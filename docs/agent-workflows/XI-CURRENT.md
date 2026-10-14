@@ -127,7 +127,7 @@
 
 ## 2026-10-09 当前入口：前批 reader 正文已验收；FPV17 工作活动读取仅本地候选
 
-- **主线与前批终态：** 只读核对 GitHub `foigent/x-insight` main 为 `05a36eda4ecd8dec79173a8c1e111c680d1d907c`，[PR118](https://github.com/foigent/x-insight/pull/118) 已合并；本地 `origin` 是旧 checkout，GitHub remote 名为 `github`。第61份当前事实源的最新 reader 段记录：原账号页面对 run `07c1a367-acaf-413b-b0d6-e4550739663b` 与原 run `b10d9149-9818-4268-8685-e344ae48504c` 的 12 份不同正文实际按钮读取、字节数及摘要核验已完成；前批累计 18/20 次供应商调用、保守费用计算界 ¥4.354599/¥10，最终供应商账单未核。这一完成不代表本批源码已部署。
+- **主线与前批终态：** 只读核对 GitHub `foigent/x-insight` main 为 `05a36eda4ecd8dec79173a8c1e111c680d1d907c`，[PR118](https://github.com/foigent/x-insight-private-history/pull/118) 已合并；本地 `origin` 是旧 checkout，GitHub remote 名为 `github`。第61份当前事实源的最新 reader 段记录：原账号页面对 run `07c1a367-acaf-413b-b0d6-e4550739663b` 与原 run `b10d9149-9818-4268-8685-e344ae48504c` 的 12 份不同正文实际按钮读取、字节数及摘要核验已完成；前批累计 18/20 次供应商调用、保守费用计算界 ¥4.354599/¥10，最终供应商账单未核。这一完成不代表本批源码已部署。
 - **本批候选：** 本地分支 `codex/xi-work-activity-reading-20261009` 以该 main 为基线，产品及 FPV17/schema45 元数据提交为 `5cefc8942f17b221430980571fdeb34243fdf86d`。工作活动独立于经济事实展示，同一来源范围内的运行汇总/分页、可选缺失与失败分型、执行身份和任务发起人边界、正文与 runtime 返回均有定向验证。隔离 PG16 的数据库与正式 TLS HTTP 测试通过；合成账号的真实页面验收在 360/1440/1920 宽度完成正文按钮及导航检查，harness 和 PG16 均正常停止。详细测试日志、摘要和四项复盘见[执行记录](EXECUTION-RECORD.md)顶部。
 - **交付边界：** D profile 配置与矩阵现为 `0.2.0-dev.fpv17`，保留 schema45 并新增准确受管 FPV16 来源；干净树 `build-signed-release.sh --profile=development-d --dry-run` 仅通过元数据/受保护运行时预检，未构建或签名。正式同版 FPV16 替换会被 `upgrade --check` 拒绝。现已在既有 `fresh_install` CI 中接入独立 FPV16→FPV17 候选：重建并验签 CI 专用 FPV16 包，保留原 UR 夹具在线执行正式升级，检查 `--check` 无副作用、schema45/密钥/历史/游标/授权、升级后原正文读取和新来源继续采集。该 Linux 作业尚未运行；同一冻结 commit 的签名整包资格、获批 Target 只读 check 与升级/浏览器验收仍待后续授权和证据。本轮无推送、正式签发、真实密钥或 Target 修改；现有 FPV16 Target 身份来自既有执行记录，未在本轮重新读取。
 
@@ -137,13 +137,13 @@
 
 ## 2026-10-09 当前入口：Flash 真实工作链已读回，PR116 已合并；插件升级持久化后失败修正待交付
 
-- **PR116 源码边界：** [PR116](https://github.com/foigent/x-insight/pull/116) 已合并为 main `b05c37413fb3ae7803608a7f47f020dc5b93ce70`，tree `cb928de87285e192d4e6a4955826e52978a45f27`。PR 精确 head `990d277d15213f4a9c576d5414f6b04850d206f6` 的[适用 CI](https://github.com/foigent/x-insight/actions/runs/37816733593)成功，同树 main [CI](https://github.com/foigent/x-insight/actions/runs/37820732845)成功。源码合并不等于 M4 采用。
+- **PR116 源码边界：** [PR116](https://github.com/foigent/x-insight-private-history/pull/116) 已合并为 main `b05c37413fb3ae7803608a7f47f020dc5b93ce70`，tree `cb928de87285e192d4e6a4955826e52978a45f27`。PR 精确 head `990d277d15213f4a9c576d5414f6b04850d206f6` 的[适用 CI](https://github.com/foigent/x-insight-private-history/actions/runs/37816733593)成功，同树 main [CI](https://github.com/foigent/x-insight-private-history/actions/runs/37820732845)成功。源码合并不等于 M4 采用。
 - **本次原生反例与防线：** M4 首次升级的原生 install 返回 saved+failed；主任务脱敏读回显示 `plugins.load.paths=[旧目录,新目录]`、`plugins registry --json` 的 persisted/current `installRecords['xi-work-events']` 均指新目录，但所选插件行仍是无安装 owner 的旧目录，故 `plugins inspect --json` 省略 `install`。旧安装器据此误报 `existing_plugin_source_conflict`，不能把它当成未安装而再次 install。本次后续源码修正独立读取原生 registry 安装记录，严格核对同一插件身份、两侧记录、原／目标路径及局部 stale 过渡态；仅在记录仍指旧源时调用原生 install。修正后的模拟反例使旧实现在恢复时失败、新实现在相同前态下跳过重装；原安装器目录 CAS 与完成态检验保留。脱敏现场为 `/private/tmp/ur-deepseek-current-flash-20261008/m4-native-registry-after-failed-install.json`；本地源码和 CI 证据不能替代 M4 resume 与 Gateway 新事件回执。
 - **M4 后续读回与输入错误：** 总体的 `/private/tmp/ur-deepseek-current-flash-20261008/m4-xi-plugin-upgraded.json` 表明原 M4 对同一 c783 包的正式 resume 返回 `activated_waiting_for_events`，选中源／索引均为新目录，原身份、17 个 Agent 和其他配置保持。其后唯一验证 run `51e1d47d-d72e-4577-9a20-faf071d3ae78` 已 failed／无 active；脱敏 history `/private/tmp/ur-deepseek-current-flash-20261008/m4-history-plugin-upgrade-metadata.json` 显示三个显式 `optional:false` 的原生 `read` 均在参数校验被拒，`optional:true` 的缺失读取正常返回，原输入／输出文件未变。严格读取应省略 `optional`；XI 只读回执 `/private/tmp/ur-deepseek-current-flash-20261008/xi-plugin-upgrade-outcome-readback.json` 确认该 run 收到 25 个事件、15 个已接受正文和 2 条 UR 关联，其中三条 `resource.read.failed`、一条 `resource.read.not_found` 及 `task.failed`；这证明新事件接收，不证明严格读取成功或正文浏览器验收。
 
 - **前一轮运行事实：** 总体在原 M4 OpenClaw／`xi-acceptance` 上验证新 Flash 成功续轮 run `20cfd856-9053-4f15-907c-43062c260648`，截至该轮整批新增供应商调用 6/20；本次成功 run 的两次 UR 请求均返回 200。XI 自动收到该 run 的 16 个事件、8 个正文和 2 条准确 UR 关系。原 reviewer 已实际读取工具返回 179 B 和同一请求的 `provider_request` 22,713 B。对应只读本地回执为 `/private/tmp/ur-deepseek-current-flash-20261008/m4-native-result-continuation.json`、`ur-flash-outcome-final-readback.json`、`account-recovery/xi-history-readback.json` 及 `xi-browser-body-final.json`。较早的“DeepSeek 无路由”只描述 10 月 7 日前态，不再是当前 Flash 路由结论。
 - **本地修正与边界：** PR115／PR116 均已合并；下述 10 月 7 日记录保留其当时源码、CI 和运行边界。PR116 的八文件改动已交付任务终态、可选缺失文件资源事实、页面名称和现有受管插件的显式原生目录切换。此次 M4 首次采用遇到上述新反例；总体已另行完成正式 resume，并由 XI 回执确认后续失败 run 的新事件接收；本 PR 源码尚未在 M4 运行。旧历史事件不改写；Target 当前状态不由本轮源码修正确认。
-- **PR116 首轮漏检与入口：** [首轮 CI 37813137149](https://github.com/foigent/x-insight/actions/runs/37813137149) 的前端资源比对和签名资格因 `WorkActivityPage.tsx` 改动后未提交同步生成的 `internal/webui/dist` 而失败。推送前实际只运行差异、受保护运行时和定向测试，没有运行前端 `npm run build` 后的 `git diff --exit-code -- internal/webui/dist`；后者是现有 CI 的正式资源比对入口。PR116 后续以固定 Node 22.23.1／npm 10.9.8 和当前锁文件重建资源，最终准确 PR/main CI 已通过；首轮失败仍保留为历史失败证据。
+- **PR116 首轮漏检与入口：** [首轮 CI 37813137149](https://github.com/foigent/x-insight-private-history/actions/runs/37813137149) 的前端资源比对和签名资格因 `WorkActivityPage.tsx` 改动后未提交同步生成的 `internal/webui/dist` 而失败。推送前实际只运行差异、受保护运行时和定向测试，没有运行前端 `npm run build` 后的 `git diff --exit-code -- internal/webui/dist`；后者是现有 CI 的正式资源比对入口。PR116 后续以固定 Node 22.23.1／npm 10.9.8 和当前锁文件重建资源，最终准确 PR/main CI 已通过；首轮失败仍保留为历史失败证据。
 - **PR116 原生升级反例：** OpenClaw 2026.9.5 的 `plugins install --link --force` 将新目录追加到 `plugins.load.paths`，不替换旧目录；同 ID 的两个显式路径按顺序选中旧源。原测试只改安装索引的 `rootDir`，误把索引变更新等同于加载源切换。PR116 分开核对 `plugins inspect --json` 的安装记录和选中源，在确认新安装记录后以原生 CAS 替换旧路径；测试覆盖追加前态、丢回复、并发冲突、第三来源和回滚。但这仍遗漏“安装记录已保存、旧源胜出、`inspect.install` 缺失”，由本次修正覆盖。`inspect --runtime` 只在 CLI 进程导入插件，不能单独证明运行中的 Gateway 已采用新包；需原生 reload 回执及后续新事件证据。
 
 下节是 10 月 7 日的历史前态，不作为当前路由或插件状态。
@@ -153,7 +153,7 @@
 ## 2026-10-07 历史前态：M4 原宿主单 Agent 工作链与 PR115 源码合并
 
 - **实际工作链：** 复用 M4 原 OpenClaw 2026.9.5、原 UR Key102／org2／project86；本批仅将 `xi-acceptance` 选为 XI 受管 Agent，新增 XI 插件为 `xi-work-events`。原 16 个 Agent 保持，本机共 17 个 Agent。无需 ECS 专用模型 key 或第二套 OpenClaw；总体已移除 ECS 上额外的 OpenClaw。GLM 已有 7 次真实供应商调用，文件结果及 reviewer 正文经实际核验。DeepSeek 现网为无可用路由，不能记作供应商拒绝；UR 本地修复的外部采用待独立决定，本阶段不增加付费请求。
-- **代码、CI 与运行分层：** [PR115](https://github.com/foigent/x-insight/pull/115) 已合并到 main `83a16a54ba31c244cd6d5e1986d842d904ac3888`，tree `a10ee2105e68a5ae3127336234ecdaa42e467b36`；PR 精确 head `e6171cd450f34c3eb4b386f48602f4f80eabc777` 的[全部适用 CI](https://github.com/foigent/x-insight/actions/runs/37610953975)成功。该 main head 的原生 [CI 37614771582](https://github.com/foigent/x-insight/actions/runs/37614771582)整体 success：分类、签名资格、新装／旧装资格及 Backend Tests 成功；Frontend、Backend/API、PG16 rotation、FPV9／FPV11 按路由 skipped。合并仅是源码交付，Target 仍是原 FPV16 安装，M4 仍载入旧 `27a5` 候选；该插件缺本次 lifecycle 等待与 413 分类，且安装器仍拒绝把已有插件切到新的不可变目录。
+- **代码、CI 与运行分层：** [PR115](https://github.com/foigent/x-insight-private-history/pull/115) 已合并到 main `83a16a54ba31c244cd6d5e1986d842d904ac3888`，tree `a10ee2105e68a5ae3127336234ecdaa42e467b36`；PR 精确 head `e6171cd450f34c3eb4b386f48602f4f80eabc777` 的[全部适用 CI](https://github.com/foigent/x-insight-private-history/actions/runs/37610953975)成功。该 main head 的原生 [CI 37614771582](https://github.com/foigent/x-insight-private-history/actions/runs/37614771582)整体 success：分类、签名资格、新装／旧装资格及 Backend Tests 成功；Frontend、Backend/API、PG16 rotation、FPV9／FPV11 按路由 skipped。合并仅是源码交付，Target 仍是原 FPV16 安装，M4 仍载入旧 `27a5` 候选；该插件缺本次 lifecycle 等待与 413 分类，且安装器仍拒绝把已有插件切到新的不可变目录。
 - **正文边界：** 总体另行修复 Target 的精确 NGINX 正文入口后，新的一份 35,784 字节 `model_input` 被接受；PR CI 的新装和旧装两模式均以真实 NGINX 验证 16 KiB／32 MiB 匿名请求到 XI 为 401、32 MiB＋1 字节和普通入口 16 KiB为 413。匿名 401 不是 32 MiB 正文托管证明；原先八份缺失正文不恢复。原 reader 浏览器原文展示仍未验收。
 - **下一步边界：** M4 插件更新需解决既有不可变目录冲突，并另取安装及运行回执。DeepSeek 路由、reader 浏览器验收分别沿原授权和独立决定处理；不得从 PR 合并或 CI 成功推定部署、插件升级、旧正文回填或完整双模型链。过程和复盘见[EXECUTION-RECORD](EXECUTION-RECORD.md)顶部当前条目。
 
@@ -163,7 +163,7 @@
 
 ## 2026-10-07 历史前态：FPV16/schema45 Target已升级，原连接已恢复
 
-[PR112](https://github.com/foigent/x-insight/pull/112)的运行源码为
+[PR112](https://github.com/foigent/x-insight-private-history/pull/112)的运行源码为
 `f2b42d60ff8961c1216cbe54ce15008f4bbec1a9`／tree
 `59d2444aa8c89734f727a50ff2c0dcb164ee94b0`；同树PR及准确main的适用CI／协议已成功。
 主线实际通过签名发布资格和两条正式Linux安装资格；其分类跳过的作业由同树PR成功结果覆盖。

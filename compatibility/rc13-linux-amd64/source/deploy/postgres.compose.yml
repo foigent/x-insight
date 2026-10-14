@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16.14-alpine3.24@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    platform: linux/amd64
+    container_name: xinsight-postgres
+    pull_policy: never
+    restart: unless-stopped
+    env_file:
+      - /etc/x-insight/postgres.env
+    environment:
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - type: bind
+        source: /data/x-insight/postgres
+        target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "PGAPPNAME=xinsight_healthcheck pg_isready -q -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    shm_size: 256mb
+    stop_grace_period: 60s
+    security_opt:
+      - no-new-privileges:true

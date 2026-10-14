@@ -13,7 +13,7 @@ OLD_ARTIFACT="$4"; OLD_PAYLOAD="$5"; OLD_SOURCE="$6"
 for input in "$@"; do case "$input" in /*) ;; *) echo "absolute inputs required" >&2; exit 1 ;; esac; done
 test -f "$TARGET_ARTIFACT" && test -f "$OLD_ARTIFACT" && test -f "$TRUST_STORE"
 test -d "$TARGET_PAYLOAD/bin" && test -d "$OLD_PAYLOAD/bin" && test -d "$OLD_SOURCE/migrations"
-test "$(git -C "$OLD_SOURCE" rev-parse HEAD)" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
+python3 "$ROOT/scripts/reproduce-signed-predecessor-source.py" --check-built-source-directory fpv11 "$OLD_SOURCE"
 python3 - "$TARGET_PAYLOAD/release/compatibility-matrix.json" "$OLD_PAYLOAD/release/compatibility-matrix.json" <<'PYINPUT'
 import json,sys
 current,old=(json.load(open(p)) for p in sys.argv[1:])

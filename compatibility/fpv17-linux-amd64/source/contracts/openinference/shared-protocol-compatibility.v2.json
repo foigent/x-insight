@@ -1,0 +1,54 @@
+{
+  "assessment_version": "xinsight.openinference-shared-protocol-compatibility.v2",
+  "status": "protocol_v2_product_pin_adopted_bounded_offline_authorization_required",
+  "protocol": {
+    "version": "2.0.2",
+    "tag_object": "1fece056b251239b8a557264c5d95043c4b5bdd2",
+    "tag_commit": "ad8fe7a38c9d7335657630baa8670dd07556b98c",
+    "tree": "288fa23b0591b6ed2953e14bc4a9d3571e2839ac",
+    "release_digest": "sha256:99f8a541b6d33b0a74d2e4c06aa312c6d6c88c35a4bfb1d4d34b98b4e4e2e8e8",
+    "content_digest": "sha256:9dce6081e15be0028441513291808f8d58becb25f00887ae66299031bc79c1c0",
+    "release_manifest_file_sha256": "sha256:3c5489c9931255cce5b565046deee3fd082d524e9a80945cbbd88e413ec073b0"
+  },
+  "product_pin": {
+    "path": "contracts/foigent/event-connector-protocol.pin.json",
+    "sha256": "sha256:7924a8b75f4f49a995227d51bfdee60b83bac43c64715e33165bb48f2492090e"
+  },
+  "projection_binding": {
+    "path": "contracts/openinference/xinsight-projection-binding.v2.json",
+    "sha256": "sha256:edb9e69baac748bce103e7b16ee477eb8e1ffc6a40939c337903cb25861cd519"
+  },
+  "product_migration": {
+    "integration_mode": "connector_bounded_offline",
+    "assurance_mode": "bounded_offline_import",
+    "checkpoint": "not_applicable",
+    "parent_resolution_scope": "source_declared_parent_span_within_sanitized_bundle; product-local read model may correlate persisted events across execution identities only by exact source_system_id, org_ref, project_ref and trace_id",
+    "mutable_delivery_state_in_event_hash_or_event_linked_provenance": false,
+    "existing_m0_identity_and_hash_changed": false
+  },
+  "authority_reference_conflict": {
+    "manifest_path": "manifests/foigent.openinference.otlp-spans-1.0.0.json",
+    "manifest_sha256": "sha256:363123d5837741ed78c134e305593d3fd0fdf68040cebff068d3f76d5bc62a1b",
+    "projection_path": "mappings/xinsight/openinference-span-to-m0-m0.1-v2.json",
+    "manifest_embedded_projection_sha256": "sha256:d5abcabffeb8bb368e5c188b7ed5179b5674092e9421af2c38e548bfdbec7077",
+    "release_component_projection_sha256": "sha256:d5abcabffeb8bb368e5c188b7ed5179b5674092e9421af2c38e548bfdbec7077",
+    "classification": "resolved_in_v2.0.1"
+  },
+  "runtime_gate": {
+    "activation_eligible": false,
+    "bounded_offline_one_operation_eligible": true,
+    "production_bootstrap_import": false,
+    "durable_bounded_import_receipt_implemented": true,
+    "runtime_authorized": false,
+    "authorization_mode": "exact_root_owned_expiring_nonproduction_manifest",
+    "authorization_schema": "schemas/integration/openinference-bounded-offline-authorization-v1.schema.json",
+    "default_without_authorization": "fail_closed_before_bundle_credentials_or_database",
+    "network_listener": false,
+    "feed_activation": false,
+    "cursor_checkpoint": false,
+    "remaining_blockers": [
+      "obtain an exact per-operation non-production authorization; general and production activation remain blocked"
+    ]
+  },
+  "runtime_mutation": "none"
+}

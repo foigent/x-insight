@@ -1,0 +1,88 @@
+{
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "bootstrap_trust": {
+    "customer_self_upgrade": false,
+    "durable_authority_revisit": "before_second_customer_delegated_or_unattended_upgrade",
+    "field_authority": "owner_supervised_trial",
+    "first_tool": "xinsight-release",
+    "private_key_retained": false,
+    "required_proof": "exact_main_successful_push_ci_manual_workflow_and_independent_sha256",
+    "self_authentication": false
+  },
+  "config_schema": "xinsight.config.v1",
+  "database_schema": "23",
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "field_qualification": "rc13_local_qualified_ci_owner_supervised_delivery_target_external_production_pending",
+  "manual_version": "0.3.0-rc.13/manual-r13",
+  "postgresql": {
+    "image_index_digest": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+    "linux_amd64_image_digest": "sha256:7a396fd264a2067788b6551122b50f162bf6136312c7fc9d74381cb92c648382",
+    "tag": "16.14-alpine3.24"
+  },
+  "product_version": "0.3.0-rc.13",
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "release_channel": "release_candidate",
+  "schema_contract": {
+    "migration_set_sha256": "sha256:346eddbda29eae52b62f1b8e7383387ba99dc608ab065160695462eaff806cfe",
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:18cdc17c34ca477a6e9259cbbbe6affd0fa77906cfc1b2d74c5a48934afbab81"
+  },
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "supported_host": {
+    "architecture": "amd64",
+    "database_topology": "same-private-host-compose-loopback",
+    "os": "Ubuntu 22.04 LTS",
+    "service_manager": "systemd"
+  },
+  "supported_legacy_sources": [
+    {
+      "artifact_sha256": "sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1",
+      "application_database_schema_max": "11",
+      "application_database_schema_min": "9",
+      "commit": "b9e5811cc53a5cb06614956e66a1c54756617f0a",
+      "compatible_config_schemas": [
+        "xinsight.config.v1"
+      ],
+      "database_schema": "9",
+      "manifest_sha256": "sha256:aaa53c2af46f59c328ff3271fa518a20bb0551fd7bdc02a0463ff925a43a6bc1",
+      "release_id": "legacy-b9e5811-phase1-final",
+      "qualification": "artifact_recovered_and_verified_upgrade_drill_pending"
+    }
+  ],
+  "supported_upgrade_from_versions": [
+    "0.2.0-rc.3",
+    "0.2.0-rc.4",
+    "0.2.0-rc.5",
+    "0.2.0-rc.6",
+    "0.2.0-rc.7",
+    "0.2.0-rc.8",
+    "0.2.0-rc.9",
+    "0.2.0-rc.10",
+    "0.2.0-rc.11",
+    "0.2.0-rc.12",
+    "0.2.0-rc.13",
+    "0.2.0-rc.14",
+    "0.2.0-rc.15",
+    "0.3.0-rc.2",
+    "0.3.0-rc.3",
+    "0.3.0-rc.4",
+    "0.3.0-rc.5",
+    "0.3.0-rc.6",
+    "0.3.0-rc.7",
+    "0.3.0-rc.8",
+    "0.3.0-rc.9",
+    "0.3.0-rc.10",
+    "0.3.0-rc.11",
+    "0.3.0-rc.12"
+  ]
+}

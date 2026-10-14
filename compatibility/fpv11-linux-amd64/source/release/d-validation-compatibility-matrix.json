@@ -1,0 +1,54 @@
+{
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "product_version": "0.2.0-dev.fpv11",
+  "manual_version": "0.2.0-dev.fpv11/manual-r1",
+  "release_channel": "release_candidate",
+  "database_schema": "43",
+  "config_schema": "xinsight.config.v1",
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:1e7051a528083740b80fa135c5caa4eb588ab339c38aac5c5013aadece8d0be3",
+    "migration_set_sha256": "sha256:3ceb93778d35ec0d166816eedced0edf1a46bbd7b4f448647c29292afe2c282e"
+  },
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.b2",
+    "0.2.0-dev.d1",
+    "0.2.0-dev.d2",
+    "0.2.0-dev.fpv1",
+    "0.2.0-dev.fpv2",
+    "0.2.0-dev.fpv3",
+    "0.2.0-dev.fpv4",
+    "0.2.0-dev.fpv5"
+  ],
+  "supported_legacy_sources": [],
+  "supported_host": {
+    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "architecture": "amd64",
+    "service_manager": "systemd",
+    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+  },
+  "postgresql": {
+    "major": 16
+  },
+  "bootstrap_trust": {
+    "field_authority": "user_authorized_isolated_validation",
+    "customer_self_upgrade": false,
+    "private_key_retained": true,
+    "self_authentication": false,
+    "first_tool": "xinsight-release"
+  },
+  "field_qualification": "FPV11/schema43 is local delivery preparation only. Existing eight managed upgrade-source declarations are retained; all eight paths to FPV11 await exact-artifact qualification. The separately typed unmanaged direct-run FPV9 bridge is bound to one reviewed source commit, binary and migration identity and is not a general supported_upgrade_from_versions entry. Its signed FPV11 target, backup, recovery and Target acceptance remain unqualified. B2, D1, D2 and FPV1-4 package bytes match existing digests; FPV4 is first in validation order only. Exact FPV5 and FPV6 packages have not been located; FPV6 is not added to the upgrade-source list. Fresh install, existing-UR add-on, upgrade/check, failure recovery, rollback rejection and same-version campaign authority remain open P4/P6 acceptance items. Work events, review-body custody and managed install require their own end-to-end acceptance. No F/PX/V/A0/S/TD completion claim."
+}

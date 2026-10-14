@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Outcome Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "outcome_status": { "enum": ["success", "failure", "partial", "unknown"] },
+    "status_code": { "type": "integer" },
+    "error_code": { "type": "string" },
+    "failure_kind": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}

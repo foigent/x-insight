@@ -5,15 +5,15 @@ verified in CI; named Target, manual-guided User tasks and live UniRouter eviden
 remain separate gates
 Date: 2026-07-14
 Execution owner: Codex
-Implementation PRs: [#40](https://github.com/foigent/x-insight/pull/40),
-[#41](https://github.com/foigent/x-insight/pull/41) and
-[#42](https://github.com/foigent/x-insight/pull/42)
+Implementation PRs: [#40](https://github.com/foigent/x-insight-private-history/pull/40),
+[#41](https://github.com/foigent/x-insight-private-history/pull/41) and
+[#42](https://github.com/foigent/x-insight-private-history/pull/42)
 Qualified product commit: `a77ba1de2064d6b297c1010de708019e46fd61cb`
 
 ## Outcome And Claim Boundary
 
 The release-relevant main run
-[`29301064665`](https://github.com/foigent/x-insight/actions/runs/29301064665)
+[`29301064665`](https://github.com/foigent/x-insight-private-history/actions/runs/29301064665)
 passed the accepted Ubuntu 22.04 x86_64/PostgreSQL 16 qualification after an
 external process-group `SIGKILL` interrupted the exact signed `xinsightctl`
 during `upgrade/stop_service`. The durable journal remained readable, no early
@@ -119,7 +119,7 @@ Both are explicitly non-publishable CI artifacts.
 
 While `a77ba1de2064d6b297c1010de708019e46fd61cb` was still exact current
 `main`, manual workflow
-[`29301384798`](https://github.com/foigent/x-insight/actions/runs/29301384798)
+[`29301384798`](https://github.com/foigent/x-insight-private-history/actions/runs/29301384798)
 accepted source CI `29301064665`, rechecked all three required qualification
 jobs and published the bounded first-customer delivery in 49 seconds.
 

@@ -1,0 +1,71 @@
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --font-ui: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --canvas: #fff;
+  --surface: #fff;
+  --surface-muted: #f1f0f4;
+  --surface-subtle: #f8f8fa;
+  --ink: #303036;
+  --ink-soft: #53505e;
+  --muted: #716e7b;
+  --border: #e5e3ea;
+  --border-strong: #bab5c7;
+  --evidence: #6352b7;
+  --evidence-soft: #f0edf9;
+  --chart: #8980a7;
+  --gap: #8a601e;
+  --gap-soft: #fff5e5;
+  --failure: #b42318;
+  --failure-soft: #fff0ee;
+  --success: #18794e;
+  --success-soft: #ecf8f2;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --shadow: none;
+  /* Older domain components share the same semantic tokens. */
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+  --panel: var(--surface);
+  --panel-soft: var(--surface-subtle);
+  --accent-900: var(--ink);
+  --accent-800: var(--evidence);
+  --accent-700: var(--evidence);
+  --accent-600: var(--chart);
+  --accent-100: var(--evidence-soft);
+  --accent-050: var(--surface-subtle);
+  --danger: var(--failure);
+  --danger-soft: var(--failure-soft);
+  --warning: var(--gap);
+  --warning-soft: var(--gap-soft);
+  --blue: var(--evidence);
+  --blue-soft: var(--evidence-soft);
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--canvas);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --canvas: #1b1a20;
+    --surface: #211f27;
+    --surface-muted: #302d39;
+    --surface-subtle: #25232c;
+    --ink: #ece9f2;
+    --ink-soft: #cec7dc;
+    --muted: #b3acbf;
+    --border: #403b4a;
+    --border-strong: #71687f;
+    --evidence: #c3b4fc;
+    --evidence-soft: #373047;
+    --chart: #ab9bc9;
+    --gap: #efc276;
+    --gap-soft: #3d3424;
+    --failure: #ffaaa3;
+    --failure-soft: #462c2d;
+    --success: #8dd4b2;
+    --success-soft: #233b31;
+  }
+}

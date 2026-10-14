@@ -48,13 +48,13 @@ export XINSIGHT_RESPONSIBILITY_LOCAL_TEST=1
 export XINSIGHT_REQUIRE_POSTGRES_TESTS=1
 : "${XINSIGHT_LOCAL_TEST_DATABASE_SCOPE:?Set the independently recorded scope file}"
 mkdir -p output
-bash scripts/reproduce-direct-fpv9.sh "$PWD/output/local-fpv9-source" "$PWD/output/local-fpv9-bin"
+bash scripts/reproduce-direct-fpv9.sh --source-directory "$PWD/compatibility/fpv9-linux-amd64/source" "$PWD/output/local-fpv9-source" "$PWD/output/local-fpv9-bin"
 export XI_FPV9_REPRO_DIR="$PWD/output/local-fpv9-bin"
 go test -p 1 -race -coverprofile=output/local-go-coverage.out ./...
 python3 scripts/check-go-coverage.py output/local-go-coverage.out
 ```
 
-The FPV9 output paths must be new. The existing reproduction script checks out a fixed historical commit, cross-compiles its two unsigned Linux binaries, and verifies their frozen hashes. The local recovery tests inspect these bytes using their existing fixture; they do not run Linux services on macOS. Without these inputs, the recovery cases skip and the coverage floor may fail. Keep the floor unchanged. Packages are serialized because some qualification tests intentionally share a fixture database and maintenance lock.
+The FPV9 output paths must be new. The command validates the locked public source selection, copies it into a new source directory, cross-compiles its two unsigned Linux binaries, and verifies both frozen hashes. `source-manifest.json` binds the original identity and 316 file digests; no private Git history is required. With the existing two-output-argument form, the script uses this bundled source when present and otherwise retains the original private worktree fallback. `bash scripts/reproduce-direct-fpv9.sh --check-source-directory "$PWD/compatibility/fpv9-linux-amd64/source"` validates the input without building or writing files. The separate original UI/manual sources and their 13-component, 18-text license mapping are recorded in `original-asset-source-manifest.json` and the fixture `NOTICE`. The Go recipe reuses the original embedded assets; it does not establish a cold historical frontend build or redistribution rights. The local recovery tests inspect these bytes using their existing fixture; they do not run Linux services on macOS. Without these inputs, the recovery cases skip and the coverage floor may fail. Keep the floor unchanged. Packages are serialized because some qualification tests intentionally share a fixture database and maintenance lock.
 
 For Neutral D1 compatibility, obtain and qualify the five public assets using the immutable authority at `foigent/integration-control@db10730d64a9302887ad59c53921e98c757927e7`, then set `XINSIGHT_N1_RELEASE_ASSET_DIRECTORY` to that flat asset directory before the tests. The authority supports Darwin arm64 and Linux amd64. The exact download, digest, and qualification steps are retained in `.github/workflows/ci.yml`; no maintainer App credential is needed. Missing assets leave that particular compatibility test skipped, not passed. Additional CI opt-ins cover administrator rotation, Linux privilege behavior, native host lifecycle, and installed release lanes; the local command does not claim those lanes ran.
 
@@ -112,6 +112,8 @@ scripts/build-signed-release.sh output/current-preparation --profile=development
 ```
 
 Choose a new output path. `--dry-run` checks release preconditions without looking up a signing key. `--prepare-only` builds an unsigned, non-installable preparation and stops before signing. A release requires a separately authorized trust authority and exact-artifact verification. CI-generated ephemeral keys and artifacts are explicitly non-publishable.
+
+For an approved managed distribution, follow [signed distribution and installation](signed-distribution.md). It covers independent bootstrap/trust, the current FPV19 profile, portable metadata and the installed UniRouter pair; formal downloads and that pair remain pending.
 
 ## Connect UniRouter and verify the pair
 

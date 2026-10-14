@@ -676,11 +676,12 @@ jobs:
           XINSIGHT_EXPECT_COMMIT: b9e5811cc53a5cb06614956e66a1c54756617f0a
           XINSIGHT_EXPECT_GO_VERSION: go1.25.11
         run: |
-          git worktree add --detach "${RUNNER_TEMP}/phase1-source" "$XINSIGHT_EXPECT_COMMIT"
-          "${RUNNER_TEMP}/phase1-source/scripts/build-release.sh" "${RUNNER_TEMP}/phase1-dist"
+          python3 scripts/reproduce-phase1-source.py \
+            "$PWD/compatibility/phase1-linux-amd64/source" \
+            "${RUNNER_TEMP}/phase1-source" "${RUNNER_TEMP}/phase1-dist"
           legacy_artifact="${RUNNER_TEMP}/phase1-dist/xinsight-release-linux-amd64-${XINSIGHT_EXPECT_COMMIT}.tar.gz"
           test "sha256:$(sha256sum "$legacy_artifact" | awk '{print $1}')" = "sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1"
-          "${RUNNER_TEMP}/phase1-source/scripts/verify-release.sh" "$legacy_artifact"
+          # The source adapter already ran the original verifier after both frozen digest checks.
 
       - name: Rebuild and verify frozen rc13 signed candidate
         env:
@@ -688,15 +689,14 @@ jobs:
           XINSIGHT_RC13_COMMIT: 8bcea5bebf6f0f0796391dfe8c62fdf7a43519eb
         run: |
           rc13_source="${RUNNER_TEMP}/rc13-source"
-          git worktree add --detach "$rc13_source" "$XINSIGHT_RC13_COMMIT"
-          test "$(git -C "$rc13_source" rev-parse HEAD)" = "$XINSIGHT_RC13_COMMIT"
-          "$rc13_source/scripts/build-signed-release.sh" "${RUNNER_TEMP}/rc13-signed"
+          python3 scripts/reproduce-signed-predecessor-source.py --build rc13 \
+            "$GITHUB_WORKSPACE/compatibility/rc13-linux-amd64/source" "$rc13_source" "${RUNNER_TEMP}/rc13-signed"
           build_result="${RUNNER_TEMP}/rc13-signed/build-result.json"
           artifact=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["output"])' "$build_result")
           commit=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["commit"])' "$build_result")
           test "$commit" = "$XINSIGHT_RC13_COMMIT"
           XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/rc13-signed/bootstrap/xinsight-release-linux-amd64-${commit}" \
-            "$rc13_source/scripts/verify-signed-release.sh" \
+            python3 scripts/reproduce-signed-predecessor-source.py --verify rc13 "$rc13_source" \
             "$artifact" "${RUNNER_TEMP}/ci-trusted-release-keys.json" "${RUNNER_TEMP}/verified-rc13-payload"
 
       - name: Restore current Go after historical reproduction
@@ -1061,10 +1061,9 @@ jobs:
 
       - name: Check exact published managed predecessor source
         run: |
-          # PR107 is the published FPV11 source for this CI-only synthetic build.
-          # Check before tool installation, key generation or artifact creation.
-          git cat-file -e '9c58e07f011918c4a0aed2f876ce4baa9fb12b5e^{commit}'
-          git show 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e:release/d-validation-config.json | python3 -c 'import json,sys; c=json.load(sys.stdin); assert c["product_version"]=="0.2.0-dev.fpv11" and c["database_schema"]=={"current":"43","min":"43","max":"43"}'
+          # Admit the exact original FPV11 inputs before tools or credentials.
+          python3 scripts/reproduce-signed-predecessor-source.py --check-source-directory fpv11 "$GITHUB_WORKSPACE/compatibility/fpv11-linux-amd64/source"
+          python3 -c 'import json; c=json.load(open("compatibility/fpv11-linux-amd64/source/release/d-validation-config.json")); assert c["product_version"]=="0.2.0-dev.fpv11" and c["database_schema"]=={"current":"43","min":"43","max":"43"}'
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -1117,13 +1116,13 @@ jobs:
             "${RUNNER_TEMP}/managed-fpv11-payload" --profile=development-d
 
           old_source="${RUNNER_TEMP}/managed-fpv11-source"
-          git worktree add --detach "$old_source" 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
-          test "$(git -C "$old_source" rev-parse HEAD)" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
-          (cd "$old_source" && scripts/build-signed-release.sh "${RUNNER_TEMP}/managed-fpv11-old-signed" --profile=development-d)
+          python3 scripts/reproduce-signed-predecessor-source.py --build fpv11 \
+            "$GITHUB_WORKSPACE/compatibility/fpv11-linux-amd64/source" "$old_source" "${RUNNER_TEMP}/managed-fpv11-old-signed"
           old_artifact=$(python3 -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"managed-fpv11-old-signed/build-result.json").read_text())["output"])')
           old_commit=$(python3 -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"managed-fpv11-old-signed/build-result.json").read_text())["commit"])')
           test "$old_commit" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
-          (cd "$old_source" && XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/managed-fpv11-old-signed/bootstrap/xinsight-release-linux-amd64-${old_commit}" scripts/verify-signed-release.sh "$old_artifact" "${RUNNER_TEMP}/managed-fpv11-trust/trusted-release-keys.json" "${RUNNER_TEMP}/managed-fpv11-old-payload" --profile=development-d)
+          XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/managed-fpv11-old-signed/bootstrap/xinsight-release-linux-amd64-${old_commit}" \
+            python3 scripts/reproduce-signed-predecessor-source.py --verify fpv11 "$old_source" "$old_artifact" "${RUNNER_TEMP}/managed-fpv11-trust/trusted-release-keys.json" "${RUNNER_TEMP}/managed-fpv11-old-payload"
 
       - name: Qualify managed FPV11 upgrade and recovery
         env:

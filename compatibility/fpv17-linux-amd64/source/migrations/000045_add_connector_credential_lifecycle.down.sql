@@ -1,0 +1,4 @@
+DROP FUNCTION public.xinsight_initialize_connector_control_credential(text,text);
+DROP TABLE connector_control_recovery_tickets;
+DROP TABLE connector_control_credential_operations;
+DROP TABLE connector_control_credentials;

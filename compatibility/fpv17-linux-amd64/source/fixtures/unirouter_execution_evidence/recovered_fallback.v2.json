@@ -1,0 +1,245 @@
+{
+  "schema_version": "unirouter.execution-evidence.bundle.v2",
+  "profile": {
+    "id": "unirouter.execution-evidence.v2",
+    "manifest_version": "2.0.0",
+    "manifest_sha256": "sha256:834bbaae05936af76abc4608ab16547581656e415c7d73f79d5d55ef6eca9547",
+    "bundle_schema_sha256": "sha256:e47c5e074e3b7de8c16be9615c5ea073348017c58e07b9ba0566e2a66185f33a"
+  },
+  "source_instance": "demo-unirouter-synthetic",
+  "request_id": "req-v2-fallback-demo",
+  "org_id": 7,
+  "project_id": 11,
+  "closed_at": "2026-07-30T06:00:01Z",
+  "completeness": {
+    "state": "complete",
+    "source_profile_complete": true,
+    "expected_trace_event_hashes": [
+      "8a84e406c08ac9594f47222406598f7598e15c55f8044b04813e28c9dee70976",
+      "18e46e4d710ce9f85597dd3b5de784bf4038905642812c22a897d41854747d1e",
+      "06b29bb318814108e94270528fe7994c096308b3692923723bf1ae6f98d50b4f",
+      "5c7ee2074b65853f71fc5a01ce194ff26deedf6daacdb715c6beefdfd3f31b35",
+      "0c95c7ece1ce1a9750275ef1c6d7ad6b278f70d66592207783ffe7d58474cc01"
+    ],
+    "expected_call_log_hashes": [
+      "7edb360f06acaef2cc80dba16cf563f199d347db4443da04da0c8173e3f9e4ed"
+    ],
+    "observed_trace_event_hashes": [
+      "8a84e406c08ac9594f47222406598f7598e15c55f8044b04813e28c9dee70976",
+      "18e46e4d710ce9f85597dd3b5de784bf4038905642812c22a897d41854747d1e",
+      "06b29bb318814108e94270528fe7994c096308b3692923723bf1ae6f98d50b4f",
+      "5c7ee2074b65853f71fc5a01ce194ff26deedf6daacdb715c6beefdfd3f31b35",
+      "0c95c7ece1ce1a9750275ef1c6d7ad6b278f70d66592207783ffe7d58474cc01"
+    ],
+    "observed_call_log_hashes": [
+      "7edb360f06acaef2cc80dba16cf563f199d347db4443da04da0c8173e3f9e4ed"
+    ],
+    "missing_event_hashes": []
+  },
+  "stage_coverage": [
+    {
+      "stage": "identity",
+      "status": "present",
+      "source_event_hashes": [
+        "8a84e406c08ac9594f47222406598f7598e15c55f8044b04813e28c9dee70976"
+      ]
+    },
+    {
+      "stage": "routing",
+      "status": "present",
+      "source_event_hashes": [
+        "8a84e406c08ac9594f47222406598f7598e15c55f8044b04813e28c9dee70976",
+        "06b29bb318814108e94270528fe7994c096308b3692923723bf1ae6f98d50b4f",
+        "5c7ee2074b65853f71fc5a01ce194ff26deedf6daacdb715c6beefdfd3f31b35"
+      ]
+    },
+    {
+      "stage": "provider",
+      "status": "present",
+      "source_event_hashes": [
+        "18e46e4d710ce9f85597dd3b5de784bf4038905642812c22a897d41854747d1e"
+      ]
+    },
+    {
+      "stage": "retry_fallback",
+      "status": "present",
+      "source_event_hashes": [
+        "06b29bb318814108e94270528fe7994c096308b3692923723bf1ae6f98d50b4f",
+        "5c7ee2074b65853f71fc5a01ce194ff26deedf6daacdb715c6beefdfd3f31b35"
+      ]
+    },
+    {
+      "stage": "billing",
+      "status": "present",
+      "source_event_hashes": [
+        "0c95c7ece1ce1a9750275ef1c6d7ad6b278f70d66592207783ffe7d58474cc01"
+      ]
+    },
+    {
+      "stage": "usage",
+      "status": "present",
+      "source_event_hashes": [
+        "7edb360f06acaef2cc80dba16cf563f199d347db4443da04da0c8173e3f9e4ed"
+      ]
+    },
+    {
+      "stage": "logging",
+      "status": "present",
+      "source_event_hashes": [
+        "7edb360f06acaef2cc80dba16cf563f199d347db4443da04da0c8173e3f9e4ed"
+      ]
+    }
+  ],
+  "trace_events": [
+    {
+      "source_ref": "unirouter:trace:route",
+      "source_event_hash": "8a84e406c08ac9594f47222406598f7598e15c55f8044b04813e28c9dee70976",
+      "event_type": "routing.route_selected",
+      "stage": "routing",
+      "severity": "info",
+      "created_at": "2026-07-30T06:00:00Z",
+      "trace_id": "trace-v2",
+      "span_id": "span-route",
+      "actor_type": "service",
+      "actor_ref": "service:demo",
+      "model": "model-a",
+      "requested_model": "model-a",
+      "provider": "provider-a",
+      "channel": "primary",
+      "status_code": 200,
+      "latency_ms": 2,
+      "decision_kind": "routing",
+      "decision_result": "selected",
+      "payload_capture_mode": "metadata_only",
+      "metadata": {
+        "route_sequence": 1,
+        "route_total": 2
+      }
+    },
+    {
+      "source_ref": "unirouter:trace:failed",
+      "source_event_hash": "18e46e4d710ce9f85597dd3b5de784bf4038905642812c22a897d41854747d1e",
+      "event_type": "provider.request_failed",
+      "stage": "provider",
+      "severity": "warning",
+      "created_at": "2026-07-30T06:00:00.100Z",
+      "trace_id": "trace-v2",
+      "span_id": "span-failed",
+      "parent_span_id": "span-route",
+      "attempt_id": "attempt-a",
+      "model": "model-a",
+      "requested_model": "model-a",
+      "provider": "provider-a",
+      "channel": "primary",
+      "status_code": 502,
+      "latency_ms": 80,
+      "decision_kind": "provider",
+      "decision_result": "failed",
+      "payload_capture_mode": "metadata_only",
+      "metadata": {
+        "route_sequence": 1,
+        "route_total": 2
+      }
+    },
+    {
+      "source_ref": "unirouter:trace:retry",
+      "source_event_hash": "06b29bb318814108e94270528fe7994c096308b3692923723bf1ae6f98d50b4f",
+      "event_type": "retry.attempt.scheduled",
+      "stage": "routing",
+      "severity": "info",
+      "created_at": "2026-07-30T06:00:00.200Z",
+      "trace_id": "trace-v2",
+      "span_id": "span-retry",
+      "parent_span_id": "span-failed",
+      "attempt_id": "attempt-b",
+      "model": "model-a",
+      "requested_model": "model-a",
+      "provider": "provider-b",
+      "channel": "fallback",
+      "decision_kind": "routing",
+      "decision_result": "retry_scheduled",
+      "payload_capture_mode": "metadata_only",
+      "metadata": {
+        "route_sequence": 2,
+        "route_total": 2
+      }
+    },
+    {
+      "source_ref": "unirouter:trace:fallback",
+      "source_event_hash": "5c7ee2074b65853f71fc5a01ce194ff26deedf6daacdb715c6beefdfd3f31b35",
+      "event_type": "fallback.route.selected",
+      "stage": "routing",
+      "severity": "info",
+      "created_at": "2026-07-30T06:00:00.300Z",
+      "trace_id": "trace-v2",
+      "span_id": "span-fallback",
+      "parent_span_id": "span-retry",
+      "attempt_id": "attempt-b",
+      "model": "model-a",
+      "requested_model": "model-a",
+      "provider": "provider-b",
+      "channel": "fallback",
+      "decision_kind": "routing",
+      "decision_result": "fallback_selected",
+      "payload_capture_mode": "metadata_only",
+      "metadata": {
+        "route_sequence": 2,
+        "route_total": 2
+      }
+    },
+    {
+      "source_ref": "unirouter:trace:billing",
+      "source_event_hash": "0c95c7ece1ce1a9750275ef1c6d7ad6b278f70d66592207783ffe7d58474cc01",
+      "event_type": "billing.settle.succeeded",
+      "stage": "billing",
+      "severity": "info",
+      "created_at": "2026-07-30T06:00:00.900Z",
+      "trace_id": "trace-v2",
+      "span_id": "span-billing",
+      "parent_span_id": "span-fallback",
+      "attempt_id": "attempt-b",
+      "model": "model-a",
+      "requested_model": "model-a",
+      "provider": "provider-b",
+      "channel": "fallback",
+      "status_code": 200,
+      "latency_ms": 140,
+      "decision_kind": "billing",
+      "decision_result": "allowed",
+      "payload_capture_mode": "metadata_only",
+      "metadata": {
+        "cost_micros": "17",
+        "currency": "CNY",
+        "amount_scale": 1000000
+      }
+    }
+  ],
+  "call_logs": [
+    {
+      "source_ref": "unirouter:call:req-v2-fallback-demo",
+      "source_event_hash": "7edb360f06acaef2cc80dba16cf563f199d347db4443da04da0c8173e3f9e4ed",
+      "created_at": "2026-07-30T06:00:01Z",
+      "trace_id": "trace-v2",
+      "attempt_id": "attempt-b",
+      "actor_type": "service",
+      "actor_ref": "service:demo",
+      "model": "model-a",
+      "requested_model": "model-a",
+      "provider": "provider-b",
+      "channel": "fallback",
+      "status_code": 200,
+      "upstream_status_code": 200,
+      "latency_ms": 140,
+      "prompt_tokens": 7,
+      "completion_tokens": 4,
+      "cost_micros": "17",
+      "currency": "CNY",
+      "amount_scale": 1000000,
+      "usage_source": "upstream",
+      "usage_authority": "provider_reported",
+      "usage_finality": "final",
+      "payload_capture_mode": "metadata_only"
+    }
+  ],
+  "capture_gaps": []
+}

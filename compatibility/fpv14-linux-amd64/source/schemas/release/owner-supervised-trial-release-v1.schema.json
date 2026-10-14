@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x-insight.local/schemas/release/owner-supervised-trial-release-v1.schema.json",
+  "title": "X-Insight owner-supervised trial release record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "classification",
+    "created_at",
+    "product",
+    "artifact",
+    "bootstrap",
+    "trust_store",
+    "source_workflow",
+    "source_ci",
+    "supervision",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.owner-supervised-trial-release.v1"
+    },
+    "classification": {
+      "const": "owner_supervised_trial"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "manual_version", "release_channel", "commit"],
+      "properties": {
+        "name": { "const": "x-insight" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "manual_version": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "release_channel": { "const": "release_candidate" },
+        "commit": { "$ref": "#/$defs/commit" }
+      }
+    },
+    "artifact": { "$ref": "#/$defs/file" },
+    "bootstrap": { "$ref": "#/$defs/file" },
+    "trust_store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes", "key_id"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        },
+        "key_id": {
+          "type": "string",
+          "pattern": "^ed25519:sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "source_workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "run_id", "run_attempt", "actor", "url"],
+      "properties": {
+        "repository": { "const": "foigent/x-insight" },
+        "ref": { "const": "refs/heads/main" },
+        "run_id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "run_attempt": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "actor": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "url": { "type": "string", "format": "uri", "maxLength": 2048 }
+      }
+    },
+    "source_ci": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["database_id", "workflow_name", "event", "head_branch", "head_sha", "conclusion", "url"],
+      "properties": {
+        "database_id": { "type": "integer", "minimum": 1 },
+        "workflow_name": { "const": "CI" },
+        "event": { "const": "push" },
+        "head_branch": { "const": "main" },
+        "head_sha": { "$ref": "#/$defs/commit" },
+        "conclusion": { "const": "success" },
+        "url": { "type": "string", "format": "uri", "maxLength": 2048 }
+      }
+    },
+    "supervision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "install_owners",
+        "customer_self_upgrade",
+        "third_party_install",
+        "long_lived_private_key",
+        "private_key_retained",
+        "independent_hash_check_required"
+      ],
+      "properties": {
+        "install_owners": {
+          "const": ["product_owner", "codex"]
+        },
+        "customer_self_upgrade": { "const": false },
+        "third_party_install": { "const": false },
+        "long_lived_private_key": { "const": false },
+        "private_key_retained": { "const": false },
+        "independent_hash_check_required": { "const": true }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release_authority", "target_verified", "external_integration_verified", "production_verified"],
+      "properties": {
+        "release_authority": { "const": "owner_supervised_trial_only" },
+        "target_verified": { "const": false },
+        "external_integration_verified": { "const": false },
+        "production_verified": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      }
+    }
+  }
+}

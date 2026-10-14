@@ -5,7 +5,7 @@ Target, supported-host crash sample, manual-guided User tasks and live UniRouter
 integration remain separate gates
 Date: 2026-07-14
 Execution owner: Codex
-PR: [#37](https://github.com/foigent/x-insight/pull/37)
+PR: [#37](https://github.com/foigent/x-insight-private-history/pull/37)
 Merged main: `3884f6d7c9a8de04bb558c41975f44f3c511c671`
 
 ## Scope And Claim Boundary
@@ -23,7 +23,7 @@ delivery inside the accepted User-plus-Codex supervised trial.
 ## PR And Main CI
 
 PR #37 merged only after release-relevant PR run
-[`29298496412`](https://github.com/foigent/x-insight/actions/runs/29298496412)
+[`29298496412`](https://github.com/foigent/x-insight-private-history/actions/runs/29298496412)
 passed the intended routed contract:
 
 - Change Classification: success in 6 seconds;
@@ -35,7 +35,7 @@ passed the intended routed contract:
 
 The PR was squash-merged as exact main
 `3884f6d7c9a8de04bb558c41975f44f3c511c671`. Its push run
-[`29298660052`](https://github.com/foigent/x-insight/actions/runs/29298660052)
+[`29298660052`](https://github.com/foigent/x-insight-private-history/actions/runs/29298660052)
 then ran the complementary main-only route:
 
 - Change Classification: success in 4 seconds;
@@ -52,12 +52,12 @@ and release qualification was not run on the PR. These timings include cold
 cache effects and are not a performance SLO.
 
 Evidence-only PR #38 then exercised the safe-docs-only PR route in run
-[`29299294613`](https://github.com/foigent/x-insight/actions/runs/29299294613):
+[`29299294613`](https://github.com/foigent/x-insight-private-history/actions/runs/29299294613):
 Change Classification passed in 6 seconds, aggregate `Backend Tests` passed in
 5 seconds, and Frontend, Backend/API, Signed and Fresh Install all skipped. The
 PR merged as `0485a60bdbe296f65ad9e21698b2163e0f532166`; corresponding
 safe-docs-only main run
-[`29299387213`](https://github.com/foigent/x-insight/actions/runs/29299387213)
+[`29299387213`](https://github.com/foigent/x-insight-private-history/actions/runs/29299387213)
 passed classification in 7 seconds and the aggregate gate in 6 seconds while
 the same four expensive jobs skipped. Because its Signed and Fresh job results
 are skipped, this green documentation run cannot qualify a new supervised
@@ -66,7 +66,7 @@ release.
 ## Owner-Supervised Workflow
 
 Manual workflow run
-[`29298897133`](https://github.com/foigent/x-insight/actions/runs/29298897133)
+[`29298897133`](https://github.com/foigent/x-insight-private-history/actions/runs/29298897133)
 completed successfully in 41 seconds. It verified exact current main, the
 matching successful main-push CI and successful aggregate/signed/fresh jobs;
 generated a one-run Ed25519 identity; built and verified the delivery; confirmed

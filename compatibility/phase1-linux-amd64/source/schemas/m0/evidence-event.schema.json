@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "X-Insight M0 Evidence Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "schema_version",
+    "source_system_id",
+    "adapter_manifest_id",
+    "source_type",
+    "source_ref",
+    "idempotency_key",
+    "event_hash",
+    "event_type",
+    "stage",
+    "severity",
+    "capture_mode",
+    "payload_capture_mode",
+    "ingested_at",
+    "correlation",
+    "payload_policy",
+    "field_provenance"
+  ],
+  "properties": {
+    "id": { "$ref": "#/$defs/uuid" },
+    "schema_version": { "type": "string", "minLength": 1 },
+    "source_system_id": { "$ref": "#/$defs/uuid" },
+    "adapter_manifest_id": { "$ref": "#/$defs/uuid" },
+    "source_type": { "$ref": "#/$defs/source_type" },
+    "source_version": { "type": "string" },
+    "source_event_id": { "type": "string" },
+    "source_event_type": { "type": "string" },
+    "source_ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 1024 },
+    "import_cursor": { "type": "string" },
+    "event_type": { "type": "string", "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$" },
+    "stage": { "$ref": "#/$defs/stage" },
+    "severity": { "$ref": "#/$defs/severity" },
+    "capture_mode": { "$ref": "#/$defs/capture_mode" },
+    "occurred_at": { "type": "string" },
+    "observed_at": { "type": "string" },
+    "ingested_at": { "type": "string" },
+    "request_id": { "type": "string" },
+    "trace_id": { "type": "string" },
+    "span_id": { "type": "string" },
+    "org_ref": { "type": "string" },
+    "project_ref": { "type": "string" },
+    "payload_capture_mode": { "$ref": "#/$defs/payload_capture_mode" },
+    "event_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "source_event_hash": { "type": "string" },
+    "correlation": { "$ref": "./field-groups/correlation.schema.json" },
+    "identity": { "$ref": "./field-groups/identity.schema.json" },
+    "capability": { "$ref": "./field-groups/capability.schema.json" },
+    "decision": { "$ref": "./field-groups/decision.schema.json" },
+    "usage": { "$ref": "./field-groups/usage.schema.json" },
+    "outcome": { "$ref": "./field-groups/outcome.schema.json" },
+    "payload_policy": { "$ref": "./field-groups/payload-policy.schema.json" },
+    "field_provenance": { "$ref": "./field-groups/field-provenance.schema.json" },
+    "raw_source_excerpt": { "$ref": "./field-groups/raw-source-excerpt.schema.json" }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "source_type": {
+      "enum": [
+        "unirouter",
+        "litellm",
+        "one-api",
+        "new-api",
+        "otel",
+        "openinference",
+        "sdk",
+        "mcp",
+        "business_system",
+        "manual",
+        "unknown"
+      ]
+    },
+    "stage": {
+      "enum": [
+        "gateway",
+        "auth",
+        "identity",
+        "routing",
+        "provider",
+        "billing",
+        "usage",
+        "logging",
+        "policy",
+        "payload",
+        "gap",
+        "simulation",
+        "external",
+        "unknown"
+      ]
+    },
+    "severity": { "enum": ["info", "warning", "error"] },
+    "capture_mode": {
+      "enum": [
+        "native",
+        "callback",
+        "db_import",
+        "api_import",
+        "otel",
+        "openinference",
+        "sdk",
+        "mcp",
+        "derived",
+        "manual"
+      ]
+    },
+    "payload_capture_mode": {
+      "enum": [
+        "none",
+        "metadata_only",
+        "hash_only",
+        "redacted",
+        "reference_only",
+        "full_content"
+      ]
+    }
+  }
+}

@@ -91,7 +91,7 @@ These are execution-owner self-tests, not independent acceptance.
 ## PR CI Finding And Disposition
 
 PR #37 run
-[`29286487988`](https://github.com/foigent/x-insight/actions/runs/29286487988)
+[`29286487988`](https://github.com/foigent/x-insight-private-history/actions/runs/29286487988)
 passed Backend, Frontend and exact legacy release reproduction, then failed the
 signed-v2 verification step with `trailing envelope bytes`. The exact signed
 build and byte-for-byte double-build had already passed; Fresh Install was
@@ -144,7 +144,7 @@ to make later evidence appear historical.
 ## Post-Record CI Update — 2026-07-14
 
 GitHub billing was restored and the failed jobs of run
-[`29287222439`](https://github.com/foigent/x-insight/actions/runs/29287222439)
+[`29287222439`](https://github.com/foigent/x-insight-private-history/actions/runs/29287222439)
 were rerun as attempt 3. Frontend and Backend retained their successful results;
 Legacy Release Reproduction, Signed V2 Release Qualification and the dependent
 Fresh Install Qualification all completed successfully. The billing block is

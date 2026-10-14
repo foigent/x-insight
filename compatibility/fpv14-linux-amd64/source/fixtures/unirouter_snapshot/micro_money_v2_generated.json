@@ -1,0 +1,96 @@
+{
+  "schema_version": "unirouter.prd5.xinsight.snapshot.v2",
+  "exchange_id": "uxchg_a030bbde4ab099638c2f97f8af6d3348",
+  "generated_at": "2026-07-18T09:17:40.215103Z",
+  "source": "unirouter",
+  "source_instance": "local-synthetic-v2",
+  "request_ids": [
+    "req-xi-v2-micro-7-synthetic"
+  ],
+  "scenarios": null,
+  "safety": {
+    "selection_mode": "explicit_request_id_only",
+    "raw_prompts_included": false,
+    "raw_responses_included": false,
+    "api_keys_included": false,
+    "ip_handling": "raw IP addresses are not exported; only ip_address_was_present is retained",
+    "error_handling": "raw upstream_error text is not exported; only upstream_error_present is retained",
+    "metadata_handling": "request_trace_events.metadata is re-sanitized through internal/traceutil.SanitizeMetadata before export"
+  },
+  "counts": {
+    "requested_request_ids": 1,
+    "call_logs": 1,
+    "request_trace_events": 0,
+    "capture_gaps": 1
+  },
+  "capture_gaps": [
+    {
+      "request_id": "req-xi-v2-micro-7-synthetic",
+      "source": "request_trace_events",
+      "capture_gap": "not_available_from_source",
+      "candidate_capture_gaps": [
+        "sampled_out",
+        "retention_expired",
+        "not_instrumented"
+      ],
+      "reason": "call_logs row exists but no request_trace_events row matched this request_id; possible trace sampling, trace retention cleanup, or non-instrumented path",
+      "generated_by_snapshot_tool": true
+    }
+  ],
+  "call_logs": [
+    {
+      "source_ref": "unirouter:local-synthetic-v2:call_logs:1",
+      "source_event_hash": "912b46860f68b37f3fc9783a7917857e2c11d48e3c336e8bddc30bf3d7ec40d6",
+      "id": 1,
+      "request_id": "req-xi-v2-micro-7-synthetic",
+      "org_id": 1,
+      "project_id": null,
+      "api_key_id": null,
+      "owner_user_id": null,
+      "key_type": "unknown",
+      "model": "synthetic-model",
+      "requested_model": "synthetic-model",
+      "provider": "synthetic-provider",
+      "channel": "synthetic-channel",
+      "prompt_tokens": 5,
+      "completion_tokens": 1,
+      "total_tokens": 6,
+      "estimated_tokens": 0,
+      "usage_source": "upstream",
+      "usage_confidence": "1.000",
+      "cost_micros": "7",
+      "currency": "CNY",
+      "amount_scale": 1000000,
+      "money_schema": "micro-cny.v1",
+      "latency_ms": 12,
+      "ttft_ms": 3,
+      "status_code": 200,
+      "upstream_status_code": null,
+      "upstream_error_present": false,
+      "ip_address_was_present": false,
+      "ip_address_redacted": false,
+      "is_stream": false,
+      "created_at": "2026-07-18T09:17:25.366826Z",
+      "trace_id": null,
+      "session_id": null,
+      "upstream_request_id": null,
+      "evidence_ref": null,
+      "actor_type": "system",
+      "actor_ref": "synthetic:v2-verification",
+      "on_behalf_of": null,
+      "payload_ref": null,
+      "payload_capture_mode": "metadata_only",
+      "payload_capture_reason": "raw prompt/response export is disabled for PRD5 Gate A snapshots",
+      "capture_mode": "db_import",
+      "schema_version": "unirouter.evidence.v1",
+      "source_component": "logging"
+    }
+  ],
+  "request_trace_events": null,
+  "notes": {
+    "missing_rows": "missing call logs or trace events are represented as capture gaps and should not be fabricated by importers",
+    "money_contract": "cost_micros is canonical integer micro-CNY text; currency=CNY, amount_scale=1000000",
+    "payload_policy": "UniRouter raw prompt/response capture remains disabled for this snapshot path",
+    "request_id_join": "request_id is the intended join key between call_logs and request_trace_events"
+  }
+}

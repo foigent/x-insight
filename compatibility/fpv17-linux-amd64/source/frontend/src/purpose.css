@@ -1,0 +1,16 @@
+.purpose-panel { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: .75rem; overflow-wrap: anywhere; }
+.purpose-panel summary { cursor: pointer; font-weight: 600; }
+.purpose-panel p { line-height: 1.6; }
+.purpose-toolbar,.purpose-actions,.purpose-result { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: .75rem 0; }
+.purpose-result { justify-content: space-between; }
+.purpose-panel button { white-space: normal; }
+.purpose-panel label { color: var(--ink-soft); }
+.purpose-review-form { display: grid; gap: .7rem; border: 1px solid var(--border); border-radius: .5rem; padding: .8rem; margin: 1rem 0; min-width: 0; }
+.purpose-review-form label { display: grid; gap: .35rem; }
+.purpose-review-form textarea { width: 100%; min-height: 5rem; box-sizing: border-box; resize: vertical; }
+.purpose-claims { display: grid; gap: .8rem; }
+.purpose-claims > section { border: 1px solid var(--border); padding: .8rem; border-radius: .5rem; min-width: 0; }
+.purpose-claims header { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: space-between; }
+.purpose-claims code { display: block; white-space: normal; overflow-wrap: anywhere; font-size: var(--type-body); }
+.purpose-history { padding-left: 1.4rem; }
+.purpose-history li { margin: .7rem 0; }

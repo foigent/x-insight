@@ -1,0 +1,55 @@
+{
+  "name": "litellm-callback-valid",
+  "expected": "accepted",
+  "event": {
+    "id": "00000000-0000-0000-0000-000000000003",
+    "schema_version": "m0.1",
+    "source_system_id": "33333333-3333-3333-3333-333333333333",
+    "adapter_manifest_id": "44444444-4444-4444-4444-444444444444",
+    "source_type": "litellm",
+    "source_version": "unknown",
+    "source_event_id": "litellm-callback-001",
+    "source_event_type": "success_callback",
+    "source_ref": "litellm:local:callback:litellm-callback-001",
+    "idempotency_key": "adapter-litellm:33333333-3333-3333-3333-333333333333:litellm:local:callback:litellm-callback-001:external.callback.received:litellm-callback-001",
+    "event_type": "external.callback.received",
+    "stage": "external",
+    "severity": "info",
+    "capture_mode": "callback",
+    "occurred_at": "2026-07-08T01:10:00Z",
+    "ingested_at": "2026-07-08T01:10:01Z",
+    "request_id": "req-litellm-001",
+    "org_ref": "team-a",
+    "payload_capture_mode": "metadata_only",
+    "correlation": {
+      "request_id": "req-litellm-001",
+      "session_id": "session-1"
+    },
+    "identity": {
+      "org_id": "team-a",
+      "actor_type": "service",
+      "actor_ref": "litellm:user:svc-1",
+      "team_ref": "team-a",
+      "end_user_ref": "end-user-1"
+    },
+    "capability": {
+      "capability_type": "model_call",
+      "model": "gpt-4o-mini",
+      "provider": "openai"
+    },
+    "payload_policy": {
+      "payload_capture_mode": "metadata_only",
+      "redaction_state": "not_applicable"
+    },
+    "field_provenance": {
+      "correlation": "direct",
+      "identity": "direct",
+      "capability": "direct",
+      "payload_policy": "suppressed"
+    },
+    "raw_source_excerpt": {
+      "status": "success",
+      "cache_hit": false
+    }
+  }
+}

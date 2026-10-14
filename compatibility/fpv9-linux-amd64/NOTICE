@@ -1,0 +1,26 @@
+FPV9 compatibility source inputs
+
+The selected X-Insight source and embedded assets originate from repository
+ID 1293678433, commit 8ee764accbda21f21b489e01a4ab7751571beed4.
+source-manifest.json binds the 316 original compile, SQL and synthetic fixture
+inputs. original-asset-source-manifest.json binds the separately retained
+original UI/manual source and original embedded asset bytes. No original Git
+ancestry is included or fabricated. Existing copyright is preserved.
+
+The project LICENSE and NOTICE at the repository root describe X-Insight
+contributions. The owner's redistribution decision remains pending. The
+original historical commit did not include a project LICENSE or NOTICE.
+
+The component mapping in original-asset-source-manifest.json records the nine
+Go modules actually compiled into the two frozen binaries, Go 1.25.12 runtime,
+and React 19.2.7, react-dom 19.2.7 and scheduler 0.27.0 in the embedded UI.
+These 13 identified components match the versions in the root
+THIRD_PARTY_NOTICES.md; all 18 referenced license/patent texts are preserved
+byte-for-byte in the root licenses/ directory, with exact digests in the
+manifest. The project license does not replace those component licenses.
+
+The Go recipe reuses original embedded dist/manual bytes. It does not claim a
+cold historical frontend build. The retained historical frontend lock pins
+Node 22.23.1 and npm 10.9.8; its source-map-js and undici development versions
+differ from the current frontend lock. No historical package installation,
+private-history dependency or public redistribution approval is implied.

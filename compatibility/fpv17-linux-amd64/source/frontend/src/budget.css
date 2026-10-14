@@ -1,0 +1,23 @@
+.budget-navigation { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+.budget-navigation [aria-current="page"] { font-weight: 700; }
+.budget-list { display: grid; gap: 1.25rem; }
+.budget-card { min-width: 0; padding: 1.25rem; }
+.budget-card header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.budget-card h2, .budget-card p, .budget-evidence p { overflow-wrap: anywhere; }
+.budget-amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.budget-amounts dt { font-weight: 600; margin-bottom: .5rem; }
+.budget-amounts dd { font-size: 24px; font-weight: 650; margin: 0 0 .35rem; overflow-wrap: anywhere; }
+.budget-amounts small { display: block; line-height: 1.6; }
+.budget-gap { border-inline-start: 3px solid currentColor; padding: .6rem 1rem; }
+.budget-alerts { border-block-start: 1px solid color-mix(in srgb, currentColor 18%, transparent); margin-top: 1rem; padding-top: .5rem; }
+.budget-alerts li { padding-bottom: .6rem; overflow-wrap: anywhere; }
+.budget-evidence, .budget-source-gaps { padding: 1.25rem; margin-top: 1rem; min-width: 0; }
+.budget-evidence details { padding: .6rem 0; }
+.budget-evidence summary { cursor: pointer; font-weight: 600; }
+.budget-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--type-body); max-height: 32rem; overflow: auto; }
+.budget-page button { max-width: 100%; white-space: normal; }
+@media (max-width: 680px) {
+  .budget-amounts { grid-template-columns: 1fr; }
+  .budget-card header { flex-direction: column; }
+  .budget-card, .budget-evidence, .budget-source-gaps { padding: 1rem; }
+}

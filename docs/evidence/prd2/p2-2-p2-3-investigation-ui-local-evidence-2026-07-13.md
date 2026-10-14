@@ -154,7 +154,7 @@ PostgreSQL 18.
 
 ### GitHub delivery
 
-PR [#31](https://github.com/foigent/x-insight/pull/31) passed all jobs in
+PR [#31](https://github.com/foigent/x-insight-private-history/pull/31) passed all jobs in
 Actions run `29258723199`:
 
 - `Frontend Tests`: exact locked install, TypeScript/OpenAPI, 6/6 component

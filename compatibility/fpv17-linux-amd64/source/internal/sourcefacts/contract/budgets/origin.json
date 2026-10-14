@@ -1,0 +1,6 @@
+{
+  "repository": "foigent/unirouter",
+  "commit": "a84ac2726e079796ade0af573b575b7c11bbdfbc",
+  "path": "contracts/source-budgets/v1",
+  "use": "frozen local candidate contract; not live source qualification"
+}

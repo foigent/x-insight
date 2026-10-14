@@ -1,0 +1,6 @@
+.readable-identifier { min-width:0; max-width:100%; font-size:var(--type-body); }
+.readable-identifier>summary { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.readable-identifier .identifier-content { display:grid; gap:8px; margin-top:8px; min-width:0; }
+.readable-identifier .identifier-content>code { display:block; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; user-select:all; color:var(--ink); }
+.readable-identifier .identifier-content>button { justify-self:start; font-size:var(--type-body); }
+.readable-identifier .identifier-content>span { color:var(--muted); }

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foigent.example/x-insight/schemas/integration/connector-checkpoint-epoch-prepare-v1.schema.json",
+  "title": "X-Insight Connector Checkpoint Epoch Prepare Request V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "binding",
+    "worker_unit",
+    "next_source_instance",
+    "next_cursor",
+    "next_high_watermark",
+    "authorization_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.connector-checkpoint-epoch-prepare.v1"
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_system_id", "adapter_manifest_id", "cursor_key"],
+      "properties": {
+        "source_system_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "adapter_manifest_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "cursor_key": {
+          "enum": ["unirouter.completed-execution.v1", "litellm.spend-logs.v1"]
+        }
+      }
+    },
+    "worker_unit": {
+      "enum": ["xinsight-feed.service", "xinsight-litellm-feed.service"]
+    },
+    "next_source_instance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "next_cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 524288
+    },
+    "next_high_watermark": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 524288
+    },
+    "authorization_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"worker_unit": {"const": "xinsight-feed.service"}},
+        "required": ["worker_unit"]
+      },
+      "then": {
+        "properties": {
+          "binding": {
+            "properties": {
+              "cursor_key": {"const": "unirouter.completed-execution.v1"}
+            }
+          },
+          "next_cursor": {"maxLength": 512},
+          "next_high_watermark": {"maxLength": 512}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"worker_unit": {"const": "xinsight-litellm-feed.service"}},
+        "required": ["worker_unit"]
+      },
+      "then": {
+        "properties": {
+          "binding": {
+            "properties": {
+              "cursor_key": {"const": "litellm.spend-logs.v1"}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

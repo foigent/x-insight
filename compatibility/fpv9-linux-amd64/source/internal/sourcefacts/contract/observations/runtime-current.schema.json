@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "foigent://schemas/unirouter/runtime-current/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_instance",
+    "org_id",
+    "project_id",
+    "profile",
+    "observed_at",
+    "coverage",
+    "uncovered",
+    "entries",
+    "has_more",
+    "source_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "unirouter.runtime-current.v1"
+    },
+    "source_instance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "org_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$",
+      "maxLength": 19
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$",
+      "maxLength": 19
+    },
+    "profile": {
+      "const": "unirouter.runtime-observation.v1"
+    },
+    "observed_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "coverage": {
+      "enum": [
+        "lease_backed_inventory",
+        "requested_execution_snapshot"
+      ]
+    },
+    "uncovered": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ]
+      },
+      "uniqueItems": true,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request_id",
+          "family",
+          "subject_kind",
+          "subject_id",
+          "operation",
+          "freshness",
+          "original_state",
+          "last_observed_at",
+          "evidence_ref"
+        ],
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "family": {
+            "enum": [
+              "stream",
+              "media",
+              "request"
+            ]
+          },
+          "subject_kind": {
+            "enum": [
+              "provider_attempt",
+              "media_job",
+              "request"
+            ]
+          },
+          "subject_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "freshness": {
+            "enum": [
+              "lease_valid_execution",
+              "leased_pending",
+              "last_known"
+            ]
+          },
+          "original_state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "last_observed_at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+          },
+          "valid_until": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+          },
+          "lease_generation": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "evidence_ref": {
+            "type": "string",
+            "pattern": "^uf1_[a-f0-9]{64}$"
+          },
+          "checkpoint_ref": {
+            "type": "string",
+            "pattern": "^uf1_[a-f0-9]{64}$"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "freshness": {
+                  "const": "last_known"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "valid_until"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "lease_generation"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "checkpoint_ref"
+                    ]
+                  }
+                ]
+              }
+            },
+            "else": {
+              "required": [
+                "valid_until",
+                "lease_generation"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "freshness": {
+                  "const": "leased_pending"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "family": {
+                  "const": "media"
+                },
+                "original_state": {
+                  "const": "pending"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 50
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "next_cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "has_more": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "next_cursor"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "next_cursor"
+          ]
+        }
+      }
+    }
+  ]
+}

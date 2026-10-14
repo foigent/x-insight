@@ -47,7 +47,7 @@ deliberately not used to claim the frozen signed release build.
 ## Exact CI And Clean-VM Evidence
 
 GitHub Actions run
-[`29278281737`](https://github.com/foigent/x-insight/actions/runs/29278281737)
+[`29278281737`](https://github.com/foigent/x-insight-private-history/actions/runs/29278281737)
 passed all five jobs. The branch head was
 `180d6aad7f09852b4d1a179a3a950f2cdf6f690d`; the pull-request merge ref built
 inside Actions was `0f82712ebb3d498d3eed6c64fdf4697b4de37801`.
@@ -55,7 +55,7 @@ The distinction matters: neither identity is a promoted field release.
 
 PR #35 squash-merged as
 `7d56a36fcce255be152621a39c48645be6d7549c`. Main push run
-[`29279421355`](https://github.com/foigent/x-insight/actions/runs/29279421355)
+[`29279421355`](https://github.com/foigent/x-insight-private-history/actions/runs/29279421355)
 then repeated all five jobs successfully. The hashes below intentionally bind
 the already recorded PR qualification run; each CI run creates a new ephemeral
 key and non-publishable artifact, and no CI artifact was promoted as a field

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Raw Source Excerpt Field Group",
+  "type": "object",
+  "additionalProperties": true,
+  "maxProperties": 64
+}

@@ -1,0 +1,57 @@
+{
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "product_version": "0.2.0-dev.fpv14",
+  "manual_version": "0.2.0-dev.fpv14/manual-r1",
+  "release_channel": "release_candidate",
+  "database_schema": "44",
+  "config_schema": "xinsight.config.v1",
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:07dbb90f7d8712fd13f143ed0313f97f5467049e86d515399add70c82f156b69",
+    "migration_set_sha256": "sha256:25ca8feb6b3ddaef4308d1d4f941582b1ae2c143c8b9c8293e741b4e4f60ab42"
+  },
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.b2",
+    "0.2.0-dev.d1",
+    "0.2.0-dev.d2",
+    "0.2.0-dev.fpv1",
+    "0.2.0-dev.fpv2",
+    "0.2.0-dev.fpv3",
+    "0.2.0-dev.fpv4",
+    "0.2.0-dev.fpv5",
+    "0.2.0-dev.fpv11",
+    "0.2.0-dev.fpv12",
+    "0.2.0-dev.fpv13"
+  ],
+  "supported_legacy_sources": [],
+  "supported_host": {
+    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "architecture": "amd64",
+    "service_manager": "systemd",
+    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+  },
+  "postgresql": {
+    "major": 16
+  },
+  "bootstrap_trust": {
+    "field_authority": "user_authorized_isolated_validation",
+    "customer_self_upgrade": false,
+    "private_key_retained": true,
+    "self_authentication": false,
+    "first_tool": "xinsight-release"
+  },
+  "field_qualification": "FPV14/schema44 is an unsigned local repair candidate for capless root host reference writes and explicitly reauthorized restored source continuation. Host UID0/exact secret0400-or0600/public0644/single-link/safe-parent protection is retained; GID is observed metadata rather than a forced root group. Native systemd credential ACL/GID/mount contracts and service caps/groups remain unchanged. Only exact restore_requires_authorization collections matching current approved config, source/project/profile/enrollment/consent and authenticated preflight can resume through original CAS/ack paths; other sources remain paused. FPV13/schema44 is an explicit upgrade predecessor. Existing FPV11-to-FPV12 qualification remains historical. New capless Linux CI execution, signed artifact verification, authorized FPV13-to-FPV14 upgrade check and actual Target/browser completion remain required; no such completion is asserted by this candidate."
+}

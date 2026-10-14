@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Field Provenance Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "correlation": { "$ref": "#/$defs/provenance_state" },
+    "identity": { "$ref": "#/$defs/provenance_state" },
+    "capability": { "$ref": "#/$defs/provenance_state" },
+    "decision": { "$ref": "#/$defs/provenance_state" },
+    "usage": { "$ref": "#/$defs/provenance_state" },
+    "outcome": { "$ref": "#/$defs/provenance_state" },
+    "payload_policy": { "$ref": "#/$defs/provenance_state" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  },
+  "$defs": {
+    "provenance_state": {
+      "enum": ["direct", "derived", "declared", "suppressed", "gap", "not_applicable", "unknown"]
+    }
+  }
+}

@@ -1,0 +1,55 @@
+[Unit]
+Description=X-Insight Connector root controller
+After=network-online.target
+Wants=network-online.target
+Before=xinsight.service
+ConditionPathIsSymbolicLink=/opt/x-insight/current
+ConditionPathIsReadWrite=/var/lib/x-insight
+
+[Service]
+Type=simple
+User=root
+Group=xinsight
+WorkingDirectory=/opt/x-insight/current
+EnvironmentFile=-/etc/x-insight/xinsight-connector.env
+LoadCredential=postgres-admin.dsn:/etc/x-insight/database/current/postgres-admin.dsn
+ExecStartPre=+/usr/bin/env -i /opt/x-insight/current/bin/xinsightctl connector-target-config validate
+ExecStart=/opt/x-insight/current/bin/xinsightctl connector-controller serve
+RuntimeDirectory=x-insight
+RuntimeDirectoryMode=0750
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+UMask=0007
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectHostname=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+IPAddressAllow=10.0.0.0/8
+IPAddressAllow=100.64.0.0/10
+IPAddressAllow=172.16.0.0/12
+IPAddressAllow=192.168.0.0/16
+IPAddressAllow=fc00::/7
+ReadWritePaths=/etc/x-insight /var/lib/x-insight /run/x-insight /etc/systemd/system/xinsight-connector-controller.service.d /etc/systemd/system/xinsight-source-facts.service.d /etc/systemd/system/xinsight.service.d
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,2137 @@
+{
+  "negative": [
+    {
+      "name": "numeric_money",
+      "reject_by": "schema",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": 1000
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:bb13661004ab0d792c6b82680c218bb423311459d86aacf2bc76d4eb1bcb10b9"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": 1000
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "not_observed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:bae7ca435c6774d393f1eac85cd6a5a538076f4e7aed8ddca1e1f86a13e9f65c"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "fabricated_request",
+      "reject_by": "schema",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1000000000"
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "not_observed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:3b15da926b138a5748786ad90354d05aa5ae3f1281bc8db429bea3baeb2697b9"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "request_id": "not-an-execution-event",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "wrong_hash",
+      "reject_by": "domain",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1000000000"
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "not_observed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:3b15da926b138a5748786ad90354d05aa5ae3f1281bc8db429bea3baeb2697b9"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "mixed_reading",
+      "reject_by": "domain",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-ffffffffffffffffffffffffffffffff",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:e9257ea72eeb26631bec6169491059eae0d1c6b0056762e9e7ded7a214774509"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1000000000"
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "not_observed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:3b15da926b138a5748786ad90354d05aa5ae3f1281bc8db429bea3baeb2697b9"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "duplicate_profile",
+      "reject_by": "domain",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "wrong_remaining",
+      "reject_by": "domain",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000001"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:887a1e37ce278301136558d80659aea83d5d7f7b578290ae6f6ac55bdc29eb49"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1000000000"
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "not_observed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:3b15da926b138a5748786ad90354d05aa5ae3f1281bc8db429bea3baeb2697b9"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "partial_is_not_comparable",
+      "reject_by": "domain",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [
+                    "restore_gap"
+                  ],
+                  "state": "known_subtotal_with_gap",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:c1da9ed9f39619ecde4541824e245ff26dae1074aa87401192635e8fea7c4af5"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1000000000"
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "not_observed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:3b15da926b138a5748786ad90354d05aa5ae3f1281bc8db429bea3baeb2697b9"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    },
+    {
+      "name": "ack_is_not_read",
+      "reject_by": "schema",
+      "value": {
+        "access_generation": "1",
+        "binding_revision": "",
+        "budget_ref": "gateway-project:2",
+        "catalog_revision": "2",
+        "definition_revision": "2",
+        "documents": [
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "authority_ref": "projects:2",
+                "change_kind": "value_changed",
+                "changed_at": "2026-09-10T00:00:00.000000Z",
+                "origin": "gateway_project",
+                "period_kind": "monthly",
+                "revision": "2",
+                "runtime_effect": "report_only",
+                "setting_state": "active"
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-definition.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-definition.v1",
+            "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+                "authority": "usage_finalization_journal.settled.charged_cost_micros",
+                "committed_state": "not_modeled",
+                "comparison": {
+                  "remaining": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "400000000"
+                  },
+                  "state": "comparable",
+                  "threshold_state": "below",
+                  "utilization_denominator": "1000000000",
+                  "utilization_numerator": "600000000"
+                },
+                "coverage": {
+                  "certified_from": "2026-09-10T00:00:00.000000Z",
+                  "coverage_epoch": "1",
+                  "materialization_pending": "0",
+                  "materialized_awaiting_ack": "1",
+                  "reasons": [],
+                  "state": "complete_settled_as_of",
+                  "writer_contract": "unirouter.gateway-financial-journal.v2"
+                },
+                "excluded": [
+                  "asynchronous_media_charge_facts",
+                  "wallet_balance"
+                ],
+                "forecast_state": "not_modeled",
+                "known_subtotal": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "600000000"
+                },
+                "period_end": "2026-11-01T00:00:00.000000Z",
+                "period_start": "2026-10-01T00:00:00.000000Z",
+                "period_state": "original_utc_period",
+                "unresolved_economics": {
+                  "financial_holds": "0",
+                  "open_reservations": "1",
+                  "reserved_at_read": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "200000000"
+                  },
+                  "scope": "all_current_project_reservations_as_of_read",
+                  "state": "unresolved"
+                }
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-period-summary.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-period-summary.v1",
+            "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+          },
+          {
+            "document": {
+              "binding_revision": "",
+              "body": {
+                "coverage": "project_budget_notifications",
+                "entries": [
+                  {
+                    "budget_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1000000000"
+                    },
+                    "budget_version_state": "version_unknown",
+                    "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "delivery_state": "delivered",
+                    "event_ref": "notification_events:1",
+                    "human_read": "confirmed",
+                    "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                    "period_kind": "monthly",
+                    "period_start": "2026-09-01T00:00:00.000000Z",
+                    "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                    "spent_at_trigger": {
+                      "currency": "CNY",
+                      "scale": "1000000",
+                      "value_minor": "1200000000"
+                    },
+                    "status": "acknowledged",
+                    "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                    "threshold_percent": "100",
+                    "trigger_evidence": "original_event_amounts",
+                    "triggered_at": "2026-09-30T00:00:00.000000Z"
+                  }
+                ],
+                "has_more": false
+              },
+              "budget_ref": "gateway-project:2",
+              "definition_revision": "2",
+              "observed_at": "2026-10-02T00:00:00.000000Z",
+              "org_id": "1",
+              "profile": "unirouter.budget-alert.v1",
+              "project_id": "2",
+              "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+              "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+              "schema_version": "unirouter.budget-snapshot.v1",
+              "source_instance": "synthetic-UR-<&>-范围"
+            },
+            "profile": "unirouter.budget-alert.v1",
+            "source_sha256": "sha256:f57c44c82bfb37fa32bcc07cf5c6ddd10a4660819766a0a1c5d17a620838ba3f"
+          }
+        ],
+        "observed_at": "2026-10-02T00:00:00.000000Z",
+        "org_id": "1",
+        "project_id": "2",
+        "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+        "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+        "schema_version": "unirouter.budget-snapshot.v1",
+        "source_instance": "synthetic-UR-<&>-范围"
+      }
+    }
+  ],
+  "positive": [
+    {
+      "access_generation": "1",
+      "binding_revision": "",
+      "budget_ref": "gateway-project:2",
+      "catalog_revision": "2",
+      "definition_revision": "2",
+      "documents": [
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "1000000000"
+              },
+              "authority_ref": "projects:2",
+              "change_kind": "value_changed",
+              "changed_at": "2026-09-10T00:00:00.000000Z",
+              "origin": "gateway_project",
+              "period_kind": "monthly",
+              "revision": "2",
+              "runtime_effect": "report_only",
+              "setting_state": "active"
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-definition.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-definition.v1",
+          "source_sha256": "sha256:d47a34af63f90d407feccc215bc695c4f82632113ca0b3834cac2b6ac2cc6dd5"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+              "authority": "usage_finalization_journal.settled.charged_cost_micros",
+              "committed_state": "not_modeled",
+              "comparison": {
+                "remaining": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "400000000"
+                },
+                "state": "comparable",
+                "threshold_state": "below",
+                "utilization_denominator": "1000000000",
+                "utilization_numerator": "600000000"
+              },
+              "coverage": {
+                "certified_from": "2026-09-10T00:00:00.000000Z",
+                "coverage_epoch": "1",
+                "materialization_pending": "0",
+                "materialized_awaiting_ack": "1",
+                "reasons": [],
+                "state": "complete_settled_as_of",
+                "writer_contract": "unirouter.gateway-financial-journal.v2"
+              },
+              "excluded": [
+                "asynchronous_media_charge_facts",
+                "wallet_balance"
+              ],
+              "forecast_state": "not_modeled",
+              "known_subtotal": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "600000000"
+              },
+              "period_end": "2026-11-01T00:00:00.000000Z",
+              "period_start": "2026-10-01T00:00:00.000000Z",
+              "period_state": "original_utc_period",
+              "unresolved_economics": {
+                "financial_holds": "0",
+                "open_reservations": "1",
+                "reserved_at_read": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "200000000"
+                },
+                "scope": "all_current_project_reservations_as_of_read",
+                "state": "unresolved"
+              }
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-period-summary.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-period-summary.v1",
+          "source_sha256": "sha256:7f5638193be7ca355ebdc1a24d0178866d1b3d0535c2db0fd444f9cda7b4b44d"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "coverage": "project_budget_notifications",
+              "entries": [
+                {
+                  "budget_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1000000000"
+                  },
+                  "budget_version_state": "version_unknown",
+                  "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "delivery_state": "delivered",
+                  "event_ref": "notification_events:1",
+                  "human_read": "not_observed",
+                  "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                  "period_kind": "monthly",
+                  "period_start": "2026-09-01T00:00:00.000000Z",
+                  "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                  "spent_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1200000000"
+                  },
+                  "status": "acknowledged",
+                  "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "threshold_percent": "100",
+                  "trigger_evidence": "original_event_amounts",
+                  "triggered_at": "2026-09-30T00:00:00.000000Z"
+                }
+              ],
+              "has_more": false
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-alert.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-alert.v1",
+          "source_sha256": "sha256:3b15da926b138a5748786ad90354d05aa5ae3f1281bc8db429bea3baeb2697b9"
+        }
+      ],
+      "observed_at": "2026-10-02T00:00:00.000000Z",
+      "org_id": "1",
+      "project_id": "2",
+      "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+      "reading_id": "ur-budget-reading-00000000000000000000000000000001",
+      "schema_version": "unirouter.budget-snapshot.v1",
+      "source_instance": "synthetic-UR-<&>-范围"
+    },
+    {
+      "access_generation": "1",
+      "binding_revision": "",
+      "budget_ref": "gateway-project:2",
+      "catalog_revision": "2",
+      "definition_revision": "2",
+      "documents": [
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "1000000000"
+              },
+              "authority_ref": "projects:2",
+              "change_kind": "value_changed",
+              "changed_at": "2026-09-10T00:00:00.000000Z",
+              "origin": "gateway_project",
+              "period_kind": "monthly",
+              "revision": "2",
+              "runtime_effect": "report_only",
+              "setting_state": "active"
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-definition.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000002",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-definition.v1",
+          "source_sha256": "sha256:9fe0e5f574e69f73242f34b9ec27ca896ca163355cbeece8dede282207a135f4"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+              "authority": "usage_finalization_journal.settled.charged_cost_micros",
+              "committed_state": "not_modeled",
+              "comparison": {
+                "state": "coverage_gap"
+              },
+              "coverage": {
+                "certified_from": "2026-10-01T12:00:00.000000Z",
+                "coverage_epoch": "1",
+                "materialization_pending": "0",
+                "materialized_awaiting_ack": "1",
+                "reasons": [
+                  "restore_gap"
+                ],
+                "state": "known_subtotal_with_gap",
+                "writer_contract": "unirouter.gateway-financial-journal.v2"
+              },
+              "excluded": [
+                "asynchronous_media_charge_facts",
+                "wallet_balance"
+              ],
+              "forecast_state": "not_modeled",
+              "known_subtotal": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "200000000"
+              },
+              "period_end": "2026-11-01T00:00:00.000000Z",
+              "period_start": "2026-10-01T00:00:00.000000Z",
+              "period_state": "original_utc_period",
+              "unresolved_economics": {
+                "financial_holds": "0",
+                "open_reservations": "1",
+                "reserved_at_read": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "200000000"
+                },
+                "scope": "all_current_project_reservations_as_of_read",
+                "state": "unresolved"
+              }
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-period-summary.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000002",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-period-summary.v1",
+          "source_sha256": "sha256:c0fe3be88d9fde933d7e3be37e5d3b3cf66ae943f39dadf72be2e559bfdf99a8"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "coverage": "project_budget_notifications",
+              "entries": [
+                {
+                  "budget_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1000000000"
+                  },
+                  "budget_version_state": "version_unknown",
+                  "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "delivery_state": "delivered",
+                  "event_ref": "notification_events:1",
+                  "human_read": "not_observed",
+                  "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                  "period_kind": "monthly",
+                  "period_start": "2026-09-01T00:00:00.000000Z",
+                  "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                  "spent_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1200000000"
+                  },
+                  "status": "acknowledged",
+                  "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "threshold_percent": "100",
+                  "trigger_evidence": "original_event_amounts",
+                  "triggered_at": "2026-09-30T00:00:00.000000Z"
+                }
+              ],
+              "has_more": false
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-alert.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000002",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-alert.v1",
+          "source_sha256": "sha256:f3c03babf1f2ecf706673502eb5806311293806dde861b8864cd4d40d28eb123"
+        }
+      ],
+      "observed_at": "2026-10-02T00:00:00.000000Z",
+      "org_id": "1",
+      "project_id": "2",
+      "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+      "reading_id": "ur-budget-reading-00000000000000000000000000000002",
+      "schema_version": "unirouter.budget-snapshot.v1",
+      "source_instance": "synthetic-UR-<&>-范围"
+    },
+    {
+      "access_generation": "1",
+      "binding_revision": "",
+      "budget_ref": "gateway-project:2",
+      "catalog_revision": "2",
+      "definition_revision": "2",
+      "documents": [
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "1000000000"
+              },
+              "authority_ref": "projects:2",
+              "change_kind": "value_changed",
+              "changed_at": "2026-09-10T00:00:00.000000Z",
+              "origin": "gateway_project",
+              "period_kind": "monthly",
+              "revision": "2",
+              "runtime_effect": "report_only",
+              "setting_state": "active"
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-definition.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000003",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-definition.v1",
+          "source_sha256": "sha256:d431916616ee8e5c531139df1bba1e3b32ec1bedd9b46b6f45eb67e8a8270414"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+              "authority": "usage_finalization_journal.settled.charged_cost_micros",
+              "committed_state": "not_modeled",
+              "comparison": {
+                "remaining": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1000000000"
+                },
+                "state": "comparable",
+                "threshold_state": "below",
+                "utilization_denominator": "1000000000",
+                "utilization_numerator": "0"
+              },
+              "coverage": {
+                "certified_from": "2026-09-10T00:00:00.000000Z",
+                "coverage_epoch": "1",
+                "materialization_pending": "0",
+                "materialized_awaiting_ack": "1",
+                "reasons": [],
+                "state": "complete_settled_as_of",
+                "writer_contract": "unirouter.gateway-financial-journal.v2"
+              },
+              "excluded": [
+                "asynchronous_media_charge_facts",
+                "wallet_balance"
+              ],
+              "forecast_state": "not_modeled",
+              "known_subtotal": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "0"
+              },
+              "period_end": "2026-11-01T00:00:00.000000Z",
+              "period_start": "2026-10-01T00:00:00.000000Z",
+              "period_state": "original_utc_period",
+              "unresolved_economics": {
+                "financial_holds": "0",
+                "open_reservations": "1",
+                "reserved_at_read": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "200000000"
+                },
+                "scope": "all_current_project_reservations_as_of_read",
+                "state": "unresolved"
+              }
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-period-summary.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000003",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-period-summary.v1",
+          "source_sha256": "sha256:8b7b2505928b82e1f913afc60986250b5f496fbccc26ca5d1b401ebea10e13a5"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "coverage": "project_budget_notifications",
+              "entries": [
+                {
+                  "budget_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1000000000"
+                  },
+                  "budget_version_state": "version_unknown",
+                  "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "delivery_state": "delivered",
+                  "event_ref": "notification_events:1",
+                  "human_read": "not_observed",
+                  "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                  "period_kind": "monthly",
+                  "period_start": "2026-09-01T00:00:00.000000Z",
+                  "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                  "spent_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1200000000"
+                  },
+                  "status": "acknowledged",
+                  "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "threshold_percent": "100",
+                  "trigger_evidence": "original_event_amounts",
+                  "triggered_at": "2026-09-30T00:00:00.000000Z"
+                }
+              ],
+              "has_more": false
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-alert.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000003",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-alert.v1",
+          "source_sha256": "sha256:1aace06f8bb6013be043de371d3098cda39d3765d9e41351706bc960d36a6333"
+        }
+      ],
+      "observed_at": "2026-10-02T00:00:00.000000Z",
+      "org_id": "1",
+      "project_id": "2",
+      "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+      "reading_id": "ur-budget-reading-00000000000000000000000000000003",
+      "schema_version": "unirouter.budget-snapshot.v1",
+      "source_instance": "synthetic-UR-<&>-范围"
+    },
+    {
+      "access_generation": "1",
+      "binding_revision": "",
+      "budget_ref": "gateway-project:2",
+      "catalog_revision": "2",
+      "definition_revision": "2",
+      "documents": [
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "1000000000"
+              },
+              "authority_ref": "projects:2",
+              "change_kind": "value_changed",
+              "changed_at": "2026-09-10T00:00:00.000000Z",
+              "origin": "gateway_project",
+              "period_kind": "monthly",
+              "revision": "2",
+              "runtime_effect": "report_only",
+              "setting_state": "active"
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-definition.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000004",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-definition.v1",
+          "source_sha256": "sha256:a8dd115433727d77610abcc50d3ebc2385cf16f89e45f412fc8614410f51ca86"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+              "authority": "usage_finalization_journal.settled.charged_cost_micros",
+              "committed_state": "not_modeled",
+              "comparison": {
+                "remaining": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "-200000000"
+                },
+                "state": "comparable",
+                "threshold_state": "above",
+                "utilization_denominator": "1000000000",
+                "utilization_numerator": "1200000000"
+              },
+              "coverage": {
+                "certified_from": "2026-09-10T00:00:00.000000Z",
+                "coverage_epoch": "1",
+                "materialization_pending": "0",
+                "materialized_awaiting_ack": "1",
+                "reasons": [],
+                "state": "complete_settled_as_of",
+                "writer_contract": "unirouter.gateway-financial-journal.v2"
+              },
+              "excluded": [
+                "asynchronous_media_charge_facts",
+                "wallet_balance"
+              ],
+              "forecast_state": "not_modeled",
+              "known_subtotal": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "1200000000"
+              },
+              "period_end": "2026-11-01T00:00:00.000000Z",
+              "period_start": "2026-10-01T00:00:00.000000Z",
+              "period_state": "original_utc_period",
+              "unresolved_economics": {
+                "financial_holds": "0",
+                "open_reservations": "1",
+                "reserved_at_read": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "200000000"
+                },
+                "scope": "all_current_project_reservations_as_of_read",
+                "state": "unresolved"
+              }
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-period-summary.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000004",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-period-summary.v1",
+          "source_sha256": "sha256:e97e9eb21d9d06b27b344805a150345166e0c9e70860b560262509f104e94abe"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "coverage": "project_budget_notifications",
+              "entries": [
+                {
+                  "budget_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1000000000"
+                  },
+                  "budget_version_state": "version_unknown",
+                  "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "delivery_state": "delivered",
+                  "event_ref": "notification_events:1",
+                  "human_read": "not_observed",
+                  "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                  "period_kind": "monthly",
+                  "period_start": "2026-09-01T00:00:00.000000Z",
+                  "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                  "spent_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1200000000"
+                  },
+                  "status": "acknowledged",
+                  "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "threshold_percent": "100",
+                  "trigger_evidence": "original_event_amounts",
+                  "triggered_at": "2026-09-30T00:00:00.000000Z"
+                }
+              ],
+              "has_more": false
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-alert.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000004",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-alert.v1",
+          "source_sha256": "sha256:53d8ff4c8f8c478a2d4e2141df2ab151ce5f33fc7e634578882d1c66561871b7"
+        }
+      ],
+      "observed_at": "2026-10-02T00:00:00.000000Z",
+      "org_id": "1",
+      "project_id": "2",
+      "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+      "reading_id": "ur-budget-reading-00000000000000000000000000000004",
+      "schema_version": "unirouter.budget-snapshot.v1",
+      "source_instance": "synthetic-UR-<&>-范围"
+    },
+    {
+      "access_generation": "1",
+      "binding_revision": "",
+      "budget_ref": "gateway-project:2",
+      "catalog_revision": "2",
+      "definition_revision": "2",
+      "documents": [
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "1000000000"
+              },
+              "authority_ref": "projects:2",
+              "change_kind": "value_changed",
+              "changed_at": "2026-09-10T00:00:00.000000Z",
+              "origin": "gateway_project",
+              "period_kind": "monthly",
+              "revision": "2",
+              "runtime_effect": "report_only",
+              "setting_state": "active"
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-definition.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000005",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-definition.v1",
+          "source_sha256": "sha256:e2ca7129f5cea28cb23a3250c364341bb77764997393152229823cce39ce9153"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "amount_cutoff": "2026-10-02T00:00:00.000000Z",
+              "authority": "usage_finalization_journal.settled.charged_cost_micros",
+              "committed_state": "not_modeled",
+              "comparison": {
+                "remaining": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "1"
+                },
+                "state": "comparable",
+                "threshold_state": "below",
+                "utilization_denominator": "1000000000",
+                "utilization_numerator": "999999999"
+              },
+              "coverage": {
+                "certified_from": "2026-09-10T00:00:00.000000Z",
+                "coverage_epoch": "1",
+                "materialization_pending": "0",
+                "materialized_awaiting_ack": "1",
+                "reasons": [],
+                "state": "complete_settled_as_of",
+                "writer_contract": "unirouter.gateway-financial-journal.v2"
+              },
+              "excluded": [
+                "asynchronous_media_charge_facts",
+                "wallet_balance"
+              ],
+              "forecast_state": "not_modeled",
+              "known_subtotal": {
+                "currency": "CNY",
+                "scale": "1000000",
+                "value_minor": "999999999"
+              },
+              "period_end": "2026-11-01T00:00:00.000000Z",
+              "period_start": "2026-10-01T00:00:00.000000Z",
+              "period_state": "original_utc_period",
+              "unresolved_economics": {
+                "financial_holds": "0",
+                "open_reservations": "1",
+                "reserved_at_read": {
+                  "currency": "CNY",
+                  "scale": "1000000",
+                  "value_minor": "200000000"
+                },
+                "scope": "all_current_project_reservations_as_of_read",
+                "state": "unresolved"
+              }
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-period-summary.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000005",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-period-summary.v1",
+          "source_sha256": "sha256:e3c56fe22f01e6dce3e6cccecf1eb0326f41dc755816e98f949817945ccc9c6c"
+        },
+        {
+          "document": {
+            "binding_revision": "",
+            "body": {
+              "coverage": "project_budget_notifications",
+              "entries": [
+                {
+                  "budget_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1000000000"
+                  },
+                  "budget_version_state": "version_unknown",
+                  "delivery_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "delivery_state": "delivered",
+                  "event_ref": "notification_events:1",
+                  "human_read": "not_observed",
+                  "last_delivery_at": "2026-10-02T00:00:00.000000Z",
+                  "period_kind": "monthly",
+                  "period_start": "2026-09-01T00:00:00.000000Z",
+                  "source_updated_at": "2026-10-02T00:00:00.000000Z",
+                  "spent_at_trigger": {
+                    "currency": "CNY",
+                    "scale": "1000000",
+                    "value_minor": "1200000000"
+                  },
+                  "status": "acknowledged",
+                  "status_cutoff": "2026-10-02T00:00:00.000000Z",
+                  "threshold_percent": "100",
+                  "trigger_evidence": "original_event_amounts",
+                  "triggered_at": "2026-09-30T00:00:00.000000Z"
+                }
+              ],
+              "has_more": false
+            },
+            "budget_ref": "gateway-project:2",
+            "definition_revision": "2",
+            "observed_at": "2026-10-02T00:00:00.000000Z",
+            "org_id": "1",
+            "profile": "unirouter.budget-alert.v1",
+            "project_id": "2",
+            "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+            "reading_id": "ur-budget-reading-00000000000000000000000000000005",
+            "schema_version": "unirouter.budget-snapshot.v1",
+            "source_instance": "synthetic-UR-<&>-范围"
+          },
+          "profile": "unirouter.budget-alert.v1",
+          "source_sha256": "sha256:c8a95371449cf5033c1d8deb8cee90f8abaa23e4a9de9d329e9e4ea9524daf75"
+        }
+      ],
+      "observed_at": "2026-10-02T00:00:00.000000Z",
+      "org_id": "1",
+      "project_id": "2",
+      "reading_cutoff": "2026-10-02T00:00:00.000000Z",
+      "reading_id": "ur-budget-reading-00000000000000000000000000000005",
+      "schema_version": "unirouter.budget-snapshot.v1",
+      "source_instance": "synthetic-UR-<&>-范围"
+    }
+  ]
+}

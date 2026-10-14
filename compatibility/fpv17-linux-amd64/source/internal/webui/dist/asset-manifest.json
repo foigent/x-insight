@@ -1,0 +1,20 @@
+{
+  "schema_version": "xinsight.webui-asset-manifest.v1",
+  "entries": [
+    {
+      "path": "index.html",
+      "size_bytes": 894,
+      "sha256": "sha256:c6976fff3a0bbfe7d73bab92f2437abcf733e84754ed2ee526f1536e3f6d0e78"
+    },
+    {
+      "path": "assets/index-CGAwlqkF.js",
+      "size_bytes": 780871,
+      "sha256": "sha256:2f1daaf53e910a0dd94531b6822fe16cd21e44ff004bba0da317f3596f3b1a35"
+    },
+    {
+      "path": "assets/index-CuIMSh6Y.css",
+      "size_bytes": 160464,
+      "sha256": "sha256:6f399ec0aebf6479d5b3355f319ce7b670fc3239247889db436f4ed3684cb0b6"
+    }
+  ]
+}

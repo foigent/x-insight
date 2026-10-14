@@ -1,0 +1,1024 @@
+{
+  "origin_commit": "8ee764accbda21f21b489e01a4ab7751571beed4",
+  "files": [
+    {
+      "origin_path": "docs/manual/zh-CN/admin/10-workbench-access.md",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/docs/manual/zh-CN/admin/10-workbench-access.md",
+      "bytes": 14730,
+      "sha256": "c07f206a85569b807b434fd51b49dd5e51c574692ff9a0b2270dfad3bc4e6c38",
+      "origin_blob": "94f365f389e3a5d239d2315900b1abf6eb9cabaa",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "docs/manual/zh-CN/d-validation.md",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/docs/manual/zh-CN/d-validation.md",
+      "bytes": 16994,
+      "sha256": "a14c99fcbcd2a2aedc7bd2b0138144d482aabe7f22fe03fa1e91511dfbb85925",
+      "origin_blob": "1cdcee13226aeca6c6a1fbcfb81ca0309e9b27a2",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "docs/manual/zh-CN/operator/06-execution-investigation-workflow-development-d.md",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/docs/manual/zh-CN/operator/06-execution-investigation-workflow-development-d.md",
+      "bytes": 12490,
+      "sha256": "6d9c800ad8f0ffbf86c5f1e47321f197cf80a1f907c17a8a5ea8c2fb175161ab",
+      "origin_blob": "7ac8f10207f9a314968a7e80bfa82c5d94eaa6cb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "docs/manual/zh-CN/operator/07-source-provenance-and-capture-gaps.md",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/docs/manual/zh-CN/operator/07-source-provenance-and-capture-gaps.md",
+      "bytes": 2294,
+      "sha256": "c064ab0fae723d41bedca905763471a1517802a11d948b1ea47750a0e444c01f",
+      "origin_blob": "f46d3bb0e5647baf687a36343561c729b24731f2",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/.npmrc",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/.npmrc",
+      "bytes": 46,
+      "sha256": "bdb60294f245431a60ccf83dc69c56ca8023a927eee292489c5cee6e30b9ed99",
+      "origin_blob": "23f619956d7572a09b63fc80c63236b0df122a62",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/index.html",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/index.html",
+      "bytes": 796,
+      "sha256": "15e3c46c69ce5a378537127ee54a6ce81a5729ef53a49084a1f444cbcb86b9b3",
+      "origin_blob": "d5ef131cedcdb5fb45d77bbf511d4c8fabde91db",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/package-lock.json",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/package-lock.json",
+      "bytes": 100674,
+      "sha256": "f80d436c4c78719cb2ee8497b3e4a303339e7f51b4397f35ef6dd6c49f8a0ab8",
+      "origin_blob": "6be202c70b69d9bbbd3a1c93345ea57106e169b6",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/package.json",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/package.json",
+      "bytes": 1402,
+      "sha256": "41f3a93e8cefd480b1fd20ef8cb14ea50a82c2fb47d0917fe80560ae97d9bffe",
+      "origin_blob": "e22c1d1f0519a755cc252395d72825b4b8f3d3cf",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/scripts/asset-manifest.mjs",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/scripts/asset-manifest.mjs",
+      "bytes": 1451,
+      "sha256": "dacf0dfb1ca747782491ccfdbf64193d30629a930b448e427f6259e5e97d6601",
+      "origin_blob": "13fb396b3370f3c9bff5a1d3add920b3246c6a73",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/scripts/validate-dist.mjs",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/scripts/validate-dist.mjs",
+      "bytes": 2410,
+      "sha256": "d95703af94e9b1984ee3a8e99f66de57185a4830a4d349b401d208e0511941ea",
+      "origin_blob": "8b03fbd2b40e96bf34637a0c74a22d29c82fc583",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/scripts/write-asset-manifest.mjs",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/scripts/write-asset-manifest.mjs",
+      "bytes": 649,
+      "sha256": "5626fe87fb3faa18f6414edf3c9e805f4bb5923a8be1b77fbada049ecf119630",
+      "origin_blob": "87a0a944bf379f2fdadaf61dbb2199b96fdf2285",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/AccessPages.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/AccessPages.tsx",
+      "bytes": 8652,
+      "sha256": "86838cc532649f4df73a1d8aad68a5ff4ae8983af8513bd288e5bbef3fd7a2b7",
+      "origin_blob": "7577a104b284108d90156dbfd10f17ccb616aa07",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ActionWitnessPanel.review.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ActionWitnessPanel.review.test.tsx",
+      "bytes": 15053,
+      "sha256": "5a795199f80b2f3dd0af67313f7d2ea04482b0f1e3a4b19a2207f698fc17fedf",
+      "origin_blob": "ea27d6f0d21bec1d099606e929eaaf90723b56eb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ActionWitnessPanel.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ActionWitnessPanel.tsx",
+      "bytes": 17409,
+      "sha256": "c2769dceda2462885aeef0454f89f7a7713fb8057166fc7a0253eaec593b35f4",
+      "origin_blob": "e04b38f02ba766cef5ea174db95ffb48e86f86a1",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/App.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/App.test.tsx",
+      "bytes": 96204,
+      "sha256": "750a5b12fdc8065f5ce6fea53277a459f3403a9fe5a9973404dce7640564ec75",
+      "origin_blob": "5b4aabe9d77b62d982212074507658c8ee296726",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/App.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/App.tsx",
+      "bytes": 33290,
+      "sha256": "d707146d0b642e18e9b84db21f00a85286b40980a8f9547dc0d9b9c8f65050a5",
+      "origin_blob": "2dda256b72bcdaf8d715ee9eb09f7ad7e90879f4",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/BudgetPage.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/BudgetPage.test.tsx",
+      "bytes": 8292,
+      "sha256": "fcb1477c256af775e946f7282afe397c37a5a932e5c26941fc37ba4a9b395f73",
+      "origin_blob": "453ce76375404286a46a4deae745c7c6abff9448",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/BudgetPage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/BudgetPage.tsx",
+      "bytes": 14840,
+      "sha256": "df12d8321c2b71eb57bbcd2db290ee90cf3fabbdaefca415284dfb7aec6f4a8a",
+      "origin_blob": "a16ed88b6b4944604b56cea3b8aae29b9248ac13",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ContentPanel.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ContentPanel.test.tsx",
+      "bytes": 15950,
+      "sha256": "a3c53185d6283c7ac1cc2f2676d9a86e0d802b85954ff85f5f9fd7b924583999",
+      "origin_blob": "f6fcbba2de08f876c2c18c8ddae9962041e56a89",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ContentPanel.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ContentPanel.tsx",
+      "bytes": 13310,
+      "sha256": "f8ba2a6da88ec596c76e63603abee3340b4ea28f9fed6108982039da4217dfd5",
+      "origin_blob": "5640ab4be014c4ca6b93db6968e7639e0ca93750",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/DetailViewTabs.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/DetailViewTabs.tsx",
+      "bytes": 1285,
+      "sha256": "ea697513563394601e35af8fa180fb44d84966ffe9ce84da2c370130351b0f26",
+      "origin_blob": "a962ff1ebc0bd216d3a8b2262a01fa997b0d7370",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionContextSummary.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionContextSummary.test.tsx",
+      "bytes": 4569,
+      "sha256": "a6258bf07cb431ca16baf7a3dc77d190f1318295c1873484664431aefb919744",
+      "origin_blob": "c0193a4d719bfe1af8b3a9d9365ef596f2b7da86",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionDetailPage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionDetailPage.tsx",
+      "bytes": 37808,
+      "sha256": "bbcb598bd06c11b1132fd5e94dea9b10fb0f9f788422ea306cca8165fdb774da",
+      "origin_blob": "a728326ace691c1a2de5bb132110d87741982a14",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionReadingInheritance.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionReadingInheritance.test.tsx",
+      "bytes": 13929,
+      "sha256": "9dd68633d5ce33bb1edce7b191e737ac810471bfc486b464f2d8d584c5302596",
+      "origin_blob": "773fe2360961ce494fdb70c0927c25e33cbf7a2c",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionRuntimePanel.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionRuntimePanel.test.tsx",
+      "bytes": 11668,
+      "sha256": "ad5b996b815e5353fdc61f4aa93f8988746cbbb1e63776d33e79ffb70475292d",
+      "origin_blob": "618f52e6d70c3c1ce75d13b1c184a966d21ffe44",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionRuntimePanel.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionRuntimePanel.tsx",
+      "bytes": 9879,
+      "sha256": "a3911ab9318cd908c48d755df71a527f8f9591703120782ce2ecfd6711c43b97",
+      "origin_blob": "fb56fcde29a190cf3abe58d264834148895a41d2",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionSearchPage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionSearchPage.tsx",
+      "bytes": 23831,
+      "sha256": "9b409c76f96be5fac51c80473dded7adf4701a1755b172145e1ba0ebf35ddf6a",
+      "origin_blob": "ceac32f848e12da30ded67c5e20ab2ebe86033a9",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ExecutionSearchPermissions.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ExecutionSearchPermissions.test.tsx",
+      "bytes": 2613,
+      "sha256": "71a961ad9ea35c1dcb045fb3886840cc5891d473cac618bfbb5b5ceb3d9d0fa6",
+      "origin_blob": "4da3b73d6753619d170861986c030230e09e48b8",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/Feedback.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/Feedback.tsx",
+      "bytes": 3681,
+      "sha256": "5bc702f61a56f77875705550a583a8a89d026d4e6b672d924e117b863ce504fe",
+      "origin_blob": "91fec5ae0c4cfb8c5cf849228aab9945c7c4e7a9",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/FindingLifecycle.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/FindingLifecycle.test.tsx",
+      "bytes": 28193,
+      "sha256": "12ae03c5e43fc943777e2bf51888d27a3e4cb2c24f9cc4967c60f81afd7f4ef2",
+      "origin_blob": "58c468c9b8bdc6711b367cbd615c7ff281f2d6f2",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/FindingLifecycle.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/FindingLifecycle.tsx",
+      "bytes": 26656,
+      "sha256": "92f2d80176467dfb3672e25bcd16e3b6111b987b8a4d845eb3b0780eecb9a783",
+      "origin_blob": "cb0f8776e4f8a62eaf1332fe055ce2d4b2e4cd0e",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/FindingResponsibility.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/FindingResponsibility.test.tsx",
+      "bytes": 11107,
+      "sha256": "5df5096e616842ce591870c29838a09ddde28f64b41eb1c57656dad8bf671cdb",
+      "origin_blob": "523534c75a4164cc763d024a8790f9acbd42c96e",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/FindingResponsibility.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/FindingResponsibility.tsx",
+      "bytes": 16034,
+      "sha256": "1b6e14800172d58be6914e1571195a2ce8e3218c8bcbb83e444564d90d1223e4",
+      "origin_blob": "fd91e89df7112ce2f16cf488fd284ef9c706d4dc",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/Identifier.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/Identifier.test.tsx",
+      "bytes": 1642,
+      "sha256": "9765005783dbf52ac680cda1cdd56e5895f45d62aa14b2b497ee8a561322dee3",
+      "origin_blob": "3a05c9147d0e918b60cd6074e4f9f4042fd69016",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/Identifier.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/Identifier.tsx",
+      "bytes": 953,
+      "sha256": "467709fbc08bc93deb87e9f1b930a40fff72017210671e2794cbc0cd5b6f2f61",
+      "origin_blob": "4e592dccc87d2b7bfd00fe08cfc814f534a9b415",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/InvestigationQueuePage.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/InvestigationQueuePage.test.tsx",
+      "bytes": 18144,
+      "sha256": "0fd588a76854e63f871551eeb9af42c0312a86ac645a10de0f9ead748d9eee5d",
+      "origin_blob": "45660cc6267c9d8e5c18a493ff73f84a4d64e2d6",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/InvestigationQueuePage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/InvestigationQueuePage.tsx",
+      "bytes": 18404,
+      "sha256": "bcefb00e2370a9644db426825ec4278871c5c9d4cd71318f4926792fb29c3913",
+      "origin_blob": "04f3a491d25ab5d23a61b18fd98f3ff0482adf15",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/InvestigationView.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/InvestigationView.tsx",
+      "bytes": 52563,
+      "sha256": "14110edc4a159f3db9d0bb586bcd8a2ce734e73972b88fe437bc14b66e40ee47",
+      "origin_blob": "07745737e2967441265b1452afe839f6a4641138",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/OverviewPage.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/OverviewPage.test.tsx",
+      "bytes": 45707,
+      "sha256": "35969ef26d3d31d98c0865af196af6c436e54aa5e1f45f6899f8b49fa17cbe6c",
+      "origin_blob": "31fa8c5fe148245c92ff0f2bee5c596f3cf736c0",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/OverviewPage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/OverviewPage.tsx",
+      "bytes": 45137,
+      "sha256": "4c0a377de3d9a2020c8048311b1528ec50e55fa1b5db0701b77ee817d16bed8e",
+      "origin_blob": "53e2fa287a176d59625e3dbe6a3859feb350aeba",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/PosturePage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/PosturePage.tsx",
+      "bytes": 31978,
+      "sha256": "0175202f3d3d08de42728b1a9216b36c918eaf8c0cb2e693c932647722d0d5db",
+      "origin_blob": "29c85d3e3f0673a98f66bffc148e8e91a65b3e8b",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ProductPages.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ProductPages.tsx",
+      "bytes": 45899,
+      "sha256": "29897b59365c5f38883d3d611a0d143730c556ccab751833f08ba5ba475b4eb0",
+      "origin_blob": "e5149150ed9193b592fd5952cb1e33869012e631",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/PurposePanel.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/PurposePanel.test.tsx",
+      "bytes": 8249,
+      "sha256": "1ed662d281738611791072273576de069edbf2222ef0ce42f1c5292d28e698e8",
+      "origin_blob": "17608a784cbe985af991639a434bb1b78546c95b",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/PurposePanel.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/PurposePanel.tsx",
+      "bytes": 12011,
+      "sha256": "45f55e2e69d62962bea851a70b6535324d22579caae002229151a7304d999ca1",
+      "origin_blob": "38b47ed90742165a073fdc58911c470e19d06e36",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ReviewBasisView.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ReviewBasisView.tsx",
+      "bytes": 12732,
+      "sha256": "ec0cb8a813d88c59210d844a0282710fa58efb3dedce7c1b0438a7cea74a71ae",
+      "origin_blob": "ea1db5e5092702b9aa8ab1efcaa82406dc9894c5",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ReviewExecutionContext.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ReviewExecutionContext.test.tsx",
+      "bytes": 10137,
+      "sha256": "24f197f7deb90a77cb2dd810c3f47a74a1a3b83877fc22c5e45a9749c5e46fb8",
+      "origin_blob": "a7ec0edee7e33ccfc331282c6525b05d883bfede",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/ReviewStart.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/ReviewStart.tsx",
+      "bytes": 14302,
+      "sha256": "52268ef2a7214c3d16f42320476cf5c6e867ffda4afdaa45cce02d32df6a61ae",
+      "origin_blob": "667df88d874f1f7a41c2104feb6a074bd65c29bb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/RuntimeNavigation.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/RuntimeNavigation.test.tsx",
+      "bytes": 15253,
+      "sha256": "e42c539e59e54758e38a463c3a488e31bf4f5adcf7162ef4a9fc3acc75e669eb",
+      "origin_blob": "9c547df4f865ef035a36110b04af69e2c0c688eb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/RuntimePage.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/RuntimePage.test.tsx",
+      "bytes": 45634,
+      "sha256": "78b3f782e1da543d5e2489909f5829569df7f8067b5389f6e756346e2ce6e5fa",
+      "origin_blob": "9592f350afa9af5686102fb5cce04c473c8c4349",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/RuntimePage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/RuntimePage.tsx",
+      "bytes": 62941,
+      "sha256": "a797e239dd28b29f5bf1c987651ac63d88c463159e88dfa04c9ee6d4d67108cc",
+      "origin_blob": "e4a87a3c62bc382a0b265c92a944a7c2880a2860",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/SourceCollectionStatus.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/SourceCollectionStatus.test.tsx",
+      "bytes": 1191,
+      "sha256": "048be2c93b9377e541acbb896e38b8cf3bfec446ed2bc19eedabcbd7ab1ff485",
+      "origin_blob": "49c2b498a6d7c3bed1970ac982aabbd565d0b5c4",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/SourceCollectionStatus.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/SourceCollectionStatus.tsx",
+      "bytes": 2140,
+      "sha256": "b58bcbf5faed6eab395e49c9756d9fbe0d6c30f4b210935fef6f3a34deadc292",
+      "origin_blob": "f25d6de48a4eb6d96b2dd9062cba09088c5de8bb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/SourceFactsPanel.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/SourceFactsPanel.test.tsx",
+      "bytes": 9314,
+      "sha256": "3ba04027dc1456dac0df77fb8683ad28c0c22f264571502127784d202a5f5bce",
+      "origin_blob": "3432ebe605554837e5106d1bf4bfef829e039280",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/SourceFactsPanel.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/SourceFactsPanel.tsx",
+      "bytes": 12019,
+      "sha256": "bc98aa284d076126783629701f7a12a8c948d16d7416a528df1821fc76ec49f8",
+      "origin_blob": "bfdb549ab40f55e7973a1874f42503cfa2fc9917",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/WorkbenchNavigation.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/WorkbenchNavigation.test.tsx",
+      "bytes": 13174,
+      "sha256": "8e6ea18a6e663ff37f433733030513dae1865e1e76e23604341e9dff1a825d95",
+      "origin_blob": "0113f9cca4319ee84d8097b15dbf2cff81605590",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/WorkbenchPage.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/WorkbenchPage.test.tsx",
+      "bytes": 40628,
+      "sha256": "baa83833cf05d17bd73638453f04d6a9c0adc02236c8e9503b43fd545388b6a0",
+      "origin_blob": "b35b945e29797e45a8a24aff6f02527c4ab45201",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/WorkbenchPage.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/WorkbenchPage.tsx",
+      "bytes": 44664,
+      "sha256": "9d959c111774ae2f929b79bed5cf70046f024bc1c279614e2c0c3ea13851acd2",
+      "origin_blob": "743b01c60a2f35218c09eaefdfe87b81691346f7",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/actionDiff.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/actionDiff.test.ts",
+      "bytes": 2171,
+      "sha256": "59d414daef5195b996498439093572880fdeb2080adc2ece219ff682c50924a9",
+      "origin_blob": "23645bc904ff00aa8d81eb62ebe8ada07c7be3d3",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/actionDiff.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/actionDiff.ts",
+      "bytes": 3318,
+      "sha256": "ce00064cddea51911ae98313a9373d62eb4354bab557b25e162397cdb1d3bc51",
+      "origin_blob": "fcf9f4ff5a074eebec9a2912df2770f67c5e1bf5",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/api.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/api.test.ts",
+      "bytes": 4118,
+      "sha256": "1e5f1df9614145d22127bdd95a9a80ed04a2e97c959b356ae1b6b36d3c9b16ac",
+      "origin_blob": "b180374a2197b877ff2960c9360d317a65b28766",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/api.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/api.ts",
+      "bytes": 67310,
+      "sha256": "62f75be8aa4597c10ad794b8656ff584e689ab5a67f71d9f7d8283bee037d73d",
+      "origin_blob": "073baebdd30820ba29851479b4be35aaff1a315a",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/assessmentTypes.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/assessmentTypes.ts",
+      "bytes": 7015,
+      "sha256": "e5bd0968ca6735c85faecf80c0a701bafc2e81044d8d968ac88b07cbfbbf32f7",
+      "origin_blob": "681dbccd6d74a652310db749a47194b654a662cb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/budget.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/budget.css",
+      "bytes": 1651,
+      "sha256": "07c86929dba4bb8cc6ae848f80d3150c0c417336881c4a974e232902b315420b",
+      "origin_blob": "8df813f8c952e2440aa97586348e69b530235ddb",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/budget.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/budget.ts",
+      "bytes": 3149,
+      "sha256": "0f22a2bc1b9328ac40801c317ea8089f5370884ebe7510b9bc6da4c6c06a065d",
+      "origin_blob": "3d9cdaaf1e721a6a5765967567c850eb57528c04",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/content.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/content.test.ts",
+      "bytes": 10888,
+      "sha256": "fc950769631c775a366bdb42baa6a0b2539e762e58c524efcbbde77d5ca0203f",
+      "origin_blob": "e4534019d98b198679fdca3e0f237805e48a9b72",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/content.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/content.ts",
+      "bytes": 15039,
+      "sha256": "df9636107b230bddae1a4bd89b1dee3f83553aab837e10f8211075f7400dec70",
+      "origin_blob": "87dc47a1396aa4efb10b294612358a7a3991f707",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/contentProjection.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/contentProjection.test.ts",
+      "bytes": 15886,
+      "sha256": "434aff0f8fb87d9789346708e8aeed472aab1b7cdc6bc7aad5e7b2cc85519740",
+      "origin_blob": "e809658d8e8221153bc6b280f617777c00cbfe92",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/contentProjection.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/contentProjection.ts",
+      "bytes": 17779,
+      "sha256": "b2853ea1bcd0883d5dfb984e434fd83d206c64a2f5acebfb2e4e09f78c867b63",
+      "origin_blob": "b24b86f128ab7f787fad651091c8ba28a0e34147",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/declaredGraph.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/declaredGraph.test.ts",
+      "bytes": 1373,
+      "sha256": "61d9bdd9a3314304d0b1e0a79a476ee879769b2cd13fa20bafa53fa2c0ad61be",
+      "origin_blob": "39ef0508881518b6e32b1070b949dc7d743f3299",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/declaredGraph.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/declaredGraph.ts",
+      "bytes": 2525,
+      "sha256": "dc5fd2b83377e09e3d33af9f56e503140adcb2112be452620dfa0c9faedbbd9b",
+      "origin_blob": "db409e777d6321e2a8e3496e98f5687a417ffa8b",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/design-tokens.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/design-tokens.css",
+      "bytes": 1973,
+      "sha256": "102c3f7bdf85e6e534787bd5f0faef0872f41f52a4aa72376822fc9a981e0d25",
+      "origin_blob": "09b1e71ca4b935d75ec7e9f58e387a88ed714186",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/executionReading.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/executionReading.ts",
+      "bytes": 4634,
+      "sha256": "1caa2b685718da7f1e26d15b13c5573139192592f7fe057b78defde23f7cdc99",
+      "origin_blob": "c0366254b7add94f9388fdc095c7637429d73c0c",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/format.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/format.test.ts",
+      "bytes": 434,
+      "sha256": "ce32fb0fa61b4aadae318c6c7d9a7f0290cae7904181e8e9c24c9a97c40f8bba",
+      "origin_blob": "baa1d9bd924cf1d16bba91c3a943fb8c5a3e9718",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/format.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/format.ts",
+      "bytes": 5468,
+      "sha256": "c759644da0232fe63b2974dbd75eeb600d249305b97a2a936aebb4732745de4f",
+      "origin_blob": "b1e343a810772ce13e9ea404a8499fff5bc29236",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/identifier.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/identifier.css",
+      "bytes": 604,
+      "sha256": "84cfc97261cb3180b20eec9017dd9d7d67f2e875a240d65512944486dfcfe08b",
+      "origin_blob": "41b6231d035063051a7425e36ff390c42276c2c2",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/main.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/main.tsx",
+      "bytes": 408,
+      "sha256": "baf79219bcf36e7541eb747d47145cef3b8fd676e21b581ac92549fc10ee3bf1",
+      "origin_blob": "53afca5ea4e42e3ea4d024637a16625b50db689c",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/overview.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/overview.css",
+      "bytes": 7948,
+      "sha256": "59b82fac0c2be91f9dc2ae43a4cfd674b59a515ed187ebf91bed52938ac8bb31",
+      "origin_blob": "4db868534fbb9948c14b4aeca2225c82f5718ba3",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/pendingReview.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/pendingReview.ts",
+      "bytes": 4151,
+      "sha256": "f99438ac70773174aa4ae07538e20d273480d9a4f89be065bbc559bd8ff188d6",
+      "origin_blob": "62814781c7c94bd1d028b13d807dd402af2a8a40",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/purpose.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/purpose.css",
+      "bytes": 1280,
+      "sha256": "5f327024100f53706234f5261d0c7f917f7c6e10de91913863505b8e76637b24",
+      "origin_blob": "2ae89377a188c33c09a06a3822af127394864c2e",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/responsibilityTime.test.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/responsibilityTime.test.ts",
+      "bytes": 1023,
+      "sha256": "e08c97827197f9c548d4e82951c9a2f114da33164cdb8313c5c5f6a6e15eabad",
+      "origin_blob": "69be28c7819c0f9965bbb7cba92fff32b1860b29",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/responsibilityTime.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/responsibilityTime.ts",
+      "bytes": 2778,
+      "sha256": "5844cdb98c596a148d8a4a4c1e15872511788bd0b94ad2af2f1aa63b1f2a21cc",
+      "origin_blob": "1cb51aafc7b8e759ffc84e648a4101217b711c54",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/runtime.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/runtime.css",
+      "bytes": 6608,
+      "sha256": "d5068842c9741ed2644fb8cffe99d6c3a30017e61181239056b6f866f812efec",
+      "origin_blob": "05f51086dd6cf2df0992df25cc98f18415dcf985",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/runtime.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/runtime.ts",
+      "bytes": 11183,
+      "sha256": "15b6b3fc30290854cb9b52ba20aeea80d12aa5a21e52183e2b0a6ae63a7982df",
+      "origin_blob": "6a32f65221107e5bf3297527076b61f7fd7fad13",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/scopedAccess.test.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/scopedAccess.test.tsx",
+      "bytes": 16336,
+      "sha256": "13422349160ea427cde551139042e8eb5c0ab54c7766fad742e6c5b02f391d71",
+      "origin_blob": "ef68dadafadfc3a74bb7e8a73e55853fe722639c",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/source-facts.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/source-facts.css",
+      "bytes": 1963,
+      "sha256": "9485d038a6cca2729f581c9139a400cdd19d3ee96fb35e9b10b4d78866b0710a",
+      "origin_blob": "650040c3886420617a58d8843b0f8d9103910ad1",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/status.tsx",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/status.tsx",
+      "bytes": 4867,
+      "sha256": "9b56c7718fff5dd7700986597387ee302c18222ffc360f62842ceb7f8f80a5ac",
+      "origin_blob": "de14c476d46a844fa47d6b196d53c0554e0dd622",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/styles.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/styles.css",
+      "bytes": 51116,
+      "sha256": "ace01b9da40240c2b35c69e8155539efd3ea3b25de746405ade4e46794f9919d",
+      "origin_blob": "6cac5c01723977575f4e064414f64fdad3b3cb67",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/vite-env.d.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "origin_blob": "11f02fe2a0061d6e6e1f271b21da95423b448b32",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/workbench-layout.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/workbench-layout.css",
+      "bytes": 14123,
+      "sha256": "9723ea2e97243b086ff8bda506dbb431b4bd5e1152c01bca509894039d1ef77f",
+      "origin_blob": "cd8683e84472ddacf6c9b32579d707db55a53ac8",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/workbenchNavigation.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/workbenchNavigation.ts",
+      "bytes": 7329,
+      "sha256": "168c08bb14e139b3bcda87dc62cfe7460d31cb88570a7f8f7e9698b01eecf4d2",
+      "origin_blob": "893d43ec35f34718e610caff8d4e8c2102e53a2a",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/src/workspace-v2.css",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/src/workspace-v2.css",
+      "bytes": 73813,
+      "sha256": "4569e833767068f19c6681c9a6ec2fca0b6757ab5e3136bfd14681265341cca4",
+      "origin_blob": "51116e5e95ea2e04c6124ee01989f81399c1aef8",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/tsconfig.json",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/tsconfig.json",
+      "bytes": 574,
+      "sha256": "d5ea55ad8984ceb43692a84d5a1ede3d95cca0f6285569e68a11eb3501e715c9",
+      "origin_blob": "2939ffe1780de55d9e54f7c7e7eea219270f00b1",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "frontend/vite.config.ts",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/frontend/vite.config.ts",
+      "bytes": 2444,
+      "sha256": "2684df7c57dabb1332ed470ab83b8c499d1f890e2d64b44f9e77ff801b5093ea",
+      "origin_blob": "ee2945ecd752fa2400ac87f233a28e0d6e240bcc",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "release/d-validation-compatibility-matrix.json",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/release/d-validation-compatibility-matrix.json",
+      "bytes": 2230,
+      "sha256": "3a948d8e29f3529a96a68d533228b538da9c622af264c426a5b9015ab807c180",
+      "origin_blob": "50d3afa758a8d5b5f15c42c3695a9e2341532f89",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "release/d-validation-config.json",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/release/d-validation-config.json",
+      "bytes": 1777,
+      "sha256": "a844719a0e697d1c6764cd6da92e8b3cffaaf6f41bfc12bc0ed39e2dc835da5e",
+      "origin_blob": "8a356f8202f677e4ae1441f0348dfc6774ccbace",
+      "origin_git_mode": "100644"
+    },
+    {
+      "origin_path": "scripts/build-manual.mjs",
+      "candidate_path": "compatibility/fpv9-linux-amd64/original-asset-source/scripts/build-manual.mjs",
+      "bytes": 17982,
+      "sha256": "c670c5dfc63c821bf5e24a3b58eb72875079117f467ab77bb12955f89fd9a3f0",
+      "origin_blob": "c032c221505573fc382cda04a1e263c4ce4b13d7",
+      "origin_git_mode": "100755"
+    }
+  ],
+  "file_count": 96,
+  "bytes": 1528311,
+  "source_selection": "actual tracked frontend/src (including tests required by tsconfig), frontend package locks/config and two production build scripts; explicit original development-d manual generator and four selected Markdown chapters/config/matrix; no e2e or unrelated historical docs/trees; exact asset-manifest.mjs imported by both production build scripts",
+  "input_toolchain": {
+    "node": "22.23.1",
+    "npm": "10.9.8"
+  },
+  "old_lock_versions_not_current": [
+    "source-map-js1.2.1",
+    "undici7.29.0"
+  ],
+  "no_old_package_install_or_frontend_build": true,
+  "embedded_asset_bytes_remain_original": "Go build source retains original embedded dist/manual; original-asset-source separately provides their source, no generated output overwritten",
+  "license_components": [
+    {
+      "name": "github.com/jackc/pgx/v5",
+      "version": "v5.10.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_pgx_v5/LICENSE",
+          "sha256": "467f95e074fe23079a5623ed652619682692041b8551da27e3c2ddb9659a1507"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgpassfile",
+      "version": "v1.0.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_pgpassfile/LICENSE",
+          "sha256": "adb1663fda031df8f4344aa68f299fd87d80353e31339406742ded21dae65702"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgservicefile",
+      "version": "v0.0.0-20240606120523-5a60cdf6a761",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_pgservicefile/LICENSE",
+          "sha256": "fc505773403fe869ed64cc2235cdd13988a427bb7e3a7e7004a3f4b27420f8fc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/text",
+      "version": "v0.38.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_text/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_text/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/sys",
+      "version": "v0.46.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_sys/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_sys/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/crypto",
+      "version": "v0.53.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_crypto/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_crypto/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "github.com/santhosh-tekuri/jsonschema/v6",
+      "version": "v6.0.2",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_santhosh-tekuri_jsonschema_v6/LICENSE",
+          "sha256": "c8858a5a76440bbca484e134cf7df46385d090dd18b2c58e650f939258802e5b"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/puddle/v2",
+      "version": "v2.2.2",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_puddle_v2/LICENSE",
+          "sha256": "2d50e98a4900b4d6457a38d39c1432fdc156fc2f7b365f2e33ec9344acbb0057"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/sync",
+      "version": "v0.21.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_sync/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_sync/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "version": "19.2.7",
+      "redistributed_in": "Embedded browser UI",
+      "license_files": [
+        {
+          "path": "licenses/react/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.7",
+      "redistributed_in": "Embedded browser UI",
+      "license_files": [
+        {
+          "path": "licenses/react-dom/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "name": "scheduler",
+      "version": "0.27.0",
+      "redistributed_in": "Embedded browser UI",
+      "license_files": [
+        {
+          "path": "licenses/scheduler/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "name": "Go standard library and runtime",
+      "version": "go1.25.12",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/Go_standard_library_and_runtime/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/Go_standard_library_and_runtime/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    }
+  ],
+  "root_current_LICENSE_NOTICE_THIRD_PARTY_and_all_referenced_texts_preserved": true,
+  "owner_rights": "pending; no agent legal assertion",
+  "origin_tree": "eaa416d12588a47727b1b5a821de8300c23b00cb",
+  "root_notice_files": [
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "cc3303d6981b5fd0a03495e277d9594c4ac860992b1c4bfc2206675be4e6a623"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "fe0dccb05b8cccc6ba56e43457b1b8263c1a72d10b3016ffa6a985e3f140fda8"
+    },
+    {
+      "path": "licenses/manifest.json",
+      "sha256": "30d3b3f9cd83e9c88a7fff245cca4d823aab3a8f9a1a082b855849d72c3e155f"
+    }
+  ],
+  "matching_component_versions_and_exact_license_texts": true,
+  "original_assets": [
+    {
+      "path": "internal/webui/dist/asset-manifest.json",
+      "bytes": 581,
+      "sha256": "d7ba9038024c2b1a0810f45ed15036fcaa781e1175fdb74e7d7033a5f887be67",
+      "origin_blob": "01604dfdf997b13a3f8225cc7c03335f7b152fe8",
+      "git_mode": "100644"
+    },
+    {
+      "path": "internal/webui/dist/assets/index-Bo0ehSCV.css",
+      "bytes": 134183,
+      "sha256": "eb43f2fc6c90587cd8113fec88e086f2da243244e73464563d7975af5dea5a06",
+      "origin_blob": "2e74eb86b2adf9fdeaf35b1c4ac8984d7a3c181e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "internal/webui/dist/assets/index-UIRZnDfN.js",
+      "bytes": 652015,
+      "sha256": "1f899b87d36e8d18ad55c499c466bfee64079ec4aa8572c4fc2fdb75d29bf69e",
+      "origin_blob": "bde28ba034a1b4585abbe7e115cfa034c4316f82",
+      "git_mode": "100644"
+    },
+    {
+      "path": "internal/webui/dist/index.html",
+      "bytes": 894,
+      "sha256": "f0589f0ca58dd04257921ba2140aeed3ed74e2b784e966c3a80ce0eb4b6b6b2e",
+      "origin_blob": "7e92c758e1efe273ff79c343e364822861fbb127",
+      "git_mode": "100644"
+    },
+    {
+      "path": "internal/webui/manual/zh-CN/index.html",
+      "bytes": 53289,
+      "sha256": "e791c36b50ceab3891f05736072f853f7cc9a73c7bc0d77ae19313bc5ee002ca",
+      "origin_blob": "9ce27433098f7effd29d87d3716223e161b68d7d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "internal/webui/manual/zh-CN/manual-icon.svg",
+      "bytes": 244,
+      "sha256": "aac6c4617bd5f4ba575e16808b7b52bdcc279f4896de4692927c8bb4099e4978",
+      "origin_blob": "1c11105c0ad8b378ccd064a8d70f471a539a8107",
+      "git_mode": "100644"
+    },
+    {
+      "path": "internal/webui/manual/zh-CN/manual.css",
+      "bytes": 3435,
+      "sha256": "6fcf91ae037d331f2b712ea134c4c810d8a7f18b564931a6267586325b522519",
+      "origin_blob": "966deb5ce6660028261102e943ed981155cad2f2",
+      "git_mode": "100644"
+    }
+  ]
+}

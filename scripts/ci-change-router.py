@@ -32,9 +32,9 @@ def is_safe_documentation(path: str) -> bool:
     return not (path == "docs/manual" or path.startswith("docs/manual/"))
 
 
-def classify(paths: Iterable[str]) -> dict[str, object]:
+def classify(paths: Iterable[str], *, initial_root: bool = False) -> dict[str, object]:
     unique_paths = sorted(set(paths))
-    safe_docs_only = bool(unique_paths) and all(
+    safe_docs_only = not initial_root and bool(unique_paths) and all(
         is_safe_documentation(path) for path in unique_paths
     )
     return {
@@ -43,6 +43,15 @@ def classify(paths: Iterable[str]) -> dict[str, object]:
         "changed_count": len(unique_paths),
         "paths": unique_paths,
     }
+
+
+def is_initial_root_push(event: str, base: str, head: str) -> bool:
+    if event != "push" or base != ZERO_SHA:
+        return False
+    parents = subprocess.check_output(
+        ["git", "rev-list", "--parents", "-n", "1", head]
+    ).decode("utf-8").split()
+    return parents == [head]
 
 
 def changed_paths(event: str, base: str, head: str) -> list[str]:
@@ -54,20 +63,24 @@ def changed_paths(event: str, base: str, head: str) -> list[str]:
         raise ValueError("head must be a 40-character lowercase Git SHA")
 
     if base == ZERO_SHA:
-        comparison = f"{head}^..{head}"
+        if event != "push":
+            raise ValueError("pull_request requires an available nonzero base")
+        if is_initial_root_push(event, base, head):
+            command = ["git", "diff-tree", "--root", "--no-commit-id", "-r",
+                       "--name-only", "--no-renames", "-z", head]
+        else:
+            command = ["git", "diff", "--name-only", "--no-renames", "-z",
+                       f"{head}^..{head}"]
     else:
         if len(base) != 40 or any(
             character not in "0123456789abcdef" for character in base
         ):
             raise ValueError("base must be a 40-character lowercase Git SHA")
         separator = "..." if event == "pull_request" else ".."
-        comparison = f"{base}{separator}{head}"
+        command = ["git", "diff", "--name-only", "--no-renames", "-z",
+                   f"{base}{separator}{head}"]
 
-    completed = subprocess.run(
-        ["git", "diff", "--name-only", "--no-renames", "-z", comparison],
-        check=True,
-        stdout=subprocess.PIPE,
-    )
+    completed = subprocess.run(command, check=True, stdout=subprocess.PIPE)
     return [
         path.decode("utf-8", errors="replace")
         for path in completed.stdout.split(b"\0")
@@ -111,7 +124,8 @@ def self_test() -> None:
         actual = classify(paths)["safe_docs_only"]
         if actual is not expected:
             raise AssertionError(f"classify({paths!r})={actual!r}, expected {expected!r}")
-    print(f"ci-change-router self-test: {len(cases)} cases passed")
+    assert classify(["README.md"], initial_root=True)["safe_docs_only"] is False
+    print(f"ci-change-router self-test: {len(cases) + 1} cases passed")
 
 
 def parse_args() -> argparse.Namespace:
@@ -141,7 +155,10 @@ def main() -> int:
     if missing:
         raise SystemExit(f"missing required arguments: {', '.join(missing)}")
 
-    result = classify(changed_paths(args.event, args.base, args.head))
+    result = classify(
+        changed_paths(args.event, args.base, args.head),
+        initial_root=is_initial_root_push(args.event, args.base, args.head),
+    )
     append_outputs(args.github_output, result)
     append_summary(args.step_summary, result)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))

@@ -34,10 +34,10 @@ its release-time claims were not rewritten.
 
 | Item | Exact value |
 | --- | --- |
-| Prerequisite PR | [#54](https://github.com/foigent/x-insight/pull/54), merged |
+| Prerequisite PR | [#54](https://github.com/foigent/x-insight-private-history/pull/54), merged |
 | Merged exact main | `0ca502f99181173e3542592ae5a018a5bfc43e0c` |
-| Exact-main CI | [29648815418](https://github.com/foigent/x-insight/actions/runs/29648815418), success |
-| Owner-supervised workflow | [29648976737](https://github.com/foigent/x-insight/actions/runs/29648976737), success |
+| Exact-main CI | [29648815418](https://github.com/foigent/x-insight-private-history/actions/runs/29648815418), success |
+| Owner-supervised workflow | [29648976737](https://github.com/foigent/x-insight-private-history/actions/runs/29648976737), success |
 | GitHub artifact ID | `8430900609` |
 | Downloaded workflow ZIP SHA-256 | `bd80cd65aa368acc9b1523d7bb68819e364f132e8e876652a595827b5fb623f3` |
 | Signed bundle SHA-256 | `500e538d2162a8c716f08fdc5b5973e5b604e4c7d38915d8ddf630a8f3d45e2b` |

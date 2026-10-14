@@ -1,0 +1,54 @@
+{
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "product_version": "0.2.0-dev.fpv9",
+  "manual_version": "0.2.0-dev.fpv9/manual-r1",
+  "release_channel": "release_candidate",
+  "database_schema": "40",
+  "config_schema": "xinsight.config.v1",
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:5d4dfafac03011780ac58a07bfef6d763797dd18372b3e088543bc3b3b6e50fa",
+    "migration_set_sha256": "sha256:820ca60fe64ff6743c9599fe91477491dd05d1da335b95ed95bcb83dd099ffb9"
+  },
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.b2",
+    "0.2.0-dev.d1",
+    "0.2.0-dev.d2",
+    "0.2.0-dev.fpv1",
+    "0.2.0-dev.fpv2",
+    "0.2.0-dev.fpv3",
+    "0.2.0-dev.fpv4",
+    "0.2.0-dev.fpv5"
+  ],
+  "supported_legacy_sources": [],
+  "supported_host": {
+    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "architecture": "amd64",
+    "service_manager": "systemd",
+    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+  },
+  "postgresql": {
+    "major": 16
+  },
+  "bootstrap_trust": {
+    "field_authority": "user_authorized_isolated_validation",
+    "customer_self_upgrade": false,
+    "private_key_retained": true,
+    "self_authentication": false,
+    "first_tool": "xinsight-release"
+  },
+  "field_qualification": "FPV9/schema40 is local delivery preparation only. Existing eight upgrade-source declarations are retained; all eight paths to FPV9 await exact-artifact qualification. B2, D1, D2 and FPV1-4 package bytes match existing digests; FPV4 is first in validation order only. Exact FPV5 and FPV6 packages have not been located; FPV6 is not added to the upgrade-source list. Fresh install, existing-UR add-on, upgrade/check, failure recovery, rollback rejection and same-version campaign authority remain open P4/P6 acceptance items. No F/PX/V/A0/S/TD completion claim."
+}

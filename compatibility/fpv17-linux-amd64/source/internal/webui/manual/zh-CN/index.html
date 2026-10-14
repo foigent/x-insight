@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="xinsight-product-version" content="0.2.0-dev.fpv17">
+  <meta name="xinsight-manual-version" content="0.2.0-dev.fpv17/manual-r1">
+  <meta name="xinsight-manual-source-sha256" content="sha256:1ac0e7603c648b9ad883642baebd9c285ca509203826475b89267eacb903e247">
+  <title>X-Insight 0.2.0-dev.fpv17 简体中文产品手册</title>
+  <link rel="icon" href="manual-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <a class="skip-link" href="#manual-content">跳到手册正文</a>
+  <header class="manual-header">
+    <p class="eyebrow">X-Insight · 对应版本的离线手册</p>
+    <h1>简体中文产品手册</h1>
+    <p>产品版本 <strong>0.2.0-dev.fpv17</strong> · 手册版本 <strong>0.2.0-dev.fpv17/manual-r1</strong></p>
+    <p class="boundary">内部单部署租户 · loopback-only · 正文读取默认关闭 · 按当前授权显式读取并核验 · 尚非 Production verified</p>
+    <a class="product-link" href="/executions">返回产品 · 执行调查</a>
+  </header>
+  <div class="manual-layout">
+    <nav class="toc" aria-label="手册目录">
+      <strong>目录</strong>
+      <a href="#d-validation">当前 D 隔离候选：预算与来源依据</a>
+      <a href="#workbench-access">工作台范围授权（后继开发候选）</a>
+      <a href="#investigation-workflow">执行调查工作流</a>
+      <a href="#provenance-gaps">来源、溯源与采集缺口</a>
+    </nav>
+    <main id="manual-content">
+      <section class="chapter" aria-labelledby="d-validation">
+<h2 id="d-validation">当前 D 隔离候选：预算与来源依据</h2>
+<p>本页记录 FPV17/schema45 的近期工作活动读取候选，沿用已安装 FPV16 的预算、来源、受控内容工作台及原连接控制凭据生命周期。源码、前端和手册改动须绑定到同一冻结候选；本页不表示已构建、签发或部署制品。</p>
+<h3>版本与适用范围</h3>
+<p>本页对应 <code>0.2.0-dev.fpv17</code>，手册版本 <code>0.2.0-dev.fpv17/manual-r1</code>。只适用于已授权的 XI 隔离验证环境；正式签名、安装、升级和恢复资格以相同 commit/制品/环境的回执为准，源码中的候选名称不表示已验收。</p>
+<div class="table-scroll"><table><thead><tr><th>项目</th><th>当前值</th></tr></thead><tbody><tr><td>数据库 schema</td><td>45</td></tr><tr><td>PostgreSQL</td><td>16，同机 loopback 专用数据库</td></tr><tr><td>主机</td><td>既有 Ubuntu 24.04 / Linux amd64 XI guest，systemd</td></tr><tr><td>配置</td><td><code>xinsight.config.v1</code>；显式预算采集使用 managed-source-facts v3</td></tr><tr><td>升级前态</td><td>现有受管安装 <code>0.2.0-dev.fpv16</code> / schema45；其余声明来源见下表，分别核验准确制品与安装状态</td></tr><tr><td>应用回滚</td><td>不声明旧应用可运行 schema45；数据库恢复必须显式执行</td></tr></tbody></table></div>
+<p>当前不声明客户发布、UR 真实增强来源、完整 F 配对、原 A0/S 或最终 V 通过。历史 B 和 rc.13 手册、配置及回执保留原身份，不构成本候选的升级白名单。</p>
+<h3>FPV17 近期工作活动读取</h3>
+<p>近期工作活动以授权项目和来源为界，分别展示执行请求、运行观察、正文证据和经济事实。运行结果不依赖经济事实是否产生；详情标明读取阶段、成功、失败及未知缺口，不把失败读取或缺少写入证据解释为文件已修改。只读详情的正文需按当前授权、留存与来源限制读取；关联 runtime 导航返回时保留期间、筛选及所选事件。FPV17 不增加数据库迁移，schema45 的原凭据、来源绑定和历史事实保持。正式升级必须从已验签目标包内控制器对准确 FPV16 受管前态执行 <code>upgrade --check</code>，核对无副作用后再经单独批准执行升级。</p>
+<h3>历史 FPV16 原连接控制凭据生命周期</h3>
+<p>schema45 为原受管 installation 建立唯一 current token 摘要、至多一个 prepared 替代操作和有时限的管理员恢复票据。新装 v1 首兑与既有来源 v2 接管首兑分别在原受限事务中记录准确 current 摘要；无法唯一确定旧安装前驱则拒绝升级。正常 active 且授权有效的连接由 UR 原控制循环在旧 token 剩余 6 小时内轮换，XI 返回 prepared 后由有效新 token 查询、确认并撤旧；中断时复用同一 operation 和已保存的 secret，不新建连接。离线跨期时 XI 与 UR 管理员各在本端确认，15 分钟票据与 UR 保有的准确旧 secret 共同约束恢复；票据过期须重新确认。撤销、断开、范围漂移及遗失原 secret 不会被自动恢复。具体操作见[配置、安全与访问](admin/03-configuration-security-and-access.md#原连接的控制凭据续期与恢复schema45)。</p>
+<p>FPV16 的正式升级与原连接恢复证据另见项目执行记录；该历史结果不构成 FPV17 的签名包、Linux 安装资格或 Target 验收。FPV15/schema44 是 FPV16 的历史受管升级前态，相关主机配置说明保留如下。</p>
+<h3>历史 FPV15 连接配置生效修复</h3>
+<p>受管连接由系统准备并加载凭据及精确来源地址的网络配置。管理员完成向导后无需手工编辑服务文件。状态只有在当前进程已加载配置、实际收到数据后才进入相应完成阶段；重启或配置发布中断会复用已有授权继续执行。</p>
+<p>本候选保留原数据库版本和权限分工。新增 Linux 资格分别验证新安装、FPV14 恢复暂停连接的正式升级接续，以及未授权旧来源保持暂停。CI 结果、制品验签和目标实例验收须分别核实；本页不表示这些步骤已经完成。</p>
+<h3>正常接入与正文恢复</h3>
+<p>管理员从“连接与接入”的“开始设置”进入正常接入。没有 XI 留存策略时，页面提出完整正文、90 天、每项目 5 GiB、单条 32 MiB 的草稿；只有人类明确确认并完成 UR 同意，后台才应用期望。已有生效策略（包括停用）继续复用。UR 来源采集独立约束复制：没有企业策略时须在 UR 最终确认中选择来源数值；正常推荐为完整正文、30 天、每项目 5 GiB、单条 32 MiB，并使用实际来源支持的协议及观察点。组织管理员明确授予企业策略读写后，才能从 XI 联合管理正文开关；项目及用户例外继续保留。</p>
+<p>设置页分别显示等待同意、准备连接、等待数据和当前问题；历史同意不冻结以后修改的当前策略。浏览器只保留当前主体的非秘密请求引用与同意内容以恢复丢响应，邀请令牌仅用于临时跳转与请求，不进入持久浏览器存储。原邀请过期后须重新审阅确认，不能延长旧邀请。</p>
+<p>正常安装及升级在原主机锁与操作回执内准备正文密钥；已有或停用密钥继续使用。存在任何密文时，丢失原密钥必须停止并恢复原件，不能生成替代密钥。启用完整正文前检查实际 API 及已配置来源 worker 所加载的相同密钥；文件存在或配置就绪不能代表已加载。已经加载时不重复重启服务。</p>
+<p>完整私有备份包含数据库与原正文密钥，按私有文件保管；恢复先核对准确包摘要，在新数据库与独立安装根导入原密钥，再读取未到期正文。已到期正文仍不可读；来源端已经到期不改变 XI 自己的期限。恢复到不同部署会撤销还原数据库中的原运行身份和令牌，历史记录保留，重新接入须走当前授权。旧数据库单独备份仍按原兼容路径处理，不能据此宣称正文密钥已恢复。</p>
+<pre><code>xinsightctl backup --output /absolute/private-backup.tar --check
+xinsightctl install --artifact /absolute/signed-artifact.tar.gz --recovery-bundle /absolute/private-backup.tar --recovery-bundle-sha256 sha256:EXACT_DIGEST --check
+xinsightctl restore --recovery-bundle /absolute/private-backup.tar --recovery-bundle-sha256 sha256:EXACT_DIGEST --new-database xinsight_restore_approved --check</code></pre>
+<p>上述路径与摘要须替换为已批准的准确对象。当前本地实现、隔离 PostgreSQL 与 HTTPS 夹具证据不表示 Linux 服务生命周期、签名制品或 Target 已通过。</p>
+<h3>FPV10：工作事件与复核正文</h3>
+<p>本地 schema41 增加 OpenClaw 工作事件接收，用原始事件的范围、对象、时间和结果展示近期工作；缺少动作证据时仍显示缺口，不推断模型已完成修改。schema42 增加按授权与有效期限制的 XI 复核正文副本，XI 留存策略与 UR 来源采集策略分别约束实际复制。schema43 增加受管工作事件安装邀请：首次登记候选 Agent 须经管理员批准；对同一已授权安装，未来 Agent 可按已批准的自动纳入策略建立独立 XI 项目和 collection，不能据此推断 UR 项目。schema44 增加原接收端接管、独立机器候选回执和来源登记，保留原 epoch、游标、来源键和正文引用；v3 两端使用各自主机时间，不跨主机排序。schema45 增加原连接控制凭据续期与恢复，保留原 installation、授权、来源与历史。正文复制到 XI 后按 XI 权限和留存期读取，原 UR 来源元数据保持原样。当前源码和本地测试不能代表 Target 验收或签名制品资格。</p>
+<h3>FPV9：测试文件资料与修改结果（历史）</h3>
+<p>在已授权的隔离测试阅读中，“系统与数据 → 这次工作”展示 OpenClaw 原生运行时报告的读取、修改对象和状态。五轮 UR 请求只有在准确的关系回执与原生事件/响应身份相符时合并为一次工作；无法确认关系的动作只留在触发请求下。文件修改的“目标检查通过”来自独立测试检查器的前后完整文件摘要与字节检查，不等于资源系统审计，也不证明模型内部实际使用了提交内容。</p>
+<p>读取原文、提供方请求和前后差异均需当前 C 内容读取权限，并按准确请求、内容引用及有效期按需读取；无权或到期时仍可看获准的动作元数据，但不能从旧正文推断结果。提供方请求表示只说明网关向提供方提交了什么。本地 schema40 增加 <code>xinsight.resource-action.v1</code> 元数据，首批只准 test/development 的受控离线导入；CC15 真实 OpenClaw/UR/XI/浏览器整链与同版制品资格尚未通过。</p>
+<h3>FPV8：执行关联预览与提交权限一致</h3>
+<p>资源复核保留执行阅读关联时，预览和提交共同检查当前权限：除精确的内容来源覆盖例外外，关联执行须同时具备 source_context、source_identity、source_cost。缺权限时预览即拒绝，不再先给出可确认预览再在提交时拒绝。有效 C 来源必须覆盖同一 execution 的每个 as_of；既有相同 tuple 仍可复用，不以任意内容引用放行其他截止。显式不保留执行关联的资源复核继续按资源双方权限处理。</p>
+<p>新账户的正式角色配置、逐来源授权与验收顺序见下一章“工作台范围授权”。access validate 补齐 v2/v3 角色计数，不改变角色能力或替用户授权。FPV8 当时的数据库 schema39、API、内容与资源合同和升级前态白名单保持；候选版本推进不表示新增升级来源已获验证。</p>
+<h3>在六个工作主题中查看预算</h3>
+<p>总览、使用与目的、运行与执行、安全与复核、费用与使用、来源与覆盖保留原入口。运行请求、能力、资源资料与 I-01 金额仍是不同证据集合。预算从“费用与使用”的“查看全周期预算”进入；访问取决于当前人员与字段授权。</p>
+<p>页面分别显示来源预算、同口径全周期已知小计、计划差额、来源周期和截止、覆盖状态及提醒。原月度周期使用来源 UTC 边界，不能被全局近7天筛选替换。币种/精度分别保留，不相加或隐式换算；显示百分比的舍入不改变源阈值。</p>
+<ul>
+<li>预算1000、同口径完整已用600，计划差额为400；已用1200则为-200。差额不表示余额、预留或还能调用多少。</li>
+<li>未设置、显式零、停用、不支持、未批准、无权、覆盖不足分别说明。中途接入或恢复缺口不能当作可信零。</li>
+<li>来源全周期摘要600与 XI 局部明细200不能相加成800。当前来源未给出逐请求包含关系，也不能仅凭两个金额说缺明细400。</li>
+<li>单次来源 reading 的定义、摘要和提醒按各自授权出现。缺定义权时不会通过摘要显示其分母或计划差额；不会从旧版本拼补。</li>
+<li>预算1000改为1500不会改写旧 source reading；旧提醒继续说明其当时已用/预算证据。当前超额、提醒resolved、已投递、人工已读和实际调用限制是不同事实。</li>
+</ul>
+<p>点击“查看依据”检查来源阅读 ID、版本、截止、收到时间、当前可访问文档/hash，再查看各次独立来源快照。返回时重新检查当前访问；撤权或阅读过期后不继续显示旧金额。历史仅包含本次 XI 阅读截止前已收到的快照，后到修订不会把旧阅读补绿。提醒续页保留为新的来源快照，不把不同阅读合并成一个财务状态。</p>
+<p>受控离线输入明确标为“受控离线快照”，不表示当前在线状态。来源没有正式计算费用预算 profile，独立供应商账单来源也未绑定；两项正向目标仍开放。现有原扣费与计算费用不能改名为独立账单。XI 不更改来源预算、不发外部提醒、不阻断调用。</p>
+<h3>登记、权限和 CLI</h3>
+<p>来源采集与人员阅读分开授权。旧连接/凭据不自动增加 D；管理员显式登记 collection 和 profiles，实际来源许可可为1—3份非空组合。字段授权 allow_budget_definition / allow_budget_summary / allow_budget_alert 默认拒绝；来源项目限制仍适用。预算权不授予全部费用、人员或执行明细。</p>
+<p>在线目录和提醒最多50项/页，每份文档最多64KiB；修改许可/绑定后须重新检查目录。暂停或撤销预算集合不会重置 A/B 事件游标。受控离线授权须绑定当前目标、机器、精确产品版本/commit、实际目标 schema45、冻结来源合同和完整 bundle 摘要，有效期最长2小时。离线登记默认暂停，由管理员启用、importer 单事务接收；check 无写入。已消费的离线授权暂停/恢复后需新登记，不能当作在线恢复许可。</p>
+<p>完整命令、JSON 字段与边界见随包来源说明。常用查询：</p>
+<pre><code>xinsightctl query budgets create --origin https://XI_ORIGIN --username PERSON --request-file /absolute/budget-reading.json
+xinsightctl query budgets items --origin https://XI_ORIGIN --username PERSON --reading READING_ID --limit 25
+xinsightctl query budgets history --origin https://XI_ORIGIN --username PERSON --reading READING_ID --budget-ref MEMBER_UUID</code></pre>
+<p>CLI 沿人员 HTTPS Session 与 CSRF，密码仅从交互终端读取，结束登出。旧阅读、JSON 和 CLI 都重查当前权限。API 与页面阅读有效期30分钟；过期410、授权变化409、范围不足403，按提示重新建立当前有权阅读，不伪装成旧结果。</p>
+<h3>未签名准备与信任边界</h3>
+<p>构建入口是 <code>scripts/build-signed-release.sh</code>。默认仍选择历史 rc13；开发准备必须显式选择 <code>--profile=development-d --prepare-only</code>。只读 <code>--dry-run</code> 仅核对干净源码、工具链与交付配置，不生成文件、不读取签名密钥、不编译，也不证明生成物或安装可用。prepare-only 使用已备依赖，生成未签名 payload、bootstrap 工具和 <code>prepare-result.json</code>；结果明确为 unsigned、不可安装，没有签名 manifest 或正式包。它仍要求干净源码和准确工具链，不能把带 WIP 的 HEAD 当作制品身份。</p>
+<p>当前代码的 CI、owner release、conformance、<code>build-release.sh</code> 与签名构建/验签入口使用 Go 1.25.12、Node 22.23.1、npm 10.9.8。CI 中复现准确 Phase 1 制品是唯一历史例外：先由 setup-go 切到 Go 1.25.11，以冻结 commit <code>b9e5811cc53a5cb06614956e66a1c54756617f0a</code> 的旧脚本重建并核对原制品 SHA256，再恢复 Go 1.25.12 验证当前 reader；历史摘要不因当前工具链更新而改变。<code>go.mod</code> 的 <code>go 1.25.0</code> 仍是模块最低要求。验签入口核对签名 manifest 的 <code>build_toolchain</code>，并要求四个产品二进制与 bootstrap 的 <code>version --json</code> 报告同一 Go 身份。历史制品保持原记录，旧工具链的测试结果不能代替新候选的制品与目标资格。</p>
+<p>开发配置、矩阵和 payload 均使用 schema45 的 <code>development_schema_contract.json</code>。产品版本、commit、构建时间、Go 和手册版本沿现有构建参数注入；数据库范围保持编译期45。冻结后须重新构建并核对前端、manual、四个产品二进制和 bootstrap 的同版身份；当前本地准备不能代替此步骤。</p>
+<h3>安装、升级与恢复</h3>
+<p>以下是同版签名包形成后、在已批准隔离主机上使用的操作顺序。本地未签名目录不满足入口条件，不能直接复制为受管安装。开发配置仍沿原 Ubuntu 24.04 / amd64 / systemd / 同机 loopback PostgreSQL 16 隔离验证范围；新的精确目标、容量和操作窗口由总体核定，不从本页推定已批准。</p>
+<ol>
+<li>从已批准渠道核对准确包、bootstrap verifier、公开 trust store 的摘要与来源。不要使用包内自带公钥自证，也不复用历史 rc13 的发布身份。使用经独立核验的 <code>xinsight-release verify</code>，指定 <code>--artifact</code>、<code>--trust-store</code>、<code>--expected-commit</code> 和 <code>--expected-version 0.2.0-dev.fpv17</code>；再用 <code>extract</code> 的 <code>--destination</code> 解到不存在的绝对目录。核对四个二进制 <code>version --json</code>、内嵌手册、webui manifest，以及 <code>xinsightctl schema-contract expected --raw</code> 与签名 payload 的一致性。</li>
+<li>首装前明确专用空库、服务账号和四角色凭据：admin 管理结构与授权，importer 接收来源，workspace 建立冻结阅读/调查对象，reader 只读。四份 DSN 位于 <code>/etc/x-insight/database/sets/APPROVED_SET/</code> 的 <code>postgres-{admin,reader,workspace,importer}.dsn</code>，目录0700、文件0600，由 <code>/etc/x-insight/database/current</code> 指向该绝对目录；不得覆盖现有凭据集。沿包内配置模板及正式 access CLI 准备人员访问、当前授权和批准的 HTTPS origin。凭据、权限与 HTTPS 配置由对应批准步骤提供，本页不授权生成或替换。</li>
+<li>使用该目标包中已验签的控制器先运行 <code>install --check --artifact ...</code>，再执行 <code>install --artifact ...</code>；已有安装先核准下表的准确前态、备份和安装状态，再以目标控制器运行 <code>upgrade --check --artifact ...</code>、<code>upgrade --artifact ...</code>。不用现运行的旧控制器驱动跨版本升级。check 前后核对数据库、序列、配置、安装槽和运行状态无变化。已有 UR 加装 XI 仍需独立的许可、连接启用与普通用户整链验收；安装成功不自动启用 Feed 或扩大授权。</li>
+<li>失败先保留精确候选、备份、operation journal 和回执，以同一已验证目标控制器执行 <code>recover</code>，根据报告执行 <code>resume</code> 或受支持的 <code>abort</code>；不 reset、不手改 SQL、不覆盖旧槽。数据库恢复先 <code>restore --check --backup /absolute/EXACT.dump --backup-sha256 sha256:EXACT --new-database NEW_APPROVED_NAME</code>，再按批准动作恢复到新库；保留原库及失败现场，核验财务事实、人工记录、历史引用和摘要。恢复后采集保持暂停，当前可见性重查授权，离线授权重新绑定实际schema与目标。</li>
+<li>本候选 <code>application_rollback_compatible=false</code>。必须实际验证回退入口准确拒绝，不使用强制 schema 降级；如需旧版本恢复，另核对应备份、旧包和新隔离库，不能静默丢弃39期间新增记录。</li>
+</ol>
+<h4>保留的升级来源与待验状态</h4>
+<p>既有 <code>supported_upgrade_from_versions</code> 声明保持，新增准确受管 <code>0.2.0-dev.fpv16</code> / schema45 来源。FPV4 只是历史首验顺序，不缩小其他来源的支持边界。下表“包摘要已核”只指现存包字节与原 pack 记录一致，不表示该来源到 FPV17 已通过。</p>
+<p>以下保留历史 FPV9→FPV11/schema43 的独立入口；它不构成 FPV14 升级资格。原八项不含 Target 的未受管直运行 FPV9。FPV11 增加独立 <code>upgrade-direct-fpv9</code> 一次性入口，不把该前态解释为已签名 V2 或通用升级来源。管理员须提供仅含准确系统 ID、数据库名、两项运行二进制路径、旧服务与配置摘要及单个已审阅公网源站 IP 的根持有 <code>source-proof</code> 文件（常规文件、0600、单硬链接）。三个运行服务的进程路径与两项二进制摘要会在 check 中分别验证。先以验签目标控制器运行 <code>upgrade-direct-fpv9 --check --artifact ABSOLUTE_BUNDLE --source-proof ABSOLUTE_PROOF</code>，核对只读前态和目标身份，再按另行批准的操作执行不带 <code>--check</code> 的相同命令。该入口只接受本次固定 FPV9 commit/二进制/40 条迁移摘要与 FPV11/schema43 签名目标；三个旧程序路径覆盖项会留恢复副本并退役，只将旧配置中已放行且与来源配置相符的单个 IP 带入受管 unit，正文及来源凭据引用保持原位。旧 unit 中的 TLS 代理设置须与已准备的受管环境文件逐值相等；若 <code>/etc/x-insight/xinsight.env</code> 已存在则 check 拒绝，避免迁移后才发现配置冲突。跨越迁移屏障后以 <code>recover</code>/<code>resume</code> 续办，不把未签名旧程序列为可回滚目标；需要回到 schema40 时仅可在新库验证准确备份与旧程序。源码与本地测试尚未构成 Target 资格，原八项声明不变。</p>
+<p><code>source-proof</code> 的固定字段为 <code>schema_version</code>（<code>xinsight.unmanaged-fpv9-source.v1</code>）、<code>product_version</code>、<code>commit</code>、<code>database_name</code>、<code>system_identifier</code>、<code>egress_allow_cidr</code>、<code>server_binary</code>、<code>worker_binary</code> 和 <code>files</code>。<code>files</code> 必须恰含 <code>service_unit</code>、<code>feed_unit</code>、<code>source_facts_unit</code>、<code>service_content_dropin</code>、<code>service_delivery_dropin</code>、<code>feed_delivery_dropin</code>、<code>source_facts_credentials_dropin</code>、<code>source_facts_delivery_dropin</code>、<code>source_facts_config</code> 九项，每项为 <code>sha256:</code> 前缀的文件摘要。只读取摘要，不把密钥正文放入证明文件或回执；目标公钥信任库、受管 TLS 代理配置与签名包需由独立批准步骤准备。</p>
+<div class="table-scroll"><table><thead><tr><th>声明来源</th><th>数据库前态</th><th>当前证据及缺口</th></tr></thead><tbody><tr><td><code>0.2.0-dev.b2</code></td><td>35</td><td>包摘要已核；35→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.d1</code></td><td>36</td><td>包摘要已核；36→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.d2</code></td><td>36</td><td>包摘要已核；36→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.fpv1</code></td><td>36</td><td>包摘要已核；36→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.fpv2</code></td><td>36</td><td>包摘要已核；36→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.fpv3</code></td><td>36</td><td>包摘要已核；36→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.fpv4</code></td><td>36</td><td>包摘要已核，首验前态；36→44整包升级、check及恢复待验</td></tr><tr><td><code>0.2.0-dev.fpv5</code></td><td>37</td><td>尚未找到准确安装包；声明保留，取证及整包链待验</td></tr><tr><td><code>0.2.0-dev.fpv12</code></td><td>44</td><td>保留原受管来源及资格身份</td></tr><tr><td><code>0.2.0-dev.fpv13</code></td><td>44</td><td>历史升级来源；到 FPV17 的整包 check 待验</td></tr><tr><td><code>0.2.0-dev.fpv14</code></td><td>44</td><td>历史升级来源；到 FPV17 的整包 check 待验</td></tr><tr><td><code>0.2.0-dev.fpv15</code></td><td>44</td><td>FPV16 的历史升级前态；到 FPV17 的整包 check 待验</td></tr><tr><td><code>0.2.0-dev.fpv16</code></td><td>45</td><td>当前记录的受管 Target 前态；到 FPV17 的正式整包 check、Linux 资格和获批 Target 升级待验</td></tr><tr><td><code>0.2.0-dev.fpv11</code></td><td>43</td><td>正常受管 43→44：本地原状态迁移、恢复前向迁移已验；签名整包与 Linux CI 待验</td></tr></tbody></table></div>
+<p>FPV4首验包为 <code>xinsight-v0.2.0-dev.fpv4-0fa3977e7a51-linux-amd64.tar.gz</code>，SHA256 为 <code>5d9256b1d83ef0e6710f3b153f3816562149f7720f3b14c1434051f43241405d</code>。FPV6/schema38目前也缺准确安装包证据；它不在原八项声明内，本次不自动增列或删除任何既有身份。既有36/37/38→39数据库迁移测试与九个历史角色策略身份测试均不能替代目标 schema45 的整包链；35→45还须覆盖其真实前态。</p>
+<h4>FPV15 控制器主机配置边界</h4>
+<p>正文复制使用正式 workspace 数据库权限；原来源锁、身份／策略／配额复核保持，避免为只读清单申请额外 UPDATE 权限。旧正文保管切换由现有 owner 控制器维护流程完成，来源分页完整且全部仍可读取正文已复制后才切换；采集器不修改连接授权状态。新旧路径分别验证，历史 root 凭据认证不套用新增控制器网络前置条件。</p>
+<p>旧正文接管区分捕获覆盖与副本齐备：允许原样保留 UR 的 <code>unknown/capture_health_unknown</code>，但其他清单缺口仍阻止切换；全部未过期、有正文表示的历史修订必须有准确 XI 副本。暂时 <code>source_unavailable</code> 的完整正文沿原队列重试，部分正文、策略排除、配额与完整性失败不被跳过。接管不改变来源 coverage/gaps，也不声称已证明从未漏捕获。</p>
+<p>现有 controller 只增加 <code>/etc/systemd/system/xinsight-connector-controller.service.d</code>、<code>xinsight-source-facts.service.d</code> 和 <code>xinsight.service.d</code> 三个目录的写入权；目录在 controller 启动前检查并准备。目录级可写允许进程创建其他 drop-in，因此这是明确批准的权限扩大，不等同于内核只准写固定文件。产品仅生成和校验固定文件；机器绑定发布后须读取新 controller invocation 及准确 UR 单 IP 出站规则，原 worker 和正文密钥实际加载后方可恢复暂停来源。真实 Linux systemd namespace、原连接与未来项目仍待资格回执。</p>
+<p>准确 HTTPS IP origin 的初始网络准备由现有 root <code>connector-target-config set --unirouter-origin</code> 完成：从同一已确认 origin 生成 controller 和 Feed worker 各自的 <code>19-ur-target-network.conf</code>，仅开放 localhost 与该 <code>/32</code> 或 <code>/128</code>。写入前核对旧 20/40 出站规则和两份 19 文件没有冲突；同 origin 中断后可补齐，<code>validate</code> 与升级 <code>--check</code> 只读。root CLI reload 并重启 controller 后，以新 invocation 和两 unit 实际 <code>IPAddressAllow</code> 读回为成功门槛。暂停认证前必须有 controller 的有效规则，worker-last 前必须有 Feed worker 的有效规则；这两步不代表已经读取经济 feed，经济读取仍要核对精确来源和游标。已有受管升级从原 target 补齐网络文件，不要求冻结 FPV14 CLI 识别新文件。hostname target 只保留旧配置兼容，不取得精确 IP 出站资格。</p>
+<h4>历史 FPV14 凭据写入与恢复接续边界</h4>
+<p>root:xinsight 控制器无需新增 CAP_CHOWN。host 文件按 UID0、秘密精确0400/0600或公开0644、单链接、安全父目录和原子发布保护；GID记录实际值，systemd凭据的原生ACL/GID/只读挂载要求保持。机器凭据目录保持0700。</p>
+<p>当前重新授权的来源范围须匹配原配置、来源/项目/类别/版本、新同意、目的授权及authenticated preflight。恢复暂停只有精确 restore_requires_authorization 原因可通过原 resume/ack/CAS 接续；普通暂停、撤销、scope_changed 和其他未获新授权来源不恢复。既有消费者先在集合暂停时准备，匹配正文策略生效并实际加载原密钥后才能恢复集合。原stream/C游标、epoch/HWM、ID和历史保留；预算当前快照沿原resume语义重新刷新。预览、状态与check只读，不自动恢复旧来源。</p>
+<p>FPV13包及历史 FPV11→FPV12 fixture身份保留。原历史CI不替代本候选的真实Linux零cap回归、签名制品及获批FPV13→FPV14 check/Target验收。</p>
+<h4>Campaign package 的同版验收缺口</h4>
+<p>D/F的 pack、verify 和 hostctl 安装不调用 campaign authority。Campaign authority 的本地实现保留历史 schema23 factory，并允许编译期 min=max 的精确当前代际（本候选为45）；输入清单不能自行定义当前代际或扩张范围。历史schema20仍仅可解析，不获得执行权。签名清单、M0、N1、component scope、运行版本与执行文件的精确绑定继续适用，23与45的身份不能混用。历史包、样例、签名和摘要保持原字节。本地一次性签名夹具及离线校验不代表真实CLI、同版签名制品到schema45 PostgreSQL的正式导入已获资格。</p>
+<p>这个缺口属于原第三批 P4/P6：签名包中同版 campaign consumer/verifier 的身份派生、与冻结 N1及UR component scope 的绑定、正式导入及负向拒绝须有对应证据。历史整链测试通过、普通 Feed/J1通过或本次安装准备，均不关闭该项；本说明不将其降为可选功能，也不宣称整体交付完成。通用 <code>scripts/verify-signed-release.sh ARTIFACT TRUST_STORE ABSOLUTE_DESTINATION --profile=development-d</code> 显式选择 D 的版本、手册、矩阵和 schema contract；默认仍为 rc13。它保留完整签名、campaign authority、五个二进制、WebUI、手册和主机模板检查，profile、元数据、工具链或 payload 不一致均拒绝。离线入口夹具通过只证明控制流与检查，不代替同版真实签名包及 schema45 PostgreSQL 正式导入资格，不能跳过失败宣称完整验包通过。</p>
+<p>以下保留 FPV5/6 当时的增量说明；其中历史前态、授权格式和待验状态不等于 FPV14 当前环境事实。</p>
+<h3>FPV5/schema37候选增量</h3>
+<p>schema37仅扩展内部合成资源离线授权，不改D金额或预算语义。B v2可验证历史35/36授权；实际37安装仍须新37目标绑定。D离线接受36/37格式并核对实际数据库schema，旧36授权不能用于37库导入。原v1/v2字段与摘要保持。36→37、原权限、A/B/D数据和复核的保留及正式安装恢复仍以本候选实际证据为准；当前候选配置不等于发行或验收通过。资源管理入口见[工作台范围管理](admin/10-workbench-access.md#隔离环境合成资源记录)。</p>
+<h3>FPV6/schema38：资源依据进入复核</h3>
+<p>系统与数据中的资源卡片可直接选择具名修订作为支持、反证或背景，经服务端预览后进入原Case/Finding/Review。历史依据保留完整报告方/目标范围、请求、修订/hash及来源声明，不依赖短期reading，不自动替换为后续修订；记录已撤回不等于导入许可或人员授权撤销。资源声明仍不能证明真实内容、转换效果或外发许可。</p>
+<p>复核、队列、人工核验结束、封存与续办沿原流程；可只采用资源，也可与Evidence/Gap混合。在线操作按报告方资源权限及目标实际profile/项目权限检查；没有新的自授权入口。备份恢复核历史引用、原记录hash及动作链，即使历史复核者现已撤权仍可恢复；恢复后的读取按当前权限拒绝。原无资源命令/basis/封存字节保持，含资源的basis/pack分别使用v2/v4。</p>
+<p>正式ASUS前态仍为FPV4/schema36；schema37只是本地已接受实现的额外迁移前态。38候选同时检查36→38和37→38，旧导入授权须重新绑定实际schema与目标。当前源码/Local证据不代表正式安装或完整F/PX/V已通过。</p>
+</section>
+      <section class="chapter" aria-labelledby="workbench-access">
+<h2 id="workbench-access">工作台范围授权（后继开发候选）</h2>
+<p>本入口补充正式本地账户配置与工作台的来源/项目授权操作；尚未表示已发行或已有客户部署。沿用现有单Role、<code>workbench_access_grants</code>和读写隔离，未新增IAM或SSO。</p>
+<p>账户由主机root使用<code>xinsightctl access</code>的受支持TTY流程配置到<code>/etc/x-insight/access-accounts.json</code>。费用→执行→资源→复核→返回使用<code>xinsight.local-accounts.v3</code>的<code>workbench_investigation_reviewer</code>；只读使用<code>workbench_investigation_reader</code>。旧<code>investigator</code>不自动取得工作台权限；用途修订角色也不自动取得复核写权。账户必须启用，grant只补来源/项目/字段范围，不能扩张角色能力。</p>
+<p>主机root准备0600、单硬链接、非symlink的绝对路径JSON文件。下面ID均是示例，必须替换为实际稳定subject、已登记source和新grant UUID；项目用实际引用，只有有意授全部项目才写<code>&quot;*&quot;</code>。省略、null、空项目不会自动扩大范围。JSON字段名必须使用下文精确的小写拼写；大小写别名、语义重复和未知字段均拒绝。</p>
+<p>下面是“可看整个来源项目预算”的grant，只授予预算能力，不授予全项目明细：</p>
+<pre><code>{
+  &quot;schema_version&quot;: &quot;xinsight.workbench-grant-change.v1&quot;,
+  &quot;action&quot;: &quot;create&quot;,
+  &quot;grant_id&quot;: &quot;11111111-1111-1111-1111-111111111111&quot;,
+  &quot;subject_id&quot;: &quot;xs_1111111111111111&quot;,
+  &quot;source_system_id&quot;: &quot;22222222-2222-2222-2222-222222222222&quot;,
+  &quot;source_project_ref&quot;: &quot;project-42&quot;,
+  &quot;cost_project_ref&quot;: &quot;*&quot;,
+  &quot;expected_revision&quot;: 0,
+  &quot;capabilities&quot;: [&quot;budget_definition&quot;, &quot;budget_summary&quot;, &quot;budget_alert&quot;]
+}</code></pre>
+<pre><code>sudo xinsightctl workbench-access apply --file /approved/grant.json --check
+sudo xinsightctl workbench-access apply --file /approved/grant.json
+sudo xinsightctl workbench-access show --grant-id 11111111-1111-1111-1111-111111111111</code></pre>
+<p>UniRouter 的来源项目引用使用 <code>project-&lt;project_id&gt;</code>（如 <code>project-42</code>），不是裸数字。预算是来源项目的全周期快照，没有可证明的费用项目分摊；预算权限要求 <code>cost_project_ref:&quot;*&quot;</code>，并用准确的 <code>source_project_ref</code> 限定来源项目。如果同一人同时需要“完整来源预算”和“仅某费用项目的汇总/明细”，保留上面的预算专用grant，再使用另一个ID配置下面的明细专用grant（费用项目引用须替换成实际已有引用，不能从来源项目编号推定）：</p>
+<pre><code>{
+  &quot;schema_version&quot;: &quot;xinsight.workbench-grant-change.v1&quot;,
+  &quot;action&quot;: &quot;create&quot;,
+  &quot;grant_id&quot;: &quot;33333333-3333-3333-3333-333333333333&quot;,
+  &quot;subject_id&quot;: &quot;xs_1111111111111111&quot;,
+  &quot;source_system_id&quot;: &quot;22222222-2222-2222-2222-222222222222&quot;,
+  &quot;source_project_ref&quot;: &quot;project-42&quot;,
+  &quot;cost_project_ref&quot;: &quot;replace-with-actual-cost-project-ref&quot;,
+  &quot;expected_revision&quot;: 0,
+  &quot;capabilities&quot;: [&quot;summary&quot;, &quot;details&quot;]
+}</code></pre>
+<p>两个grant使用不同文件，分别执行上述check/apply/show。预算专用grant的all-cost只配预算能力；明细grant仅在指定费用项目授予summary/details。二者仍同时受同一账户role限制。</p>
+<p><strong>同一用户的有效grant按能力和范围取并集，窄grant不能限制另一个宽grant。</strong> 如果已经照旧示例授予<code>summary/details</code>且<code>cost_project_ref:&quot;*&quot;</code>，添加窄grant仍会保留全来源项目明细权限。应先show该宽grant取得当前revision，再以<code>replace</code>、该ID及准确原范围，将其完整capabilities改成预算专用列表；或明确revoke不再需要的宽grant。其他仍覆盖同一明细的宽grant也须按实际权限需求分别处理，然后再增加窄的明细grant。不要把新建窄grant当成deny规则，也不能把受限费用明细当作整个来源预算。</p>
+<p><code>--check</code>只读当前账户、source、grant范围冲突和revision，不创建操作文件、不修改grant/audit。它不是锁定后续执行的批准：apply重新检查当前状态。使用当前安装的受保护admin DSN；命令不接收DSN、密码或普通会话凭据，普通用户不能调用此运维入口。</p>
+<p><code>create</code>要求revision0和不存在的grant ID。<code>replace</code>要求show得到的当前revision；其显式subject/source/project和完整capabilities列表替代该grant配置，不做追加式默认扩权。可用能力还包括<code>purpose_read</code>和<code>purpose_review</code>，但动作仍同时受账户role约束；辅助字段能力必须与至少一种摘要/详情/覆盖/筛选/运行/资源/预算能力一起授予。未知、重复能力及重复/未知JSON字段拒绝。</p>
+<p>撤销时使用<code>action:&quot;revoke&quot;</code>、当前revision、准确原subject/source/project和<code>capabilities:[]</code>。撤销保留旧grant身份及历史，将active设false并推进revision；即使账户已禁用/移除也可撤销。恢复已撤销权限需显式replace，不能靠重放旧请求。不要将客户提供的JSON直接以root运行，运维配置者须核对精确范围。</p>
+<p>读者与复核写事务继续使用原grant共享锁；配置变更按同一表锁→advisory锁顺序等待其结束，再检查并更新。变更、revision及<code>access_audit_records</code>中的root操作者、前后状态在同一事务提交；审计失败、取消、冲突均不部分生效。重试前show当前状态并重新准备expected_revision，不跳过并发检查。原授权状态和审计沿既有备份/恢复，不额外保存第二份权限状态。<code>--check</code>不保证来源正在供数或角色的全部客户链已通过。</p>
+<h3>普通新账户：资源与执行关联复核</h3>
+<p>以下是已批准安装上的正式配置路径，使用现有账户文件和 CLI，不需要体验专用 helper 或手工 SQL。账户配置、权限范围和服务重启须由获准管理员执行；以下示例不构成扩权批准。数据前提是来源、经济执行、运行请求及同请求资源已经通过各自正式导入路径登记，配置账户本身不会生成这些数据。</p>
+<ol>
+<li>在目标主机的受保护交互终端，对每个人分别运行 <code>xinsightctl access generate-subject</code> 和 <code>xinsightctl access hash-password</code>。subject 是稳定身份；password 仅从 TTY 隐藏读取，hash 也只能进入 root-only 配置编辑过程，不能放入 argv、环境、日志或聊天。CLI 不提供 <code>access create</code> 或写回账户文件命令。</li>
+<li>管理员保留现有账户，在 <code>/etc/x-insight/access-accounts.json</code> 的账户集合中追加人员条目，使用 <code>schema_version:&quot;xinsight.local-accounts.v3&quot;</code>。每个条目显式提供 <code>subject_id</code>、规范化 <code>username</code>、<code>role</code>、<code>disabled:false</code> 和有效 <code>password_hash</code>；复核人角色为 <code>workbench_investigation_reviewer</code>，读者为 <code>workbench_investigation_reader</code>。账户保持 root 所有、0400/0600、普通单硬链接文件；不得用全新示例覆盖现有人员。</li>
+<li>执行 <code>sudo /opt/x-insight/current/bin/xinsightctl access validate --file /etc/x-insight/access-accounts.json</code>。输出只有 schema、总数、各角色数及 disabled 数；可用 <code>workbench_investigation_reviewer_count</code> 与 <code>workbench_investigation_reader_count</code> 核对角色，没有 username、subject 或 hash。计数包含禁用人员，必须结合 <code>disabled_count</code> 和受保护原配置核对启用状态。校验不写文件、不加载服务；按既有配置流程原子替换并在已批准窗口重启后，新人员才能登录，原内存 Session 会失效。</li>
+<li>对每位人员分别准备下面两类精确 grant 文件。目标来源与资源报告方可能不同，不能只配置其中一侧。所有 UUID、subject 和项目都是示例，替换为已登记的实际身份；每个人、每条 grant 用不同 ID。目标来源例子有意允许 <code>project-42</code> 中全部费用项目；需要费用项目限制时用实际 cost_project_ref，不从来源项目编号推导。报告方的 resource grant 用其实际来源项目，<code>*</code> 表示该项目内不按费用项目过滤。</li>
+</ol>
+<p>目标执行来源 grant（费用→执行→运行请求→资源，并保留执行关联）：</p>
+<pre><code>{
+  &quot;schema_version&quot;: &quot;xinsight.workbench-grant-change.v1&quot;,
+  &quot;action&quot;: &quot;create&quot;,
+  &quot;grant_id&quot;: &quot;44444444-4444-4444-8444-444444444444&quot;,
+  &quot;subject_id&quot;: &quot;xs_1111111111111111&quot;,
+  &quot;source_system_id&quot;: &quot;22222222-2222-4222-8222-222222222222&quot;,
+  &quot;source_project_ref&quot;: &quot;project-42&quot;,
+  &quot;cost_project_ref&quot;: &quot;*&quot;,
+  &quot;expected_revision&quot;: 0,
+  &quot;capabilities&quot;: [&quot;summary&quot;, &quot;details&quot;, &quot;coverage&quot;, &quot;preferences&quot;, &quot;source_runtime&quot;, &quot;source_context&quot;, &quot;source_identity&quot;, &quot;source_cost&quot;]
+}</code></pre>
+<p>资源报告方 grant：</p>
+<pre><code>{
+  &quot;schema_version&quot;: &quot;xinsight.workbench-grant-change.v1&quot;,
+  &quot;action&quot;: &quot;create&quot;,
+  &quot;grant_id&quot;: &quot;55555555-5555-4555-8555-555555555555&quot;,
+  &quot;subject_id&quot;: &quot;xs_1111111111111111&quot;,
+  &quot;source_system_id&quot;: &quot;33333333-3333-4333-8333-333333333333&quot;,
+  &quot;source_project_ref&quot;: &quot;project-42&quot;,
+  &quot;cost_project_ref&quot;: &quot;*&quot;,
+  &quot;expected_revision&quot;: 0,
+  &quot;capabilities&quot;: [&quot;resource&quot;]
+}</code></pre>
+<p>三个 source 字段授权会增加该人员可读的来源上下文、身份和费用范围，不是默认初始化项。应明确确认其用途和精确范围；普通资源复核带执行关联须完整字段，缺失时 preview/Create 均拒绝。若只批准资源复核，可由用户显式取消“同时保留本次执行阅读关联”，不会保存该执行关联；不能把这一结果当成带执行关联的同一功能验收。C 内容来源的合法精确覆盖例外保持，必须覆盖每个 execution/as_of；本示例不授内容读取或正文查看权限。能读取已保存案件的 reader 同样须满足案件的来源字段与资源双方分类；reader 角色不会因字段 grant 获得复核写权。</p>
+<p>每个文件须 root 所有、0600、单硬链接且非 symlink，分别执行：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl workbench-access apply --file /approved/target-grant.json --check
+sudo /opt/x-insight/current/bin/xinsightctl workbench-access apply --file /approved/target-grant.json
+sudo /opt/x-insight/current/bin/xinsightctl workbench-access show --grant-id 44444444-4444-4444-8444-444444444444
+sudo /opt/x-insight/current/bin/xinsightctl workbench-access apply --file /approved/reporter-grant.json --check
+sudo /opt/x-insight/current/bin/xinsightctl workbench-access apply --file /approved/reporter-grant.json
+sudo /opt/x-insight/current/bin/xinsightctl workbench-access show --grant-id 55555555-5555-4555-8555-555555555555</code></pre>
+<p>已有 grant 不用 create 覆盖：先 show 当前 revision，按原范围和批准的完整 capabilities 准备 replace，再 check/apply/show。本文 grant v1 例子不用于替换含 C 内容权限的 v2 grant；该类变更必须保留并明确核对 <code>allow_content</code> 与 <code>allowed_content_purposes</code>，不能隐式清除或追加。配置变更使旧 reading 失效，人员应登录并建立当前新阅读；不能以旧页面反复提交来验证新权限。</p>
+<p>普通人员验收沿 HTTPS UI：reviewer 从费用中精确执行进入同请求资源，选定资源并保留执行关联，preview 后确认创建；核案件中的资源、execution/as_of 与复核历史。reader 应能 GET 同案件和历史，但写复核仍被拒绝。经批准重启后重新登录，再核持久关联与历史。以上 CLI 的 check/apply/show 与角色计数只证明配置步骤，不替代真实 PG、普通用户整链及重启验收；源未供数、资源双方范围不符或阅读过期须分别处理，不通过自动补权限消除错误。</p>
+<h3>隔离环境合成资源记录</h3>
+<p>schema37新增受限<code>xinsight-importer import-synthetic-resources --authorization-file /绝对路径/授权.json --target-ref 精确目标 [--check]</code>。仅接收<code>synthetic:true</code>的内部资源元数据，不执行资源访问、不授予模型或真实资源权限，也不开放生产I-03。原UR <code>import-source-facts</code>不接受此profile。</p>
+<p>管理员沿原<code>source-facts offline-register</code>、<code>offline-enable</code>、<code>offline-status</code>、<code>offline-disable</code>、<code>offline-revoke</code>管理同一登记；登记默认disabled，enable需当前revision。授权文件和批文件须root拥有、0400/0600、无符号/硬链接，秘密不入报告。入口使用既有importer DSN；普通reader/workspace不能登记或导入。</p>
+<p>授权版本<code>xinsight.source-facts-offline-authorization.v3</code>、profile <code>xinsight.synthetic-resource-access.v1</code>，保留原授权字段名；三个UR协议字段必须明确为空，不能把内部报告者标为UR。绑定本机ID摘要、安装版本/commit、schema37、实际数据库名/OID/cluster system identifier、完整报告方和完整目标方来源/instance/org/project、批摘要和绝对路径、操作ID及最长两小时有效期，无通配范围。新字段为<code>target_database_name</code>、<code>target_database_oid</code>、<code>target_database_system_id</code>、<code>target_source_system_id</code>、<code>target_source_instance</code>、<code>target_org_id</code>、<code>target_project_id</code>。管理员应从实际连接读取数据库身份；导入端重新核对。<code>source_schema_sha256</code>绑定发行源码的<code>internal/sourcefacts/contract/resource-access.schema.json</code>。</p>
+<p>批格式为<code>{&quot;schema_version&quot;:&quot;xinsight.synthetic-resource-bundle.v1&quot;,&quot;records&quot;:[…]}</code>，最多50条且小于现有离线批大小限制。记录使用<code>xinsight.resource-access.internal.v1</code>；必须精确使用字段名，包含<code>synthetic:true</code>与显式<code>withdrawn</code>。报告、目标、修订和相邻hash按既有资源链校验；未知内容使用合同允许的unknown，缺前驱保留为缺口，不补造前驱。非法项使整批、操作绑定及回执一起回滚；check不预留操作或写入数据。相同操作重放仍检查当前授权，成功回执保持不变。</p>
+<p>资源查看继续同时要求报告方resource范围和目标方当前范围。导入许可撤销只阻止后续导入；人员撤权阻止阅读；记录撤回用来源新修订表达，三者不能混用。备份恢复保留记录、链和人工工作并暂停导入授权；恢复到新数据库后必须签发新的目标绑定与授权ID，旧文件不能仅enable重新使用。</p>
+<p>原内部资格入口仍只接受既定测试库名；本入口不会放宽它。旧记录读取保留原解码兼容，新写入使用严格字段校验，避免历史受支持数据因字段规范收紧而无法恢复。完整安装、浏览器链及恢复验收以本次候选实际运行证据为准。</p>
+<h4>资源依据的后续变化</h4>
+<p>复核保留当时明确采用的资源修订及其原始来源摘要。资源后来新增修订或声明撤回时，案件的复核与跟进区域、调查队列会显示当前提示，并进入“依据变化待复核”判断；不会自动替换依据、重写原结论或重开跟进。新修订的双方权限不足时，只提示当前状态不可用，不展示新修订编号或摘要。历史封存仍保留当时采用的内容。</p>
+</section>
+      <section class="chapter" aria-labelledby="investigation-workflow">
+<h2 id="investigation-workflow">执行调查工作流</h2>
+<h3>登录与 Session</h3>
+<p>只从已批准的单一内部 HTTPS origin 打开 X-Insight。登录表单只接受管理员离线分配的 username/password；浏览器和服务端审计都不应显示密码、hash、Session cookie 或 CSRF token。 登录成功会建立新的产品 Session，并使同一浏览器提交的旧 Session 失效。</p>
+<p>Session 的 idle timeout 为 30 分钟、absolute timeout 为 8 小时；服务进程重启会使全部 Session 失效。结束调查时使用产品内“退出登录”，不要只关闭标签页。<code>investigator</code> 只能访问 Evidence；<code>operator</code> 可在“会话管理”查看最小化 Session metadata，并按非 secret <code>session_ref</code> 撤销 Session。该页面不是账户、密码、角色、数据库或 worker 管理界面。</p>
+<p>登录页若运行在 HTTP、跨 origin、证书/hostname 未验证的入口，必须停止；不要关闭浏览器 cookie 安全属性，也不要把 SSH HTTP tunnel 或代理登录页当作 X-Insight 产品登录。</p>
+<h3>导航与页面层级</h3>
+<p>桌面左侧导航按“总览”“使用与目的”“运行与执行”“安全与复核”“费用与使用”“来源与覆盖”组织。 当前角色与字段授权决定实际可见入口；无费用权限的运行读者不会因此获得费用页。窄屏使用页首“菜单”按钮打开抽屉；选择页面后抽屉自动关闭。 不要把当前登录角色、<code>按当前授权范围展示资料</code> 或“来源/导入/投影/因果”边界当成可关闭的装饰。</p>
+<p>“运行态势”不是 MaaS 指标副本。先固定时间与来源范围，再从开放 Alert、Evidence Gap、四个独立 覆盖口径和来源声明的 Runtime Path 下钻。execution/Gap/coverage 使用固定 Evidence 快照； Connector trust/checkpoint 和 Case/Saved View 是当前工作区状态。Alert 的 observed 时间受窗口约束， 但当前 state 不等于历史状态重建。没有关联 execution 时应进入 Discovery 或关联 Case，不得用另一 条 execution 的 Trace 补位。</p>
+<h3>数据准备</h3>
+<p>首次产品演示优先使用仓库 fixture。真实现场元数据须经客户批准；正文读取默认关闭，仅在来源显式启用、绑定核验通过且当前人员具备范围及 human_review 用途授权时开放。元数据许可不自动授予正文权限。UniRouter/LiteLLM pull workers 虽已作为独立 dormant service 打包，但没有当前 Target activation receipt 时不得启动；受控 sidecar import 仍须走下述 manifest/preflight。 OpenInference 只允许由产品 owner/Codex 在命名非生产目标执行 exact bounded-offline import。 每次必须有 root-owned、最多两小时、绑定 target/build/bundle/operation/scope 的授权 manifest； bundle 必须是 metadata-only 且不含 prompt/response attribute。没有该授权时，命令在 bundle、 credential 和数据库之前 fail closed。它不是 live collector，也不授权 Feed 或 Production。</p>
+<p>内部真实开发数据或客户批准的 sanitized metadata 在任何持久化前，必须先运行不写数据库的 限定预检：</p>
+<pre><code>/opt/x-insight/current/bin/xinsight-importer unirouter preflight-sanitized \
+  --snapshot /approved/path/sanitized-snapshot.json \
+  --approval-manifest /approved/path/approval-manifest.json \
+  --max-request-ids 20 \
+  --max-events 200</code></pre>
+<p>只有 <code>status=pass</code> 才能进入后续导入。预检会读取并计算真实 approval manifest 的 SHA-256， 核对 snapshot v2 中声明的 hash、source instance、批准 request/scenario、批次上限、每个 request 的 org-bound source row、单一 org、counts、artifact hash、source ref 与 payload policy，并对 明显的 email、phone、IP、URL、credential 和未批准自由文本输出不含 metadata key 或 artifact 字段原值的固定 finding path/code。JSON report 不保存输入路径；文件系统失败的 stderr 可能 包含 operator 提供的精确路径，只能留在私有执行日志。它是额外的 fail-closed 护栏，不等于 通用 DLP，也不能替代精确数据授权和私下逐字段复核。<code>source_event_hash</code> 仅检查为 producer-declared 64-hex；X-Insight 不把它表述成本地重算结果。</p>
+<pre><code>sudo env XINSIGHT_IMPORTER_POSTGRES_DSN_FILE=/etc/x-insight/database/current/postgres-importer.dsn \
+  /opt/x-insight/current/bin/xinsight-importer unirouter gate-a-check \
+  --snapshot /approved/path/sanitized-snapshot.json \
+  --approval-manifest /approved/path/approval-manifest.json \
+  --schema /opt/x-insight/current/schemas/m0/evidence-event.schema.json \
+  --receipt-schema /opt/x-insight/current/schemas/integration/import-receipt.schema.json \
+  --persist \
+  --receipt-output /approved/path/import-receipt.json</code></pre>
+<p>输入与 receipt 路径必须是逐一批准的明确路径。重复导入相同 snapshot 应保持幂等；失败或 quarantine 不能被描述成已持久化成功。<code>--receipt-output</code> 只属于 <code>gate-a-check</code>；该路径必须 尚不存在，工具拒绝覆盖既有 receipt。</p>
+<p>sanitized batch 的 <code>gate-a-check</code> 必须携带同一 manifest。工具会在同一进程先完成预检，再将 实际 import bytes 的 SHA-256 与预检 hash 比较；两次读取间发生任何 byte 变化都会在持久化前 停止。省略 manifest 的既有兼容路径不能用于本流程，也不能产生 internal-real 验证结论。 只有本次实际 manifest preflight 通过，持久化 provenance 才能标为 <code>operator_approved</code>；snapshot 自报非空 hash/exchange ID 不足以提升证明等级。</p>
+<h3>搜索 execution</h3>
+<p>在 <code>/executions</code> 使用 request ID、request ID prefix、source、outcome、has gaps 和时间范围。 默认窗口为服务端 <code>as_of</code> 向前 24 小时，最大跨度 31 天，每页最多 100。搜索结果显示 proof class、freshness、事件数和 gap 数；它们是固定 <code>as_of</code> 下的视图。</p>
+<p>Saved View 创建位于折叠的次级动作中，只保存筛选与呈现方式。结果在紧凑桌面或移动宽度会从表格 改为带字段标签的卡片，但 source、outcome、Evidence 状态、payload 和 Gap 语义不变；无需横向 拖动页面才能读取完整记录。<code>0 无已记录缺口</code> 是当前快照的中性陈述，不是来源完整性保证。</p>
+<p>如果没有结果：先核对时间范围、source 和 proof class，再核对 import receipt 与 readiness。 不要假设“无结果”表示 UniRouter 没有执行。</p>
+<h3>阅读 Story、DAG 与 Chronology</h3>
+<p>先读 outcome-first Story：谁/哪个系统发起、做了什么、来源明确声明经过哪些节点、在哪里结束， 以及哪些结论受 Gap 限制。再检查 causal DAG；边只能来自 API <code>edges[]</code> 与来源 parent 声明， unresolved parent/orphan 必须可见。Chronology 只回答时间顺序，不把相邻 node 画成因果。</p>
+<p>Story 中“发起者—动作—经过系统—终点”四步摘要只使用 Evidence identity、request identity 和 来源声明父子边。如果发起者、完整路径或终态关系未声明，对应步骤显示未知/未解析；不要把该提示 解释为系统故障。桌面 DAG 使用完整内容宽度，小屏使用等价的顺序关系列表，不会为了塞入 SVG 而缩小到不可读。两种呈现都选择同一个 Evidence node，并驱动同一详情面板。</p>
+<p>若来源提供同一 exact source/org/project/trace 的多个 Span，<code>Trace Journey</code> 会跨 M0 execution 显示来源声明路径。每个节点仍保留自己的 execution/event/hash；点击跨 execution 节点会进入它 自己的 fixed <code>as_of</code> Evidence。只有唯一可解析 <code>parent_span_id</code> 才连边；同 trace、时间接近或 相同模型都不足以证明因果；未解析节点之间显示断点而不是箭头，来源声明形成 cycle 时完整性 失败。<code>source_timeline_complete=false</code> 表示 bounded export 外仍可能有未知 Span，即使可见 parent 全部解析也不能写成完整业务链路。</p>
+<p>四个 completeness 轴分别是 Source、Import、Projection、Causal。任一为 partial/unknown 时， 不能用其他轴的 current 状态替代。freshness、Cursor、high-watermark、retry 与 ingestion time 属于运行状态，不进入 M0 hash 或 event-linked provenance。</p>
+<p>四轴完整且没有记录 Gap 时，“证据覆盖与完整性”默认折叠，只显示阶段计数和四轴结论；存在 Gap 或任一轴未闭合时默认展开。折叠不删除证据，也不扩大完整性声明。</p>
+<h3>打开 detail 与 timeline</h3>
+<p>选择 execution 后先看摘要：request/source/outcome、事件/gap 数、payload capture mode 和 freshness。timeline 按 <code>effective_at</code> 稳定排序；时间异常与 unresolved declared parent 单独标记。 相邻 node 不是自动因果。</p>
+<p>分页继续使用服务端返回的 opaque cursor 和同一个 <code>as_of</code>。cursor 过期时回到搜索重新建立 快照，不拼接或修改 cursor。</p>
+<h3>检查 selected node</h3>
+<p>选择一个 timeline node，依次核对：</p>
+<ol>
+<li>event type、stage、severity 和多个时间；</li>
+<li>correlation、identity、capability、decision、usage、outcome、payload policy；</li>
+<li>每个 field group 的 provenance 标签；</li>
+<li>source system/version、schema、source event/ref 和 hashes；</li>
+<li>declared parent 是否 resolved，以及是否存在对应 capture gap。</li>
+</ol>
+<p>执行的内容页先显示已授权清单；用户选择“读取并核验正文”后，服务端重查当前权限和准确来源绑定，核验保存字节的长度及摘要后展示。打开事件节点不会自动读取正文。无权、未采集、过期、删除或完整性失败分别显示状态，不用缺失正文推断执行事实；撤权后不能沿用旧阅读或迟到响应继续显示正文。</p>
+<p>Case 引用卡片默认显示缩短的技术引用；展开后才能查看并复制完整 event hash。缩短只改变视觉 层级，不改变 seal 输入、citation snapshot 或 Evidence identity。</p>
+<h3>写结论</h3>
+<p>调查记录至少写 execution ID、固定 <code>as_of</code>、source/proof class、关键 event IDs、provenance、 gap/freshness、观察事实和未知项。结论用“证据显示”“来源声明”“X-Insight 派生”“当前未知” 区分，不把未解析 parent 或缺失 node 写成已证实串谋、故障原因或策略绕过。</p>
+<h3>Case、Finding 与 Evidence Pack</h3>
+<p>把需要共同解释的 execution 加入 Case，再创建 Finding。每个 Finding 明确选择 <code>evidence_backed</code>、<code>deterministic_derived</code>、<code>hypothesis</code> 或 <code>unknown</code>，并逐条关联支持、反驳、 上下文 Evidence 和限制/阻断 Gap。Case-level 引用与 Finding-level 引用不同，不应混用。</p>
+<p>封存前核对 title/statement、relation、Evidence ID/hash snapshot、Gap affected claim、Annotation 和 Alert link。seal 后生成固定 revision/digest；JSON 与 print-first HTML 应按相同 snapshot 导出。用户输入会原样进入 pack，禁止粘贴 raw prompt、credential 或未经批准的来源内容。</p>
+<p>“添加 Finding”默认折叠，避免编辑控件与已保存结论竞争。展开编辑器仍必须选择声明分类；产品 不会把手工陈述静默提升为 <code>evidence_backed</code> 或 <code>deterministic_derived</code>。</p>
+<h3>Session、Compare 与 Saved View</h3>
+<p>只有来源提供稳定 Session/Thread identity 时才展示 Session；时间接近不创建会话。Compare 必须 使用同一固定 <code>as_of</code>，版本/用量/时延/完整性字段中的 <code>Missing</code>、<code>Partial</code> 与 <code>0</code> 分开解释。 Saved View 只保存有界 filters 与 presentation，不保存结果快照；重新打开时仍要核对新的 <code>as_of</code> 与 freshness。</p>
+<h3>Connector 信任与交付状态</h3>
+<p>Connector 页面分三层读取：来源契约（source、Manifest、Fidelity、payload、idempotency）、 交付运行状态（worker、import、page/commit/duplicate-noop）和 Checkpoint 摘要（只显示 digest/ 是否存在，不暴露可变 cursor）。来源契约可兼容不代表 worker 正在运行；worker degraded 也不 改写历史 M0 Evidence。Cursor、high-watermark、page time、retry 与 ingestion time 只属于 checkpoint/status 或非事件关联回执。</p>
+<h3>Discovery 假设</h3>
+<p>Coverage、process、topic、anomaly、coalition 与 authority-drift 输出只用于发现调查方向。先看 method version、sample/minimum、support score、Evidence/execution refs、limitations；样本不足时 必须显示 abstention。调查员可以把候选写入 Finding，但必须保留其假设分类，不能自动关闭 Gap、 改变路由或触发 enforcement。</p>
+</section>
+      <section class="chapter" aria-labelledby="provenance-gaps">
+<h2 id="provenance-gaps">来源、溯源与采集缺口</h2>
+<h3>七种字段状态</h3>
+<div class="table-scroll"><table><thead><tr><th>标签</th><th>含义</th><th>正确说法</th></tr></thead><tbody><tr><td><code>direct</code></td><td>值由规范化来源直接提供</td><td>“来源事件直接提供该值”</td></tr><tr><td><code>derived</code></td><td>X-Insight 由已保存字段按确定规则派生</td><td>“X-Insight 从已记录字段派生”</td></tr><tr><td><code>declared</code></td><td>来源声明该关系/属性，尚非独立证明</td><td>“来源声明 parent/policy”</td></tr><tr><td><code>suppressed</code></td><td>按批准策略有意不展示或不捕获</td><td>“该字段被策略抑制”</td></tr><tr><td><code>gap</code></td><td>已存在具体缺失/不可获得证据</td><td>“存在 capture gap”</td></tr><tr><td><code>unknown</code></td><td>当前证据不能确定</td><td>“当前未知”</td></tr><tr><td><code>not_applicable</code></td><td>该 field group 对此事件不适用</td><td>“此事件不适用该字段组”</td></tr></tbody></table></div>
+<p><code>suppressed</code> 不等于值不存在，<code>gap</code> 不等于系统失败，<code>unknown</code> 不等于默认允许或拒绝， <code>not_applicable</code> 也不能用于隐藏本应存在的证据。</p>
+<h3>Source inspection</h3>
+<p>Source 面板用于核对 <code>source_system_id</code>、source type/display name/version、adapter manifest ID、 schema version、source event identity/ref、event hash、source event hash 和 fidelity。预留的 source type/schema 字段只是兼容性信息，不证明存在可运行 adapter。</p>
+<p>hash 证明保存字节或规范化事件的一致性，不证明发布者真实性、语义完整性或因果关系；发布 artifact 的真实性由独立 Ed25519 trust/signature 链负责。</p>
+<h3>Capture gap</h3>
+<p>Gap 面板区分 confirmed gap 与 candidate gap，并显示 scope、source ref、时间和可用原因。 常见类型包括 <code>permission_denied</code>、<code>not_available_from_source</code>、<code>not_instrumented</code>、 <code>sampled_out</code>、<code>retention_expired</code>。candidate 只能作为排查方向，不能升级成确认事实。</p>
+<p><code>freshness.sync_state=gap</code> 或 <code>timeline_complete=false</code> 表示当前 timeline 不能作为完整过程。此时 可报告已观察事实，但必须同时报告缺口和未知，不得补画“最可能”的 node。</p>
+<h3>Proof class</h3>
+<p><code>synthetic_fixture</code> 只证明产品路径和预期 UI/API 行为。批准 sanitized metadata 可证明特定现场 输入经过受控路径被保存和读取，但不自动成为 External integration 或 Production verified。 状态提升必须有准确 target、contract、artifact 和独立记录。</p>
+</section>
+    </main>
+  </div>
+  <footer>
+    <span>X-Insight 0.2.0-dev.fpv17</span>
+    <span>0.2.0-dev.fpv17/manual-r1</span>
+    <span>生成源 sha256:1ac0e7603c648b9ad883642baebd9c285ca509203826475b89267eacb903e247</span>
+  </footer>
+</body>
+</html>

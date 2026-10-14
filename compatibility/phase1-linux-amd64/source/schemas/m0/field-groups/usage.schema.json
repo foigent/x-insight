@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Usage Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "prompt_tokens": { "type": "integer", "minimum": 0 },
+    "completion_tokens": { "type": "integer", "minimum": 0 },
+    "total_tokens": { "type": "integer", "minimum": 0 },
+    "cost_cents": { "type": "integer", "minimum": 0 },
+    "latency_ms": { "type": "integer", "minimum": 0 },
+    "ttft_ms": { "type": "integer", "minimum": 0 },
+    "usage_source": { "type": "string" },
+    "usage_confidence": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}
