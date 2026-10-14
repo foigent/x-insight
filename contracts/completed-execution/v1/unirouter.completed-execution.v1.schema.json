@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unirouter.local/contracts/unirouter.completed-execution.v1.schema.json",
+  "title": "UniRouter completed execution V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "org_id",
+    "project_id",
+    "terminal",
+    "usage",
+    "money",
+    "capture_gaps"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "unirouter.completed-execution.v1"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "org_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "project_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "available_at"],
+      "properties": {
+        "status": {
+          "enum": ["settled", "cancelled"]
+        },
+        "available_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "prompt_tokens",
+        "uncached_prompt_tokens",
+        "cache_read_tokens",
+        "cache_creation_tokens",
+        "completion_tokens",
+        "source",
+        "authority",
+        "purpose",
+        "finality",
+        "contract_version",
+        "cache_usage_schema",
+        "cache_usage_status"
+      ],
+      "properties": {
+        "model": {"type": "string", "minLength": 1, "maxLength": 100},
+        "prompt_tokens": {"type": "integer", "minimum": 0},
+        "uncached_prompt_tokens": {"type": "integer", "minimum": 0},
+        "cache_read_tokens": {"type": "integer", "minimum": 0},
+        "cache_creation_tokens": {"type": "integer", "minimum": 0},
+        "completion_tokens": {"type": "integer", "minimum": 0},
+        "source": {"type": "string", "maxLength": 32},
+        "authority": {"type": "string", "maxLength": 64},
+        "purpose": {"type": "string", "maxLength": 64},
+        "finality": {"type": "string", "maxLength": 64},
+        "contract_version": {"type": "string", "maxLength": 80},
+        "estimate_version": {"type": "string", "maxLength": 80},
+        "cache_usage_schema": {"type": "string", "maxLength": 80},
+        "cache_usage_status": {"type": "string", "maxLength": 40}
+      }
+    },
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "currency",
+        "amount_scale",
+        "calculated_cost_micros",
+        "charged_cost_micros",
+        "pricing_version"
+      ],
+      "properties": {
+        "schema": {"const": "micro-cny.v1"},
+        "currency": {"const": "CNY"},
+        "amount_scale": {"const": 1000000},
+        "calculated_cost_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "charged_cost_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "pricing_version": {"type": "string", "maxLength": 80}
+      }
+    },
+    "capture_gaps": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "reason"],
+        "properties": {
+          "source": {
+            "enum": [
+              "call_log",
+              "request_trace",
+              "client_ip_presence",
+              "upstream_error_presence"
+            ]
+          },
+          "reason": {
+            "const": "not_available_at_billing_terminal"
+          }
+        }
+      },
+      "allOf": [
+        {"contains": {"properties": {"source": {"const": "call_log"}}}},
+        {"contains": {"properties": {"source": {"const": "request_trace"}}}},
+        {"contains": {"properties": {"source": {"const": "client_ip_presence"}}}},
+        {"contains": {"properties": {"source": {"const": "upstream_error_presence"}}}}
+      ]
+    }
+  }
+}

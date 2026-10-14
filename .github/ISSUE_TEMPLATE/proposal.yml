@@ -1,0 +1,19 @@
+name: Proposal
+description: Propose a concrete user outcome or behavior change
+title: "[Proposal] "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: User need and intended outcome
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed behavior, scope, and alternatives
+      description: Include access, evidence, compatibility, and recovery implications where relevant.
+  - type: textarea
+    id: verification
+    attributes:
+      label: How would we verify it?

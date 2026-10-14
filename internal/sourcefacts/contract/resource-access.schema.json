@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "xinsight://internal/synthetic-resource-access/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.resource-access.internal.v1"
+    },
+    "record_ref": {
+      "type": "string"
+    },
+    "previous_hash": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "application_ref": {
+      "type": "string"
+    },
+    "actor_ref": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string"
+    },
+    "report_kind": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "access_outcome": {
+      "type": "string"
+    },
+    "access_decision": {
+      "type": "string"
+    },
+    "decision_ref": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "synthetic": {
+      "const": true
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "reporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_system_id": {
+          "type": "string"
+        },
+        "source_instance": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_system_id",
+        "source_instance",
+        "org_id",
+        "project_id"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_system_id": {
+          "type": "string"
+        },
+        "source_instance": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_system_id",
+        "source_instance",
+        "org_id",
+        "project_id"
+      ]
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "ownership": {
+          "type": "string"
+        },
+        "owner_ref": {
+          "type": "string"
+        },
+        "classification": {
+          "type": "string"
+        },
+        "classification_ref": {
+          "type": "string"
+        },
+        "device_management": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "version",
+        "name",
+        "location",
+        "ownership",
+        "classification",
+        "device_management"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fragment_ref": {
+          "type": "string"
+        },
+        "fragment_version": {
+          "type": "string"
+        },
+        "attempt_id": {
+          "type": "string"
+        },
+        "attempt_kind": {
+          "type": "string"
+        },
+        "reported_input_ref": {
+          "type": "string"
+        },
+        "transforms": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "input_version": {
+                "type": "string"
+              },
+              "output_version": {
+                "type": "string"
+              },
+              "receipt_ref": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "input_version",
+              "output_version",
+              "receipt_ref"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fragment_ref",
+        "fragment_version",
+        "attempt_id",
+        "attempt_kind",
+        "reported_input_ref",
+        "transforms"
+      ]
+    },
+    "withdrawn": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "record_ref",
+    "request_id",
+    "application_ref",
+    "actor_ref",
+    "occurred_at",
+    "report_kind",
+    "action",
+    "access_outcome",
+    "access_decision",
+    "synthetic",
+    "revision",
+    "reporter",
+    "target",
+    "resource",
+    "withdrawn"
+  ],
+  "description": "XI synthetic-only internal metadata. Typed resource validation also enforces enums, refs, chronology and transform continuity; not a production I-03 profile."
+}

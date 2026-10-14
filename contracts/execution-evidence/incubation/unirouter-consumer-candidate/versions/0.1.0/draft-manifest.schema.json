@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-insight:incubation:unirouter-execution-evidence-draft-manifest:1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_version", "draft_version", "ownership", "source_context", "consumer_baseline", "completed_execution_v1", "foigent_protocol", "artifacts", "validator", "comparator", "authority_status", "release_status", "runtime_eligible", "compatibility_commitment"],
+  "properties": {
+    "manifest_version": {"const": "xinsight.execution-evidence-incubation-manifest.v1"},
+    "draft_version": {"const": "0.1.0-draft"},
+    "ownership": {"const": "x-insight-consumer-side-incubation-candidate"},
+    "previous_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "source_context": {"$ref": "#/$defs/source_context"},
+    "consumer_baseline": {"$ref": "#/$defs/repository_identity"},
+    "completed_execution_v1": {"$ref": "#/$defs/v1"},
+    "foigent_protocol": {"$ref": "#/$defs/foigent"},
+    "artifacts": {"type": "array", "minItems": 5, "items": {"$ref": "#/$defs/artifact"}},
+    "validator": {"$ref": "#/$defs/tool_identity"},
+    "comparator": {"$ref": "#/$defs/tool_identity"},
+    "authority_status": {"enum": ["resolved", "declared_but_unresolvable", "undefined"]},
+    "release_status": {"enum": ["released_contract_resolved", "no_eligible_release", "not_applicable"]},
+    "runtime_eligible": {"const": false},
+    "compatibility_commitment": {"const": "none"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "repository_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "repository_id", "commit", "tree"],
+      "properties": {
+        "repository": {"type": "string", "format": "uri"},
+        "repository_id": {"type": "integer", "minimum": 1},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "source_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "version", "content_sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "repository_id", "commit", "tree", "version", "authority_mechanism", "observations"],
+      "properties": {
+        "repository": {"const": "https://github.com/foigent/unirouter"},
+        "repository_id": {"type": "integer", "minimum": 1},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "version": {"type": "string", "minLength": 1},
+        "authority_mechanism": {"const": "undefined"},
+        "observations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source_observation"}}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "content_sha256"],
+      "properties": {
+        "role": {"enum": ["draft_schema", "matrix_schema", "matrix", "fixture_index", "fixture_index_schema", "manifest_schema", "compatibility_input"]},
+        "path": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "content_sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "tool_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "source_files"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "source_files": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source_file"}}
+      }
+    },
+    "v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_path", "schema_content_sha256", "fixtures"],
+      "properties": {
+        "schema_path": {"const": "contracts/completed-execution/v1/unirouter.completed-execution.v1.schema.json"},
+        "schema_content_sha256": {"const": "sha256:4ae2897d4f8470c38624dfe21c54d72eaf6d995d2c9578c4420c94d244424fb2"},
+        "fixtures": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/source_file"}}
+      }
+    },
+    "foigent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "pin_path", "pin_content_sha256", "public_components"],
+      "properties": {
+        "version": {"const": "2.0.2"},
+        "pin_path": {"const": "contracts/foigent/event-connector-protocol.pin.json"},
+        "pin_content_sha256": {"$ref": "#/$defs/sha256"},
+        "public_components": {
+          "type": "object",
+          "minProperties": 3,
+          "additionalProperties": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    }
+  }
+}

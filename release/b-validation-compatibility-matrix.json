@@ -1,0 +1,48 @@
+{
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "product_version": "0.2.0-dev.b2",
+  "manual_version": "0.2.0-dev.b2/manual-r1",
+  "release_channel": "release_candidate",
+  "database_schema": "35",
+  "config_schema": "xinsight.config.v1",
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:11299b8688283c7f65d4bfbc7be4d9dc4ff89a64a16e50b58a64545e8f8c03ab",
+    "migration_set_sha256": "sha256:f165eca23edf2b97aa442cd39bff6c03912907f19623f85c47612a04d1548baa"
+  },
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.f4",
+    "0.2.0-dev.b1"
+  ],
+  "supported_legacy_sources": [],
+  "supported_host": {
+    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "architecture": "amd64",
+    "service_manager": "systemd",
+    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+  },
+  "postgresql": {
+    "major": 16
+  },
+  "bootstrap_trust": {
+    "field_authority": "user_authorized_isolated_validation",
+    "customer_self_upgrade": false,
+    "private_key_retained": true,
+    "self_authentication": false,
+    "first_tool": "xinsight-release"
+  },
+  "field_qualification": "B local candidate; exact signed artifact/native install-upgrade-restore receipts determine qualification; manager acceptance, real enhanced sources, F and final V remain separate"
+}

@@ -1,0 +1,15 @@
+{
+  "pin_version": "xinsight.unirouter-execution-evidence-pin.v1",
+  "product": "x-insight",
+  "profile_id": "unirouter.execution-evidence.v2",
+  "manifest_version": "2.0.0",
+  "manifest_sha256": "sha256:834bbaae05936af76abc4608ab16547581656e415c7d73f79d5d55ef6eca9547",
+  "bundle_schema": {
+    "schema_version": "unirouter.execution-evidence.bundle.v2",
+    "sha256": "sha256:e47c5e074e3b7de8c16be9615c5ea073348017c58e07b9ba0566e2a66185f33a"
+  },
+  "authority": {
+    "product": "unirouter",
+    "path": "contracts/execution-evidence/v2/unirouter.execution-evidence.v2.profile.json"
+  }
+}

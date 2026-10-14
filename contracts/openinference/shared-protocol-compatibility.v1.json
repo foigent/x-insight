@@ -1,0 +1,44 @@
+{
+  "assessment_version": "xinsight.openinference-shared-protocol-compatibility.v1",
+  "status": "blocked_requires_shared_protocol_major",
+  "protocol": {
+    "version": "1.1.2",
+    "tag_commit": "fd82aeca9877bea8064b25c365a3cdcdd0bb3d16",
+    "tree": "d316d6ada678066ed7679a772856aea6157d869d",
+    "review_checkout_commit": "b0c57472fc00a72301a795a7f0e605529e9647d1",
+    "connector_manifest_schema_sha256": "sha256:59c405086310d0dfb2aaff37e55d73853e04319e6ccf659c66f98d8ba704a205"
+  },
+  "candidate_manifest": {
+    "path": "contracts/openinference/connector-manifest.v1.json",
+    "sha256": "sha256:0379ee7da0ec05562e2f7407c3edf92812c02cc55fa6cbe596dfe5a1c9b8cadb",
+    "activation_eligible": false
+  },
+  "conflicts": [
+    {
+      "json_path": "$.transport.mode",
+      "frozen_v1_semantics": "https_pull",
+      "required_semantics": "otlp_http_push_or_bounded_offline_export"
+    },
+    {
+      "json_path": "$.checkpoint.strategy",
+      "frozen_v1_semantics": "opaque_cursor_or_reference_connector_specific",
+      "required_semantics": "no_delivery_cursor_for_one_accepted_push_batch"
+    },
+    {
+      "json_path": "$.bootstrap.mode",
+      "frozen_v1_semantics": "activation_forward",
+      "required_semantics": "receiver_activation_or_explicit_bounded_offline_import"
+    },
+    {
+      "json_path": "$.compatibility.timeline_complete",
+      "frozen_v1_semantics": "true",
+      "required_semantics": "false_for_bounded_execution_span_batch"
+    }
+  ],
+  "non_resolution": [
+    "do_not_relabel_otlp_push_as_https_pull",
+    "do_not_claim_execution_timeline_complete",
+    "do_not_activate_or_register_candidate_manifest"
+  ],
+  "recommended_resolution": "authorize a shared protocol v2.0.0 decision that makes transport and completeness source-neutral"
+}

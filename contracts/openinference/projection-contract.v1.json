@@ -1,0 +1,43 @@
+{
+  "contract_version": "xinsight.openinference-to-m0.v1",
+  "source_schema": "xinsight.otlp-openinference-span.v1",
+  "shared_envelope": {
+    "event_type": "observability.span.completed",
+    "schema_ref": "foigent://events/observability/openinference-span-completed/v1",
+    "schema_version": "1"
+  },
+  "m0_projection": {
+    "main_event": {
+      "event_type": {
+        "succeeded": "model.request.succeeded",
+        "failed": "model.request.failed"
+      },
+      "stage": "provider",
+      "capture_mode": "openinference",
+      "payload_capture_mode": "metadata_only",
+      "correlation_paths": [
+        "trace_id",
+        "span_id",
+        "parent_span_id",
+        "session_id"
+      ]
+    },
+    "capture_gap_event": {
+      "event_type": "gap.capture.detected",
+      "stage": "gap",
+      "payload_capture_mode": "none"
+    }
+  },
+  "exclusions": [
+    "raw input.value",
+    "raw output.value",
+    "llm.input_messages",
+    "llm.output_messages",
+    "credentials",
+    "network addresses",
+    "delivery cursor",
+    "checkpoint",
+    "retry state",
+    "ingestion time from event identity and hash"
+  ]
+}

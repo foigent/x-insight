@@ -1,0 +1,278 @@
+{
+  "schema_version": "unirouter.measurement-acceptance-vectors.v1",
+  "fixture_only": true,
+  "evidence_layer": "synthetic_semantic_vectors",
+  "unit": "milliseconds",
+  "group_by": [
+    "operation",
+    "stream_mode",
+    "measurement_kind",
+    "measurement_version",
+    "completion_evidence"
+  ],
+  "cases": [
+    {
+      "id": "T01",
+      "operation": "openai.chat_completions.v1",
+      "stream_mode": "non_streaming",
+      "ingress": 0,
+      "response_written": 3000,
+      "old_log_latency": 5200,
+      "expected_response_complete": 3000,
+      "expected_first_output_state": "not_applicable"
+    },
+    {
+      "id": "T02",
+      "operation": "openai.chat_completions.v1",
+      "stream_mode": "streaming",
+      "ingress": 0,
+      "old_stream_start": 2000,
+      "frame_prepared": 2200,
+      "first_write_and_flush": 2250,
+      "old_log": 6500,
+      "terminal_write_and_flush": 6800,
+      "expected_old_ttft": 200,
+      "expected_first_output": 2250,
+      "expected_stream_complete": 6800
+    },
+    {
+      "id": "T03",
+      "operation": "openai.chat_completions.v1",
+      "stream_mode": "streaming",
+      "frame_prepared": 2200,
+      "first_write_succeeded": false,
+      "first_flush_succeeded": false,
+      "old_ttft": 200,
+      "expected_state": "not_observed"
+    },
+    {
+      "id": "T04",
+      "samples": [
+        {
+          "origin": "new",
+          "stream_mode": "streaming",
+          "state": "observed",
+          "value": 0
+        },
+        {
+          "origin": "legacy",
+          "stream_mode": "streaming",
+          "state": "legacy_unknown"
+        },
+        {
+          "origin": "legacy",
+          "stream_mode": "non_streaming",
+          "state": "not_applicable"
+        }
+      ],
+      "expected_included": [
+        0
+      ]
+    },
+    {
+      "id": "T05",
+      "measurement_kind": "request_response_complete",
+      "measurement_version": "1",
+      "operation": "openai.chat_completions.v1",
+      "stream_mode": "non_streaming",
+      "completed_observed": [
+        100,
+        200,
+        300,
+        400,
+        1000
+      ],
+      "excluded": [
+        {
+          "reason": "failed",
+          "value": 10
+        },
+        {
+          "reason": "not_observed"
+        },
+        {
+          "reason": "not_applicable"
+        }
+      ],
+      "expected": {
+        "n": 5,
+        "p50": "300",
+        "p95": "880"
+      },
+      "with_observed_zero": {
+        "n": 6,
+        "p50": "250",
+        "p95": "850"
+      },
+      "empty": {
+        "state": "not_computable"
+      }
+    },
+    {
+      "id": "T06",
+      "requests": [
+        {
+          "id": "r1",
+          "state": "completed"
+        },
+        {
+          "id": "r2",
+          "state": "completed"
+        },
+        {
+          "id": "r3",
+          "state": "completed"
+        },
+        {
+          "id": "r4",
+          "state": "policy_rejected"
+        },
+        {
+          "id": "r5",
+          "state": "technical_failure"
+        },
+        {
+          "id": "r6",
+          "state": "interrupted"
+        },
+        {
+          "id": "r7",
+          "state": "running"
+        },
+        {
+          "id": "r8",
+          "state": "unknown"
+        }
+      ],
+      "expected": {
+        "requests": 8,
+        "numerator": 1,
+        "denominator": 4,
+        "excluded": 4,
+        "diagnostic_ratio": "0.25",
+        "metric": "technical_failure_among_classified_results",
+        "slo": false
+      }
+    },
+    {
+      "id": "T07",
+      "requests": [
+        {
+          "id": "A",
+          "attempts": [
+            {
+              "id": "A1",
+              "registered": true,
+              "do_observed": true,
+              "response_observed": true
+            },
+            {
+              "id": "A2",
+              "registered": true,
+              "do_observed": true,
+              "response_observed": true
+            }
+          ]
+        },
+        {
+          "id": "B",
+          "cache_hit": true,
+          "attempts": []
+        },
+        {
+          "id": "C",
+          "attempts": [
+            {
+              "id": "C1",
+              "registered": true,
+              "do_observed": false,
+              "response_observed": false,
+              "outcome": "unknown"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "requests": 3,
+        "registered_attempts": 3,
+        "response_observed_attempts": 2,
+        "retried_requests": 1
+      }
+    },
+    {
+      "id": "T08",
+      "request": {
+        "source_instance": "synthetic",
+        "request_id": "cross-midnight",
+        "started_at": "2026-09-08T23:59:59Z"
+      },
+      "old_reading": {
+        "cutoff": "2026-09-09T00:00:00Z",
+        "events": [
+          {
+            "event_id": "start",
+            "recorded_at": "2026-09-08T23:59:59Z",
+            "kind": "started"
+          }
+        ]
+      },
+      "new_reading": {
+        "cutoff": "2026-09-09T00:00:10Z",
+        "events": [
+          {
+            "event_id": "start",
+            "recorded_at": "2026-09-08T23:59:59Z",
+            "kind": "started"
+          },
+          {
+            "event_id": "terminal",
+            "recorded_at": "2026-09-09T00:00:05Z",
+            "kind": "completed"
+          },
+          {
+            "event_id": "terminal",
+            "recorded_at": "2026-09-09T00:00:05Z",
+            "kind": "completed"
+          }
+        ]
+      },
+      "expected": {
+        "request_day": "2026-09-08",
+        "requests": 1,
+        "old_state": "started",
+        "new_state": "completed",
+        "new_distinct_events": 2
+      }
+    },
+    {
+      "id": "T09",
+      "observed": "request_context_done",
+      "context_done_reason": "context_cancelled",
+      "expected": {
+        "actor": "unknown",
+        "human_cancel": false,
+        "provider_timeout": false
+      }
+    },
+    {
+      "id": "T10",
+      "non_ur_records": [
+        {
+          "type": "external_model_span"
+        },
+        {
+          "type": "ai_site_access"
+        }
+      ],
+      "sources": {
+        "runtime": "unavailable",
+        "cost": "available"
+      },
+      "expected": {
+        "ur_request_increment": 0,
+        "runtime_count_state": "unknown",
+        "cost_source_state": "available"
+      }
+    }
+  ]
+}

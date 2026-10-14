@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Correlation Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "request_id": { "type": "string" },
+    "upstream_request_id": { "type": "string" },
+    "trace_id": { "type": "string" },
+    "span_id": { "type": "string" },
+    "parent_span_id": { "type": "string" },
+    "session_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "parent_event_id": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}

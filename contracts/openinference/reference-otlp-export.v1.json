@@ -1,0 +1,70 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": { "stringValue": "checkout-agent" }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "0123456789abcdef0123456789abcdef",
+              "spanId": "0123456789abcdef",
+              "name": "chat.completions",
+              "startTimeUnixNano": "1785463200000000000",
+              "endTimeUnixNano": "1785463200123456000",
+              "attributes": [
+                {
+                  "key": "openinference.span.kind",
+                  "value": { "stringValue": "LLM" }
+                },
+                {
+                  "key": "llm.model_name",
+                  "value": { "stringValue": "model-a" }
+                },
+                {
+                  "key": "llm.provider",
+                  "value": { "stringValue": "provider-a" }
+                },
+                {
+                  "key": "llm.token_count.prompt",
+                  "value": { "intValue": "7" }
+                },
+                {
+                  "key": "llm.token_count.completion",
+                  "value": { "intValue": "4" }
+                },
+                {
+                  "key": "llm.token_count.total",
+                  "value": { "intValue": "11" }
+                },
+                {
+                  "key": "session.id",
+                  "value": { "stringValue": "session-source-01" }
+                },
+                {
+                  "key": "user.id",
+                  "value": { "stringValue": "user-source-01" }
+                },
+                {
+                  "key": "input.value",
+                  "value": { "stringValue": "MUST_NOT_SURVIVE_SANITIZATION" }
+                },
+                {
+                  "key": "output.value",
+                  "value": { "stringValue": "MUST_NOT_SURVIVE_SANITIZATION" }
+                }
+              ],
+              "status": { "code": "STATUS_CODE_OK" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

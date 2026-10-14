@@ -1,0 +1,240 @@
+{
+  "valid": [
+    {
+      "name": "empty_bounded_inventory",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "lease_backed_inventory",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [],
+        "has_more": false,
+        "source_sha256": "sha256:c906aea6d624a154a8693a08064bb410171714e41e1dbbcb0eec43b9f54a6984"
+      },
+      "canonical_source_utf8": "{\"coverage\":\"lease_backed_inventory\",\"entries\":[],\"has_more\":false,\"observed_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"2\",\"schema_version\":\"unirouter.runtime-current.v1\",\"source_instance\":\"synthetic-ur\",\"uncovered\":[\"synchronous_requests_without_execution_lease\",\"progress_between_lease_observations\"]}"
+    },
+    {
+      "name": "cross_day_execution_lease",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "lease_backed_inventory",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [
+          {
+            "request_id": "cross-day",
+            "family": "stream",
+            "subject_kind": "provider_attempt",
+            "subject_id": "attempt-1",
+            "operation": "openai.chat_completions.v1",
+            "freshness": "lease_valid_execution",
+            "original_state": "active",
+            "last_observed_at": "2026-09-09T23:59:59.000000Z",
+            "valid_until": "2026-09-10T00:00:20.000000Z",
+            "lease_generation": "1",
+            "evidence_ref": "uf1_1111111111111111111111111111111111111111111111111111111111111111",
+            "checkpoint_ref": "uf1_2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "has_more": false,
+        "source_sha256": "sha256:9febb54f36076a0d51e73341178b2c531ab25535689f6c48536f360c7badf009"
+      },
+      "canonical_source_utf8": "{\"coverage\":\"lease_backed_inventory\",\"entries\":[{\"checkpoint_ref\":\"uf1_2222222222222222222222222222222222222222222222222222222222222222\",\"evidence_ref\":\"uf1_1111111111111111111111111111111111111111111111111111111111111111\",\"family\":\"stream\",\"freshness\":\"lease_valid_execution\",\"last_observed_at\":\"2026-09-09T23:59:59.000000Z\",\"lease_generation\":\"1\",\"operation\":\"openai.chat_completions.v1\",\"original_state\":\"active\",\"request_id\":\"cross-day\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\",\"valid_until\":\"2026-09-10T00:00:20.000000Z\"}],\"has_more\":false,\"observed_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"2\",\"schema_version\":\"unirouter.runtime-current.v1\",\"source_instance\":\"synthetic-ur\",\"uncovered\":[\"synchronous_requests_without_execution_lease\",\"progress_between_lease_observations\"]}"
+    },
+    {
+      "name": "sync_last_known_no_liveness",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "requested_execution_snapshot",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [
+          {
+            "request_id": "sync",
+            "family": "request",
+            "subject_kind": "request",
+            "subject_id": "sync",
+            "operation": "openai.responses.v1",
+            "freshness": "last_known",
+            "original_state": "frozen",
+            "last_observed_at": "2026-09-09T23:59:59.000000Z",
+            "evidence_ref": "uf1_3333333333333333333333333333333333333333333333333333333333333333"
+          }
+        ],
+        "has_more": false,
+        "source_sha256": "sha256:5de2c311ff82aa2e6b0e0fdd0e3e0f515a03a70855967682122e379e7187aabe"
+      },
+      "canonical_source_utf8": "{\"coverage\":\"requested_execution_snapshot\",\"entries\":[{\"evidence_ref\":\"uf1_3333333333333333333333333333333333333333333333333333333333333333\",\"family\":\"request\",\"freshness\":\"last_known\",\"last_observed_at\":\"2026-09-09T23:59:59.000000Z\",\"operation\":\"openai.responses.v1\",\"original_state\":\"frozen\",\"request_id\":\"sync\",\"subject_id\":\"sync\",\"subject_kind\":\"request\"}],\"has_more\":false,\"observed_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"2\",\"schema_version\":\"unirouter.runtime-current.v1\",\"source_instance\":\"synthetic-ur\",\"uncovered\":[\"synchronous_requests_without_execution_lease\",\"progress_between_lease_observations\"]}"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "last_known_lease",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "requested_execution_snapshot",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [
+          {
+            "request_id": "sync",
+            "family": "request",
+            "subject_kind": "request",
+            "subject_id": "sync",
+            "operation": "openai.responses.v1",
+            "freshness": "last_known",
+            "original_state": "frozen",
+            "last_observed_at": "2026-09-09T23:59:59.000000Z",
+            "evidence_ref": "uf1_3333333333333333333333333333333333333333333333333333333333333333",
+            "valid_until": "2026-09-10T00:00:20.000000Z"
+          }
+        ],
+        "has_more": false,
+        "source_sha256": "sha256:5de2c311ff82aa2e6b0e0fdd0e3e0f515a03a70855967682122e379e7187aabe"
+      }
+    },
+    {
+      "name": "raw_owner",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "requested_execution_snapshot",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [
+          {
+            "request_id": "sync",
+            "family": "request",
+            "subject_kind": "request",
+            "subject_id": "sync",
+            "operation": "openai.responses.v1",
+            "freshness": "last_known",
+            "original_state": "frozen",
+            "last_observed_at": "2026-09-09T23:59:59.000000Z",
+            "evidence_ref": "uf1_3333333333333333333333333333333333333333333333333333333333333333",
+            "lease_owner": "private-owner"
+          }
+        ],
+        "has_more": false,
+        "source_sha256": "sha256:5de2c311ff82aa2e6b0e0fdd0e3e0f515a03a70855967682122e379e7187aabe"
+      }
+    },
+    {
+      "name": "unknown_freshness",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "requested_execution_snapshot",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [
+          {
+            "request_id": "sync",
+            "family": "request",
+            "subject_kind": "request",
+            "subject_id": "sync",
+            "operation": "openai.responses.v1",
+            "freshness": "running",
+            "original_state": "frozen",
+            "last_observed_at": "2026-09-09T23:59:59.000000Z",
+            "evidence_ref": "uf1_3333333333333333333333333333333333333333333333333333333333333333"
+          }
+        ],
+        "has_more": false,
+        "source_sha256": "sha256:5de2c311ff82aa2e6b0e0fdd0e3e0f515a03a70855967682122e379e7187aabe"
+      }
+    },
+    {
+      "name": "missing_generation",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "lease_backed_inventory",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [
+          {
+            "request_id": "cross-day",
+            "family": "stream",
+            "subject_kind": "provider_attempt",
+            "subject_id": "attempt-1",
+            "operation": "openai.chat_completions.v1",
+            "freshness": "lease_valid_execution",
+            "original_state": "active",
+            "last_observed_at": "2026-09-09T23:59:59.000000Z",
+            "valid_until": "2026-09-10T00:00:20.000000Z",
+            "evidence_ref": "uf1_1111111111111111111111111111111111111111111111111111111111111111",
+            "checkpoint_ref": "uf1_2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "has_more": false,
+        "source_sha256": "sha256:9febb54f36076a0d51e73341178b2c531ab25535689f6c48536f360c7badf009"
+      }
+    },
+    {
+      "name": "missing_continuation",
+      "document": {
+        "schema_version": "unirouter.runtime-current.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "profile": "unirouter.runtime-observation.v1",
+        "observed_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "lease_backed_inventory",
+        "uncovered": [
+          "synchronous_requests_without_execution_lease",
+          "progress_between_lease_observations"
+        ],
+        "entries": [],
+        "has_more": true,
+        "source_sha256": "sha256:c906aea6d624a154a8693a08064bb410171714e41e1dbbcb0eec43b9f54a6984"
+      }
+    }
+  ]
+}

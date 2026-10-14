@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-insight:incubation:unirouter-execution-evidence-fixture-index:1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["index_version", "schema_id", "schema_version", "schema_content_sha256", "fixtures"],
+  "properties": {
+    "index_version": {"const": "xinsight.execution-evidence-fixture-index.v1"},
+    "schema_id": {"const": "urn:x-insight:incubation:unirouter-execution-evidence-consumer-candidate:0.1.0"},
+    "schema_version": {"const": "0.1.0-draft"},
+    "schema_content_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "fixtures": {
+      "type": "array",
+      "minItems": 28,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fixture_id", "fixture_version", "path", "content_sha256", "origin_kind", "expectation", "scenario_id", "capability_claim_boundary"],
+        "properties": {
+          "fixture_id": {"type": "string", "minLength": 1},
+          "fixture_version": {"const": "1.0.0"},
+          "path": {"type": "string", "pattern": "^fixtures/(accept|reject)/[A-Za-z0-9._-]+\\.json$"},
+          "content_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "origin_kind": {"enum": ["source_derived", "synthetic_contract_fixture", "hypothesis_only"]},
+          "expectation": {"enum": ["accept", "reject"]},
+          "expected_validation_error": {"type": "string", "minLength": 1},
+          "scenario_id": {"type": "string", "minLength": 1},
+          "capability_claim_boundary": {"const": "conformance_only_not_unirouter_capability_or_release_evidence"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"expectation": {"const": "reject"}}},
+            "then": {"required": ["expected_validation_error"]},
+            "else": {"not": {"required": ["expected_validation_error"]}}
+          }
+        ]
+      }
+    }
+  }
+}

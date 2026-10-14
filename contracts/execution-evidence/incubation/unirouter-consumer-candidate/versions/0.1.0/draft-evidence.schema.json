@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-insight:incubation:unirouter-execution-evidence-consumer-candidate:0.1.0",
+  "$comment": "Owned by X-Insight as a consumer-side incubation candidate. Non-runtime, no compatibility commitment, and does not replace unirouter.completed-execution.v1. Raw-byte identity is recorded by the versioned draft manifest.",
+  "title": "X-Insight UniRouter execution evidence consumer candidate fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_id",
+    "fixture_version",
+    "origin",
+    "expectation",
+    "capability_claim_boundary",
+    "scenario_id",
+    "evidence"
+  ],
+  "properties": {
+    "fixture_id": {"type": "string", "pattern": "^xinsight\\.draft-evidence\\.[a-z0-9-]+$"},
+    "fixture_version": {"const": "1.0.0"},
+    "origin": {"$ref": "#/$defs/origin"},
+    "expectation": {"$ref": "#/$defs/expectation"},
+    "capability_claim_boundary": {
+      "const": "conformance_only_not_unirouter_capability_or_release_evidence"
+    },
+    "scenario_id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "v1_differential": {"$ref": "#/$defs/v1_differential"},
+    "evidence": {"$ref": "#/$defs/evidence"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "source_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "commit", "tree", "path", "version", "content_sha256"],
+      "properties": {
+        "repository": {"const": "https://github.com/foigent/unirouter"},
+        "ref": {"type": "string", "minLength": 1},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "path": {"type": "string", "pattern": "^[A-Za-z0-9._/-]+$"},
+        "version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["source_derived", "synthetic_contract_fixture", "hypothesis_only"]
+        },
+        "source": {"$ref": "#/$defs/source_reference"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "source_derived"}}},
+          "then": {"required": ["source"]},
+          "else": {"not": {"required": ["source"]}}
+        }
+      ]
+    },
+    "expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result"],
+      "properties": {"result": {"enum": ["accept", "reject"]}}
+    },
+    "v1_differential": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_path", "source_content_sha256", "mapping"],
+      "properties": {
+        "source_path": {"type": "string", "pattern": "^contracts/completed-execution/v1/fixtures/[A-Za-z0-9._-]+\\.json$"},
+        "source_content_sha256": {"$ref": "#/$defs/sha256"},
+        "mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "terminal_outcome",
+            "execution_identity",
+            "usage",
+            "cost",
+            "pricing_finality",
+            "post_terminal_facts",
+            "duplicate_delivery",
+            "gaps"
+          ],
+          "properties": {
+            "terminal_outcome": {"const": "same_source_fact"},
+            "execution_identity": {"const": "same_source_fact"},
+            "usage": {"enum": ["same_source_fact", "not_applicable"]},
+            "cost": {"enum": ["same_source_fact", "not_applicable"]},
+            "pricing_finality": {"enum": ["preserved", "not_applicable"]},
+            "post_terminal_facts": {"const": "separate_lifecycle_fact"},
+            "duplicate_delivery": {"const": "same_business_identity"},
+            "gaps": {"const": "never_filled_without_source"}
+          }
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "protocol_profile", "protocol_version", "capability_type", "execution_profile", "execution_profile_version"],
+      "properties": {
+        "family": {"enum": ["predispatch", "chat", "responses", "messages"]},
+        "protocol_profile": {"type": "string", "minLength": 1},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "capability_type": {"type": "string", "minLength": 1},
+        "execution_profile": {"type": "string", "minLength": 1},
+        "execution_profile_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "capability_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reference"],
+      "properties": {
+        "status": {"enum": ["known", "gap", "unknown"]},
+        "reference": {"type": ["string", "null"], "maxLength": 256},
+        "reference_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "known"}}},
+          "then": {"required": ["reference_sha256"], "properties": {"reference": {"type": "string", "minLength": 1}}},
+          "else": {"properties": {"reference": {"type": "null"}}, "not": {"required": ["reference_sha256"]}}
+        }
+      ]
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt_id", "ordinal", "route", "provider", "status"],
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1},
+        "ordinal": {"type": "integer", "minimum": 1},
+        "route": {"type": "string", "minLength": 1},
+        "provider": {"type": "string", "minLength": 1},
+        "status": {"enum": ["failed", "succeeded", "cancelled"]}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "source_fact_identity"],
+      "properties": {
+        "mode": {"enum": ["direct", "source_declared", "xinsight_test_derived"]},
+        "source_fact_identity": {"type": "string", "minLength": 1},
+        "algorithm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "content_sha256", "inputs"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "minLength": 1},
+            "content_sha256": {"$ref": "#/$defs/sha256"},
+            "inputs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mode": {"const": "xinsight_test_derived"}}},
+          "then": {"required": ["algorithm"]},
+          "else": {"not": {"required": ["algorithm"]}}
+        }
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target_fact_id", "source_declared"],
+      "properties": {
+        "type": {"enum": ["revision_of", "supersedes", "caused_by", "relates_to", "derived_from"]},
+        "target_fact_id": {"type": "string", "minLength": 1},
+        "source_declared": {"type": "boolean"},
+        "source_event_identity": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_id", "kind", "sequence", "lifecycle", "provenance", "relationships"],
+      "properties": {
+        "fact_id": {"type": "string", "minLength": 1},
+        "kind": {
+          "enum": ["predispatch_outcome", "terminal_outcome", "usage", "cost", "pricing", "reasoning", "tool_choice", "refund", "reconciliation", "correction", "gap"]
+        },
+        "sequence": {"type": "integer", "minimum": 1},
+        "lifecycle": {"enum": ["predispatch", "attempt", "terminal", "post_terminal", "correction"]},
+        "value": {},
+        "unknown_reason": {"type": "string", "minLength": 1},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "relationships": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/relationship"}}
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "state", "reason"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "state": {"enum": ["gap", "unknown"]},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "ownership", "source_authority_status", "runtime_eligible", "compatibility_commitment", "replaces_completed_execution_v1", "execution_identity", "operation", "capability_evidence", "attempts", "facts", "gaps", "delivery"],
+      "properties": {
+        "schema_id": {"const": "urn:x-insight:incubation:unirouter-execution-evidence-consumer-candidate:0.1.0"},
+        "schema_version": {"const": "0.1.0-draft"},
+        "ownership": {"const": "x-insight-consumer-side-incubation-candidate"},
+        "source_authority_status": {"enum": ["resolved", "declared_but_unresolvable", "undefined"]},
+        "runtime_eligible": {"const": false},
+        "compatibility_commitment": {"const": "none"},
+        "replaces_completed_execution_v1": {"const": false},
+        "execution_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["execution_id", "source_fact_identity", "idempotency_key"],
+          "properties": {
+            "execution_id": {"type": "string", "minLength": 1},
+            "source_fact_identity": {"type": "string", "minLength": 1},
+            "idempotency_key": {"type": "string", "minLength": 1}
+          }
+        },
+        "operation": {"$ref": "#/$defs/operation"},
+        "capability_evidence": {"$ref": "#/$defs/capability_evidence"},
+        "attempts": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/attempt"}},
+        "facts": {"type": "array", "minItems": 1, "maxItems": 24, "items": {"$ref": "#/$defs/fact"}},
+        "gaps": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/gap"}},
+        "delivery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["delivery_count", "business_fact_count"],
+          "properties": {
+            "delivery_count": {"type": "integer", "minimum": 1},
+            "business_fact_count": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    }
+  }
+}

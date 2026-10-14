@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "xinsight://internal/resource-action/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.resource-action.v1"
+    },
+    "environment": {
+      "enum": [
+        "test",
+        "development"
+      ]
+    },
+    "record_ref": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "reporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_system_id": {
+          "type": "string"
+        },
+        "source_instance": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_system_id",
+        "source_instance",
+        "org_id",
+        "project_id"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_system_id": {
+          "type": "string"
+        },
+        "source_instance": {
+          "type": "string"
+        },
+        "org_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_system_id",
+        "source_instance",
+        "org_id",
+        "project_id"
+      ]
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "final_request_id": {
+      "type": "string"
+    },
+    "related_request_ids": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "string"
+      }
+    },
+    "occurred_at": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "tool_call_id": {
+      "type": "string"
+    },
+    "action_kind": {
+      "enum": [
+        "read",
+        "edit"
+      ]
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "version",
+        "name"
+      ]
+    },
+    "tool_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "completed",
+            "failed",
+            "unknown"
+          ]
+        },
+        "result_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "state"
+      ]
+    },
+    "native_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "events_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "call_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "call_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "result_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "result_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "trace_id",
+        "session_id",
+        "manifest_sha256",
+        "events_sha256",
+        "call_seq",
+        "call_sha256"
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "receipt_ref": {
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "receipt_ref",
+        "receipt_sha256"
+      ]
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "confirmed",
+            "failed",
+            "not_checked"
+          ]
+        },
+        "goal_state": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_checked"
+          ]
+        },
+        "hash_scope": {
+          "enum": [
+            "full_file",
+            "fragment",
+            "unknown"
+          ]
+        },
+        "before_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "after_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "checked_at": {
+          "type": "string"
+        },
+        "checker_ref": {
+          "type": "string"
+        },
+        "before_receipt_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "after_receipt_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "state",
+        "goal_state",
+        "hash_scope"
+      ]
+    },
+    "content_links": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {
+            "enum": [
+              "call",
+              "result",
+              "before",
+              "after"
+            ]
+          },
+          "extent": {
+            "enum": [
+              "full_file",
+              "fragment",
+              "unknown"
+            ]
+          },
+          "source_system_id": {
+            "type": "string"
+          },
+          "source_instance": {
+            "type": "string"
+          },
+          "org_id": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "source_fact_id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "content_ref": {
+            "type": "string"
+          },
+          "source_sha256": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "json_pointer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "extent",
+          "source_system_id",
+          "source_instance",
+          "org_id",
+          "project_id",
+          "request_id",
+          "source_fact_id",
+          "revision",
+          "content_ref",
+          "source_sha256",
+          "json_pointer"
+        ]
+      }
+    },
+    "withdrawn": {
+      "type": "boolean"
+    },
+    "previous_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "environment",
+    "record_ref",
+    "revision",
+    "reporter",
+    "target",
+    "request_id",
+    "occurred_at",
+    "run_id",
+    "tool_call_id",
+    "action_kind",
+    "object",
+    "tool_result",
+    "native_evidence",
+    "acceptance",
+    "content_links",
+    "withdrawn"
+  ],
+  "description": "Metadata-only test/development action witness. Typed validation enforces exact identity, version, chronology, pairing and receipt boundaries; no raw content or production admission."
+}

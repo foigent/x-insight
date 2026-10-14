@@ -1,0 +1,1342 @@
+{
+  "fixture_only": true,
+  "i01": [
+    {
+      "snapshot": {
+        "capture_gaps": [
+          {
+            "reason": "not_available_at_billing_terminal",
+            "source": "call_log"
+          },
+          {
+            "reason": "not_available_at_billing_terminal",
+            "source": "request_trace"
+          },
+          {
+            "reason": "not_available_at_billing_terminal",
+            "source": "client_ip_presence"
+          },
+          {
+            "reason": "not_available_at_billing_terminal",
+            "source": "upstream_error_presence"
+          }
+        ],
+        "money": {
+          "amount_scale": 1000000,
+          "calculated_cost_micros": "700",
+          "charged_cost_micros": "700",
+          "currency": "CNY",
+          "pricing_version": "pv3_5f4fc0b3d3bd4e23705d7a003ab61865c0c86805e51c4ca0872cad24aaa46691",
+          "schema": "micro-cny.v1"
+        },
+        "org_id": 2,
+        "project_id": 2,
+        "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+        "schema_version": "unirouter.completed-execution.v1",
+        "terminal": {
+          "available_at": "2026-09-10T03:44:34.137463Z",
+          "status": "settled"
+        },
+        "usage": {
+          "authority": "provider_reported",
+          "cache_creation_tokens": 0,
+          "cache_read_tokens": 0,
+          "cache_usage_schema": "",
+          "cache_usage_status": "not_reported",
+          "completion_tokens": 5,
+          "contract_version": "unirouter.usage.v1",
+          "finality": "final",
+          "model": "gpt-4o",
+          "prompt_tokens": 10,
+          "purpose": "customer_charge",
+          "source": "upstream",
+          "uncached_prompt_tokens": 10
+        }
+      },
+      "snapshot_revision": "1",
+      "snapshot_sha256": "sha256:59c24566383d290aac17f72c74a219727d30c7df588068880813a37f251efc87",
+      "snapshot_wire": "{\"schema_version\":\"unirouter.completed-execution.v1\",\"request_id\":\"op_b6d4251ef0e7e37bd2baebfa9a3abd24\",\"org_id\":2,\"project_id\":2,\"terminal\":{\"status\":\"settled\",\"available_at\":\"2026-09-10T03:44:34.137463Z\"},\"usage\":{\"model\":\"gpt-4o\",\"prompt_tokens\":10,\"uncached_prompt_tokens\":10,\"cache_read_tokens\":0,\"cache_creation_tokens\":0,\"completion_tokens\":5,\"source\":\"upstream\",\"authority\":\"provider_reported\",\"purpose\":\"customer_charge\",\"finality\":\"final\",\"contract_version\":\"unirouter.usage.v1\",\"cache_usage_schema\":\"\",\"cache_usage_status\":\"not_reported\"},\"money\":{\"schema\":\"micro-cny.v1\",\"currency\":\"CNY\",\"amount_scale\":1000000,\"calculated_cost_micros\":\"700\",\"charged_cost_micros\":\"700\",\"pricing_version\":\"pv3_5f4fc0b3d3bd4e23705d7a003ab61865c0c86805e51c4ca0872cad24aaa46691\"},\"capture_gaps\":[{\"source\":\"call_log\",\"reason\":\"not_available_at_billing_terminal\"},{\"source\":\"request_trace\",\"reason\":\"not_available_at_billing_terminal\"},{\"source\":\"client_ip_presence\",\"reason\":\"not_available_at_billing_terminal\"},{\"source\":\"upstream_error_presence\",\"reason\":\"not_available_at_billing_terminal\"}]}",
+      "source_instance": "synthetic-http"
+    }
+  ],
+  "measurements": {
+    "latest_journal_timestamp_to_read_ms": 197.919,
+    "latest_publication_to_read_ms": 149.14,
+    "pull_with_replay_ack_ms": 122.006
+  },
+  "pages": [
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_7fbe92bd227168b5dae683b420f6ab8ef36b13acc5456d48c1354791ad3a2b3b",
+            "event_type": "execution.cost_basis.recorded",
+            "identity": {
+              "idempotency_key": "sha256:c6963ba40cb2bc9cb1b77b6ca2e2445b3c4fd9fd826d82e986787f861b308c40",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:5f32b3a15476607bbb5be05983f94a828e6f281c8a43206aa5672e157e08da6a",
+              "source_hash": "sha256:31344624d9011452a9e8e072ddacf8fade67f2ffb0743352a202078de8b16355"
+            },
+            "payload": {
+              "capture_status": "available",
+              "cost": {
+                "basis": {
+                  "amount_scale": "1000000",
+                  "billing_mode": "prepaid_enforced",
+                  "cache_creation_rate_micros_per_million": "20000000",
+                  "cache_read_rate_micros_per_million": "20000000",
+                  "currency": "CNY",
+                  "execution_snapshot_hash": "mrs1_fc0359dc66465c1ce6c31ac9f8780d8b55ac33ec1f3f7cb09fbb9dfeafff1205",
+                  "input_rate_micros_per_million": "20000000",
+                  "mode_source": "reservation",
+                  "output_rate_micros_per_million": "100000000",
+                  "price_multiplier": "1",
+                  "pricing_authority": "legacy",
+                  "pricing_state": "priced",
+                  "pricing_version": "pv3_5f4fc0b3d3bd4e23705d7a003ab61865c0c86805e51c4ca0872cad24aaa46691",
+                  "unit_rates": []
+                },
+                "basis_status": "available",
+                "economic_reference": {
+                  "calculated_amount_path": "money.calculated_cost_micros",
+                  "charged_amount_path": "money.charged_cost_micros",
+                  "org_id": "2",
+                  "project_id": "2",
+                  "publication_status": "published_by_i01",
+                  "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+                  "revision": "1",
+                  "snapshot_sha256": "sha256:59c24566383d290aac17f72c74a219727d30c7df588068880813a37f251efc87",
+                  "source": "completed_execution",
+                  "source_instance": "synthetic-http"
+                },
+                "journal_billing_mode": "prepaid_enforced",
+                "journal_mode_source": "journal_payload",
+                "model": "gpt-4o",
+                "terminal_status": "settled"
+              },
+              "event_id": "uf1_7fbe92bd227168b5dae683b420f6ab8ef36b13acc5456d48c1354791ad3a2b3b",
+              "occurred_at": "2026-09-10T03:44:34.137463Z",
+              "org_id": "2",
+              "profile": "unirouter.cost-basis.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.137463Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_6741c92adccd5f7d7cc73fe11166928f8fe5c8e9dfda0d5bf002bbdfc3f763d8",
+              "source_instance": "synthetic-http",
+              "stage": "terminal"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/cost-basis/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.137463Z",
+              "occurred_at": "2026-09-10T03:44:34.137463Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.262608Z",
+        "has_more": false,
+        "high_watermark": "ASeLM9k544npPztQ8wVa9qzsltSQ9rIwS7UMg8hqKRqkAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAARGe_BXJGJ801oRHilYIBcOQRtKGoEuYtcUovLQCMIAd",
+        "next_cursor": "ASeLM9k544npPztQ8wVa9qzsltSQ9rIwS7UMg8hqKRqkAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAARGe_BXJGJ801oRHilYIBcOQRtKGoEuYtcUovLQCMIAd",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "ASeLM9k544npPztQ8wVa9qzsltSQ9rIwS7UMg8hqKRqkAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAIK3TDFHp650gkIm93Cnp1IlQs8zsnnK5oC0AJwybmDt",
+      "profile": "unirouter.cost-basis.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_993b621ad1e9aa08f678dc4946622ad015a99ccb96ac0a4bc3fa5fd8b26d68a1",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:13bd354eaecafd0028b55cc34aa9647b9a0f8341498ab7c34ab6a70dfba1d969",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:63ac5b708f76648444678addea4e6c3c57a40c094366a7a3ad86f87614119bf9",
+              "source_hash": "sha256:23f1ad5414026607e46acd7b5d6d44ebadadcdfdb59ecbb99818dd7c02be05f1"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "1",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.029527Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+              },
+              "event_id": "uf1_993b621ad1e9aa08f678dc4946622ad015a99ccb96ac0a4bc3fa5fd8b26d68a1",
+              "occurred_at": "2026-09-10T03:44:34.029527Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.029527Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_bc3d44ec015e97c4cbbaab92744ff8e327a9432ee8469653e55c08eecc07b108",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.029527Z",
+              "occurred_at": "2026-09-10T03:44:34.029527Z"
+            }
+          },
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_e6ad737e0a5b0b5a1edbbb0cb18d44ec69a1cc91b85badb93a99b8673e83d02a",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:0422aca9b6acac1557609f72bc2548dd90a7e40eea4e9f927cd6b4d3aa305fe8",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:ba6885ad10fdf17204f1670025b4fc120a19ee2031136ba69b0e3729eb3350b6",
+              "source_hash": "sha256:a72f873e7e358187a3f1e280b6389907abaf32b894a8e03f7320a475c7fdda4b"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "1",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.029527Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+              },
+              "event_id": "uf1_e6ad737e0a5b0b5a1edbbb0cb18d44ec69a1cc91b85badb93a99b8673e83d02a",
+              "occurred_at": "2026-09-10T03:44:34.063808Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.063808Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_ffcba435532ca25095c5d1d3e62917c09a6f874eeed0f55d25771f46d90c23d6",
+              "source_instance": "synthetic-http",
+              "stage": "admission"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.063808Z",
+              "occurred_at": "2026-09-10T03:44:34.063808Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.283404Z",
+        "has_more": true,
+        "high_watermark": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB-qYUSoOFJRxpVpWJBQWzjaGiw831ytVFCNXuRCf20WF",
+        "next_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAmZ-A2e_haUo0r5Lj3V7MQY9vLBEHdE6YNNWY_6lsTt7",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAGFAkVrdnP395-Btvgj7cPTig0voufzg3O9JUwc2X_v_",
+      "profile": "unirouter.execution-context.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_320b787ba70f830b06a1825fa147c5bda41c756db729a9baf16f307fc4afcfc6",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:6bfae9d91f969d7b5c8663699ddf8350e62a34a4d8bee82b31d70ebef6454e22",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:d3dfb0d9541843f52908a8fad092571a7ceb8b7585ee56a17074c3644977764a",
+              "source_hash": "sha256:0c1330eeb3ab668282a9a1504bd3ced8992ada3852b2b7b348ede2153e703489"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "1",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.029527Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+              },
+              "event_id": "uf1_320b787ba70f830b06a1825fa147c5bda41c756db729a9baf16f307fc4afcfc6",
+              "occurred_at": "2026-09-10T03:44:34.137463Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.137463Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_4b908f20fe298355c731ed63149915b3ffc6961f42312a68d26b16a4b03a1725",
+              "source_instance": "synthetic-http",
+              "stage": "terminal"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.137463Z",
+              "occurred_at": "2026-09-10T03:44:34.137463Z"
+            }
+          },
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_a8315d80ddac05a2bdbe3b1353b68380"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_288663ac97b2d8f25fb7ad81d4c7053d0710c11af0cdba48733f58e3378549b6",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:06dd97aa33ddd6c25ec753d2d632384e3651ef4b14e9c57d573e34523538fe90",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:881bc998640dfa83ed2a9266bc217ff4179cd30b90b94ee49fcf4d41b8fc07ff",
+              "source_hash": "sha256:70a8cb1908d25d555d8fb5aaca0850467e928ed7f560c1b87f3fd5a66f33b9b7"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "2",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.215079Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_a8315d80ddac05a2bdbe3b1353b68380"
+              },
+              "event_id": "uf1_288663ac97b2d8f25fb7ad81d4c7053d0710c11af0cdba48733f58e3378549b6",
+              "occurred_at": "2026-09-10T03:44:34.215079Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.215079Z",
+              "request_id": "op_a8315d80ddac05a2bdbe3b1353b68380",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_2c26b639025ae59fd9c99bd14efbd3f286cc37cac36398854ad3c666cd2bb23b",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_a8315d80ddac05a2bdbe3b1353b68380",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.215079Z",
+              "occurred_at": "2026-09-10T03:44:34.215079Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.294345Z",
+        "has_more": true,
+        "high_watermark": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB-qYUSoOFJRxpVpWJBQWzjaGiw831ytVFCNXuRCf20WF",
+        "next_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABGtilqSyTxtYcnrFbbM0ifGtfqQETABYoFSJymsxojiP",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAmZ-A2e_haUo0r5Lj3V7MQY9vLBEHdE6YNNWY_6lsTt7",
+      "profile": "unirouter.execution-context.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_85b3280c4eff942729b0ce47504f5781"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_0a6004898409ebef38a3f094c6afbda2420760a9858f97c30c9a951babe3c092",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:a43e4e588007020df8a8368c6ac51f100ec34bdd200fc885a0b00b0138da2d6d",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:90607547cb50ff5ed51c41bff13802f68aeb9de3c71103a521e08c19b3f471c1",
+              "source_hash": "sha256:d32913219000b54de22c996a84ef81f5080ef76f821cb932349225ed0cfa65a2"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "2",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.222110Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_85b3280c4eff942729b0ce47504f5781"
+              },
+              "event_id": "uf1_0a6004898409ebef38a3f094c6afbda2420760a9858f97c30c9a951babe3c092",
+              "occurred_at": "2026-09-10T03:44:34.222110Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.222110Z",
+              "request_id": "op_85b3280c4eff942729b0ce47504f5781",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_bee7001ca84e734616b4291e5607c867616847241ac19f1a65e44c9d6e957d3d",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_85b3280c4eff942729b0ce47504f5781",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.222110Z",
+              "occurred_at": "2026-09-10T03:44:34.222110Z"
+            }
+          },
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_9d605745ae844718f3a66e944b0604cf"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_178fa5e0781ace8ec1103edf5f9c566f1080c6726f2d7dc441101bd103b3c21f",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:8a79187b2af5cc3c01aeb1f6d8ab35fdd475da79dcc39f43b7c072a9ef79d927",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:b2103d5c8aa5e1ba77ddcb39b9a54753ede099dfca89ba345d2d67a5036fd6b4",
+              "source_hash": "sha256:86e7371a78dd8ca0ca1aceed45d49910965bc314610ad77c61a211cb485353d4"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "2",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.227745Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_9d605745ae844718f3a66e944b0604cf"
+              },
+              "event_id": "uf1_178fa5e0781ace8ec1103edf5f9c566f1080c6726f2d7dc441101bd103b3c21f",
+              "occurred_at": "2026-09-10T03:44:34.227745Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.227745Z",
+              "request_id": "op_9d605745ae844718f3a66e944b0604cf",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_3f6aa83ef6e3e0553b364946a4309bff5e138565de8db635e2c5825eed0f501f",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_9d605745ae844718f3a66e944b0604cf",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.227745Z",
+              "occurred_at": "2026-09-10T03:44:34.227745Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.309423Z",
+        "has_more": true,
+        "high_watermark": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB-qYUSoOFJRxpVpWJBQWzjaGiw831ytVFCNXuRCf20WF",
+        "next_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABnNAHsQWZKmeF-VQEbj0GJFaqEOj46t1i1-BkiRMRCBm",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABGtilqSyTxtYcnrFbbM0ifGtfqQETABYoFSJymsxojiP",
+      "profile": "unirouter.execution-context.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_328b9d320cc28d17c1740ca414a2e924"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_2477b59364218071a0982e2b006c7cbc7e8789c2971e4795178dc31c5db11c6e",
+            "event_type": "execution.context.recorded",
+            "identity": {
+              "idempotency_key": "sha256:4700c61d3ea0a78b049ef92ab37dd45c4d0666db48664a54e8f0b1f5c205c238",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:2bf983e3164087ed74f38f72d38b01e9dd04ce4ab48032d9eee94e2cb9e4fedd",
+              "source_hash": "sha256:b0db38d786ac1b6f6106e5435f321f267911100a882760ad402afbb5dfeaaae0"
+            },
+            "payload": {
+              "capture_status": "available",
+              "core": {
+                "api_key_id": "1",
+                "auth_epoch": "2",
+                "auth_kind": "api_key",
+                "captured_at": "2026-09-10T03:44:34.233686Z",
+                "key_type": "shared",
+                "operation": "openai.chat_completions.v1",
+                "org_id": "2",
+                "project_id": "2",
+                "protocol": "openai.chat-completions.v1",
+                "request_id": "op_328b9d320cc28d17c1740ca414a2e924"
+              },
+              "event_id": "uf1_2477b59364218071a0982e2b006c7cbc7e8789c2971e4795178dc31c5db11c6e",
+              "occurred_at": "2026-09-10T03:44:34.233686Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-context.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.233686Z",
+              "request_id": "op_328b9d320cc28d17c1740ca414a2e924",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_e63fdad9324909a1cd83c93109e3119d9e2d530f999be53e3bcf653e926c3284",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-context/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_328b9d320cc28d17c1740ca414a2e924",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.233686Z",
+              "occurred_at": "2026-09-10T03:44:34.233686Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.320196Z",
+        "has_more": false,
+        "high_watermark": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB-qYUSoOFJRxpVpWJBQWzjaGiw831ytVFCNXuRCf20WF",
+        "next_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB-qYUSoOFJRxpVpWJBQWzjaGiw831ytVFCNXuRCf20WF",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AderSOLgftIN-vK5PexFEljkut8eR7H9ojY_uWOM6ZikAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABnNAHsQWZKmeF-VQEbj0GJFaqEOj46t1i1-BkiRMRCBm",
+      "profile": "unirouter.execution-context.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_cb7c2a20a79b7e12324b7cc230832ad41a9fc4d649c55f7d1f9bf1a0ad247fc8",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:3b2b6d150681e11423e1f3dd8f71350711e128c53f678b0814fc06577a929ab4",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:2f4ec59c8aaa2fd0efc77865e69453fb1fd9e52e29da75f193a4ad5b171b21df",
+              "source_hash": "sha256:d789cfa53243e9130665ece8ac763a78d634be9d4e20a75fde14a79fea9fce3f"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_cb7c2a20a79b7e12324b7cc230832ad41a9fc4d649c55f7d1f9bf1a0ad247fc8",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key",
+                "owner_user_id": "2"
+              },
+              "occurred_at": "2026-09-10T03:44:34.029527Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.029527Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_50bce966aedd6cb14e67339501e28cf66b18b5819c18d19878fee7961628aeee",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.029527Z",
+              "occurred_at": "2026-09-10T03:44:34.029527Z"
+            }
+          },
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_359310d271b535898c78552088c96571d8fa70e92651ba5155cd031a1f8c7603",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:0b3c1ffcb0721fe5917ef47976834682b8a5504f0cdec98e0f34f33ed7225e13",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:11479bedddda5c3017699ed193bbed327f2f5280f91c4ba4b50b65f881a9c8e6",
+              "source_hash": "sha256:83c976cc71429bd3638f912034d5677cfd126d31b26641433cababc945d1f5d1"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_359310d271b535898c78552088c96571d8fa70e92651ba5155cd031a1f8c7603",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key",
+                "owner_user_id": "2"
+              },
+              "occurred_at": "2026-09-10T03:44:34.063808Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.063808Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_1a7d3ff8ea1021d27572e3d7af970d6f9a4c75d2016e10c602be12cf520aed7e",
+              "source_instance": "synthetic-http",
+              "stage": "admission"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.063808Z",
+              "occurred_at": "2026-09-10T03:44:34.063808Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.334617Z",
+        "has_more": true,
+        "high_watermark": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB3zARdWjqz1mTiui2Zwg0NEn-qAREl0iT5tMIxSVm5fc",
+        "next_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAnOYBisKs5VDaCNkujiw20XZuTIZN3RaEc3AuBinHbvG",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAACps0Zh8EMPWRS5S9k4A_AVKbfePiPlHPwOgYyx7HVVQ",
+      "profile": "unirouter.execution-identity.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_6a6882465761529d73902801bf1927303a64ca4418fd1583cf182db24842d0da",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:62b618a1512130188cdde8e49e6a04766b2d9beda00622a1a08b46aa0fef8dff",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:433c42a0c7459eea82d9e7e28d762f1716ab7a0e089eb602c55f5adf07a163e6",
+              "source_hash": "sha256:1cece5542ea020d17eb433a41d0bb14beb7389ee248f8a749ac0f7151433baf6"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_6a6882465761529d73902801bf1927303a64ca4418fd1583cf182db24842d0da",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key",
+                "owner_user_id": "2"
+              },
+              "occurred_at": "2026-09-10T03:44:34.137463Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.137463Z",
+              "request_id": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_630c824f73cdba9e9b8aff8d802cbc375ed4766c4420f287ac84b17d0b9b69b3",
+              "source_instance": "synthetic-http",
+              "stage": "terminal"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_b6d4251ef0e7e37bd2baebfa9a3abd24",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.137463Z",
+              "occurred_at": "2026-09-10T03:44:34.137463Z"
+            }
+          },
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_a8315d80ddac05a2bdbe3b1353b68380"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_ea1d6d0a27f50de454cd7ed0935c02845f1013ac235dcf006aff9da66f6a0419",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:4b6c07c43fc8f92432f2e510ae7815142126aa4ee8fd65ce1f8efa7f39bacc43",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:f72fb26b8d331215f8fa9dae93523152e2f2539a39598ad85ac5ffd38d87cb94",
+              "source_hash": "sha256:49d7570ee72d5126868be8e60754da2d9151a82c5393f64c8e896e41b554b082"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_ea1d6d0a27f50de454cd7ed0935c02845f1013ac235dcf006aff9da66f6a0419",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key"
+              },
+              "occurred_at": "2026-09-10T03:44:34.215079Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.215079Z",
+              "request_id": "op_a8315d80ddac05a2bdbe3b1353b68380",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_0d0bc8f1c1e9b25690620712fefb7f623e6ab762f58eca2119af95335a868a85",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_a8315d80ddac05a2bdbe3b1353b68380",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.215079Z",
+              "occurred_at": "2026-09-10T03:44:34.215079Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.344267Z",
+        "has_more": true,
+        "high_watermark": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB3zARdWjqz1mTiui2Zwg0NEn-qAREl0iT5tMIxSVm5fc",
+        "next_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABIiZf-v2skutv_AntKzJ0Xh5ZPc_RnWApc46f5o0rqyP",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAnOYBisKs5VDaCNkujiw20XZuTIZN3RaEc3AuBinHbvG",
+      "profile": "unirouter.execution-identity.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_85b3280c4eff942729b0ce47504f5781"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_3b41856f7050e22fcf321c7bc25f4248da4ea3201c6ae6e48cfe3108015375ab",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:01b59d35285e1dbc384514d5b283d294681cacf8234c95edd3946c805b43a4a5",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:85f9c18166c6f57228c216734ebefc979d01f46f517767240aefa6bc3bdf34aa",
+              "source_hash": "sha256:3f9f2cf59883e648f08752df439e5cc17aab733229f28942d2db156337b0d15d"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_3b41856f7050e22fcf321c7bc25f4248da4ea3201c6ae6e48cfe3108015375ab",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key"
+              },
+              "occurred_at": "2026-09-10T03:44:34.222110Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.222110Z",
+              "request_id": "op_85b3280c4eff942729b0ce47504f5781",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_bba248b89e8b3a419afa6c2c824448a8141c3dadd319e819d120ab3f55eb4919",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_85b3280c4eff942729b0ce47504f5781",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.222110Z",
+              "occurred_at": "2026-09-10T03:44:34.222110Z"
+            }
+          },
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_9d605745ae844718f3a66e944b0604cf"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_bb1d9721fcab0708322c8707391ee64dacfc54e4d2fa1666e2a9bcece39400f4",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:b1ba52e4de32358d3439fa0612734722c1da156bb6f3f8fc67f71e8b12c4839f",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:faa3d47f95c51e1e3dd5c836716c49109ff8901b5681819427ce9da8aacd9e45",
+              "source_hash": "sha256:0c96dca046c0c925eaada5f04073db5eb4803ef805063db69b3746a06cb22bab"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_bb1d9721fcab0708322c8707391ee64dacfc54e4d2fa1666e2a9bcece39400f4",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key"
+              },
+              "occurred_at": "2026-09-10T03:44:34.227745Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.227745Z",
+              "request_id": "op_9d605745ae844718f3a66e944b0604cf",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_73f421ca5c7fbeadcc00e182e837fdbc3d4c3cade7485b78daf2a2461b8a3de4",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_9d605745ae844718f3a66e944b0604cf",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.227745Z",
+              "occurred_at": "2026-09-10T03:44:34.227745Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.358022Z",
+        "has_more": true,
+        "high_watermark": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB3zARdWjqz1mTiui2Zwg0NEn-qAREl0iT5tMIxSVm5fc",
+        "next_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABhJrLMePnL7ORUmfEqm9jQaRQUvFzrhzPionp260XBC-",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABIiZf-v2skutv_AntKzJ0Xh5ZPc_RnWApc46f5o0rqyP",
+      "profile": "unirouter.execution-identity.v1",
+      "project_id": "2"
+    },
+    {
+      "org_id": "2",
+      "page": {
+        "batch_version": "foigent.event-batch.v1",
+        "connector_id": "unirouter.workfacts",
+        "connector_version": "1.0.0",
+        "events": [
+          {
+            "actor": {
+              "type": "unknown"
+            },
+            "correlation": {
+              "request_ref": "op_328b9d320cc28d17c1740ca414a2e924"
+            },
+            "data_policy": {
+              "payload_capture_mode": "metadata_only",
+              "raw_payload_present": false
+            },
+            "event_id": "uf1_22975c58fa8d1d0fc9d6b11f415f873ce2965c7fcb5f52e5acfaea1463515658",
+            "event_type": "execution.identity.recorded",
+            "identity": {
+              "idempotency_key": "sha256:8070c65756db8efd46c86888ff959cfb9f8dd9220543f9e6e4e793683f493e42",
+              "source_revision": "1"
+            },
+            "integrity": {
+              "envelope_hash": "sha256:cf2523bfcae76c47cbc0d26110206f5e1f7fa63601b9b735744f4b02840db900",
+              "source_hash": "sha256:67f997dd08e9486a752610ae0e9212fc0da598b14bdc99a939eeb2b838c188d6"
+            },
+            "payload": {
+              "capture_status": "available",
+              "event_id": "uf1_22975c58fa8d1d0fc9d6b11f415f873ce2965c7fcb5f52e5acfaea1463515658",
+              "identity": {
+                "actual_human": "unknown",
+                "authority_read": "live_key"
+              },
+              "occurred_at": "2026-09-10T03:44:34.233686Z",
+              "org_id": "2",
+              "profile": "unirouter.execution-identity.v1",
+              "project_id": "2",
+              "recorded_at": "2026-09-10T03:44:34.233686Z",
+              "request_id": "op_328b9d320cc28d17c1740ca414a2e924",
+              "revision": "1",
+              "schema_version": "unirouter.source-fact.v1",
+              "source_fact_id": "uf1_8228af729c8b4f364468ab3c30524af6f2b88ef6c88a43a352136aabaecb2980",
+              "source_instance": "synthetic-http",
+              "stage": "authenticated"
+            },
+            "producer": {
+              "connector_id": "unirouter.workfacts",
+              "connector_version": "1.0.0",
+              "instance": "synthetic-http",
+              "product": "unirouter"
+            },
+            "provenance": {
+              "adapter_fidelity": "F2",
+              "field_groups": {
+                "source_fact": "direct"
+              }
+            },
+            "schema_ref": "foigent://events/unirouter/execution-identity/v1",
+            "schema_version": "1",
+            "scope": {
+              "org_ref": "2",
+              "project_ref": "2"
+            },
+            "spec_version": "foigent.event-envelope.v1",
+            "subject": {
+              "ref": "op_328b9d320cc28d17c1740ca414a2e924",
+              "type": "execution"
+            },
+            "time": {
+              "observed_at": "2026-09-10T03:44:34.233686Z",
+              "occurred_at": "2026-09-10T03:44:34.233686Z"
+            }
+          }
+        ],
+        "generated_at": "2026-09-10T03:44:34.368328Z",
+        "has_more": false,
+        "high_watermark": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB3zARdWjqz1mTiui2Zwg0NEn-qAREl0iT5tMIxSVm5fc",
+        "next_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAAB3zARdWjqz1mTiui2Zwg0NEn-qAREl0iT5tMIxSVm5fc",
+        "producer_instance": "synthetic-http"
+      },
+      "previous_cursor": "AeNsTww64irUqg42IwtIixzyoPhHcFpd410cT8xAc0t6AAAAAAAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAAAAAAEAAAAAAAAABhJrLMePnL7ORUmfEqm9jQaRQUvFzrhzPionp260XBC-",
+      "profile": "unirouter.execution-identity.v1",
+      "project_id": "2"
+    }
+  ],
+  "test": "TestCoordinatorPrepaidSourceAndMoneyIntegration/chat/legacy_shared"
+}

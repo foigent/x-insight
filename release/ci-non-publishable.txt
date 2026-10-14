@@ -1,0 +1,15 @@
+X-Insight CI qualification artifact — NOT FOR INSTALLATION OR PUBLICATION
+
+This artifact is signed by a per-run ephemeral CI key solely to prove deterministic
+build, signature verification, extraction, binary identity and offline-manual gates.
+It is not signed by the field/production release authority and is not an approved
+customer artifact. The private CI key is not uploaded or retained.
+
+The adjacent bootstrap xinsight-release binary is likewise only a deterministic
+CI output. A field bootstrap requires a separately approved out-of-band digest
+or signature receipt for that tool and the trusted public-key store.
+
+The accepted first-customer exception is produced only by the separate manual
+Owner-Supervised Trial Release workflow. It requires exact current main plus a
+successful matching push CI run and emits its own strict workflow/CI/hash-bound
+record. This ordinary CI artifact never becomes that delivery.

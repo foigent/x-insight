@@ -1,0 +1,39 @@
+{
+  "schema_version": "unirouter.completed-execution.v1",
+  "request_id": "req_feed_v1_cancelled",
+  "org_id": 101,
+  "project_id": 202,
+  "terminal": {
+    "status": "cancelled",
+    "available_at": "2026-07-25T04:06:07Z"
+  },
+  "usage": {
+    "model": "synthetic-model",
+    "prompt_tokens": 0,
+    "uncached_prompt_tokens": 0,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "completion_tokens": 0,
+    "source": "missing",
+    "authority": "none",
+    "purpose": "provider_evidence",
+    "finality": "missing",
+    "contract_version": "usage.v1",
+    "cache_usage_schema": "",
+    "cache_usage_status": "not_reported"
+  },
+  "money": {
+    "schema": "micro-cny.v1",
+    "currency": "CNY",
+    "amount_scale": 1000000,
+    "calculated_cost_micros": "0",
+    "charged_cost_micros": "0",
+    "pricing_version": "pricing-v1"
+  },
+  "capture_gaps": [
+    {"source": "call_log", "reason": "not_available_at_billing_terminal"},
+    {"source": "request_trace", "reason": "not_available_at_billing_terminal"},
+    {"source": "client_ip_presence", "reason": "not_available_at_billing_terminal"},
+    {"source": "upstream_error_presence", "reason": "not_available_at_billing_terminal"}
+  ]
+}

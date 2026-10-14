@@ -1,0 +1,730 @@
+{
+  "vector_version": "unirouter.source-observation-vectors.v1",
+  "fixture_only": true,
+  "notes": "Independent Python length-prefixed identity and sorted JSON, not UR writer output. Alternatives, not a single publication history.",
+  "valid": [
+    {
+      "name": "request_started",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "request_started",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "request_started",
+          "request_terminal"
+        ],
+        "runtime": {
+          "operation": "openai.chat_completions.v1",
+          "stream_mode": "not_observed",
+          "admission": "authenticated",
+          "provider": "not_started",
+          "local_delivery": "not_started",
+          "financial": "not_created",
+          "capture": "observed"
+        },
+        "source_fact_id": "uf1_8529715b6903d114d17a2c9cdde1c5c2a53dd5b3a8fbf00b6f9236f6fb884eaf",
+        "event_id": "uf1_efbdcbb2d38383ca54df3a92c2c69e0bf35cf95e2f257468bd68dce0696be643"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"request_started\",\"request_terminal\"],\"coverage\":\"observed\",\"event_id\":\"uf1_efbdcbb2d38383ca54df3a92c2c69e0bf35cf95e2f257468bd68dce0696be643\",\"observation_kind\":\"request_started\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"runtime\":{\"admission\":\"authenticated\",\"capture\":\"observed\",\"financial\":\"not_created\",\"local_delivery\":\"not_started\",\"operation\":\"openai.chat_completions.v1\",\"provider\":\"not_started\",\"stream_mode\":\"not_observed\"},\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_8529715b6903d114d17a2c9cdde1c5c2a53dd5b3a8fbf00b6f9236f6fb884eaf\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}",
+      "source_sha256": "sha256:bce4782e0ccd279ebb4382f040433feb85cd3a4e87e834f6cf5928befdaf388a"
+    },
+    {
+      "name": "attempt_registered",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.attempt-observation.v1",
+        "subject_kind": "provider_attempt",
+        "subject_id": "attempt-1",
+        "observation_kind": "attempt_registered",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "attempt_registered",
+          "provider_response_received",
+          "provider_rejected",
+          "provider_outcome_unknown",
+          "provider_response_unusable"
+        ],
+        "attempt": {
+          "attempt_id": "attempt-1",
+          "operation": "openai.chat_completions.v1",
+          "provider": "registered",
+          "local_delivery": "not_started",
+          "financial": "reserved",
+          "retry_authorized": false,
+          "evidence_ref": "attempt-1"
+        },
+        "source_fact_id": "uf1_faf5f880a48e88a0044adf6f05ae4743fa161df464875f6565ab43e959ff23ab",
+        "event_id": "uf1_cfe0652ee355d5c425979de196c860c652e6cdb3e1778fdd7ac2d64001cc42d6"
+      },
+      "canonical_utf8": "{\"attempt\":{\"attempt_id\":\"attempt-1\",\"evidence_ref\":\"attempt-1\",\"financial\":\"reserved\",\"local_delivery\":\"not_started\",\"operation\":\"openai.chat_completions.v1\",\"provider\":\"registered\",\"retry_authorized\":false},\"capture_expected\":[\"attempt_registered\",\"provider_response_received\",\"provider_rejected\",\"provider_outcome_unknown\",\"provider_response_unusable\"],\"coverage\":\"observed\",\"event_id\":\"uf1_cfe0652ee355d5c425979de196c860c652e6cdb3e1778fdd7ac2d64001cc42d6\",\"observation_kind\":\"attempt_registered\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.attempt-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_faf5f880a48e88a0044adf6f05ae4743fa161df464875f6565ab43e959ff23ab\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\"}",
+      "source_sha256": "sha256:947e891781cf7105ba8e2a766cd08628b262824ea7c50d524b28a0c7ae65f034"
+    },
+    {
+      "name": "selected_capability",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.capability-snapshot.v1",
+        "subject_kind": "provider_attempt",
+        "subject_id": "attempt-1",
+        "observation_kind": "selection",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "selection"
+        ],
+        "capability": {
+          "model_ref": "synthetic-model",
+          "provider": "synthetic",
+          "operation": "openai.chat_completions.v1",
+          "surface": "openai.chat_completions",
+          "protocol": {
+            "id": "integration.openai.chat.v1",
+            "version": "1.0.0"
+          },
+          "execution_profile": {
+            "id": "unverified",
+            "version": "1.0.0"
+          },
+          "evidence_state": "partial",
+          "required_capabilities": [
+            "tools"
+          ],
+          "capabilities": [
+            {
+              "capability_id": "tools",
+              "support_state": "enabled",
+              "evidence_state": "verified",
+              "evidence_ref_sha256": "sha256:3c5763d016c26246a8b8906f3eacf399cb980b20b7efd076acc4435ffd307789",
+              "verified_at": "2026-09-10T00:00:00.000000Z",
+              "revision": "1"
+            }
+          ]
+        },
+        "source_fact_id": "uf1_108d060882d747142a3d49805e5e54d8166b7723a6e38d1f17b22138e40c79e6",
+        "event_id": "uf1_792ff2bdb4e57c5c2e8d7cf7af701ef15644d0f4910b63b4cf68472069e313b9"
+      },
+      "canonical_utf8": "{\"capability\":{\"capabilities\":[{\"capability_id\":\"tools\",\"evidence_ref_sha256\":\"sha256:3c5763d016c26246a8b8906f3eacf399cb980b20b7efd076acc4435ffd307789\",\"evidence_state\":\"verified\",\"revision\":\"1\",\"support_state\":\"enabled\",\"verified_at\":\"2026-09-10T00:00:00.000000Z\"}],\"evidence_state\":\"partial\",\"execution_profile\":{\"id\":\"unverified\",\"version\":\"1.0.0\"},\"model_ref\":\"synthetic-model\",\"operation\":\"openai.chat_completions.v1\",\"protocol\":{\"id\":\"integration.openai.chat.v1\",\"version\":\"1.0.0\"},\"provider\":\"synthetic\",\"required_capabilities\":[\"tools\"],\"surface\":\"openai.chat_completions\"},\"capture_expected\":[\"selection\"],\"coverage\":\"observed\",\"event_id\":\"uf1_792ff2bdb4e57c5c2e8d7cf7af701ef15644d0f4910b63b4cf68472069e313b9\",\"observation_kind\":\"selection\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.capability-snapshot.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_108d060882d747142a3d49805e5e54d8166b7723a6e38d1f17b22138e40c79e6\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\"}",
+      "source_sha256": "sha256:5b208eda7ea02370e63aab659dfee6dd3900de2c3ef2b02ed6f8a71d733a0184"
+    },
+    {
+      "name": "shadow_match_not_block",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.policy-observation.v1",
+        "subject_kind": "policy",
+        "subject_id": "policy-1",
+        "observation_kind": "input_result",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "input_result"
+        ],
+        "policy": {
+          "detector_outcomes": [
+            "match"
+          ],
+          "stage_decisions": [
+            "allow"
+          ],
+          "policy_ref": "policy-1",
+          "policy_version": "1",
+          "detector_ref": "synthetic",
+          "detector_version": "1",
+          "stage": "input",
+          "mode": "shadow",
+          "configured_action": "block",
+          "outcome": "match",
+          "failure_mode": "closed",
+          "degraded": false,
+          "mandatory": true,
+          "effects": [],
+          "evidence_state": "observed"
+        },
+        "source_fact_id": "uf1_e52e5b8332eaa53a8e1f6e51622188f68fd7ea94f256c80e7b3c0f0a449ca498",
+        "event_id": "uf1_a79c07b0745ce6c571785ba07fbe6cda52a9482ec9b4981f41c7d0a392ee0910"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"input_result\"],\"coverage\":\"observed\",\"event_id\":\"uf1_a79c07b0745ce6c571785ba07fbe6cda52a9482ec9b4981f41c7d0a392ee0910\",\"observation_kind\":\"input_result\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"policy\":{\"configured_action\":\"block\",\"degraded\":false,\"detector_outcomes\":[\"match\"],\"detector_ref\":\"synthetic\",\"detector_version\":\"1\",\"effects\":[],\"evidence_state\":\"observed\",\"failure_mode\":\"closed\",\"mandatory\":true,\"mode\":\"shadow\",\"outcome\":\"match\",\"policy_ref\":\"policy-1\",\"policy_version\":\"1\",\"stage\":\"input\",\"stage_decisions\":[\"allow\"]},\"profile\":\"unirouter.policy-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_e52e5b8332eaa53a8e1f6e51622188f68fd7ea94f256c80e7b3c0f0a449ca498\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"policy-1\",\"subject_kind\":\"policy\"}",
+      "source_sha256": "sha256:730c3ecff47b04fe186246f453012f36aa5f6bfad6e27dffdd3b5daa0e42f852"
+    },
+    {
+      "name": "destination_registration_not_delivery",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.destination-observation.v1",
+        "subject_kind": "provider_attempt",
+        "subject_id": "attempt-1",
+        "observation_kind": "dispatch_registered",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "dispatch_registered",
+          "dispatch_result"
+        ],
+        "destination": {
+          "provider": "synthetic",
+          "origin": "https://provider.invalid",
+          "region_source": "not_available",
+          "dispatch": "registered",
+          "policy_evidence": "not_observed",
+          "input_binding_state": "unknown"
+        },
+        "source_fact_id": "uf1_a5850a573bc39cacb5fa37eb60726bb6726a03703b23555f39ecd7fc928c471f",
+        "event_id": "uf1_da56d03be9ff279c565144dafbab7499ae1849f5fb5cd8c086d3dbcab7f79a56"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"dispatch_registered\",\"dispatch_result\"],\"coverage\":\"observed\",\"destination\":{\"dispatch\":\"registered\",\"input_binding_state\":\"unknown\",\"origin\":\"https://provider.invalid\",\"policy_evidence\":\"not_observed\",\"provider\":\"synthetic\",\"region_source\":\"not_available\"},\"event_id\":\"uf1_da56d03be9ff279c565144dafbab7499ae1849f5fb5cd8c086d3dbcab7f79a56\",\"observation_kind\":\"dispatch_registered\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.destination-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_a5850a573bc39cacb5fa37eb60726bb6726a03703b23555f39ecd7fc928c471f\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\"}",
+      "source_sha256": "sha256:f2e1c59cb461b8d3fe3f1eee5bceeef05f26a44482b9ea6b7d00f447dcf01cfb"
+    },
+    {
+      "name": "request_response_complete_true_zero",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "response_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "response_measurement"
+        ],
+        "measurement": {
+          "kind": "request_response_complete",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "protocol_response_written",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_829fe039cc854d50e0f7b3c0fee7c7dff454ae026d4b3d2f7c8ff69bd14da50a",
+        "event_id": "uf1_056a9fa859ab32b3abd1ed99b67fd7255329a2c6317f457ea1c066906f9b6ff4"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"response_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_056a9fa859ab32b3abd1ed99b67fd7255329a2c6317f457ea1c066906f9b6ff4\",\"measurement\":{\"end_boundary\":\"protocol_response_written\",\"kind\":\"request_response_complete\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"response_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_829fe039cc854d50e0f7b3c0fee7c7dff454ae026d4b3d2f7c8ff69bd14da50a\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}",
+      "source_sha256": "sha256:f7615214fdee944daa21a8254198d37f68f966f418d105d0fd9f07992a1509fd"
+    },
+    {
+      "name": "stream_first_valid_output_true_zero",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "first_output_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "first_output_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_first_valid_output",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "first_meaningful_frame_written_and_flushed",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654",
+        "event_id": "uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"first_output_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d\",\"measurement\":{\"end_boundary\":\"first_meaningful_frame_written_and_flushed\",\"kind\":\"stream_first_valid_output\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"first_output_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}",
+      "source_sha256": "sha256:c989c0c89ed549925897c33d101f1f2b8a7be24c9881dcfe86b0ef763344750c"
+    },
+    {
+      "name": "stream_complete_true_zero",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "stream_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "stream_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_complete",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "protocol_terminal_written_and_flushed",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_8fcbabd296a0892942b1deb72ceb0e91ad40067bd629a36834ad73f9e8dcf15b",
+        "event_id": "uf1_bbcfeb0fa08891637be3cf4508777d5999470cb8dc47f704004e6a4446123dd7"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"stream_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_bbcfeb0fa08891637be3cf4508777d5999470cb8dc47f704004e6a4446123dd7\",\"measurement\":{\"end_boundary\":\"protocol_terminal_written_and_flushed\",\"kind\":\"stream_complete\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"stream_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_8fcbabd296a0892942b1deb72ceb0e91ad40067bd629a36834ad73f9e8dcf15b\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}",
+      "source_sha256": "sha256:02085131145830ff925008e4075aa2a2d0ced19825be2f8083af09346bef9217"
+    },
+    {
+      "name": "attempt_http_round_trip_true_zero",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.attempt-observation.v1",
+        "subject_kind": "provider_attempt",
+        "subject_id": "attempt-1",
+        "observation_kind": "round_trip_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "round_trip_measurement"
+        ],
+        "measurement": {
+          "kind": "attempt_http_round_trip",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "http_do_called",
+          "end_boundary": "http_do_returned",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_d661619aeb9ea6b5b1e7df895ae2830a33d5db06cc46e0f3a4014b99a9b45988",
+        "event_id": "uf1_67518da30916d55b73d0875f5a46e6ae8bd4e93bfeb0d0e267957995b4ec20a7"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"round_trip_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_67518da30916d55b73d0875f5a46e6ae8bd4e93bfeb0d0e267957995b4ec20a7\",\"measurement\":{\"end_boundary\":\"http_do_returned\",\"kind\":\"attempt_http_round_trip\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"http_do_called\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"round_trip_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.attempt-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_d661619aeb9ea6b5b1e7df895ae2830a33d5db06cc46e0f3a4014b99a9b45988\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\"}",
+      "source_sha256": "sha256:a8c5f4c66e0b81c097bd474c78380a041728167d5ecd6b9da861ab5fd2c2c8d2"
+    },
+    {
+      "name": "context_done_no_actor_inference",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "request_context_done",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "request_context_done"
+        ],
+        "runtime": {
+          "operation": "openai.chat_completions.v1",
+          "stream_mode": "not_observed",
+          "admission": "authenticated",
+          "provider": "unknown",
+          "local_delivery": "unknown",
+          "financial": "unknown",
+          "capture": "observed",
+          "context_done_reason": "context_cancelled"
+        },
+        "source_fact_id": "uf1_fb4fdc951b1c31c85bb167331a468e49561ebe67ae9112522f5f5bc52e97715b",
+        "event_id": "uf1_90c26485eefcdd1434cdb5d40651a769850de1bdc57a921152cb50c068ffa0cd"
+      },
+      "canonical_utf8": "{\"capture_expected\":[\"request_context_done\"],\"coverage\":\"observed\",\"event_id\":\"uf1_90c26485eefcdd1434cdb5d40651a769850de1bdc57a921152cb50c068ffa0cd\",\"observation_kind\":\"request_context_done\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"runtime\":{\"admission\":\"authenticated\",\"capture\":\"observed\",\"context_done_reason\":\"context_cancelled\",\"financial\":\"unknown\",\"local_delivery\":\"unknown\",\"operation\":\"openai.chat_completions.v1\",\"provider\":\"unknown\",\"stream_mode\":\"not_observed\"},\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_fb4fdc951b1c31c85bb167331a468e49561ebe67ae9112522f5f5bc52e97715b\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}",
+      "source_sha256": "sha256:66dd036663428abdfcfde031e65953644cda7607ef8bbdddce45d40c311d4e23"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "unknown_bearer",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "first_output_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "first_output_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_first_valid_output",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "first_meaningful_frame_written_and_flushed",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654",
+        "event_id": "uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d",
+        "bearer": "synthetic-only"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"bearer\":\"synthetic-only\",\"capture_expected\":[\"first_output_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d\",\"measurement\":{\"end_boundary\":\"first_meaningful_frame_written_and_flushed\",\"kind\":\"stream_first_valid_output\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"first_output_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}"
+    },
+    {
+      "name": "null_not_zero",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "first_output_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "first_output_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_first_valid_output",
+          "version": "1",
+          "value": null,
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "first_meaningful_frame_written_and_flushed",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654",
+        "event_id": "uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"first_output_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d\",\"measurement\":{\"end_boundary\":\"first_meaningful_frame_written_and_flushed\",\"kind\":\"stream_first_valid_output\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":null,\"version\":\"1\"},\"observation_kind\":\"first_output_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}"
+    },
+    {
+      "name": "false_first_output",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "first_output_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "first_output_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_first_valid_output",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "headers_sent",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654",
+        "event_id": "uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"first_output_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d\",\"measurement\":{\"end_boundary\":\"headers_sent\",\"kind\":\"stream_first_valid_output\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"first_output_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}"
+    },
+    {
+      "name": "unobserved_value",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "first_output_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "first_output_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_first_valid_output",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "not_observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "first_meaningful_frame_written_and_flushed",
+          "resolution": "nanosecond_representation",
+          "source": "process_monotonic_clock"
+        },
+        "source_fact_id": "uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654",
+        "event_id": "uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"first_output_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d\",\"measurement\":{\"end_boundary\":\"first_meaningful_frame_written_and_flushed\",\"kind\":\"stream_first_valid_output\",\"resolution\":\"nanosecond_representation\",\"source\":\"process_monotonic_clock\",\"start_boundary\":\"trusted_ingress\",\"state\":\"not_observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"first_output_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}"
+    },
+    {
+      "name": "wall_clock",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "first_output_measurement",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "first_output_measurement"
+        ],
+        "measurement": {
+          "kind": "stream_first_valid_output",
+          "version": "1",
+          "value": "0",
+          "unit": "nanoseconds",
+          "state": "observed",
+          "start_boundary": "trusted_ingress",
+          "end_boundary": "first_meaningful_frame_written_and_flushed",
+          "resolution": "nanosecond_representation",
+          "source": "wall_clock_subtraction"
+        },
+        "source_fact_id": "uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654",
+        "event_id": "uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"first_output_measurement\"],\"coverage\":\"observed\",\"event_id\":\"uf1_c1e4ed0dae43c2b2f6cd57fdcdca590cdb25ecf9b1e9308641a6693a5de8825d\",\"measurement\":{\"end_boundary\":\"first_meaningful_frame_written_and_flushed\",\"kind\":\"stream_first_valid_output\",\"resolution\":\"nanosecond_representation\",\"source\":\"wall_clock_subtraction\",\"start_boundary\":\"trusted_ingress\",\"state\":\"observed\",\"unit\":\"nanoseconds\",\"value\":\"0\",\"version\":\"1\"},\"observation_kind\":\"first_output_measurement\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_b6cfbd94dc6d64ab2c5a9fa44f9d0fc68743052ab671b825b01a8c8a62299654\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}"
+    },
+    {
+      "name": "raw_destination",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.destination-observation.v1",
+        "subject_kind": "provider_attempt",
+        "subject_id": "attempt-1",
+        "observation_kind": "dispatch_registered",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "dispatch_registered",
+          "dispatch_result"
+        ],
+        "destination": {
+          "provider": "synthetic",
+          "origin": "https://user:synthetic@provider.invalid/path?key=synthetic",
+          "region_source": "not_available",
+          "dispatch": "registered",
+          "policy_evidence": "not_observed",
+          "input_binding_state": "unknown"
+        },
+        "source_fact_id": "uf1_a5850a573bc39cacb5fa37eb60726bb6726a03703b23555f39ecd7fc928c471f",
+        "event_id": "uf1_da56d03be9ff279c565144dafbab7499ae1849f5fb5cd8c086d3dbcab7f79a56"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"dispatch_registered\",\"dispatch_result\"],\"coverage\":\"observed\",\"destination\":{\"dispatch\":\"registered\",\"input_binding_state\":\"unknown\",\"origin\":\"https://user:synthetic@provider.invalid/path?key=synthetic\",\"policy_evidence\":\"not_observed\",\"provider\":\"synthetic\",\"region_source\":\"not_available\"},\"event_id\":\"uf1_da56d03be9ff279c565144dafbab7499ae1849f5fb5cd8c086d3dbcab7f79a56\",\"observation_kind\":\"dispatch_registered\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.destination-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_a5850a573bc39cacb5fa37eb60726bb6726a03703b23555f39ecd7fc928c471f\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\"}"
+    },
+    {
+      "name": "shadow_as_block",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.policy-observation.v1",
+        "subject_kind": "policy",
+        "subject_id": "policy-1",
+        "observation_kind": "input_result",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "input_result"
+        ],
+        "policy": {
+          "detector_outcomes": [
+            "match"
+          ],
+          "stage_decisions": [
+            "allow"
+          ],
+          "policy_ref": "policy-1",
+          "policy_version": "1",
+          "detector_ref": "synthetic",
+          "detector_version": "1",
+          "stage": "input",
+          "mode": "shadow",
+          "configured_action": "block",
+          "outcome": "match",
+          "failure_mode": "closed",
+          "degraded": false,
+          "mandatory": true,
+          "effects": [
+            "input_blocked"
+          ],
+          "evidence_state": "observed"
+        },
+        "source_fact_id": "uf1_e52e5b8332eaa53a8e1f6e51622188f68fd7ea94f256c80e7b3c0f0a449ca498",
+        "event_id": "uf1_a79c07b0745ce6c571785ba07fbe6cda52a9482ec9b4981f41c7d0a392ee0910"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"input_result\"],\"coverage\":\"observed\",\"event_id\":\"uf1_a79c07b0745ce6c571785ba07fbe6cda52a9482ec9b4981f41c7d0a392ee0910\",\"observation_kind\":\"input_result\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"policy\":{\"configured_action\":\"block\",\"degraded\":false,\"detector_outcomes\":[\"match\"],\"detector_ref\":\"synthetic\",\"detector_version\":\"1\",\"effects\":[\"input_blocked\"],\"evidence_state\":\"observed\",\"failure_mode\":\"closed\",\"mandatory\":true,\"mode\":\"shadow\",\"outcome\":\"match\",\"policy_ref\":\"policy-1\",\"policy_version\":\"1\",\"stage\":\"input\",\"stage_decisions\":[\"allow\"]},\"profile\":\"unirouter.policy-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_e52e5b8332eaa53a8e1f6e51622188f68fd7ea94f256c80e7b3c0f0a449ca498\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"policy-1\",\"subject_kind\":\"policy\"}"
+    },
+    {
+      "name": "wrong_fact_identity",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.attempt-observation.v1",
+        "subject_kind": "provider_attempt",
+        "subject_id": "attempt-1",
+        "observation_kind": "attempt_registered",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "attempt_registered",
+          "provider_response_received",
+          "provider_rejected",
+          "provider_outcome_unknown",
+          "provider_response_unusable"
+        ],
+        "attempt": {
+          "attempt_id": "attempt-1",
+          "operation": "openai.chat_completions.v1",
+          "provider": "registered",
+          "local_delivery": "not_started",
+          "financial": "reserved",
+          "retry_authorized": false,
+          "evidence_ref": "attempt-1"
+        },
+        "source_fact_id": "uf1_0000000000000000000000000000000000000000000000000000000000000000",
+        "event_id": "uf1_cfe0652ee355d5c425979de196c860c652e6cdb3e1778fdd7ac2d64001cc42d6"
+      },
+      "validation": "domain",
+      "canonical_utf8": "{\"attempt\":{\"attempt_id\":\"attempt-1\",\"evidence_ref\":\"attempt-1\",\"financial\":\"reserved\",\"local_delivery\":\"not_started\",\"operation\":\"openai.chat_completions.v1\",\"provider\":\"registered\",\"retry_authorized\":false},\"capture_expected\":[\"attempt_registered\",\"provider_response_received\",\"provider_rejected\",\"provider_outcome_unknown\",\"provider_response_unusable\"],\"coverage\":\"observed\",\"event_id\":\"uf1_cfe0652ee355d5c425979de196c860c652e6cdb3e1778fdd7ac2d64001cc42d6\",\"observation_kind\":\"attempt_registered\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.attempt-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_0000000000000000000000000000000000000000000000000000000000000000\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"attempt-1\",\"subject_kind\":\"provider_attempt\"}"
+    },
+    {
+      "name": "unsupported_cancel_actor",
+      "document": {
+        "schema_version": "unirouter.source-observation.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "2",
+        "project_id": "3",
+        "request_id": "request-1",
+        "profile": "unirouter.runtime-observation.v1",
+        "subject_kind": "request",
+        "subject_id": "request-1",
+        "observation_kind": "request_context_done",
+        "revision": "1",
+        "occurred_at": "2026-09-10T00:00:00.000000Z",
+        "recorded_at": "2026-09-10T00:00:00.000000Z",
+        "coverage": "observed",
+        "capture_expected": [
+          "request_context_done"
+        ],
+        "runtime": {
+          "operation": "openai.chat_completions.v1",
+          "stream_mode": "not_observed",
+          "admission": "authenticated",
+          "provider": "unknown",
+          "local_delivery": "unknown",
+          "financial": "unknown",
+          "capture": "observed",
+          "context_done_reason": "employee_cancelled"
+        },
+        "source_fact_id": "uf1_fb4fdc951b1c31c85bb167331a468e49561ebe67ae9112522f5f5bc52e97715b",
+        "event_id": "uf1_90c26485eefcdd1434cdb5d40651a769850de1bdc57a921152cb50c068ffa0cd"
+      },
+      "validation": "schema_and_domain",
+      "canonical_utf8": "{\"capture_expected\":[\"request_context_done\"],\"coverage\":\"observed\",\"event_id\":\"uf1_90c26485eefcdd1434cdb5d40651a769850de1bdc57a921152cb50c068ffa0cd\",\"observation_kind\":\"request_context_done\",\"occurred_at\":\"2026-09-10T00:00:00.000000Z\",\"org_id\":\"2\",\"profile\":\"unirouter.runtime-observation.v1\",\"project_id\":\"3\",\"recorded_at\":\"2026-09-10T00:00:00.000000Z\",\"request_id\":\"request-1\",\"revision\":\"1\",\"runtime\":{\"admission\":\"authenticated\",\"capture\":\"observed\",\"context_done_reason\":\"employee_cancelled\",\"financial\":\"unknown\",\"local_delivery\":\"unknown\",\"operation\":\"openai.chat_completions.v1\",\"provider\":\"unknown\",\"stream_mode\":\"not_observed\"},\"schema_version\":\"unirouter.source-observation.v1\",\"source_fact_id\":\"uf1_fb4fdc951b1c31c85bb167331a468e49561ebe67ae9112522f5f5bc52e97715b\",\"source_instance\":\"synthetic-ur\",\"subject_id\":\"request-1\",\"subject_kind\":\"request\"}"
+    }
+  ]
+}

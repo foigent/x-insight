@@ -1,0 +1,1 @@
+{"schema_version":"xinsight.signed-campaign-package-consumer.v1","profile":"poc_source_evidence","role":"source_evidence_consumer","import_mode":"bounded_offline","capability_boundary":"offline_files_only","package_scope_complete_required":true,"partial_member_source_profiles_preserved":true,"explicit_capture_gaps_required":true,"runtime_close_marker_required":false}

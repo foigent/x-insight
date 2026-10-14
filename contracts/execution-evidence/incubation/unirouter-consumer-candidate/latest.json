@@ -1,0 +1,14 @@
+{
+  "pointer_version": "xinsight.execution-evidence-incubation-latest.v1",
+  "draft_version": "0.1.0-draft",
+  "manifest_path": "versions/0.1.0/draft-manifest.json",
+  "manifest_content_sha256": "sha256:79fa04b1b038987cbb77bedc1064acdf70acda904aedc322f991a9a83b8a7d5d",
+  "schema_id": "urn:x-insight:incubation:unirouter-execution-evidence-consumer-candidate:0.1.0",
+  "schema_content_sha256": "sha256:abd055cbfc53367664a734df47c5efffca2bad3632782fd77a00599868457044",
+  "source_commit": "f3a73f3cd84cf4c75e9a4159dbe1831d9c517379",
+  "source_tree": "ce36a61e0027513b9f668dda6229a8d5d0590de7",
+  "authority_status": "undefined",
+  "release_status": "no_eligible_release",
+  "runtime_eligible": false,
+  "compatibility_commitment": "none"
+}

@@ -1,0 +1,6 @@
+{
+  "schema_version": "xinsight.p3-component-pair.v1",
+  "unirouter_repository": "foigent/unirouter",
+  "unirouter_commit": "1b49266bc5112f885350d32d9ec23506d8308082",
+  "status": "immutable_portable_candidate"
+}

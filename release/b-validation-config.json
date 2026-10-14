@@ -1,0 +1,57 @@
+{
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "application_compatibility": {
+    "config_schema_max": "xinsight.config.v1",
+    "config_schema_min": "xinsight.config.v1",
+    "database_schema_max": "35",
+    "database_schema_min": "35"
+  },
+  "config_schema": {
+    "current": "xinsight.config.v1",
+    "max": "xinsight.config.v1",
+    "min": "xinsight.config.v1"
+  },
+  "database_schema": {
+    "current": "35",
+    "min": "35",
+    "max": "35"
+  },
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "manual": {
+    "language": "zh-CN",
+    "version": "0.2.0-dev.b2/manual-r1"
+  },
+  "product_name": "x-insight",
+  "product_version": "0.2.0-dev.b2",
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "release_channel": "release_candidate",
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:11299b8688283c7f65d4bfbc7be4d9dc4ff89a64a16e50b58a64545e8f8c03ab",
+    "migration_set_sha256": "sha256:f165eca23edf2b97aa442cd39bff6c03912907f19623f85c47612a04d1548baa"
+  },
+  "rollback": {
+    "application_rollback_compatible": false,
+    "barriers": [
+      "no_destructive_or_contract_migration",
+      "database_restore_is_explicit"
+    ]
+  },
+  "schema_version": "xinsight.release-config.v1",
+  "supported_legacy_sources": [],
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.f4",
+    "0.2.0-dev.b1"
+  ],
+  "trust_reference": "/etc/x-insight/trusted-release-keys.json"
+}

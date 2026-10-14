@@ -1,0 +1,25 @@
+{
+  "classification": "synthetic_deterministic_contract_bytes_no_live_credentials",
+  "files": {
+    "rotate.json": {
+      "bytes": 665,
+      "sha256": "880134bb56e8c19f8d66865e46e32d2f523c42cd58f576aa28df7cf8a81b2716"
+    },
+    "recover.json": {
+      "bytes": 915,
+      "sha256": "448c692e68d3b2b74d052f7cbd8e00342c5101c7b8d9e1d69a47b771be909b95"
+    },
+    "prepared.json": {
+      "bytes": 889,
+      "sha256": "0191f1dc68590b7afef0851028605642a5f0afadcdeef15d86eb44ae263f7fc7"
+    },
+    "committed.json": {
+      "bytes": 890,
+      "sha256": "42c13408335b57494d87ccb10e01118254ea026ac0a6f9449398dcb395800aea"
+    },
+    "confirm.json": {
+      "bytes": 204,
+      "sha256": "a8b92b1fc35297f69cf2bf59fc0615b307083503531439534752cf6731ceb31f"
+    }
+  }
+}

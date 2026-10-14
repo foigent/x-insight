@@ -1,0 +1,53 @@
+{
+  "archive_path": "PRIVATE_RETAINED_ARCHIVE/coordinator-a11-acceptance-06-guest.tar.gz",
+  "archive_sha256": "4194902e2f55b2239a67e0372e23570422472416a90d1316bb1e8d0ed3a58b2e",
+  "boundary": "Retained production UR Handler synthetic exports; no new UR runtime or real integration",
+  "files": [
+    {
+      "file": "TestCoordinatorPrepaidSourceAndMoneyIntegration_chat_legacy_shared.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-06/pages/TestCoordinatorPrepaidSourceAndMoneyIntegration_chat_legacy_shared.json",
+      "sha256": "b984c79840a3f7a6a09a2476e79bbe871e07257d229bfe2e7356a144343964e2"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_grant_success_replay.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_grant_success_replay.json",
+      "sha256": "a344892610cc16fe36b9dc5e0e94dd6ce50a97f46bc82ad9652a2b021c317aed"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_grant_revoke_before_dispatch.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_grant_revoke_before_dispatch.json",
+      "sha256": "430b274a492013c24ed342ac9c7c6b0d455f3c440c21b39b40b499df6f562dc0"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_legacy_success_replay.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_legacy_success_replay.json",
+      "sha256": "32f25dec948840af650139feac865077b4b9df32df4a46d0e96006db312f9d86"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_legacy_revoke_before_dispatch.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_legacy_revoke_before_dispatch.json",
+      "sha256": "5b5c32518f008691b4fc3bbeaa8501a1cdd9bbbbc6b4a23f7746a43011a7e442"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_legacy_queued_cancel.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_legacy_queued_cancel.json",
+      "sha256": "caead615ce928218e71d7f587cd75309b0ae74e1527ce89d5f4620164daf392f"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_legacy_inflight_cancel.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_legacy_inflight_cancel.json",
+      "sha256": "8878e95184db9034122b3c0b2717e382d5df2aae20b65753b5c239bce780f829"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_grant_queued_cancel.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_grant_queued_cancel.json",
+      "sha256": "e28f110c899ffdcc0405ca3d1957cb0a0cfebdf2081ba084e376c2cfe99ab36a"
+    },
+    {
+      "file": "TestSourceFactsMediaHTTPIntegration_grant_inflight_cancel.json",
+      "archive_member": "evidence/coordinator-a11-acceptance-04/pages/TestSourceFactsMediaHTTPIntegration_grant_inflight_cancel.json",
+      "sha256": "bd71bf7973f8bab23a6dcfb4b75342420efaa7688e78fb2b3f909a6c622149d6"
+    }
+  ],
+  "public_copy_note": "The original workstation archive path is retained privately. Archive and member digests and captured bytes are unchanged."
+}

@@ -1,0 +1,187 @@
+{
+  "status": "proposed_wire_not_product_test",
+  "source_commit": "fe771d5c177f255523f290141acfc2809bb9cc31",
+  "identity": "synthetic_only_no_bearer_tokens",
+  "hash_method": "ASCII fields in Go Registration struct order, compact JSON then SHA256Reference; baseline rejects C until implementation",
+  "credential_ids": "42/43/44 illustrate successive server-assigned results; substitute exact returned IDs at execution",
+  "registrations": [
+    {
+      "registration": {
+        "schema_version": "unirouter.xinsight.source-credential-registration.v1",
+        "token_format": "ur-xf1-hex256.v1",
+        "verifier_scheme": "receiver_sha256_v1",
+        "key_prefix": "ur-xf1-0000000000001",
+        "verifier_sha256": "d9c4bb0d61dc341aba6b3bec7c2dfbede896504f0ec64d362c55803a4bb41f4d",
+        "operation_id": "00000000000000000000000000000001",
+        "source_instance": "synthetic-u1-local",
+        "org_id": "1",
+        "project_id": "2",
+        "profiles": [
+          "unirouter.interaction-content.v1"
+        ]
+      },
+      "registration_wire": "{\"schema_version\":\"unirouter.xinsight.source-credential-registration.v1\",\"token_format\":\"ur-xf1-hex256.v1\",\"verifier_scheme\":\"receiver_sha256_v1\",\"key_prefix\":\"ur-xf1-0000000000001\",\"verifier_sha256\":\"d9c4bb0d61dc341aba6b3bec7c2dfbede896504f0ec64d362c55803a4bb41f4d\",\"operation_id\":\"00000000000000000000000000000001\",\"source_instance\":\"synthetic-u1-local\",\"org_id\":\"1\",\"project_id\":\"2\",\"profiles\":[\"unirouter.interaction-content.v1\"]}",
+      "registration_hash": "sha256:f15cd0e73e6816c53aa1ad352a524580014831c92b26129e577d1919c87f1374"
+    },
+    {
+      "registration": {
+        "schema_version": "unirouter.xinsight.source-credential-registration.v1",
+        "token_format": "ur-xf1-hex256.v1",
+        "verifier_scheme": "receiver_sha256_v1",
+        "key_prefix": "ur-xf1-0000000000002",
+        "verifier_sha256": "19601b61c19ac1c128adc29095fab9f588dd8e869bd15b1b19e25a0a4a2c5ee1",
+        "operation_id": "00000000000000000000000000000002",
+        "source_instance": "synthetic-u1-local",
+        "org_id": "1",
+        "project_id": "2",
+        "profiles": [
+          "unirouter.interaction-content.v1"
+        ]
+      },
+      "registration_wire": "{\"schema_version\":\"unirouter.xinsight.source-credential-registration.v1\",\"token_format\":\"ur-xf1-hex256.v1\",\"verifier_scheme\":\"receiver_sha256_v1\",\"key_prefix\":\"ur-xf1-0000000000002\",\"verifier_sha256\":\"19601b61c19ac1c128adc29095fab9f588dd8e869bd15b1b19e25a0a4a2c5ee1\",\"operation_id\":\"00000000000000000000000000000002\",\"source_instance\":\"synthetic-u1-local\",\"org_id\":\"1\",\"project_id\":\"2\",\"profiles\":[\"unirouter.interaction-content.v1\"]}",
+      "registration_hash": "sha256:00a54da6178d1b47ef9bbbf95228ae8b7368923be5c7a2980a8969ad78609b2b"
+    },
+    {
+      "registration": {
+        "schema_version": "unirouter.xinsight.source-credential-registration.v1",
+        "token_format": "ur-xf1-hex256.v1",
+        "verifier_scheme": "receiver_sha256_v1",
+        "key_prefix": "ur-xf1-0000000000003",
+        "verifier_sha256": "13c48254d899a0b9c9cff3b2638151164c0d5945b095bb1e8804b46c46e1eb83",
+        "operation_id": "00000000000000000000000000000003",
+        "source_instance": "synthetic-u1-local",
+        "org_id": "1",
+        "project_id": "2",
+        "profiles": [
+          "unirouter.interaction-content.v1"
+        ]
+      },
+      "registration_wire": "{\"schema_version\":\"unirouter.xinsight.source-credential-registration.v1\",\"token_format\":\"ur-xf1-hex256.v1\",\"verifier_scheme\":\"receiver_sha256_v1\",\"key_prefix\":\"ur-xf1-0000000000003\",\"verifier_sha256\":\"13c48254d899a0b9c9cff3b2638151164c0d5945b095bb1e8804b46c46e1eb83\",\"operation_id\":\"00000000000000000000000000000003\",\"source_instance\":\"synthetic-u1-local\",\"org_id\":\"1\",\"project_id\":\"2\",\"profiles\":[\"unirouter.interaction-content.v1\"]}",
+      "registration_hash": "sha256:e897015057de4a12abc55f8f545f63fe9d8157d3248410018502df35778258e3"
+    }
+  ],
+  "actions": [
+    {
+      "action": "prepare",
+      "request": {
+        "operation_id": "00000000000000000000000000000001",
+        "expected_state_version": "0",
+        "registration": {
+          "schema_version": "unirouter.xinsight.source-credential-registration.v1",
+          "token_format": "ur-xf1-hex256.v1",
+          "verifier_scheme": "receiver_sha256_v1",
+          "key_prefix": "ur-xf1-0000000000001",
+          "verifier_sha256": "d9c4bb0d61dc341aba6b3bec7c2dfbede896504f0ec64d362c55803a4bb41f4d",
+          "operation_id": "00000000000000000000000000000001",
+          "source_instance": "synthetic-u1-local",
+          "org_id": "1",
+          "project_id": "2",
+          "profiles": [
+            "unirouter.interaction-content.v1"
+          ]
+        },
+        "allowed_ip": "127.0.0.1/32"
+      }
+    },
+    {
+      "action": "activate",
+      "request": {
+        "operation_id": "00000000000000000000000000000065",
+        "expected_state_version": "1",
+        "credential_id": "42",
+        "registration_hash": "sha256:f15cd0e73e6816c53aa1ad352a524580014831c92b26129e577d1919c87f1374"
+      }
+    },
+    {
+      "action": "pause",
+      "request": {
+        "operation_id": "00000000000000000000000000000066",
+        "expected_state_version": "2",
+        "credential_id": "42",
+        "registration_hash": "sha256:f15cd0e73e6816c53aa1ad352a524580014831c92b26129e577d1919c87f1374"
+      }
+    },
+    {
+      "action": "resume",
+      "request": {
+        "operation_id": "00000000000000000000000000000067",
+        "expected_state_version": "3",
+        "credential_id": "42",
+        "registration_hash": "sha256:f15cd0e73e6816c53aa1ad352a524580014831c92b26129e577d1919c87f1374"
+      }
+    },
+    {
+      "action": "rotate",
+      "request": {
+        "operation_id": "00000000000000000000000000000002",
+        "expected_state_version": "4",
+        "credential_id": "42",
+        "registration_hash": "sha256:f15cd0e73e6816c53aa1ad352a524580014831c92b26129e577d1919c87f1374",
+        "registration": {
+          "schema_version": "unirouter.xinsight.source-credential-registration.v1",
+          "token_format": "ur-xf1-hex256.v1",
+          "verifier_scheme": "receiver_sha256_v1",
+          "key_prefix": "ur-xf1-0000000000002",
+          "verifier_sha256": "19601b61c19ac1c128adc29095fab9f588dd8e869bd15b1b19e25a0a4a2c5ee1",
+          "operation_id": "00000000000000000000000000000002",
+          "source_instance": "synthetic-u1-local",
+          "org_id": "1",
+          "project_id": "2",
+          "profiles": [
+            "unirouter.interaction-content.v1"
+          ]
+        }
+      }
+    },
+    {
+      "action": "cancel",
+      "request": {
+        "operation_id": "00000000000000000000000000000069",
+        "expected_state_version": "5",
+        "credential_id": "43",
+        "registration_hash": "sha256:00a54da6178d1b47ef9bbbf95228ae8b7368923be5c7a2980a8969ad78609b2b"
+      }
+    },
+    {
+      "action": "rotate",
+      "request": {
+        "operation_id": "00000000000000000000000000000003",
+        "expected_state_version": "6",
+        "credential_id": "42",
+        "registration_hash": "sha256:f15cd0e73e6816c53aa1ad352a524580014831c92b26129e577d1919c87f1374",
+        "registration": {
+          "schema_version": "unirouter.xinsight.source-credential-registration.v1",
+          "token_format": "ur-xf1-hex256.v1",
+          "verifier_scheme": "receiver_sha256_v1",
+          "key_prefix": "ur-xf1-0000000000003",
+          "verifier_sha256": "13c48254d899a0b9c9cff3b2638151164c0d5945b095bb1e8804b46c46e1eb83",
+          "operation_id": "00000000000000000000000000000003",
+          "source_instance": "synthetic-u1-local",
+          "org_id": "1",
+          "project_id": "2",
+          "profiles": [
+            "unirouter.interaction-content.v1"
+          ]
+        }
+      }
+    },
+    {
+      "action": "activate",
+      "request": {
+        "operation_id": "0000000000000000000000000000006b",
+        "expected_state_version": "7",
+        "credential_id": "44",
+        "registration_hash": "sha256:e897015057de4a12abc55f8f545f63fe9d8157d3248410018502df35778258e3"
+      }
+    },
+    {
+      "action": "revoke",
+      "request": {
+        "operation_id": "0000000000000000000000000000006c",
+        "expected_state_version": "8",
+        "credential_id": "44",
+        "registration_hash": "sha256:e897015057de4a12abc55f8f545f63fe9d8157d3248410018502df35778258e3"
+      }
+    }
+  ]
+}

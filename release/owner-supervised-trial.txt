@@ -1,0 +1,18 @@
+X-Insight owner-supervised trial release
+
+This delivery is approved only for the first-customer PRD2 trial in which the
+product owner and Codex perform and verify every installation or upgrade.
+
+The release is signed by a one-run ephemeral Ed25519 key. The exact private-key
+file is unlinked before the delivery directory is assembled, is never uploaded,
+and is discarded with the ephemeral runner. This is not a secure-overwrite
+claim.
+The public trust store is valid only together with the recorded GitHub workflow,
+exact main commit, successful main CI run and SHA-256 values in
+owner-supervised-trial-release.json and SHA256SUMS.
+
+This is not a persistent publisher identity, customer self-upgrade channel,
+third-party installer authorization, stable commercial release or Production
+verification. Before a second customer, delegated installation or unattended
+upgrade, X-Insight requires a separately accepted persistent KMS/HSM, keyless
+or offline release authority.

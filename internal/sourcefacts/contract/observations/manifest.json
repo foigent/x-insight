@@ -1,0 +1,55 @@
+{
+  "schema_version": "unirouter.source-observations-manifest.v1",
+  "status": "local_candidate",
+  "connector_id": "unirouter.workfacts",
+  "connector_version": "2.0.0",
+  "source_product": "unirouter",
+  "protocol_version": "2.0.2",
+  "protocol_commit": "ad8fe7a38c9d7335657630baa8670dd07556b98c",
+  "profiles": [
+    "unirouter.runtime-observation.v1",
+    "unirouter.attempt-observation.v1",
+    "unirouter.capability-snapshot.v1",
+    "unirouter.policy-observation.v1",
+    "unirouter.destination-observation.v1"
+  ],
+  "purpose": "xinsight.source.read",
+  "transport": "pull",
+  "bootstrap": "forward_only",
+  "max_items": 50,
+  "max_source_bytes": 65536,
+  "max_page_bytes_exclusive": 8388608,
+  "retention_seconds": 604800,
+  "history_backfill": false,
+  "timeline_complete": false,
+  "source_schema_file": "source-observation.schema.json",
+  "source_vectors_file": "golden-observations.json",
+  "source_schema_sha256": "sha256:ca0aabfb0c7b40c00cfb910e6bd255691326883b98b38b174afc86f2c4df2260",
+  "profile_transports": {
+    "unirouter.runtime-observation.v1": [
+      "incremental_events",
+      "current_snapshot"
+    ],
+    "unirouter.attempt-observation.v1": [
+      "incremental_events"
+    ],
+    "unirouter.capability-snapshot.v1": [
+      "incremental_events"
+    ],
+    "unirouter.policy-observation.v1": [
+      "incremental_events"
+    ],
+    "unirouter.destination-observation.v1": [
+      "incremental_events"
+    ]
+  },
+  "runtime_current": {
+    "path": "/api/v1/integrations/xinsight/source/v2/runtime/current",
+    "schema_file": "runtime-current.schema.json",
+    "schema_sha256": "sha256:ea7f24afa493480643b15432bfa0a5ade7caf99a3bb9b217780fda58501fcb63",
+    "vectors_file": "golden-runtime-current.json",
+    "pagination": "each_page_current_observation",
+    "coverage": "lease_backed_inventory",
+    "cache_control": "no-store"
+  }
+}

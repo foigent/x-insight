@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "completed_execution_feed.cursor_expired",
+    "message": "Cursor is outside the retained replay window",
+    "retryable": false
+  }
+}

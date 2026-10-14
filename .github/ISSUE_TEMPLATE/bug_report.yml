@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible, non-sensitive defect
+title: "[Bug] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and expected behavior
+      description: Chinese is welcome. Do not include credentials or private evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction and observed result
+      description: Use a minimal synthetic example, with the exact version or commit.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and relevant checks
+      description: Distinguish local, CI, artifact, installed host, and external integration evidence.

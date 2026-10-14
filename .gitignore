@@ -1,0 +1,31 @@
+.DS_Store
+
+# Go build/test output
+bin/
+coverage.out
+/dist/
+*.test
+
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+
+# Frontend dependencies and local reports
+frontend/node_modules/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/test-results-real/
+frontend/output/
+frontend/*.tsbuildinfo
+.playwright-cli/
+/output/playwright/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Editor state
+.idea/
+.vscode/

@@ -1,0 +1,348 @@
+{
+  "vector_version": "unirouter.source-facts-vectors.v1",
+  "fixture_only": true,
+  "notes": "Cases are independent alternatives, not one publication history. Generated with Python standard-library length-prefixed SHA-256 and sorted JSON; no UR source writer is used.",
+  "valid": [
+    {
+      "name": "context",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.execution-context.v1",
+        "stage": "authenticated",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "core": {
+          "request_id": "golden-request",
+          "org_id": "1",
+          "project_id": "2",
+          "api_key_id": "9007199254740993",
+          "key_type": "personal",
+          "auth_kind": "api_key",
+          "auth_epoch": "0",
+          "operation": "chat.completions",
+          "protocol": "openai.v1",
+          "captured_at": "2026-09-09T00:00:00.000000Z"
+        },
+        "source_fact_id": "uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643",
+        "event_id": "uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":\"9007199254740993\",\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}",
+      "source_sha256": "sha256:26063f2a687dbd0d09d1b060e6a37acf196ec000bdc784d08b54966ac4b0a00e"
+    },
+    {
+      "name": "identity",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.execution-identity.v1",
+        "stage": "authenticated",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "identity": {
+          "owner_user_id": "9007199254740994",
+          "actual_human": "unknown",
+          "authority_read": "live_key"
+        },
+        "source_fact_id": "uf1_8e6e42d76a324ca39736a895c3a1369f1e981e01217a4814f676fce14535f762",
+        "event_id": "uf1_ff63fea898d5a7a1aac4e7bfec09ebead6dee9f6c90c05d41e2868d0d3c29104"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"event_id\":\"uf1_ff63fea898d5a7a1aac4e7bfec09ebead6dee9f6c90c05d41e2868d0d3c29104\",\"identity\":{\"actual_human\":\"unknown\",\"authority_read\":\"live_key\",\"owner_user_id\":\"9007199254740994\"},\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-identity.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_8e6e42d76a324ca39736a895c3a1369f1e981e01217a4814f676fce14535f762\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}",
+      "source_sha256": "sha256:f5a5c65684bf8b44f93fdfd1a02d74fc92fe0ae7f00a35cea756f254d6d7e5a7"
+    },
+    {
+      "name": "priced_zero",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.cost-basis.v1",
+        "stage": "terminal",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "cost": {
+          "model": "synthetic-model",
+          "terminal_status": "settled",
+          "economic_reference": {
+            "source": "completed_execution",
+            "source_instance": "synthetic-ur",
+            "org_id": "1",
+            "project_id": "2",
+            "request_id": "golden-request",
+            "revision": "1",
+            "snapshot_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "publication_status": "not_published_by_i01",
+            "calculated_amount_path": "money.calculated_cost_micros",
+            "charged_amount_path": "money.charged_cost_micros"
+          },
+          "basis": {
+            "billing_mode": "cost_observation",
+            "mode_source": "reservation",
+            "pricing_authority": "legacy",
+            "pricing_version": "zero-priced.v1",
+            "pricing_state": "priced",
+            "input_rate_micros_per_million": "0",
+            "cache_read_rate_micros_per_million": "0",
+            "cache_creation_rate_micros_per_million": "0",
+            "output_rate_micros_per_million": "0",
+            "price_multiplier": "1",
+            "currency": "CNY",
+            "amount_scale": "1000000",
+            "unit_rates": []
+          },
+          "basis_status": "available",
+          "journal_billing_mode": "cost_observation",
+          "journal_mode_source": "journal_payload"
+        },
+        "source_fact_id": "uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c",
+        "event_id": "uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"cost\":{\"basis\":{\"amount_scale\":\"1000000\",\"billing_mode\":\"cost_observation\",\"cache_creation_rate_micros_per_million\":\"0\",\"cache_read_rate_micros_per_million\":\"0\",\"currency\":\"CNY\",\"input_rate_micros_per_million\":\"0\",\"mode_source\":\"reservation\",\"output_rate_micros_per_million\":\"0\",\"price_multiplier\":\"1\",\"pricing_authority\":\"legacy\",\"pricing_state\":\"priced\",\"pricing_version\":\"zero-priced.v1\",\"unit_rates\":[]},\"basis_status\":\"available\",\"economic_reference\":{\"calculated_amount_path\":\"money.calculated_cost_micros\",\"charged_amount_path\":\"money.charged_cost_micros\",\"org_id\":\"1\",\"project_id\":\"2\",\"publication_status\":\"not_published_by_i01\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"snapshot_sha256\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source\":\"completed_execution\",\"source_instance\":\"synthetic-ur\"},\"journal_billing_mode\":\"cost_observation\",\"journal_mode_source\":\"journal_payload\",\"model\":\"synthetic-model\",\"terminal_status\":\"settled\"},\"event_id\":\"uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.cost-basis.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c\",\"source_instance\":\"synthetic-ur\",\"stage\":\"terminal\"}",
+      "source_sha256": "sha256:8bb0e31da1c44c62ebf65a2c8d29a3b8e91bbec4e63aa3c97eea1fa2c80f458c"
+    },
+    {
+      "name": "unpriced",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.cost-basis.v1",
+        "stage": "terminal",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "cost": {
+          "model": "synthetic-model",
+          "terminal_status": "settled",
+          "economic_reference": {
+            "source": "completed_execution",
+            "source_instance": "synthetic-ur",
+            "org_id": "1",
+            "project_id": "2",
+            "request_id": "golden-request",
+            "revision": "1",
+            "snapshot_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "publication_status": "not_published_by_i01",
+            "calculated_amount_path": "money.calculated_cost_micros",
+            "charged_amount_path": "money.charged_cost_micros"
+          },
+          "basis": {
+            "billing_mode": "cost_observation",
+            "mode_source": "reservation",
+            "pricing_authority": "legacy",
+            "pricing_version": "uo1_synthetic",
+            "pricing_state": "unpriced",
+            "input_rate_micros_per_million": "0",
+            "cache_read_rate_micros_per_million": "0",
+            "cache_creation_rate_micros_per_million": "0",
+            "output_rate_micros_per_million": "0",
+            "price_multiplier": "1",
+            "currency": "CNY",
+            "amount_scale": "1000000",
+            "unit_rates": []
+          },
+          "basis_status": "available",
+          "journal_billing_mode": "cost_observation",
+          "journal_mode_source": "journal_payload"
+        },
+        "source_fact_id": "uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c",
+        "event_id": "uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"cost\":{\"basis\":{\"amount_scale\":\"1000000\",\"billing_mode\":\"cost_observation\",\"cache_creation_rate_micros_per_million\":\"0\",\"cache_read_rate_micros_per_million\":\"0\",\"currency\":\"CNY\",\"input_rate_micros_per_million\":\"0\",\"mode_source\":\"reservation\",\"output_rate_micros_per_million\":\"0\",\"price_multiplier\":\"1\",\"pricing_authority\":\"legacy\",\"pricing_state\":\"unpriced\",\"pricing_version\":\"uo1_synthetic\",\"unit_rates\":[]},\"basis_status\":\"available\",\"economic_reference\":{\"calculated_amount_path\":\"money.calculated_cost_micros\",\"charged_amount_path\":\"money.charged_cost_micros\",\"org_id\":\"1\",\"project_id\":\"2\",\"publication_status\":\"not_published_by_i01\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"snapshot_sha256\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source\":\"completed_execution\",\"source_instance\":\"synthetic-ur\"},\"journal_billing_mode\":\"cost_observation\",\"journal_mode_source\":\"journal_payload\",\"model\":\"synthetic-model\",\"terminal_status\":\"settled\"},\"event_id\":\"uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.cost-basis.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c\",\"source_instance\":\"synthetic-ur\",\"stage\":\"terminal\"}",
+      "source_sha256": "sha256:e7098d774cd57cfbd68719056a83bd1cb2a55f3903c86120f5afc0bdd268e2a2"
+    },
+    {
+      "name": "legacy_missing_authority",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.cost-basis.v1",
+        "stage": "terminal",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "cost": {
+          "model": "synthetic-model",
+          "terminal_status": "settled",
+          "economic_reference": {
+            "source": "completed_execution",
+            "source_instance": "synthetic-ur",
+            "org_id": "1",
+            "project_id": "2",
+            "request_id": "golden-request",
+            "revision": "1",
+            "snapshot_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "publication_status": "not_published_by_i01",
+            "calculated_amount_path": "money.calculated_cost_micros",
+            "charged_amount_path": "money.charged_cost_micros"
+          },
+          "basis": {
+            "billing_mode": "cost_observation",
+            "mode_source": "persisted_reservation",
+            "pricing_authority": "not_captured",
+            "pricing_version": "",
+            "pricing_state": "unknown",
+            "input_rate_micros_per_million": "0",
+            "cache_read_rate_micros_per_million": "0",
+            "cache_creation_rate_micros_per_million": "0",
+            "output_rate_micros_per_million": "0",
+            "price_multiplier": "1",
+            "currency": "CNY",
+            "amount_scale": "1000000",
+            "unit_rates": []
+          },
+          "basis_status": "persisted_legacy",
+          "journal_billing_mode": "cost_observation",
+          "journal_mode_source": "legacy_interpretation.v1"
+        },
+        "source_fact_id": "uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c",
+        "event_id": "uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"cost\":{\"basis\":{\"amount_scale\":\"1000000\",\"billing_mode\":\"cost_observation\",\"cache_creation_rate_micros_per_million\":\"0\",\"cache_read_rate_micros_per_million\":\"0\",\"currency\":\"CNY\",\"input_rate_micros_per_million\":\"0\",\"mode_source\":\"persisted_reservation\",\"output_rate_micros_per_million\":\"0\",\"price_multiplier\":\"1\",\"pricing_authority\":\"not_captured\",\"pricing_state\":\"unknown\",\"pricing_version\":\"\",\"unit_rates\":[]},\"basis_status\":\"persisted_legacy\",\"economic_reference\":{\"calculated_amount_path\":\"money.calculated_cost_micros\",\"charged_amount_path\":\"money.charged_cost_micros\",\"org_id\":\"1\",\"project_id\":\"2\",\"publication_status\":\"not_published_by_i01\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"snapshot_sha256\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source\":\"completed_execution\",\"source_instance\":\"synthetic-ur\"},\"journal_billing_mode\":\"cost_observation\",\"journal_mode_source\":\"legacy_interpretation.v1\",\"model\":\"synthetic-model\",\"terminal_status\":\"settled\"},\"event_id\":\"uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.cost-basis.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c\",\"source_instance\":\"synthetic-ur\",\"stage\":\"terminal\"}",
+      "source_sha256": "sha256:05b5ab9933a7108d99e911ab516a528410dadb15fc150187d64d30c70c88755e"
+    },
+    {
+      "name": "late_capture_gap",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.execution-context.v1",
+        "stage": "terminal",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "not_captured",
+        "source_fact_id": "uf1_2d77dc5e598acb2872aa7928d6ca0e1ef45b0f66dc6b026ec702b1a20c870c76",
+        "event_id": "uf1_c35ffab65414782ab63ba2884ca446bc74539bc6237df15e0da9cba2bf50dedf"
+      },
+      "canonical": "{\"capture_status\":\"not_captured\",\"event_id\":\"uf1_c35ffab65414782ab63ba2884ca446bc74539bc6237df15e0da9cba2bf50dedf\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_2d77dc5e598acb2872aa7928d6ca0e1ef45b0f66dc6b026ec702b1a20c870c76\",\"source_instance\":\"synthetic-ur\",\"stage\":\"terminal\"}",
+      "source_sha256": "sha256:a4c8ab8dd0ad782eeab2fc81af38b2ccd3ec8363cb1b6cac67cf6337c71b913b"
+    },
+    {
+      "name": "media_independent_economics",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.cost-basis.v1",
+        "stage": "terminal",
+        "revision": "1",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "cost": {
+          "model": "synthetic-media",
+          "terminal_status": "succeeded",
+          "basis_status": "not_captured",
+          "media_amount_state": "pricing_pending_media_rate_card",
+          "economic_reference": {
+            "source": "async_media_charge_fact",
+            "source_instance": "synthetic-ur",
+            "org_id": "1",
+            "project_id": "2",
+            "request_id": "golden-request",
+            "revision": "1",
+            "publication_status": "not_applicable",
+            "charge_fact_ref": "cf_synthetic"
+          }
+        },
+        "source_fact_id": "uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c",
+        "event_id": "uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"cost\":{\"basis_status\":\"not_captured\",\"economic_reference\":{\"charge_fact_ref\":\"cf_synthetic\",\"org_id\":\"1\",\"project_id\":\"2\",\"publication_status\":\"not_applicable\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"source\":\"async_media_charge_fact\",\"source_instance\":\"synthetic-ur\"},\"media_amount_state\":\"pricing_pending_media_rate_card\",\"model\":\"synthetic-media\",\"terminal_status\":\"succeeded\"},\"event_id\":\"uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.cost-basis.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c\",\"source_instance\":\"synthetic-ur\",\"stage\":\"terminal\"}",
+      "source_sha256": "sha256:84e05c95ba04ca9310f609a380bf991d448a3fa63f81c452bb987d9bea92eee8"
+    },
+    {
+      "name": "identity_revision_2",
+      "document": {
+        "schema_version": "unirouter.source-fact.v1",
+        "source_instance": "synthetic-ur",
+        "org_id": "1",
+        "project_id": "2",
+        "request_id": "golden-request",
+        "profile": "unirouter.execution-identity.v1",
+        "stage": "authenticated",
+        "revision": "2",
+        "occurred_at": "2026-09-09T00:00:00.000000Z",
+        "recorded_at": "2026-09-09T00:00:00.000000Z",
+        "capture_status": "available",
+        "identity": {
+          "owner_user_id": "9007199254740995",
+          "actual_human": "unknown",
+          "authority_read": "live_key"
+        },
+        "source_fact_id": "uf1_8e6e42d76a324ca39736a895c3a1369f1e981e01217a4814f676fce14535f762",
+        "event_id": "uf1_a19d6b0a77677d4823f294103ca844770d9633eea42e5a10d20763bf7563c657",
+        "previous_revision": "1",
+        "previous_hash": "sha256:f5a5c65684bf8b44f93fdfd1a02d74fc92fe0ae7f00a35cea756f254d6d7e5a7",
+        "correction_reason": "source_correction"
+      },
+      "canonical": "{\"capture_status\":\"available\",\"correction_reason\":\"source_correction\",\"event_id\":\"uf1_a19d6b0a77677d4823f294103ca844770d9633eea42e5a10d20763bf7563c657\",\"identity\":{\"actual_human\":\"unknown\",\"authority_read\":\"live_key\",\"owner_user_id\":\"9007199254740995\"},\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"previous_hash\":\"sha256:f5a5c65684bf8b44f93fdfd1a02d74fc92fe0ae7f00a35cea756f254d6d7e5a7\",\"previous_revision\":\"1\",\"profile\":\"unirouter.execution-identity.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"2\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_8e6e42d76a324ca39736a895c3a1369f1e981e01217a4814f676fce14535f762\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}",
+      "source_sha256": "sha256:89aedb312f3eac52d164edcc9835460b85ea952a201a947fef2f458c4d1ec700"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "cross_profile_identity",
+      "wire": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":\"9007199254740993\",\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"identity\":{\"actual_human\":\"unknown\",\"authority_read\":\"live_key\",\"owner_user_id\":\"9007199254740994\"},\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}"
+    },
+    {
+      "name": "numeric_identifier",
+      "wire": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":9007199254740993,\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}"
+    },
+    {
+      "name": "scope_identity_mismatch",
+      "wire": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":\"9007199254740993\",\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"3\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}"
+    },
+    {
+      "name": "signed_int64_overflow",
+      "wire": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":\"9223372036854775808\",\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}"
+    },
+    {
+      "name": "fraction_not_decimal",
+      "wire": "{\"capture_status\":\"available\",\"cost\":{\"basis\":{\"amount_scale\":\"1000000\",\"billing_mode\":\"cost_observation\",\"cache_creation_rate_micros_per_million\":\"0\",\"cache_read_rate_micros_per_million\":\"0\",\"currency\":\"CNY\",\"input_rate_micros_per_million\":\"0\",\"mode_source\":\"reservation\",\"output_rate_micros_per_million\":\"0\",\"price_multiplier\":\"1/2\",\"pricing_authority\":\"legacy\",\"pricing_state\":\"priced\",\"pricing_version\":\"zero-priced.v1\",\"unit_rates\":[]},\"basis_status\":\"available\",\"economic_reference\":{\"calculated_amount_path\":\"money.calculated_cost_micros\",\"charged_amount_path\":\"money.charged_cost_micros\",\"org_id\":\"1\",\"project_id\":\"2\",\"publication_status\":\"not_published_by_i01\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"snapshot_sha256\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source\":\"completed_execution\",\"source_instance\":\"synthetic-ur\"},\"journal_billing_mode\":\"cost_observation\",\"journal_mode_source\":\"journal_payload\",\"model\":\"synthetic-model\",\"terminal_status\":\"settled\"},\"event_id\":\"uf1_35aed91fe698cd22fc335327f1a9b44dd0457dd88b3c12f8186f0d7205cfa18a\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.cost-basis.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_73c1ec64de12b93ee24e5894c17748ce1d5cb5803d81bfc99e3be4dccb1ad51c\",\"source_instance\":\"synthetic-ur\",\"stage\":\"terminal\"}"
+    },
+    {
+      "name": "noncanonical_predecessor",
+      "wire": "{\"capture_status\":\"available\",\"correction_reason\":\"source_correction\",\"event_id\":\"uf1_a19d6b0a77677d4823f294103ca844770d9633eea42e5a10d20763bf7563c657\",\"identity\":{\"actual_human\":\"unknown\",\"authority_read\":\"live_key\",\"owner_user_id\":\"9007199254740995\"},\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"previous_hash\":\"sha256:f5a5c65684bf8b44f93fdfd1a02d74fc92fe0ae7f00a35cea756f254d6d7e5a7\",\"previous_revision\":\"01\",\"profile\":\"unirouter.execution-identity.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"2\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_8e6e42d76a324ca39736a895c3a1369f1e981e01217a4814f676fce14535f762\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}"
+    },
+    {
+      "name": "duplicate_key",
+      "wire": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":\"9007199254740993\",\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\",\"revision\":\"1\"}"
+    },
+    {
+      "name": "null_field",
+      "wire": "{\"capture_status\":\"available\",\"core\":{\"api_key_id\":\"9007199254740993\",\"auth_epoch\":\"0\",\"auth_kind\":\"api_key\",\"captured_at\":\"2026-09-09T00:00:00.000000Z\",\"key_type\":\"personal\",\"operation\":\"chat.completions\",\"org_id\":\"1\",\"project_id\":\"2\",\"protocol\":\"openai.v1\",\"request_id\":\"golden-request\"},\"event_id\":\"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\",\"identity\":null,\"occurred_at\":\"2026-09-09T00:00:00.000000Z\",\"org_id\":\"1\",\"profile\":\"unirouter.execution-context.v1\",\"project_id\":\"2\",\"recorded_at\":\"2026-09-09T00:00:00.000000Z\",\"request_id\":\"golden-request\",\"revision\":\"1\",\"schema_version\":\"unirouter.source-fact.v1\",\"source_fact_id\":\"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\"source_instance\":\"synthetic-ur\",\"stage\":\"authenticated\"}"
+    },
+    {
+      "name": "noncanonical_whitespace",
+      "wire": "{\n  \"schema_version\": \"unirouter.source-fact.v1\",\n  \"source_instance\": \"synthetic-ur\",\n  \"org_id\": \"1\",\n  \"project_id\": \"2\",\n  \"request_id\": \"golden-request\",\n  \"profile\": \"unirouter.execution-context.v1\",\n  \"stage\": \"authenticated\",\n  \"revision\": \"1\",\n  \"occurred_at\": \"2026-09-09T00:00:00.000000Z\",\n  \"recorded_at\": \"2026-09-09T00:00:00.000000Z\",\n  \"capture_status\": \"available\",\n  \"core\": {\n    \"request_id\": \"golden-request\",\n    \"org_id\": \"1\",\n    \"project_id\": \"2\",\n    \"api_key_id\": \"9007199254740993\",\n    \"key_type\": \"personal\",\n    \"auth_kind\": \"api_key\",\n    \"auth_epoch\": \"0\",\n    \"operation\": \"chat.completions\",\n    \"protocol\": \"openai.v1\",\n    \"captured_at\": \"2026-09-09T00:00:00.000000Z\"\n  },\n  \"source_fact_id\": \"uf1_a3957b85cc0a71043ab72ee849f639ea06925f419df272abcc1270eb22298643\",\n  \"event_id\": \"uf1_d665bb5847725c5d8ab25edb5672e9a65e3bc2e3ff292b4aadb9cbf73d57f310\"\n}"
+    }
+  ]
+}

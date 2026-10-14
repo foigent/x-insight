@@ -1,0 +1,184 @@
+{
+  "schema_version": "xinsight.third-party-notices.v1",
+  "target": "linux/amd64; embedded UI",
+  "components": [
+    {
+      "name": "Go standard library and runtime",
+      "version": "go1.25.12",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/Go_standard_library_and_runtime/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/Go_standard_library_and_runtime/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgpassfile",
+      "version": "v1.0.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_pgpassfile/LICENSE",
+          "sha256": "adb1663fda031df8f4344aa68f299fd87d80353e31339406742ded21dae65702"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgservicefile",
+      "version": "v0.0.0-20240606120523-5a60cdf6a761",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_pgservicefile/LICENSE",
+          "sha256": "fc505773403fe869ed64cc2235cdd13988a427bb7e3a7e7004a3f4b27420f8fc"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgx/v5",
+      "version": "v5.10.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_pgx_v5/LICENSE",
+          "sha256": "467f95e074fe23079a5623ed652619682692041b8551da27e3c2ddb9659a1507"
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/puddle/v2",
+      "version": "v2.2.2",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_jackc_puddle_v2/LICENSE",
+          "sha256": "2d50e98a4900b4d6457a38d39c1432fdc156fc2f7b365f2e33ec9344acbb0057"
+        }
+      ]
+    },
+    {
+      "name": "github.com/santhosh-tekuri/jsonschema/v6",
+      "version": "v6.0.2",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_santhosh-tekuri_jsonschema_v6/LICENSE",
+          "sha256": "c8858a5a76440bbca484e134cf7df46385d090dd18b2c58e650f939258802e5b"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/crypto",
+      "version": "v0.53.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_crypto/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_crypto/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/sync",
+      "version": "v0.21.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_sync/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_sync/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/sys",
+      "version": "v0.46.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_sys/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_sys/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/term",
+      "version": "v0.44.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_term/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_term/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/text",
+      "version": "v0.38.0",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/golang.org_x_text/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "licenses/golang.org_x_text/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "version": "19.2.7",
+      "redistributed_in": "Embedded browser UI",
+      "license_files": [
+        {
+          "path": "licenses/react/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.7",
+      "redistributed_in": "Embedded browser UI",
+      "license_files": [
+        {
+          "path": "licenses/react-dom/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "name": "scheduler",
+      "version": "0.27.0",
+      "redistributed_in": "Embedded browser UI",
+      "license_files": [
+        {
+          "path": "licenses/scheduler/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    }
+  ]
+}

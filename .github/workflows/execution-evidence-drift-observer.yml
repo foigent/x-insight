@@ -1,0 +1,76 @@
+name: Execution Evidence Drift Observer
+
+on:
+  schedule:
+    # Weekly is deliberately low-noise; this observer has no runtime or merge authority.
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    name: Read-only Authority and Drift Observation
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout pinned consumer manifest
+        uses: actions/checkout@v5
+
+      - name: Observe UniRouter authority, release, and unreleased state
+        id: observe-unirouter
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/observe-execution-evidence-drift.py \
+            --repository foigent/unirouter \
+            --pinned-manifest contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/draft-manifest.json \
+            --output "${RUNNER_TEMP}/execution-evidence-drift-observation.json"
+
+      - name: Finalize sanitized observation report
+        id: finalize-observation
+        if: always()
+        env:
+          OBSERVER_OUTCOME: ${{ steps.observe-unirouter.outcome }}
+        run: |
+          python3 scripts/observe-execution-evidence-drift.py \
+            --finalize-workflow-report \
+            --repository foigent/unirouter \
+            --output "${RUNNER_TEMP}/execution-evidence-drift-observation.json" \
+            --observer-outcome "${OBSERVER_OUTCOME}" \
+            --github-output "${GITHUB_OUTPUT}"
+
+      - name: Upload read-only structured observation
+        id: upload-observation
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: execution-evidence-drift-observation-${{ github.run_id }}
+          path: ${{ runner.temp }}/execution-evidence-drift-observation.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce observation completion
+        if: always()
+        env:
+          FINALIZER_OUTCOME: ${{ steps.finalize-observation.outcome }}
+          OBSERVER_OUTCOME: ${{ steps.observe-unirouter.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-observation.outcome }}
+          OBSERVATION_STATUS: ${{ steps.finalize-observation.outputs.observation_status }}
+        run: |
+          if [ "${FINALIZER_OUTCOME}" != "success" ]; then
+            echo "observer finalizer failed"
+            exit 1
+          fi
+          if [ "${UPLOAD_OUTCOME}" != "success" ]; then
+            echo "observer artifact upload failed"
+            exit 1
+          fi
+          if [ "${OBSERVER_OUTCOME}" != "success" ] || [ "${OBSERVATION_STATUS}" != "observation_completed" ]; then
+            echo "observer did not complete: status=${OBSERVATION_STATUS} outcome=${OBSERVER_OUTCOME}"
+            exit 1
+          fi

@@ -1,0 +1,1266 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Change Classification
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      classification: ${{ steps.route.outputs.classification }}
+      safe_docs_only: ${{ steps.route.outputs.safe_docs_only }}
+      changed_count: ${{ steps.route.outputs.changed_count }}
+      direct_fpv9_required: ${{ steps.qualification.outputs.direct_fpv9_required }}
+      managed_fpv11_required: ${{ steps.qualification.outputs.managed_fpv11_required }}
+      current_release_required: ${{ steps.qualification.outputs.current_release_required }}
+
+    steps:
+      - name: Checkout complete comparison history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths conservatively
+        id: route
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base_sha="$PR_BASE_SHA"
+            head_sha="$PR_HEAD_SHA"
+          else
+            base_sha="$PUSH_BASE_SHA"
+            head_sha="$PUSH_HEAD_SHA"
+          fi
+          python3 scripts/ci-change-router.py \
+            --event "$EVENT_NAME" \
+            --base "$base_sha" \
+            --head "$head_sha" \
+            --github-output "$GITHUB_OUTPUT" \
+            --step-summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Select exact predecessor qualification
+        id: qualification
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SAFE_DOCS_ONLY: ${{ steps.route.outputs.safe_docs_only }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: python3 scripts/ci-contract-gate.py --write-direct-fpv9-route
+
+  frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.safe_docs_only != 'true'
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install declared npm toolchain
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+
+      - name: Rebuild release-matched Chinese manual
+        working-directory: .
+        run: node scripts/build-manual.mjs
+
+      - name: Verify deterministic committed manual
+        working-directory: .
+        run: git diff --exit-code -- internal/webui/manual
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check TypeScript
+        run: npm run check
+
+      - name: Validate PRD2 OpenAPI
+        run: npm run check:openapi
+
+      - name: Run component tests with coverage floor
+        run: npm run test:coverage
+
+      - name: Run OpenClaw bridge unit tests
+        working-directory: .
+        run: node --test integrations/openclaw-xinsight/*.test.mjs
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Check dependency licenses
+        run: npm run check:licenses
+
+      - name: Rebuild embedded assets
+        run: npm run build
+
+      - name: Verify deterministic committed assets
+        working-directory: .
+        run: git diff --exit-code -- internal/webui/dist
+
+      - name: Cache Playwright Chromium
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Ensure Chromium and host dependencies are installed
+        run: npm run install:e2e:chromium
+
+      - name: Run desktop and narrow-browser investigation tests
+        run: npm run test:e2e
+
+  backend_validation:
+    name: Backend and API Validation
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.safe_docs_only != 'true'
+
+    services:
+      postgres:
+        image: postgres:16.14-alpine3.24@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+        env:
+          POSTGRES_USER: xinsight_admin
+          POSTGRES_PASSWORD: xinsight
+          POSTGRES_DB: xinsight_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "PGAPPNAME=xinsight_healthcheck pg_isready -q -U xinsight_admin -d xinsight_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      XINSIGHT_POSTGRES_DSN: postgres://xinsight_admin:xinsight@127.0.0.1:5432/xinsight_test?sslmode=disable
+      XINSIGHT_ALLOW_LEGACY_SINGLE_DATABASE_ROLE: "1"
+      # This job owns the ephemeral service used by the bounded synthetic fixtures.
+      XINSIGHT_RESPONSIBILITY_LOCAL_TEST: "1"
+      XINSIGHT_HOSTCTL_DATABASE_TEST: "1"
+      XINSIGHT_HOSTCTL_ADMIN_DSN: postgres://xinsight_admin:xinsight@127.0.0.1:5432/xinsight_hostctl?sslmode=disable
+      XINSIGHT_HOSTCTL_READER_DSN: postgres://xinsight_reader:reader-ci-password@127.0.0.1:5432/xinsight_hostctl?sslmode=disable
+      XINSIGHT_HOSTCTL_IMPORTER_DSN: postgres://xinsight_importer:importer-ci-password@127.0.0.1:5432/xinsight_hostctl?sslmode=disable
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Checkout immutable Neutral D1 qualification authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: foigent/integration-control
+          ref: db10730d64a9302887ad59c53921e98c757927e7
+          path: dist/ci-neutral-d1-authority
+          persist-credentials: false
+
+      - name: Acquire and qualify immutable Neutral D1 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          asset_dir="${RUNNER_TEMP}/neutral-d1-assets"
+          qualified_dir="${RUNNER_TEMP}/neutral-d1-qualified"
+          test "$(git -C "${GITHUB_WORKSPACE}/dist/ci-neutral-d1-authority" rev-parse HEAD)" = \
+            "db10730d64a9302887ad59c53921e98c757927e7"
+          mkdir -m 0700 "${asset_dir}"
+          gh release download v0.1.0-candidate.1 \
+            --repo foigent/integration-control \
+            --dir "${asset_dir}"
+          "${GITHUB_WORKSPACE}/dist/ci-neutral-d1-authority/scripts/qualify-n1-release.sh" \
+            "${asset_dir}" "${qualified_dir}" \
+            > "${RUNNER_TEMP}/neutral-d1-qualification-result.txt"
+          chmod 0700 "${asset_dir}/foigent-integration-control-v0.1.0-candidate.1-linux-amd64"
+          printf 'XINSIGHT_N1_RELEASE_ASSET_DIRECTORY=%s\n' "${asset_dir}" >> "${GITHUB_ENV}"
+
+      - name: Configure ephemeral workspace qualification credential
+        shell: bash
+        run: |
+          workspace_password="$(openssl rand -hex 24)"
+          echo "::add-mask::${workspace_password}"
+          printf 'XINSIGHT_HOSTCTL_WORKSPACE_DSN=postgres://xinsight_workspace:%s@127.0.0.1:5432/xinsight_hostctl?sslmode=disable\n' \
+            "${workspace_password}" >> "${GITHUB_ENV}"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Check current release schema and offline authorization boundaries
+        run: |
+          go test ./internal/db ./internal/sourcefacts ./internal/integrationcontrol ./internal/releasebundle \
+            -run '^Test(CurrentReleaseAuthorizationSchemas|BudgetOfflineExactBindingAndCompleteness|ObservationOfflineFiveProfilesAndLegacyIdentity|SyntheticResourceAuthorizationSeparatesInternalAndUR|ActionAuthorizationIsDistinctAndTestOnly|CompiledCampaignReleaseAuthority|CurrentRC13ReleaseConfigRejectsCurrentDevelopmentSchema)$' -count=1
+
+      - name: Verify X consumer against exact qualified Neutral D1 authority
+        run: go test ./internal/integrationcontrol -run '^TestFrozenN1OfflineVerifierAndFixtures$' -count=1
+
+      - name: Install matched PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
+          /usr/lib/postgresql/16/bin/createdb --version
+
+      - name: Create dedicated qualification databases
+        env:
+          PGPASSWORD: xinsight
+        run: |
+          /usr/lib/postgresql/16/bin/createdb --host=127.0.0.1 --port=5432 --username=xinsight_admin --maintenance-db=postgres --owner=xinsight_admin xinsight_hostctl
+          /usr/lib/postgresql/16/bin/createdb --host=127.0.0.1 --port=5432 --username=xinsight_admin --maintenance-db=postgres --owner=xinsight_admin xinsight_schema_contract
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l cmd internal)"
+
+      - name: Check release workflow scripts
+        run: |
+          bash scripts/verify-protected-runtime.sh
+          python3 scripts/ci-change-router.py --self-test
+          python3 scripts/ci-contract-gate.py --self-test
+          python3 scripts/check-draft-evidence-history.py --self-test
+          python3 scripts/check-draft-evidence-workflows.py --self-test
+          python3 scripts/observe-execution-evidence-drift.py --self-test
+          python3 scripts/release-qualification-identity.py --self-test
+          python3 scripts/test-build-signed-release.py
+          python3 scripts/test-verify-signed-release.py
+          python3 scripts/test-ci-signed-release-wiring.py
+          bash -n scripts/build-release.sh scripts/build-signed-release.sh scripts/verify-signed-release.sh
+          python3 scripts/check-go-coverage.py --self-test
+          test "$(python3 scripts/release-qualification-identity.py --matrix release/compatibility-matrix.json --field product_version)" = "$(python3 -c 'import json; print(json.load(open("release/release-config.json", encoding="utf-8"))["product_version"])')"
+          test "$(python3 scripts/release-qualification-identity.py --matrix release/compatibility-matrix.json --field manual_version)" = "$(python3 -c 'import json; print(json.load(open("release/release-config.json", encoding="utf-8"))["manual"]["version"])')"
+          bash -n scripts/build-owner-supervised-trial-release.sh
+          bash -n scripts/verify-owner-supervised-trial-release.sh
+          bash -n scripts/ci-systemctl-sigkill-wrapper.sh
+          bash -n scripts/qualify-ubuntu22-host.sh
+          bash -n scripts/qualify-ubuntu22-fresh-install.sh scripts/qualify-ubuntu22-direct-fpv9.sh scripts/qualify-ubuntu22-managed-fpv11.sh
+          go run scripts/ci-direct-fpv9-source-roles.go check-fixture
+          if scripts/ci-systemctl-sigkill-wrapper.sh stop xinsight.service >/dev/null 2>&1; then
+            echo "SIGKILL wrapper accepted a non-ephemeral invocation" >&2
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Prove committed Web UI runtime asset parity
+        run: |
+          go build -o "${RUNNER_TEMP}/xinsight-server-asset-parity" ./cmd/xinsight-server
+          "${RUNNER_TEMP}/xinsight-server-asset-parity" webui-manifest --json \
+            > "${RUNNER_TEMP}/runtime-webui-asset-manifest.json"
+          cmp \
+            internal/webui/dist/asset-manifest.json \
+            "${RUNNER_TEMP}/runtime-webui-asset-manifest.json"
+
+      - name: Reproduce exact FPV9 unit-test inputs
+        run: scripts/reproduce-direct-fpv9.sh "${RUNNER_TEMP}/unit-fpv9-source" "${RUNNER_TEMP}/unit-fpv9-bin"
+
+      - name: Verify actual capless root host reference writers
+        run: |
+          command -v setpriv
+          go test -c -o "${RUNNER_TEMP}/xinsight-capless-reference.test" ./internal/hostctl
+          capless_root=$(sudo mktemp -d /run/xi-hostctl-credential-XXXXXXXX)
+          sudo sh -c 'umask 077; printf "legacy-fixture\n" > "$1/legacy-root.key"' sh "$capless_root"
+          sudo install -o "$(id -u)" -g "$(id -g)" -m 0600 /dev/null "$capless_root/nonroot.key"
+          sudo install -o 0 -g 0 -m 0700 "${RUNNER_TEMP}/xinsight-capless-reference.test" "$capless_root/hostctl.test"
+          sudo python3 - "$capless_root" "$(id -u)" "$(id -g)" deploy/xinsight-source-facts.service <<'PY'
+          import json, os, pathlib, subprocess, sys, tempfile
+          root, uid, gid, unit = pathlib.Path(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), pathlib.Path(sys.argv[4])
+          proof = dict(unit='xinsight-source-facts.service', invocation_id='a'*32, pid=1234, key_id='ci_proof', mac='0'*64)
+          for name, directory_mode, file_mode in [('legacy-worker',0o700,0o600), ('private-worker',0o750,0o600), ('group-worker',0o750,0o640), ('writable-worker',0o750,0o660)]:
+              directory = root/name
+              directory.mkdir(mode=directory_mode)
+              path = directory/'loaded.json'
+              path.write_text(json.dumps(proof))
+              os.chown(path,uid,gid); path.chmod(file_mode)
+              os.chown(directory,uid,gid); directory.chmod(directory_mode)
+          # Exercise systemd's actual condition parser using the shipped unit.
+          # These files test only startup eligibility; the importer validates JSON.
+          with tempfile.TemporaryDirectory(dir=root) as directory:
+              fixture = pathlib.Path(directory)
+              conditions = [line.replace('/etc/x-insight', str(fixture)) for line in unit.read_text().splitlines()
+                            if line.startswith(('ConditionPathExists=', 'ConditionPathExistsGlob='))]
+              if len(conditions) != 2: raise SystemExit('source startup contract differs')
+              def accepts(values):
+                  return subprocess.run(['systemd-analyze','condition',*values],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode == 0
+              if accepts(conditions): raise SystemExit('source unit accepts absent configuration')
+              base = fixture/'source-facts.json'; base.write_text('{}')
+              if not accepts(conditions): raise SystemExit('source unit rejects original configuration')
+              base.unlink()
+              partitions = fixture/'source-facts.d'; partitions.mkdir()
+              (partitions/('xci_'+'A'*22+'-xise_1-project-1.json')).write_text('{}')
+              if not accepts(conditions): raise SystemExit('source unit rejects managed partitions')
+              if accepts(['ConditionPathExists='+str(base)]): raise SystemExit('old startup condition unexpectedly accepts partitions')
+          PY
+          sudo setpriv --reuid=0 --regid="$(id -g)" --clear-groups \
+            --no-new-privs --inh-caps=-all --ambient-caps=-all --bounding-set=-all \
+            env -i PATH=/usr/bin:/bin \
+            XINSIGHT_CAPLESS_REFERENCE_TEST=1 XINSIGHT_CAPLESS_REFERENCE_ROOT="$capless_root" \
+            "$capless_root/hostctl.test" \
+            -test.run='^TestCaplessRoot(ManagedReferenceWriters|WorkerLoadedProof)$' -test.v -test.count=1
+
+      - name: Prove connector control credential lifecycle on PostgreSQL 16
+        env:
+          XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'
+        run: |
+          go test -p 1 -race -v ./internal/db -run '^TestControlCredential(LifecyclePostgres16InitialRotateConfirmRecover|TerminalFencesPostgres16|V1InitialLineagePostgres16|Schema44ExpiredPredecessorPostgres16)$' -count=1
+          go test -p 1 -race -v ./internal/hostctl -run '^TestControlCredentialReadOnlyPreflightAcrossSchema43To45$' -count=1
+
+      - name: Run tests
+        env:
+          XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'
+          XI_FPV9_REPRO_DIR: ${{ runner.temp }}/unit-fpv9-bin
+        # The qualification packages intentionally share this job's one
+        # PostgreSQL service database. Serialize packages so destructive
+        # migration and host-lifecycle tests cannot contend on the
+        # database-global maintenance lock. Dedicated protocol CI separately
+        # proves concurrent Connector behavior with isolated databases.
+        run: |
+          # Reuse the actual custody DB/HTTP regressions for early failure feedback;
+          # the full suite and coverage gate remain the acceptance authority.
+          go test -p 1 -v -race -run '^Test.*CustodyTransition' ./internal/api ./internal/db
+          go test -p 1 -v -race -coverprofile=coverage.out ./...
+
+      - name: Enforce Go coverage non-regression floor
+        run: python3 scripts/check-go-coverage.py coverage.out
+
+      - name: Run fixture conformance
+        run: go run ./cmd/xinsight-importer fixtures run
+
+      - name: Run migrations
+        run: go run ./cmd/xinsight-server migrate up
+
+      - name: Prove generated PostgreSQL 16 schema contract parity
+        env:
+          XINSIGHT_POSTGRES_DSN: postgres://xinsight_admin:xinsight@localhost:5432/xinsight_schema_contract?sslmode=disable
+          XINSIGHT_SCHEMA_CONTRACT_DSN: postgres://xinsight_admin:xinsight@localhost:5432/xinsight_schema_contract?sslmode=disable
+        run: |
+          go run ./cmd/xinsight-server migrate up
+          psql "$XINSIGHT_POSTGRES_DSN" -v ON_ERROR_STOP=1 \
+            -c 'GRANT EXECUTE ON FUNCTION public.synthetic_resource_cluster_id() TO xinsight_importer'
+          go run ./cmd/xinsight-schema-contract --verify-expected
+          go run ./cmd/xinsight-schema-contract \
+            --output "${RUNNER_TEMP}/fresh-schema-contract.json"
+          cmp \
+            internal/hostctl/development_schema_contract.json \
+            "${RUNNER_TEMP}/fresh-schema-contract.json"
+
+      - name: Run persistent UniRouter snapshot import
+        run: |
+          go run ./cmd/xinsight-importer unirouter import-snapshot --snapshot fixtures/unirouter_snapshot/missing_trace_gap.json --persist
+          go run ./cmd/xinsight-importer unirouter import-snapshot --snapshot fixtures/unirouter_snapshot/missing_trace_gap.json --persist
+          go run ./cmd/xinsight-importer unirouter import-snapshot --snapshot fixtures/unirouter_snapshot/model_permission_denied.json --persist
+          go run ./cmd/xinsight-importer unirouter import-snapshot --snapshot fixtures/unirouter_snapshot/micro_money_v2_generated.json --persist
+          go run ./cmd/xinsight-importer unirouter import-snapshot --snapshot fixtures/unirouter_snapshot/micro_money_v2_generated.json --persist
+          go run ./cmd/xinsight-importer unirouter gate-a-check --snapshot fixtures/unirouter_snapshot/model_permission_denied.json --persist --receipt-output /tmp/xinsight-gate-a-receipt.json
+
+      - name: Run readiness and anonymous access-boundary smoke
+        run: |
+          credential_dir="${RUNNER_TEMP}/xinsight-backend-smoke-credentials"
+          install -d -m 0700 "$credential_dir"
+          python3 - "$credential_dir/access-accounts.json" <<'PY'
+          import json
+          import os
+          import pathlib
+          import sys
+
+          target = pathlib.Path(sys.argv[1])
+          payload = {
+              "schema_version": "xinsight.local-accounts.v1",
+              "accounts": [{
+                  "subject_id": "xs_0000000000000000",
+                  "username": "ci.disabled",
+                  "role": "investigator",
+                  "disabled": True,
+                  "password_hash": "$argon2id$v=19$m=19456,t=2,p=1$l/Jq1AZhEtyhc18PB2oOXg$v2CbNPksEVetOCbGuBIIOeKNHdF/Z+JBU9YuhqQ7piY",
+              }],
+          }
+          descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+          with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+              json.dump(payload, output, separators=(",", ":"))
+              output.write("\n")
+          PY
+          CREDENTIALS_DIRECTORY="$credential_dir" \
+            go run ./cmd/xinsight-server serve 127.0.0.1:18080 \
+            > /tmp/xinsight-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in 1 2 3 4 5; do
+            if curl -fsS http://127.0.0.1:18080/readyz > /tmp/xinsight-readyz.json; then
+              break
+            fi
+            sleep 1
+          done
+          ui_status=$(curl --silent --show-error --max-redirs 0 \
+            --dump-header /tmp/xinsight-anonymous-ui-headers.txt \
+            --output /dev/null --write-out '%{http_code}' \
+            http://127.0.0.1:18080/executions)
+          api_status=$(curl --silent --show-error \
+            --dump-header /tmp/xinsight-anonymous-api-headers.txt \
+            --output /tmp/xinsight-anonymous-api-problem.json \
+            --write-out '%{http_code}' \
+            'http://127.0.0.1:18080/api/v1/executions?limit=1')
+          printf '%s\n' "$ui_status" > /tmp/xinsight-anonymous-ui-status.txt
+          printf '%s\n' "$api_status" > /tmp/xinsight-anonymous-api-status.txt
+          python3 - <<'PY'
+          import json
+          import pathlib
+
+          with open('/tmp/xinsight-gate-a-receipt.json') as f:
+              receipt = json.load(f)
+          readyz = json.loads(pathlib.Path("/tmp/xinsight-readyz.json").read_text())
+          ui_status = pathlib.Path("/tmp/xinsight-anonymous-ui-status.txt").read_text().strip()
+          ui_headers = {
+              line.strip().lower()
+              for line in pathlib.Path("/tmp/xinsight-anonymous-ui-headers.txt").read_text().splitlines()
+          }
+          api_status = pathlib.Path("/tmp/xinsight-anonymous-api-status.txt").read_text().strip()
+          api_headers = {
+              line.strip().lower()
+              for line in pathlib.Path("/tmp/xinsight-anonymous-api-headers.txt").read_text().splitlines()
+          }
+          problem = json.loads(pathlib.Path("/tmp/xinsight-anonymous-api-problem.json").read_text())
+
+          assert receipt["schema_version"] == "xinsight.import-receipt.v1", receipt
+          assert receipt["result"]["status"] == "persisted", receipt
+          assert receipt["result"]["readback_events"] == 2, receipt
+          assert receipt["result"]["readback_capture_gaps"] == 2, receipt
+          assert receipt["artifact"]["sha256"].startswith("sha256:"), receipt
+          assert readyz["status"] == "ready", readyz
+          assert readyz["db"] == "ok", readyz
+          assert readyz["representative_read"] == "ok", readyz
+          assert ui_status == "303", ui_status
+          assert "location: /login" in ui_headers, ui_headers
+          assert "cache-control: no-store" in ui_headers, ui_headers
+          assert api_status == "401", api_status
+          assert "content-type: application/problem+json" in api_headers, api_headers
+          assert set(problem) == {
+              "type", "title", "status", "code", "correlation_id", "retryable",
+          }, problem
+          assert problem["status"] == 401, problem
+          assert problem["code"] == "authentication_required", problem
+          PY
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage
+          path: coverage.out
+
+  admin_credential_rotation_pg16:
+    name: PostgreSQL 16 Admin Credential Rotation
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.safe_docs_only != 'true'
+
+    services:
+      postgres:
+        image: postgres:16.14-alpine3.24@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+        env:
+          POSTGRES_USER: xinsight_admin
+          POSTGRES_PASSWORD: predecessor-ci-password
+          POSTGRES_DB: xinsight_admin_rotation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -q -U healthcheck_role -d xinsight_admin_rotation"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      XINSIGHT_ADMIN_ROTATION_DATABASE_TEST: "1"
+      XINSIGHT_HOSTCTL_ADMIN_DSN: postgres://xinsight_admin:predecessor-ci-password@127.0.0.1:5432/xinsight_admin_rotation?sslmode=disable
+      XINSIGHT_HOSTCTL_READER_DSN: postgres://xinsight_reader:reader-ci-password@127.0.0.1:5432/xinsight_admin_rotation?sslmode=disable
+      XINSIGHT_HOSTCTL_WORKSPACE_DSN: postgres://xinsight_workspace:workspace-ci-password@127.0.0.1:5432/xinsight_admin_rotation?sslmode=disable
+      XINSIGHT_HOSTCTL_IMPORTER_DSN: postgres://xinsight_importer:importer-ci-password@127.0.0.1:5432/xinsight_admin_rotation?sslmode=disable
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run isolated admin rotation qualification
+        run: go test -race -v ./internal/hostctl -run '^TestPostgreSQL16AdminCredentialRotationQualification$' -count=1
+
+  signed_release:
+    name: Signed V2 Release Qualification
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.safe_docs_only != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && needs.changes.outputs.current_release_required == 'true'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Checkout immutable Neutral D1 qualification authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: foigent/integration-control
+          ref: db10730d64a9302887ad59c53921e98c757927e7
+          path: dist/ci-neutral-d1-authority
+          persist-credentials: false
+
+      - name: Acquire and qualify immutable Neutral D1 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          asset_dir="${RUNNER_TEMP}/neutral-d1-assets"
+          qualified_dir="${RUNNER_TEMP}/neutral-d1-qualified"
+          test "$(git -C "${GITHUB_WORKSPACE}/dist/ci-neutral-d1-authority" rev-parse HEAD)" = \
+            "db10730d64a9302887ad59c53921e98c757927e7"
+          mkdir -m 0700 "${asset_dir}"
+          gh release download v0.1.0-candidate.1 \
+            --repo foigent/integration-control \
+            --dir "${asset_dir}"
+          "${GITHUB_WORKSPACE}/dist/ci-neutral-d1-authority/scripts/qualify-n1-release.sh" \
+            "${asset_dir}" "${qualified_dir}" \
+            > "${RUNNER_TEMP}/neutral-d1-qualification-result.txt"
+          chmod 0700 "${asset_dir}/foigent-integration-control-v0.1.0-candidate.1-linux-amd64"
+          printf 'XINSIGHT_N1_RELEASE_ASSET_DIRECTORY=%s\n' "${asset_dir}" >> "${GITHUB_ENV}"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Verify X consumer against exact qualified Neutral D1 authority
+        run: go test ./internal/integrationcontrol -run '^TestFrozenN1OfflineVerifierAndFixtures$' -count=1
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify offline release entry contracts
+        run: |
+          python3 scripts/test-build-signed-release.py
+          python3 scripts/test-verify-signed-release.py
+          python3 scripts/test-ci-signed-release-wiring.py
+          bash -n scripts/build-release.sh scripts/build-signed-release.sh scripts/verify-signed-release.sh
+
+      - name: Install exact npm toolchain
+        run: npm install --global npm@10.9.8
+
+      - name: Install matched PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
+          /usr/lib/postgresql/16/bin/createdb --version
+
+      - name: Rebuild and verify deterministic manual
+        run: |
+          node scripts/build-manual.mjs
+          git diff --exit-code -- internal/webui/manual
+
+      - name: Install public frontend dependencies for redistribution notice verification
+        run: npm --prefix frontend ci
+
+      - name: Build and verify current legacy compatibility artifact
+        env:
+          XINSIGHT_EXPECT_COMMIT: ${{ github.sha }}
+          XINSIGHT_EXPECT_GO_VERSION: go1.25.12
+        run: |
+          scripts/build-release.sh "${RUNNER_TEMP}/current-legacy-dist"
+          scripts/verify-release.sh \
+            "${RUNNER_TEMP}/current-legacy-dist/xinsight-release-linux-amd64-${GITHUB_SHA}.tar.gz"
+
+      - name: Generate ephemeral non-publishable CI trust identity
+        run: >-
+          go run ./cmd/xinsight-release keygen
+          --private-key "${RUNNER_TEMP}/ci-signing-key.json"
+          --trust-store "${RUNNER_TEMP}/ci-trusted-release-keys.json"
+          --created-at 2000-01-01T00:00:00Z
+
+      - name: Build signed candidate twice
+        env:
+          XINSIGHT_RELEASE_SIGNING_KEY: ${{ runner.temp }}/ci-signing-key.json
+        run: |
+          scripts/build-signed-release.sh "${RUNNER_TEMP}/xinsight-signed-a" --profile=development-d
+          scripts/build-signed-release.sh "${RUNNER_TEMP}/xinsight-signed-b" --profile=development-d
+
+      - name: Prove byte-for-byte release reproducibility
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+
+          root = pathlib.Path(os.environ["RUNNER_TEMP"])
+          first = json.loads((root / "xinsight-signed-a/build-result.json").read_text(encoding="utf-8"))
+          second = json.loads((root / "xinsight-signed-b/build-result.json").read_text(encoding="utf-8"))
+          for field in ("bundle_sha256", "manifest_sha256", "payload_sha256", "product_version", "commit", "key_id"):
+              if first[field] != second[field]:
+                  raise SystemExit(f"signed build mismatch for {field}: {first[field]} != {second[field]}")
+          first_bytes = pathlib.Path(first["output"]).read_bytes()
+          second_bytes = pathlib.Path(second["output"]).read_bytes()
+          if first_bytes != second_bytes:
+              raise SystemExit("signed release artifacts are not byte-for-byte reproducible")
+          first_bootstrap = root / "xinsight-signed-a/bootstrap" / f"xinsight-release-linux-amd64-{first['commit']}"
+          second_bootstrap = root / "xinsight-signed-b/bootstrap" / f"xinsight-release-linux-amd64-{second['commit']}"
+          if first_bootstrap.read_bytes() != second_bootstrap.read_bytes():
+              raise SystemExit("bootstrap release tools are not byte-for-byte reproducible")
+          print(f"reproducible_sha256=sha256:{hashlib.sha256(first_bytes).hexdigest()}")
+          print(f"bootstrap_sha256=sha256:{hashlib.sha256(first_bootstrap.read_bytes()).hexdigest()}")
+          PY
+
+      - name: Set up exact historical Phase 1 Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.11'
+          cache: true
+
+      - name: Reproduce and verify exact Phase 1 legacy artifact
+        env:
+          XINSIGHT_EXPECT_COMMIT: b9e5811cc53a5cb06614956e66a1c54756617f0a
+          XINSIGHT_EXPECT_GO_VERSION: go1.25.11
+        run: |
+          git worktree add --detach "${RUNNER_TEMP}/phase1-source" "$XINSIGHT_EXPECT_COMMIT"
+          "${RUNNER_TEMP}/phase1-source/scripts/build-release.sh" "${RUNNER_TEMP}/phase1-dist"
+          legacy_artifact="${RUNNER_TEMP}/phase1-dist/xinsight-release-linux-amd64-${XINSIGHT_EXPECT_COMMIT}.tar.gz"
+          test "sha256:$(sha256sum "$legacy_artifact" | awk '{print $1}')" = "sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1"
+          "${RUNNER_TEMP}/phase1-source/scripts/verify-release.sh" "$legacy_artifact"
+
+      - name: Rebuild and verify frozen rc13 signed candidate
+        env:
+          XINSIGHT_RELEASE_SIGNING_KEY: ${{ runner.temp }}/ci-signing-key.json
+          XINSIGHT_RC13_COMMIT: 8bcea5bebf6f0f0796391dfe8c62fdf7a43519eb
+        run: |
+          rc13_source="${RUNNER_TEMP}/rc13-source"
+          git worktree add --detach "$rc13_source" "$XINSIGHT_RC13_COMMIT"
+          test "$(git -C "$rc13_source" rev-parse HEAD)" = "$XINSIGHT_RC13_COMMIT"
+          "$rc13_source/scripts/build-signed-release.sh" "${RUNNER_TEMP}/rc13-signed"
+          build_result="${RUNNER_TEMP}/rc13-signed/build-result.json"
+          artifact=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["output"])' "$build_result")
+          commit=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["commit"])' "$build_result")
+          test "$commit" = "$XINSIGHT_RC13_COMMIT"
+          XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/rc13-signed/bootstrap/xinsight-release-linux-amd64-${commit}" \
+            "$rc13_source/scripts/verify-signed-release.sh" \
+            "$artifact" "${RUNNER_TEMP}/ci-trusted-release-keys.json" "${RUNNER_TEMP}/verified-rc13-payload"
+
+      - name: Restore current Go after historical reproduction
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Verify current reader against exact Phase 1 legacy artifact
+        run: |
+          legacy_artifact="${RUNNER_TEMP}/phase1-dist/xinsight-release-linux-amd64-b9e5811cc53a5cb06614956e66a1c54756617f0a.tar.gz"
+          XINSIGHT_LEGACY_TEST_ARTIFACT="$legacy_artifact" go test ./internal/legacyrelease
+
+      - name: Verify signature, extract payload, binaries and offline manual
+        run: |
+          artifact=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "xinsight-signed-a/build-result.json").read_text())["output"])')
+          commit=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "xinsight-signed-a/build-result.json").read_text())["commit"])')
+          XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/xinsight-signed-a/bootstrap/xinsight-release-linux-amd64-${commit}" \
+            scripts/verify-signed-release.sh "$artifact" "${RUNNER_TEMP}/ci-trusted-release-keys.json" "${RUNNER_TEMP}/verified-signed-payload" --profile=development-d
+
+      - name: Qualify Phase 1 to frozen rc13 transition and recovery on clean Ubuntu VM
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+        run: |
+          artifact=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "rc13-signed/build-result.json").read_text())["output"])')
+          legacy_artifact="${RUNNER_TEMP}/phase1-dist/xinsight-release-linux-amd64-b9e5811cc53a5cb06614956e66a1c54756617f0a.tar.gz"
+          "${RUNNER_TEMP}/rc13-source/scripts/qualify-ubuntu22-host.sh" \
+            "$artifact" \
+            "${RUNNER_TEMP}/verified-rc13-payload" \
+            "${RUNNER_TEMP}/ci-trusted-release-keys.json" \
+            "$legacy_artifact"
+
+      - name: Upload explicitly non-publishable CI qualification artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-non-publishable-xinsight-signed-v2-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/current-legacy-dist/*.tar.gz
+            ${{ runner.temp }}/xinsight-signed-a/*.tar.gz
+            ${{ runner.temp }}/xinsight-signed-a/bootstrap/xinsight-release-linux-amd64-*
+            ${{ runner.temp }}/xinsight-signed-a/build-result.json
+            ${{ runner.temp }}/rc13-signed/*.tar.gz
+            ${{ runner.temp }}/rc13-signed/bootstrap/xinsight-release-linux-amd64-*
+            ${{ runner.temp }}/rc13-signed/build-result.json
+            ${{ runner.temp }}/ci-trusted-release-keys.json
+            ${{ runner.temp }}/verified-signed-payload.campaign-authority.derive.json
+            ${{ runner.temp }}/verified-signed-payload.campaign-authority.verify.json
+            ${{ runner.temp }}/verified-signed-payload.campaign-authority/*.json
+            ${{ runner.temp }}/verified-rc13-payload.campaign-authority.derive.json
+            ${{ runner.temp }}/verified-rc13-payload.campaign-authority.verify.json
+            ${{ runner.temp }}/verified-rc13-payload.campaign-authority/*.json
+            ${{ runner.temp }}/xinsight-host-qualification/*-check.json
+            ${{ runner.temp }}/xinsight-host-qualification/*-receipt.json
+            ${{ runner.temp }}/xinsight-host-qualification/access-account-validation.json
+            ${{ runner.temp }}/xinsight-host-qualification/readyz.json
+            ${{ runner.temp }}/xinsight-host-qualification/anonymous-ui-status.txt
+            ${{ runner.temp }}/xinsight-host-qualification/anonymous-ui-headers.txt
+            ${{ runner.temp }}/xinsight-host-qualification/anonymous-api-status.txt
+            ${{ runner.temp }}/xinsight-host-qualification/anonymous-api-headers.txt
+            ${{ runner.temp }}/xinsight-host-qualification/anonymous-api-problem.json
+            ${{ runner.temp }}/xinsight-host-qualification/final-status.json
+            ${{ runner.temp }}/xinsight-host-qualification/listeners.txt
+            ${{ runner.temp }}/xinsight-host-qualification/sigkill-recover.json
+            ${{ runner.temp }}/xinsight-host-qualification/sigkill-recovery-result.json
+            ${{ runner.temp }}/xinsight-host-qualification/rollback-incompatibility.json
+            ${{ runner.temp }}/xinsight-host-qualification/pre-bridge-backup.json
+            ${{ runner.temp }}/xinsight-host-qualification/postgres-bridge-result.json
+            ${{ runner.temp }}/xinsight-host-qualification/qualification-result.json
+            release/ci-non-publishable.txt
+          if-no-files-found: error
+
+  fresh_install:
+    name: Fresh Install Qualification
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        lifecycle: [new_install, adopt_existing, fpv17_upgrade]
+    needs: [changes, signed_release]
+    if: needs.changes.outputs.safe_docs_only != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && needs.changes.outputs.current_release_required == 'true'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up fixed Go for installed joint qualification
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Check current release schema and offline authorization boundaries
+        run: |
+          go test ./internal/db ./internal/sourcefacts ./internal/integrationcontrol ./internal/releasebundle \
+            -run '^Test(CurrentReleaseAuthorizationSchemas|BudgetOfflineExactBindingAndCompleteness|ObservationOfflineFiveProfilesAndLegacyIdentity|SyntheticResourceAuthorizationSeparatesInternalAndUR|ActionAuthorizationIsDistinctAndTestOnly|CompiledCampaignReleaseAuthority|CurrentRC13ReleaseConfigRejectsCurrentDevelopmentSchema)$' -count=1
+
+      - name: Set up fixed Node for exact predecessor reproduction
+        if: matrix.lifecycle == 'adopt_existing' || matrix.lifecycle == 'fpv17_upgrade'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install exact predecessor npm toolchain
+        if: matrix.lifecycle == 'adopt_existing' || matrix.lifecycle == 'fpv17_upgrade'
+        run: npm install --global npm@10.9.8
+
+      - name: Checkout fixed UR installed-service fixture
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: foigent/unirouter
+          ref: ef52a29f2d463a8c5b136f9f18fdd975c88a0c26
+          path: dist/ci-installed-ur
+          persist-credentials: false
+
+      - name: Verify exact UR fixture identity
+        run: test "$(git -C dist/ci-installed-ur rev-parse HEAD)" = ef52a29f2d463a8c5b136f9f18fdd975c88a0c26
+
+      - name: Install matched PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16 nginx
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
+          /usr/lib/postgresql/16/bin/createdb --version
+
+      - name: Download exact non-publishable signed candidate
+        uses: actions/download-artifact@v7
+        with:
+          name: ci-non-publishable-xinsight-signed-v2-${{ github.sha }}
+          path: ${{ runner.temp }}/signed-release-artifact
+
+      - name: Verify and extract exact signed candidate
+        run: |
+          download_root="${RUNNER_TEMP}/signed-release-artifact"
+          build_result="${download_root}/_temp/xinsight-signed-a/build-result.json"
+          commit=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["commit"])' "$build_result")
+          product_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["product_version"])' "$build_result")
+          artifact="${download_root}/_temp/xinsight-signed-a/xinsight-v${product_version}-linux-amd64-${commit}.tar.gz"
+          bootstrap="${download_root}/_temp/xinsight-signed-a/bootstrap/xinsight-release-linux-amd64-${commit}"
+          trust_store="${download_root}/_temp/ci-trusted-release-keys.json"
+          test -f "$artifact"
+          test -f "$bootstrap"
+          test -f "$trust_store"
+          chmod 0755 "$bootstrap"
+          XINSIGHT_RELEASE_TOOL="$bootstrap" \
+            scripts/verify-signed-release.sh \
+            "$artifact" \
+            "$trust_store" \
+            "${RUNNER_TEMP}/fresh-install-payload" \
+            --profile=development-d
+          # Installed lifecycle checks reread the signed bundle from the
+          # controller's ProtectHome=true namespace. Keep it outside /home.
+          sudo test ! -e /opt/xinsight-ci-artifacts
+          sudo test ! -L /opt/xinsight-ci-artifacts
+          sudo install -d -o root -g root -m 0755 /opt/xinsight-ci-artifacts
+          sudo install -o root -g root -m 0444 "$artifact" /opt/xinsight-ci-artifacts/candidate.tar.gz
+          test "$(sha256sum "$artifact" | cut -d ' ' -f1)" = "$(sha256sum /opt/xinsight-ci-artifacts/candidate.tar.gz | cut -d ' ' -f1)"
+
+      - name: Qualify fresh install on a second clean Ubuntu VM
+        if: matrix.lifecycle == 'new_install'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+        run: |
+          download_root="${RUNNER_TEMP}/signed-release-artifact"
+          trust_store="${download_root}/_temp/ci-trusted-release-keys.json"
+          scripts/qualify-ubuntu22-fresh-install.sh \
+            /opt/xinsight-ci-artifacts/candidate.tar.gz \
+            "${RUNNER_TEMP}/fresh-install-payload" \
+            "$trust_store"
+
+      - name: Reproduce and install exact FPV14 predecessor on clean VM
+        if: matrix.lifecycle == 'adopt_existing'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+        run: |
+          download_root="${RUNNER_TEMP}/signed-release-artifact"
+          trust="${download_root}/_temp/ci-trusted-release-keys.json"
+          bash scripts/prepare-ci-fpv14-predecessor.sh /opt/xinsight-ci-artifacts/candidate.tar.gz "${RUNNER_TEMP}/fresh-install-payload" "$trust"
+          python3 - <<'PY'
+          import json,os,pathlib,subprocess
+          p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'fpv14-ci-predecessor.json').read_text())
+          subprocess.run([p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh',p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
+          PY
+
+      - name: Reproduce and install exact FPV17 predecessor on clean VM
+        if: matrix.lifecycle == 'fpv17_upgrade'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+        run: |
+          download_root="${RUNNER_TEMP}/signed-release-artifact"
+          trust="${download_root}/_temp/ci-trusted-release-keys.json"
+          bash scripts/prepare-ci-fpv17-predecessor.sh /opt/xinsight-ci-artifacts/candidate.tar.gz "${RUNNER_TEMP}/fresh-install-payload" "$trust"
+          python3 - <<'PY'
+          import json,os,pathlib,subprocess
+          p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'fpv17-ci-predecessor.json').read_text())
+          subprocess.run([p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh',p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
+          PY
+
+      - name: Qualify installed controller and consumer lifecycle
+        if: matrix.lifecycle != 'fpv17_upgrade'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+        run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" "${{ matrix.lifecycle }}"
+
+      - name: Qualify FPV17 to FPV19 installed upgrade and source continuation
+        if: matrix.lifecycle == 'fpv17_upgrade'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+          XINSIGHT_CI_UPGRADE_PRESTATE: "1"
+        run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" fpv17_upgrade_prestate
+
+      - name: Upload explicitly non-publishable fresh-install evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-non-publishable-xinsight-fresh-install-${{ github.sha }}-${{ matrix.lifecycle }}
+          path: |
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/install-check.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/install-receipt.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/controller-old-mount-proof.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/controller-old-context.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/controller-current-mount-proof.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/controller-current-context.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/controller-manager-call.txt
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/import-receipt.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/import-report.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/access-account-validation.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/readyz.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/anonymous-ui-status.txt
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/anonymous-ui-headers.txt
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/anonymous-api-status.txt
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/anonymous-api-headers.txt
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/anonymous-api-problem.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/final-status.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/listeners.txt
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/postgres-profile-result.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/service-failure-diagnostic.json
+            ${{ runner.temp }}/xinsight-installed-joint-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-installed-joint-qualification/stage-receipts.json
+            ${{ runner.temp }}/xinsight-installed-joint-qualification/fixture-result.json
+            ${{ runner.temp }}/xinsight-installed-joint-qualification/access-validation.json
+            ${{ runner.temp }}/xinsight-installed-joint-qualification/nginx-body-ingress.json
+            ${{ runner.temp }}/xinsight-fpv17-to-fpv19-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-fpv17-to-fpv19-qualification/qualification-failure.json
+            release/ci-non-publishable.txt
+          if-no-files-found: error
+
+  direct_fpv9_upgrade:
+    name: Exact FPV9 Upgrade and Recovery
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.direct_fpv9_required == 'true'
+
+    steps:
+      - name: Checkout complete candidate history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install exact npm toolchain
+        run: npm install --global npm@10.9.8
+
+      - name: Install matched PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
+
+      - name: Reproduce exact unmanaged FPV9 binaries
+        run: scripts/reproduce-direct-fpv9.sh "${RUNNER_TEMP}/direct-fpv9-source" "${RUNNER_TEMP}/direct-fpv9-bin"
+
+      - name: Generate isolated non-publishable qualification identity
+        run: |
+          install -d -m 0700 "${RUNNER_TEMP}/direct-fpv9-trust"
+          go run ./cmd/xinsight-release keygen \
+            --private-key "${RUNNER_TEMP}/direct-fpv9-trust/signing-key.json" \
+            --trust-store "${RUNNER_TEMP}/direct-fpv9-trust/trusted-release-keys.json" \
+            --created-at 2000-01-01T00:00:00Z
+          chmod 0600 "${RUNNER_TEMP}/direct-fpv9-trust/signing-key.json"
+
+      - name: Build and verify FPV11 candidate for exact predecessor
+        env:
+          XINSIGHT_RELEASE_SIGNING_KEY: ${{ runner.temp }}/direct-fpv9-trust/signing-key.json
+        run: |
+          scripts/build-signed-release.sh "${RUNNER_TEMP}/direct-fpv9-signed" --profile=development-d
+          artifact=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "direct-fpv9-signed/build-result.json").read_text())["output"])')
+          commit=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "direct-fpv9-signed/build-result.json").read_text())["commit"])')
+          test "$commit" = "$GITHUB_SHA"
+          XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/direct-fpv9-signed/bootstrap/xinsight-release-linux-amd64-${commit}" \
+            scripts/verify-signed-release.sh "$artifact" \
+            "${RUNNER_TEMP}/direct-fpv9-trust/trusted-release-keys.json" \
+            "${RUNNER_TEMP}/direct-fpv9-payload" --profile=development-d
+
+      - name: Qualify exact FPV9 adoption and recovery
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: '1'
+        run: |
+          artifact=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "direct-fpv9-signed/build-result.json").read_text())["output"])')
+          scripts/qualify-ubuntu22-direct-fpv9.sh "$artifact" \
+            "${RUNNER_TEMP}/direct-fpv9-payload" \
+            "${RUNNER_TEMP}/direct-fpv9-trust/trusted-release-keys.json" \
+            "${RUNNER_TEMP}/direct-fpv9-source" \
+            "${RUNNER_TEMP}/direct-fpv9-bin"
+
+      - name: Upload allowlisted FPV9 qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-non-publishable-fpv9-upgrade-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/direct-fpv9-signed/build-result.json
+            ${{ runner.temp }}/xinsight-direct-fpv9-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-direct-fpv9-qualification/stage-result.json
+            ${{ runner.temp }}/xinsight-direct-fpv9-qualification/upgrade-assertions.json
+          if-no-files-found: warn
+
+  managed_fpv11_upgrade:
+    name: Managed FPV11 Upgrade and Recovery
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.managed_fpv11_required == 'true'
+
+    steps:
+      - name: Checkout complete candidate history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check exact published managed predecessor source
+        run: |
+          # PR107 is the published FPV11 source for this CI-only synthetic build.
+          # Check before tool installation, key generation or artifact creation.
+          git cat-file -e '9c58e07f011918c4a0aed2f876ce4baa9fb12b5e^{commit}'
+          git show 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e:release/d-validation-config.json | python3 -c 'import json,sys; c=json.load(sys.stdin); assert c["product_version"]=="0.2.0-dev.fpv11" and c["database_schema"]=={"current":"43","min":"43","max":"43"}'
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install exact npm toolchain
+        run: npm install --global npm@10.9.8
+
+      - name: Install matched PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
+
+      - name: Generate isolated non-publishable qualification identity
+        run: |
+          install -d -m 0700 "${RUNNER_TEMP}/managed-fpv11-trust"
+          go run ./cmd/xinsight-release keygen \
+            --private-key "${RUNNER_TEMP}/managed-fpv11-trust/signing-key.json" \
+            --trust-store "${RUNNER_TEMP}/managed-fpv11-trust/trusted-release-keys.json" \
+            --created-at 2000-01-01T00:00:00Z
+          chmod 0600 "${RUNNER_TEMP}/managed-fpv11-trust/signing-key.json"
+
+      - name: Build and verify current FPV12 and frozen managed FPV11
+        env:
+          XINSIGHT_RELEASE_SIGNING_KEY: ${{ runner.temp }}/managed-fpv11-trust/signing-key.json
+        run: |
+          scripts/build-signed-release.sh "${RUNNER_TEMP}/managed-fpv11-signed" --profile=development-d
+          artifact=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "managed-fpv11-signed/build-result.json").read_text())["output"])')
+          commit=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "managed-fpv11-signed/build-result.json").read_text())["commit"])')
+          test "$commit" = "$GITHUB_SHA"
+          XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/managed-fpv11-signed/bootstrap/xinsight-release-linux-amd64-${commit}" \
+            scripts/verify-signed-release.sh "$artifact" \
+            "${RUNNER_TEMP}/managed-fpv11-trust/trusted-release-keys.json" \
+            "${RUNNER_TEMP}/managed-fpv11-payload" --profile=development-d
+
+          old_source="${RUNNER_TEMP}/managed-fpv11-source"
+          git worktree add --detach "$old_source" 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
+          test "$(git -C "$old_source" rev-parse HEAD)" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
+          (cd "$old_source" && scripts/build-signed-release.sh "${RUNNER_TEMP}/managed-fpv11-old-signed" --profile=development-d)
+          old_artifact=$(python3 -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"managed-fpv11-old-signed/build-result.json").read_text())["output"])')
+          old_commit=$(python3 -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"managed-fpv11-old-signed/build-result.json").read_text())["commit"])')
+          test "$old_commit" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e
+          (cd "$old_source" && XINSIGHT_RELEASE_TOOL="${RUNNER_TEMP}/managed-fpv11-old-signed/bootstrap/xinsight-release-linux-amd64-${old_commit}" scripts/verify-signed-release.sh "$old_artifact" "${RUNNER_TEMP}/managed-fpv11-trust/trusted-release-keys.json" "${RUNNER_TEMP}/managed-fpv11-old-payload" --profile=development-d)
+
+      - name: Qualify managed FPV11 upgrade and recovery
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: '1'
+        run: |
+          artifact=$(python3 -c 'import json, os, pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "managed-fpv11-signed/build-result.json").read_text())["output"])')
+          old_artifact=$(python3 -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"managed-fpv11-old-signed/build-result.json").read_text())["output"])')
+          scripts/qualify-ubuntu22-managed-fpv11.sh "$artifact" \
+            "${RUNNER_TEMP}/managed-fpv11-payload" \
+            "${RUNNER_TEMP}/managed-fpv11-trust/trusted-release-keys.json" \
+            "$old_artifact" \
+            "${RUNNER_TEMP}/managed-fpv11-old-payload" \
+            "${RUNNER_TEMP}/managed-fpv11-source"
+
+      - name: Upload allowlisted managed FPV11 qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-non-publishable-managed-fpv11-upgrade-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/managed-fpv11-signed/build-result.json
+            ${{ runner.temp }}/xinsight-managed-fpv11-qualification/qualification-result.json
+            ${{ runner.temp }}/managed-fpv11-old-signed/build-result.json
+            ${{ runner.temp }}/xinsight-managed-fpv11-qualification/linux-credential-proof.json
+            ${{ runner.temp }}/xinsight-managed-fpv11-qualification/linux-reader-credential-proof.json
+            ${{ runner.temp }}/xinsight-managed-fpv11-qualification/service-failure-diagnostic.json
+          if-no-files-found: warn
+
+  p3_component:
+    name: P3 Component and Ordinary Reader Browser
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    needs: changes
+    if: needs.changes.outputs.safe_docs_only != 'true'
+    steps:
+      - name: Checkout exact XI candidate
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Admit immutable portable UR pair
+        id: pair
+        run: |
+          ur_commit=$(python3 scripts/ci/p3-component.py pair)
+          printf 'commit=%s\n' "$ur_commit" >> "$GITHUB_OUTPUT"
+      - name: Checkout exact portable UR component source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: foigent/unirouter
+          ref: ${{ steps.pair.outputs.commit }}
+          path: dist/ci-p3-ur
+          persist-credentials: false
+      - name: Set up fixed P3 Go toolchain
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+      - name: Set up fixed P3 browser toolchain
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Prepare locked P3 browser dependencies
+        run: |
+          npm install --global npm@10.9.8
+          npm --prefix frontend ci
+          npm --prefix frontend run install:e2e:chromium
+      - name: Build and read-only check exact P3 binaries
+        run: |
+          python3 scripts/ci/p3-component.py build --xi-commit "$GITHUB_SHA" --ur "$GITHUB_WORKSPACE/dist/ci-p3-ur" --build "$RUNNER_TEMP/p3-component-build"
+          python3 scripts/ci/p3-component.py check --xi-commit "$GITHUB_SHA" --ur "$GITHUB_WORKSPACE/dist/ci-p3-ur" --build "$RUNNER_TEMP/p3-component-build"
+      - name: Run isolated P3 components and same ordinary reader browser
+        run: |
+          sudo env -i PATH=/usr/bin:/bin GITHUB_ACTIONS=true \
+            XI_P3_CI_APPROVED_RUN="p3-public-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            XI_P3_CI_APPROVED_ACTIONS='synthetic-db-redis,http,credentials,source-binding,resource-authorization,human-review-grant,secret-cleanup' \
+            python3 "$GITHUB_WORKSPACE/scripts/ci/p3-component.py" run \
+            --xi-commit "$GITHUB_SHA" --ur "$GITHUB_WORKSPACE/dist/ci-p3-ur" \
+            --build "$RUNNER_TEMP/p3-component-build" --safe "$RUNNER_TEMP/p3-component-safe" \
+            --node "$(command -v node)" --browsers "$HOME/.cache/ms-playwright"
+      - name: Make only closed P3 receipts readable for upload
+        if: always()
+        run: |
+          for name in qualification-result.json browser-result.json; do
+            if sudo test -f "$RUNNER_TEMP/p3-component-safe/$name"; then
+              sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/p3-component-safe/$name"
+            fi
+          done
+          if sudo test -d "$RUNNER_TEMP/p3-component-safe"; then
+            sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/p3-component-safe"
+          fi
+      - name: Upload only sanitized P3 component receipts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-non-publishable-p3-component-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/p3-component-safe/qualification-result.json
+            ${{ runner.temp }}/p3-component-safe/browser-result.json
+          if-no-files-found: warn
+
+  ci_gate:
+    name: Backend Tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - changes
+      - frontend
+      - backend_validation
+      - admin_credential_rotation_pg16
+      - signed_release
+      - fresh_install
+      - direct_fpv9_upgrade
+      - managed_fpv11_upgrade
+      - p3_component
+
+    steps:
+      - name: Checkout gate implementation
+        uses: actions/checkout@v5
+
+      - name: Enforce the event-specific CI contract
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CHANGE_CLASSIFICATION: ${{ needs.changes.outputs.classification }}
+          SAFE_DOCS_ONLY: ${{ needs.changes.outputs.safe_docs_only }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend_validation.result }}
+          ADMIN_ROTATION_RESULT: ${{ needs.admin_credential_rotation_pg16.result }}
+          SIGNED_RELEASE_RESULT: ${{ needs.signed_release.result }}
+          FRESH_INSTALL_RESULT: ${{ needs.fresh_install.result }}
+          MANAGED_FPV11_RESULT: ${{ needs.managed_fpv11_upgrade.result }}
+          P3_COMPONENT_RESULT: ${{ needs.p3_component.result }}
+          MANAGED_FPV11_REQUIRED: ${{ needs.changes.outputs.managed_fpv11_required }}
+          CURRENT_RELEASE_REQUIRED: ${{ needs.changes.outputs.current_release_required }}
+          DIRECT_FPV9_RESULT: ${{ needs.direct_fpv9_upgrade.result }}
+          DIRECT_FPV9_REQUIRED: ${{ needs.changes.outputs.direct_fpv9_required }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: python3 scripts/ci-contract-gate.py

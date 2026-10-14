@@ -1,0 +1,62 @@
+{
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "product_version": "0.2.0-dev.fpv19",
+  "manual_version": "0.2.0-dev.fpv19/manual-r1",
+  "release_channel": "release_candidate",
+  "database_schema": "45",
+  "config_schema": "xinsight.config.v1",
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:7a2b3f79f55fe8863629220c4608e2bd3dea58f984a2a8597e91dd8c29373e53",
+    "migration_set_sha256": "sha256:1ab9bfd77ef97e93e7a06e97e57c4e378d4d5957bbc632593541f4e421967ea5"
+  },
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.b2",
+    "0.2.0-dev.d1",
+    "0.2.0-dev.d2",
+    "0.2.0-dev.fpv1",
+    "0.2.0-dev.fpv2",
+    "0.2.0-dev.fpv3",
+    "0.2.0-dev.fpv4",
+    "0.2.0-dev.fpv5",
+    "0.2.0-dev.fpv11",
+    "0.2.0-dev.fpv12",
+    "0.2.0-dev.fpv13",
+    "0.2.0-dev.fpv14",
+    "0.2.0-dev.fpv15",
+    "0.2.0-dev.fpv16",
+    "0.2.0-dev.fpv17",
+    "0.2.0-dev.fpv18"
+  ],
+  "supported_legacy_sources": [],
+  "supported_host": {
+    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "architecture": "amd64",
+    "service_manager": "systemd",
+    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+  },
+  "postgresql": {
+    "major": 16
+  },
+  "bootstrap_trust": {
+    "field_authority": "user_authorized_isolated_validation",
+    "customer_self_upgrade": false,
+    "private_key_retained": true,
+    "self_authentication": false,
+    "first_tool": "xinsight-release"
+  },
+  "field_qualification": "FPV19/schema45 is the English-default bilingual open-source preparation candidate. FPV17 and FPV18 evidence remains bound to its original commit, artifact and environment. Current signed Linux installation, upgrade, real-source integration and Target qualification require their own evidence; local tests are not substitutes."
+}

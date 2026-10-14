@@ -1,0 +1,92 @@
+{
+  "manifest_version": "xinsight.execution-evidence-incubation-manifest.v1",
+  "draft_version": "0.1.0-draft",
+  "ownership": "x-insight-consumer-side-incubation-candidate",
+  "source_context": {
+    "repository": "https://github.com/foigent/unirouter",
+    "repository_id": 1281228065,
+    "commit": "f3a73f3cd84cf4c75e9a4159dbe1831d9c517379",
+    "tree": "ce36a61e0027513b9f668dda6229a8d5d0590de7",
+    "version": "1.2.24",
+    "authority_mechanism": "undefined",
+    "observations": [
+      {
+        "path": "contracts/source-evidence/v1/unirouter.execution-evidence-v2.compatibility-pin.json",
+        "version": "unirouter.source-evidence.execution-evidence-v2-compatibility-pin.v1",
+        "content_sha256": "sha256:922e7a54bd03651fbd7207177773ea4e8e64b657cc8017cd366e68a167eb0edb"
+      },
+      {
+        "path": "internal/endpointprotocol/artifacts/manifests/anthropic-messages-text-tools.v3.json",
+        "version": "unirouter.anthropic.messages.text-tools.v3",
+        "content_sha256": "sha256:263a7e8776552e5b57a5981aed0fc5d3e508a4e27faac75658c0ca104152e429"
+      },
+      {
+        "path": "internal/endpointprotocol/artifacts/manifests/openai-responses-text.v2.json",
+        "version": "unirouter.openai.responses.text.v2",
+        "content_sha256": "sha256:a4c779fb50c5e874e60b0de3833ba7e9dcc9b4b26ca83f22b1c7d916f0f413ba"
+      },
+      {
+        "path": "internal/executionevidence/public_evidence.go",
+        "version": "unirouter.execution-route.v2-observed-source",
+        "content_sha256": "sha256:8e51c9134870b09e9ad358c9f1def1ca68bdb96cb816ec2b47dee38c572e555f"
+      }
+    ]
+  },
+  "consumer_baseline": {
+    "repository": "https://github.com/foigent/x-insight",
+    "repository_id": 1293678433,
+    "commit": "8bcea5bebf6f0f0796391dfe8c62fdf7a43519eb",
+    "tree": "ea4a845347dfaddc2afa56b8aa729a990a43538a"
+  },
+  "completed_execution_v1": {
+    "schema_path": "contracts/completed-execution/v1/unirouter.completed-execution.v1.schema.json",
+    "schema_content_sha256": "sha256:4ae2897d4f8470c38624dfe21c54d72eaf6d995d2c9578c4420c94d244424fb2",
+    "fixtures": [
+      {"path":"contracts/completed-execution/v1/fixtures/error-cursor-expired.json","content_sha256":"sha256:9f85ec830e0e61d0ac75656a980793d6d5c4020265d42ed192693659e1540437"},
+      {"path":"contracts/completed-execution/v1/fixtures/redaction-rejected.json","content_sha256":"sha256:c23fd255c139f94e729ecca70622d6e6341cf7a257c21fbccf592964b0e3853e"},
+      {"path":"contracts/completed-execution/v1/fixtures/valid-cancelled.json","content_sha256":"sha256:31cbfeb23968c07d158b591c28efb3dd40cffba1fd6d1fd4202f43d63bfe9f2d"},
+      {"path":"contracts/completed-execution/v1/fixtures/valid-settled.json","content_sha256":"sha256:5e9eda0a2630d52c5589d38b8ec480604c47c2cc77391b75a57b2a159db6dd27"}
+    ]
+  },
+  "foigent_protocol": {
+    "version": "2.0.2",
+    "pin_path": "contracts/foigent/event-connector-protocol.pin.json",
+    "pin_content_sha256": "sha256:7924a8b75f4f49a995227d51bfdee60b83bac43c64715e33165bb48f2492090e",
+    "public_components": {
+      "event_envelope_schema": "sha256:6942e85d9b5d8b08ff9828b970c317596394184ef29908cbf2b8fc792187cf26",
+      "connector_manifest_schema": "sha256:ce1e8e84b49e50d0740366e42c64a6899b27834c3cf83116a63a35d3c1a901e5",
+      "v1_to_v2_compatibility_matrix": "sha256:bdc2527ca947bf7b6a9c1feb2d5a97a9426b5b3ec602690a2d7b23d3f85ace52"
+    }
+  },
+  "artifacts": [
+    {"role":"draft_schema","path":"contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/draft-evidence.schema.json","content_sha256":"sha256:abd055cbfc53367664a734df47c5efffca2bad3632782fd77a00599868457044"},
+    {"role":"matrix_schema","path":"contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/field-matrix.schema.json","content_sha256":"sha256:1bca621bfa6a21c9dba1c30a38321105b02cb90f53a222e82f9014d3f8f6693d"},
+    {"role":"matrix","path":"contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/field-matrix.json","content_sha256":"sha256:6ca35e34d452104789f763453c62f2d96360ab97b9c8ece4e91dbbc074f283d6"},
+    {"role":"fixture_index_schema","path":"contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/fixture-index.schema.json","content_sha256":"sha256:18b109ab35ea4fff9b6a5c7623198e8fdf773a1eb6a2e5e4b076a71d8e1fc80f"},
+    {"role":"fixture_index","path":"contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/fixture-index.json","content_sha256":"sha256:767a3d4134b197989107dccf3eb8f10f3c0eb13eb025a321b7d03e65c0ceeda8"},
+    {"role":"manifest_schema","path":"contracts/execution-evidence/incubation/unirouter-consumer-candidate/versions/0.1.0/draft-manifest.schema.json","content_sha256":"sha256:fa8d81f105dff96f25dabcb7eb01132b28a579859e5ec3551da44e2c4905fb5d"},
+    {"role":"compatibility_input","path":"contracts/execution-evidence/v2/unirouter.execution-evidence.v2.pin.json","content_sha256":"sha256:4bb84a89a0a667c47fc14434e9e5a2d1bdbff9db22fb19e4d9a69aa356b1e953"},
+    {"role":"compatibility_input","path":"internal/adapters/unirouter/execution_evidence_bundle.go","content_sha256":"sha256:811af109962686bb21ca12dd182e1e9adc3b9927bcc152359434a8d6a236250f"}
+  ],
+  "validator": {
+    "id": "xinsight.execution-evidence-draft-validator",
+    "version": "1.0.0",
+    "source_files": [
+      {"path":"cmd/xinsight-draft-evidence-validator/main.go","content_sha256":"sha256:67180b7804f6fcf50c344df80a5edb5699c61de66f1ba3b6037e61fd87fb5c4d"},
+      {"path":"internal/draftevidence/differential.go","content_sha256":"sha256:745e82b46bddcf42ef19b1c85d9fbc98ca1b111ecd5b1af790242adf15b38d76"},
+      {"path":"internal/draftevidence/semantics.go","content_sha256":"sha256:25a6a31bac79a74e84c490882a1c898405ff379243a2992e486eb5e783e14c9c"},
+      {"path":"internal/draftevidence/validator.go","content_sha256":"sha256:7456943fee5b45990287f09b25ced1f6cdc58e265452efc47f7137f6d396037c"}
+    ]
+  },
+  "comparator": {
+    "id": "xinsight.completed-execution-v1-draft-differential",
+    "version": "1.0.0",
+    "source_files": [
+      {"path":"internal/draftevidence/differential.go","content_sha256":"sha256:745e82b46bddcf42ef19b1c85d9fbc98ca1b111ecd5b1af790242adf15b38d76"}
+    ]
+  },
+  "authority_status": "undefined",
+  "release_status": "no_eligible_release",
+  "runtime_eligible": false,
+  "compatibility_commitment": "none"
+}

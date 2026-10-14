@@ -1,0 +1,192 @@
+{
+  "get": {
+    "active": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "active",
+      "content_status": "active",
+      "state_version": "2",
+      "content_scope_revision": "2",
+      "active": {
+        "credential_id": "42",
+        "registration_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "content_access": {
+        "registration_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "profile": "unirouter.interaction-content.v1",
+        "enabled": true,
+        "content_scope_revision": "2",
+        "allowed_purposes": [
+          "human_review"
+        ],
+        "coverage_from": {
+          "time": "2026-09-15T00:00:00.000000Z",
+          "after_sequence": "100"
+        }
+      }
+    },
+    "global_paused": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "paused",
+      "content_status": "active",
+      "state_version": "2",
+      "content_scope_revision": "2",
+      "active": {
+        "credential_id": "42",
+        "registration_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "content_access": {
+        "registration_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "profile": "unirouter.interaction-content.v1",
+        "enabled": false,
+        "content_scope_revision": "2",
+        "allowed_purposes": [],
+        "coverage_from": {
+          "time": "2026-09-15T00:00:00.000000Z",
+          "after_sequence": "100"
+        }
+      }
+    },
+    "global_revoked": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "revoked",
+      "content_status": "revoked",
+      "state_version": "4",
+      "content_scope_revision": "4"
+    },
+    "local_paused": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "active",
+      "content_status": "paused",
+      "state_version": "3",
+      "content_scope_revision": "3",
+      "active": {
+        "credential_id": "42",
+        "registration_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "content_access": {
+        "registration_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "profile": "unirouter.interaction-content.v1",
+        "enabled": false,
+        "content_scope_revision": "3",
+        "allowed_purposes": [],
+        "coverage_from": {
+          "time": "2026-09-15T00:00:00.000000Z",
+          "after_sequence": "100"
+        }
+      }
+    },
+    "local_revoked": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "active",
+      "content_status": "revoked",
+      "state_version": "4",
+      "content_scope_revision": "4"
+    },
+    "not_configured": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "not_configured",
+      "content_status": "not_configured",
+      "state_version": "0",
+      "content_scope_revision": "0"
+    },
+    "staged": {
+      "schema_version": "unirouter.source-content-control.v1",
+      "source_instance": "synthetic-u1-local",
+      "org_id": "1",
+      "project_id": "2",
+      "connection_status": "paused",
+      "content_status": "paused",
+      "state_version": "1",
+      "content_scope_revision": "1",
+      "staged": {
+        "credential_id": "43",
+        "registration_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "content_access": {
+        "registration_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "profile": "unirouter.interaction-content.v1",
+        "enabled": false,
+        "content_scope_revision": "1",
+        "allowed_purposes": [],
+        "coverage_from": {
+          "time": "2026-09-15T00:00:00.000000Z",
+          "after_sequence": "100"
+        }
+      }
+    }
+  },
+  "meaning": "active/staged contain only credential_id/hash; content_access describes current active or staged-only binding, staged-only is always disabled; enabled requires feed_active plus global/local active; disabled purposes is []; revoked keys omitted",
+  "post_boundary": "examples only: transaction coordinator has not been applied or tested; returned IDs must come from actual execution",
+  "post_examples": {
+    "activate": {
+      "action": "activate",
+      "allowed_purposes": [
+        "human_review"
+      ],
+      "content_scope_revision": "2",
+      "coverage_from": {
+        "time": "2026-09-15T00:00:00.000000Z",
+        "after_sequence": "100"
+      },
+      "credential_id": "43",
+      "operation_id": "22222222222222222222222222222222",
+      "registration_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "state_version": "2"
+    },
+    "cancel": {
+      "action": "cancel",
+      "allowed_purposes": [
+        "human_review"
+      ],
+      "content_scope_revision": "3",
+      "coverage_from": {
+        "time": "2026-09-15T00:00:00.000000Z",
+        "after_sequence": "100"
+      },
+      "credential_id": "43",
+      "operation_id": "33333333333333333333333333333333",
+      "registration_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "state_version": "5"
+    },
+    "prepare": {
+      "action": "prepare",
+      "allowed_purposes": [
+        "human_review"
+      ],
+      "content_scope_revision": "1",
+      "coverage_from": {
+        "time": "2026-09-15T00:00:00.000000Z",
+        "after_sequence": "100"
+      },
+      "credential_id": "43",
+      "operation_id": "11111111111111111111111111111111",
+      "registration_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "state_version": "1"
+    },
+    "revoke_without_active": {
+      "action": "revoke",
+      "content_scope_revision": "4",
+      "operation_id": "44444444444444444444444444444444",
+      "state_version": "6"
+    }
+  },
+  "status": "synthetic_response_shapes_not_product_acceptance"
+}

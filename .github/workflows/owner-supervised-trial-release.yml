@@ -1,0 +1,153 @@
+name: Owner-Supervised Trial Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Exact current main commit to package
+        required: true
+        type: string
+      source_ci_run_id:
+        description: Successful main push CI run for the same commit
+        required: true
+        type: string
+      confirmation:
+        description: Confirm this is the User plus Codex first-customer trial
+        required: true
+        default: STOP
+        type: choice
+        options:
+          - STOP
+          - OWNER_SUPERVISED_TRIAL
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: owner-supervised-trial-release
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: inputs.confirmation == 'OWNER_SUPERVISED_TRIAL'
+    name: Package exact-main supervised trial
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout requested exact commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.commit }}
+          fetch-depth: 0
+
+      - name: Require exact current main and successful matching push CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_CI_RUN_ID: ${{ inputs.source_ci_run_id }}
+          REQUESTED_COMMIT: ${{ inputs.commit }}
+        run: |
+          if ! [[ "$REQUESTED_COMMIT" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "commit must be an exact 40-character lowercase SHA" >&2
+            exit 1
+          fi
+          if ! [[ "$SOURCE_CI_RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "source_ci_run_id must be a positive integer" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_COMMIT"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_COMMIT"
+          test -z "$(git status --porcelain)"
+          gh run view "$SOURCE_CI_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json databaseId,workflowName,event,headBranch,headSha,conclusion,url \
+            > "${RUNNER_TEMP}/source-main-ci.json"
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_CI_RUN_ID}/jobs?per_page=100" \
+            > "${RUNNER_TEMP}/source-main-ci-jobs.json"
+          python3 - \
+            "${RUNNER_TEMP}/source-main-ci.json" \
+            "${RUNNER_TEMP}/source-main-ci-jobs.json" \
+            "$REQUESTED_COMMIT" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          run = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          jobs = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))["jobs"]
+          expected = {
+              "workflowName": "CI",
+              "event": "push",
+              "headBranch": "main",
+              "headSha": sys.argv[3],
+              "conclusion": "success",
+          }
+          for field, value in expected.items():
+              if run.get(field) != value:
+                  raise SystemExit(f"source CI {field}={run.get(field)!r}, expected {value!r}")
+          required_jobs = {
+              "Backend Tests",
+              "Signed V2 Release Qualification",
+              "Fresh Install Qualification",
+          }
+          conclusions = {job["name"]: job.get("conclusion") for job in jobs}
+          invalid = {
+              name: conclusions.get(name)
+              for name in sorted(required_jobs)
+              if conclusions.get(name) != "success"
+          }
+          if invalid:
+              raise SystemExit(
+                  "source CI is not release-qualified; required job conclusions="
+                  f"{invalid}"
+              )
+          print(f"source_ci_url={run['url']}")
+          print(f"release_qualification_jobs={sorted(required_jobs)}")
+          PY
+
+      - name: Set up exact Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: true
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install exact npm
+        run: npm install --global npm@10.9.8
+
+      - name: Build ephemeral-key supervised delivery
+        env:
+          XINSIGHT_TRIAL_CONFIRMATION: OWNER_SUPERVISED_TRIAL
+          XINSIGHT_SOURCE_CI_JSON: ${{ runner.temp }}/source-main-ci.json
+        run: scripts/build-owner-supervised-trial-release.sh "${RUNNER_TEMP}/owner-supervised-trial"
+
+      - name: Verify exact delivery and absence of retained private key
+        run: >-
+          scripts/verify-owner-supervised-trial-release.sh
+          "${RUNNER_TEMP}/owner-supervised-trial/delivery"
+          "${RUNNER_TEMP}/owner-supervised-trial-verified-payload"
+
+      - name: Reconfirm commit is still current main before publication
+        env:
+          REQUESTED_COMMIT: ${{ inputs.commit }}
+        run: |
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_COMMIT"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_COMMIT"
+          test -z "$(git status --porcelain)"
+
+      - name: Upload bounded owner-supervised delivery
+        uses: actions/upload-artifact@v6
+        with:
+          name: owner-supervised-trial-xinsight-${{ inputs.commit }}
+          path: ${{ runner.temp }}/owner-supervised-trial/delivery
+          if-no-files-found: error
+          retention-days: 90

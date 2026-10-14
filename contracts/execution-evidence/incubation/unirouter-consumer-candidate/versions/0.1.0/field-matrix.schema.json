@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-insight:incubation:unirouter-execution-evidence-field-matrix:0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matrix_id", "matrix_version", "ownership", "freeze_status", "fields", "entries"],
+  "properties": {
+    "matrix_id": {"const": "xinsight.unirouter-execution-evidence.consumer-candidate.field-matrix"},
+    "matrix_version": {"const": "0.1.0-draft"},
+    "ownership": {"const": "x-insight-consumer-side-incubation-candidate"},
+    "freeze_status": {"const": "draft_gate_only"},
+    "fields": {"type": "array", "minItems": 10, "items": {"$ref": "#/$defs/field"}},
+    "entries": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/entry"}}
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_family", "protocol_profile", "protocol_version", "capability_type", "execution_profile", "execution_profile_version", "field_bindings"],
+      "properties": {
+        "operation_family": {"enum": ["predispatch", "chat", "responses", "messages"]},
+        "protocol_profile": {"type": "string", "minLength": 1},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "capability_type": {"type": "string", "minLength": 1},
+        "execution_profile": {"type": "string", "minLength": 1},
+        "execution_profile_version": {"type": "string", "minLength": 1},
+        "field_bindings": {"type": "array", "minItems": 10, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "relationship_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "rule"],
+      "properties": {
+        "allowed": {"type": "boolean"},
+        "rule": {"type": "string", "minLength": 1}
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_identity",
+        "path",
+        "semantic_role",
+        "execution_identity_semantics",
+        "operation_protocol_semantics",
+        "capability_evidence_semantics",
+        "route_attempt_semantics",
+        "usage_semantics",
+        "cost_pricing_reconciliation_semantics",
+        "outcome_finality_semantics",
+        "provenance",
+        "lifecycle",
+        "cardinality",
+        "sensitivity_privacy",
+        "ordering",
+        "absence_gap_unknown_semantics",
+        "idempotency_identity",
+        "revision_of",
+        "supersedes",
+        "caused_by",
+        "relates_to",
+        "derived_from",
+        "source_support_status",
+        "xinsight_projection_target",
+        "evidence_reference",
+        "classification"
+      ],
+      "properties": {
+        "field_identity": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "pattern": "^/"},
+        "semantic_role": {"enum": ["execution_identity", "operation_protocol", "capability_reference", "route_attempt", "usage", "cost_pricing_reconciliation", "outcome_finality", "provenance", "lifecycle", "relationship"]},
+        "execution_identity_semantics": {"type": "string", "minLength": 1},
+        "operation_protocol_semantics": {"type": "string", "minLength": 1},
+        "capability_evidence_semantics": {"type": "string", "minLength": 1},
+        "route_attempt_semantics": {"type": "string", "minLength": 1},
+        "usage_semantics": {"type": "string", "minLength": 1},
+        "cost_pricing_reconciliation_semantics": {"type": "string", "minLength": 1},
+        "outcome_finality_semantics": {"type": "string", "minLength": 1},
+        "provenance": {"type": "string", "minLength": 1},
+        "lifecycle": {"type": "string", "minLength": 1},
+        "cardinality": {"enum": ["exactly_one", "zero_or_one", "zero_or_more", "one_or_more"]},
+        "sensitivity_privacy": {"enum": ["public_identifier", "internal_identifier", "sensitive_reference_only", "aggregate_only", "no_raw_payload"]},
+        "ordering": {"type": "string", "minLength": 1},
+        "absence_gap_unknown_semantics": {"type": "string", "minLength": 1},
+        "idempotency_identity": {"type": "string", "minLength": 1},
+        "revision_of": {"$ref": "#/$defs/relationship_rule"},
+        "supersedes": {"$ref": "#/$defs/relationship_rule"},
+        "caused_by": {"$ref": "#/$defs/relationship_rule"},
+        "relates_to": {"$ref": "#/$defs/relationship_rule"},
+        "derived_from": {"$ref": "#/$defs/relationship_rule"},
+        "source_support_status": {"enum": ["source_declared", "source_observed_unreleased", "not_observed", "unknown"]},
+        "xinsight_projection_target": {"type": "string", "minLength": 1},
+        "evidence_reference": {"type": "string", "minLength": 1},
+        "classification": {"enum": ["internal_only", "candidate_common", "family_specific", "draft_common", "frozen_public"]}
+      }
+    }
+  }
+}

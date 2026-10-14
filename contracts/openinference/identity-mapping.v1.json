@@ -1,0 +1,19 @@
+{
+  "identity_version": "xinsight.openinference-identity.v1",
+  "source_instance_binding": {
+    "mapping_context": "producer_instance",
+    "envelope": "producer.instance",
+    "comparison": "exact_utf8_bytes"
+  },
+  "event_id": "trace_id + ':' + span_id",
+  "source_ref": "injective LP-safe components: producer.instance, trace_id, span_id",
+  "m0_event_id": "uuid-v5-shaped sha256 over source_system_id, adapter_manifest_id, source_ref, event_type and source_event_id",
+  "idempotency": "foigent.event-idempotency.v1 over seven exact components",
+  "mutable_delivery_exclusions": [
+    "cursor",
+    "high_watermark",
+    "page_time",
+    "retry_state",
+    "ingestion_time"
+  ]
+}

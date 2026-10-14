@@ -1,0 +1,131 @@
+{
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "application_compatibility": {
+    "config_schema_max": "xinsight.config.v1",
+    "config_schema_min": "xinsight.config.v1",
+    "database_schema_max": "20",
+    "database_schema_min": "20"
+  },
+  "config_schema": {
+    "current": "xinsight.config.v1",
+    "max": "xinsight.config.v1",
+    "min": "xinsight.config.v1"
+  },
+  "database_schema": {
+    "current": "20",
+    "max": "20",
+    "min": "20"
+  },
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "manual": {
+    "language": "zh-CN",
+    "version": "0.3.0-rc.11/manual-r11"
+  },
+  "product_name": "x-insight",
+  "product_version": "0.3.0-rc.11",
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "release_channel": "release_candidate",
+  "schema_contract": {
+    "migration_set_sha256": "sha256:69fcf5c40204e975396130f116f73bd9157a396a8c2f01678d4829f7cc750c97",
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:61b8f475d879c51182287be3d95fa3cb307efdf6ccc2eb881df9f11eabcbef31"
+  },
+  "rollback": {
+    "application_rollback_compatible": false,
+    "barriers": [
+      "no_destructive_or_contract_migration",
+      "database_restore_is_explicit"
+    ]
+  },
+  "schema_version": "xinsight.release-config.v1",
+  "supported_legacy_sources": [
+    {
+      "artifact_sha256": "sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1",
+      "application_database_schema_max": "11",
+      "application_database_schema_min": "9",
+      "commit": "b9e5811cc53a5cb06614956e66a1c54756617f0a",
+      "compatible_config_schemas": [
+        "xinsight.config.v1"
+      ],
+      "config_schema": "xinsight.config.legacy-env.v1",
+      "database_schema": "9",
+      "manifest_sha256": "sha256:aaa53c2af46f59c328ff3271fa518a20bb0551fd7bdc02a0463ff925a43a6bc1",
+      "migration_checksums": [
+        {
+          "id": "000001_create_source_systems",
+          "sha256": "sha256:b8f55ec5bf251af460d331e8e9628ec0359bcd05291961a0e5bf62d390c48d37"
+        },
+        {
+          "id": "000002_create_adapter_manifests",
+          "sha256": "sha256:2334bb425e0da2a0867e621b1f1d5b0f8e7070ab13cecf081b1155bc6a044322"
+        },
+        {
+          "id": "000003_create_adapter_import_states",
+          "sha256": "sha256:0799466a67de52c0b0720f552a3a14a5f061c80a06e28ff846b0670deda8a9cf"
+        },
+        {
+          "id": "000004_create_evidence_events",
+          "sha256": "sha256:d13eeb3f0c2499bc0c5553c498db1b8f15f01245c188b325b8870dd2a1a72815"
+        },
+        {
+          "id": "000005_create_evidence_refs",
+          "sha256": "sha256:91d649ec4dd7e64350849642e0619dba68700bf0a18e2fd18076c104c81ab493"
+        },
+        {
+          "id": "000006_create_capture_gaps",
+          "sha256": "sha256:a0c8b9f7f175c93e7399bd96cd78941714782aef56b6420eabb062653ea40445"
+        },
+        {
+          "id": "000007_create_payload_policies",
+          "sha256": "sha256:a2c62ea96553bebdbf23861720b349285f1796e47fa8b8356a3796848868d038"
+        },
+        {
+          "id": "000008_create_ingestion_quarantine",
+          "sha256": "sha256:a8c10dfb217b7902c83c0a6ad1d14afd494f2acf86d6f025b120b52d66529876"
+        },
+        {
+          "id": "000009_add_capture_gap_candidates",
+          "sha256": "sha256:47da986bd2e283ff5edf7c1c650bebb91acd5775bd2bb3ef15630a412bfa38f2"
+        }
+      ],
+      "release_id": "legacy-b9e5811-phase1-final",
+      "release_layout": "xinsight.release-manifest.v1",
+      "service_layout": "phase1-immutable-current-symlink.v1"
+    }
+  ],
+  "supported_upgrade_from_versions": [
+    "0.2.0-rc.3",
+    "0.2.0-rc.4",
+    "0.2.0-rc.5",
+    "0.2.0-rc.6",
+    "0.2.0-rc.7",
+    "0.2.0-rc.8",
+    "0.2.0-rc.9",
+    "0.2.0-rc.10",
+    "0.2.0-rc.11",
+    "0.2.0-rc.12",
+    "0.2.0-rc.13",
+    "0.2.0-rc.14",
+    "0.2.0-rc.15",
+    "0.3.0-rc.2",
+    "0.3.0-rc.3",
+    "0.3.0-rc.4",
+    "0.3.0-rc.5",
+    "0.3.0-rc.6",
+    "0.3.0-rc.7",
+    "0.3.0-rc.8",
+    "0.3.0-rc.9",
+    "0.3.0-rc.10"
+  ],
+  "trust_reference": "/etc/x-insight/trusted-release-keys.json"
+}

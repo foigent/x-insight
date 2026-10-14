@@ -1,0 +1,117 @@
+{
+  "manifest_version": "foigent.connector-manifest.v1",
+  "connector_id": "foigent.openinference.otlp-spans",
+  "connector_version": "1.0.0",
+  "connector_class": "integration",
+  "direction": "source",
+  "source_product": "openinference",
+  "event_identity_profile": "foigent.openinference.otlp-span-id.v1",
+  "supported_source_schemas": [
+    {
+      "schema_id": "xinsight.otlp-openinference-span.v1",
+      "sha256": "sha256:09c7a7892d35a3bca4afbb677a7b0dcbfb8fc4ff6649d5ec29b619124785bae7"
+    }
+  ],
+  "emitted_event_schemas": [
+    {
+      "event_type": "observability.span.completed",
+      "schema_ref": "foigent://events/observability/openinference-span-completed/v1",
+      "schema_version": "1"
+    }
+  ],
+  "transport": {
+    "mode": "https_pull",
+    "route": "/v1/traces/export",
+    "page_schema": "otlp.export-trace-service-request.v1",
+    "max_items": 200,
+    "max_bytes": 8388608
+  },
+  "delivery": {
+    "guarantee": "at_least_once",
+    "checkpoint_commit": "after_all_items_converge",
+    "conflict": "fail_closed",
+    "empty_page_cursor_advance": "fail_closed"
+  },
+  "bootstrap": {
+    "mode": "activation_forward",
+    "broad_backfill": false
+  },
+  "checkpoint": {
+    "strategy": "opaque_cursor",
+    "cursor_ownership": "connector_state_only"
+  },
+  "coverage": {
+    "included": [
+      "OTLP JSON OpenInference spans with openinference.span.kind=LLM",
+      "trace/span/parent correlation",
+      "model, provider, source-reported token counters, session and user metadata when observed",
+      "explicit Capture Gaps for unsupported or missing claims"
+    ],
+    "excluded": [
+      "OTLP push receiver",
+      "non-LLM spans",
+      "raw input/output/messages and arbitrary metadata",
+      "inferred sessions, inferred causal edges and source history before activation"
+    ]
+  },
+  "instance_binding": {
+    "source_field": "source_instance",
+    "envelope_field": "producer.instance",
+    "comparison": "exact_utf8_bytes",
+    "change_semantics": "new_connector_instance_identity_domain"
+  },
+  "payload_policy": {
+    "ingestion_capture_mode": "api_import",
+    "payload_capture_mode": "metadata_only",
+    "raw_payload_present": false
+  },
+  "required_capabilities": [
+    "otlp_json_export",
+    "openinference_semantic_attributes",
+    "stable_trace_and_span_ids"
+  ],
+  "declared_capture_gaps": [
+    {
+      "affected_claim": "billing_authority",
+      "reason_code": "not_exposed_by_openinference_span_v1"
+    },
+    {
+      "affected_claim": "business_outcome",
+      "reason_code": "not_exposed_by_openinference_span_v1"
+    },
+    {
+      "affected_claim": "downstream_side_effects",
+      "reason_code": "not_exposed_by_openinference_span_v1"
+    },
+    {
+      "affected_claim": "routing_decision",
+      "reason_code": "not_exposed_by_openinference_span_v1"
+    },
+    {
+      "affected_claim": "authoritative_session",
+      "reason_code": "session_id_not_observed"
+    },
+    {
+      "affected_claim": "token_usage",
+      "reason_code": "complete_token_counters_not_observed"
+    },
+    {
+      "affected_claim": "causal_parent",
+      "reason_code": "declared_parent_not_in_bounded_batch"
+    }
+  ],
+  "compatibility": {
+    "reference_profile": "xinsight.foigent-envelope-to-m0.openinference-span.v1",
+    "reference_projection_contract": {
+      "path": "contracts/openinference/projection-contract.v1.json",
+      "sha256": "sha256:666c97ceb89b85cd029d8b1d77f945e8f752474f91bce0e9d71bbfb5f511f79c"
+    },
+    "reference_compatibility_vector_bundle": {
+      "path": "contracts/openinference/reference-otlp-export.v1.json",
+      "sha256": "sha256:8b26b6e47a019eb2540ceb4be0177fc3e69dd0248449ff50fa19b55c10fe057c"
+    },
+    "source_revision": "1",
+    "timeline_complete": false,
+    "retention": "7d"
+  }
+}
