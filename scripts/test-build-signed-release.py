@@ -330,16 +330,20 @@ class ToolchainPinTests(unittest.TestCase):
             block = blocks[reproduction]
             self.assertIn('XINSIGHT_EXPECT_COMMIT: b9e5811cc53a5cb06614956e66a1c54756617f0a', block)
             self.assertIn('XINSIGHT_EXPECT_GO_VERSION: go1.25.11', block)
-            self.assertIn('git worktree add --detach "${RUNNER_TEMP}/phase1-source" "$XINSIGHT_EXPECT_COMMIT"', block)
-            self.assertIn('"${RUNNER_TEMP}/phase1-source/scripts/build-release.sh" "${RUNNER_TEMP}/phase1-dist"', block)
+            self.assertIn('python3 scripts/reproduce-phase1-source.py', block)
+            self.assertIn('"$PWD/compatibility/phase1-linux-amd64/source"', block)
+            self.assertIn('"${RUNNER_TEMP}/phase1-source" "${RUNNER_TEMP}/phase1-dist"', block)
+            self.assertNotIn('git worktree', block)
             self.assertIn('= "sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1"', block)
-            self.assertIn('"${RUNNER_TEMP}/phase1-source/scripts/verify-release.sh" "$legacy_artifact"', block)
             self.assertNotIn('go test', block)
             self.assertIn('xinsight-release-linux-amd64-b9e5811cc53a5cb06614956e66a1c54756617f0a.tar.gz', blocks[reader])
             self.assertIn('XINSIGHT_LEGACY_TEST_ARTIFACT="$legacy_artifact" go test ./internal/legacyrelease', blocks[reader])
             self.assertIn('XINSIGHT_RC13_COMMIT: 8bcea5bebf6f0f0796391dfe8c62fdf7a43519eb', blocks[frozen])
-            self.assertIn('"$rc13_source/scripts/build-signed-release.sh"', blocks[frozen])
-            self.assertIn('"$rc13_source/scripts/verify-signed-release.sh"', blocks[frozen])
+            self.assertIn('python3 scripts/reproduce-signed-predecessor-source.py --build rc13', blocks[frozen])
+            self.assertIn('"$GITHUB_WORKSPACE/compatibility/rc13-linux-amd64/source" "$rc13_source" "${RUNNER_TEMP}/rc13-signed"', blocks[frozen])
+            self.assertIn('test "$commit" = "$XINSIGHT_RC13_COMMIT"', blocks[frozen])
+            self.assertIn('python3 scripts/reproduce-signed-predecessor-source.py --verify rc13 "$rc13_source"', blocks[frozen])
+            self.assertNotIn('git worktree', blocks[frozen])
         else:
             self.assertEqual(set(all_pins), {expected})
 
@@ -378,6 +382,19 @@ class ToolchainPinTests(unittest.TestCase):
             text.replace("go-version: '1.25.12'", "go-version: '1.25.11'", 1),
             text.replace('      - name: Reproduce and verify exact Phase 1 legacy artifact', '      - name: Unrelated intervening step\n        run: true\n\n      - name: Reproduce and verify exact Phase 1 legacy artifact'),
         ]
+        for old, new in (
+            ('python3 scripts/reproduce-phase1-source.py', 'true'),
+            ('"$PWD/compatibility/phase1-linux-amd64/source"', '"$PWD/unadmitted/source"'),
+            ('"${RUNNER_TEMP}/phase1-source" "${RUNNER_TEMP}/phase1-dist"', '"${RUNNER_TEMP}/other-source" "${RUNNER_TEMP}/phase1-dist"'),
+            ('python3 scripts/reproduce-phase1-source.py', 'git worktree add --detach'),
+            ('--build rc13', '--build fpv11'),
+            ('--verify rc13 "$rc13_source"', '--verify fpv11 "$rc13_source"'),
+            ('"$GITHUB_WORKSPACE/compatibility/rc13-linux-amd64/source"', '"$GITHUB_WORKSPACE/unadmitted/source"'),
+            ('test "$commit" = "$XINSIGHT_RC13_COMMIT"', 'true'),
+            ('XINSIGHT_RC13_COMMIT: 8bcea5bebf6f0f0796391dfe8c62fdf7a43519eb', 'XINSIGHT_RC13_COMMIT: ' + '0' * 40),
+        ):
+            self.assertEqual(text.count(old), 1, old)
+            mutations.append(text.replace(old, new, 1))
         for i, candidate in enumerate(mutations):
             with self.subTest(mutation=i), self.assertRaises(AssertionError):
                 self.check_workflow(candidate, historical=True)
