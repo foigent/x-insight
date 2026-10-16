@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -47,18 +46,7 @@ const publishedFPV12ResumeCommit = "b1b6067dbd5bce1c9e9988fc12c1e1f28d979952"
 
 func publishedManagedResumeSource(t *testing.T, profile, commit string) string {
 	t.Helper()
-	source, archive := t.TempDir(), filepath.Join(t.TempDir(), "source.tar")
-	c := exec.Command("git", "archive", "--format=tar", "--output="+archive, commit,
-		"migrations", "deploy", "schemas", "fixtures", "internal/webui/manual/zh-CN", "release/d-validation-config.json",
-		"release/d-validation-compatibility-matrix.json", "release/d-validation-notes.md", "internal/hostctl/development_schema_contract.json")
-	c.Dir = "../.."
-	if out, err := c.CombinedOutput(); err != nil {
-		t.Fatalf("read exact published %s: %v %s", profile, err, out)
-	}
-	if out, err := exec.Command("tar", "-xf", archive, "-C", source).CombinedOutput(); err != nil {
-		t.Fatalf("extract exact %s: %v %s", profile, err, out)
-	}
-	return source
+	return retainedPublishedResumeSource(t, profile, commit)
 }
 
 // Use exact historical metadata/migrations/units for both FPV11 and FPV12,

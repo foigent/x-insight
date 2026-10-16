@@ -1,0 +1,19 @@
+{
+  "schema_version": "xinsight.managed-source-facts.v1",
+  "poll_interval_seconds": 5,
+  "retry_maximum_seconds": 60,
+  "profiles": [
+    {
+      "stream_id": "11111111-1111-4111-8111-111111111111",
+      "source_system_id": "22222222-2222-4222-8222-222222222222",
+      "source_instance": "replace-with-verified-source-instance",
+      "org_id": "1",
+      "project_id": "1",
+      "profile": "unirouter.execution-context.v1",
+      "scope_generation": "1",
+      "endpoint": "https://source.example/api/v1/integrations/xinsight/source-facts",
+      "key_file": "/etc/x-insight/source-context.key",
+      "allow_private_tunnel_http": false
+    }
+  ]
+}

@@ -492,6 +492,13 @@
       "origin_blob": "13fb396b3370f3c9bff5a1d3add920b3246c6a73"
     },
     {
+      "path": "frontend/scripts/require-toolchain.mjs",
+      "bytes": 886,
+      "sha256": "e4394f6fdcf714e2aee0b378141bd832e24f2e46ace6777ee66d9d7be13e5bd2",
+      "git_mode": "100644",
+      "origin_blob": "ba0e7eb083e15f450c8ca001a7a69549588c4097"
+    },
+    {
       "path": "frontend/scripts/validate-dist.mjs",
       "bytes": 2410,
       "sha256": "d95703af94e9b1984ee3a8e99f66de57185a4830a4d349b401d208e0511941ea",
@@ -4755,6 +4762,20 @@
       "origin_blob": "1887fe0b0d7b541ec41e302eabef93431fb24c9a"
     },
     {
+      "path": "scripts/qualify-ubuntu22-fresh-install.sh",
+      "bytes": 32557,
+      "sha256": "6c444dd0b5a7f6fce4598960b5f9e8f88bfd6912ca6a3d8498a2034a98f21dc0",
+      "git_mode": "100755",
+      "origin_blob": "d42db76104c30319d069f76f6433d8471f9756ef"
+    },
+    {
+      "path": "scripts/release-qualification-identity.py",
+      "bytes": 4526,
+      "sha256": "1edaeb88503b69537c9accd789902c102ef524f4edaa1c9405c6c9b50c974575",
+      "git_mode": "100644",
+      "origin_blob": "97edb84c046a1a4cf7a531558824b1b37149618e"
+    },
+    {
       "path": "scripts/validate_managed_environment.py",
       "bytes": 1166,
       "sha256": "e236baa3e72ef2322b00fb9a4c942ceaabf1d836dcabb3b5b2872a3cd1926ff8",
@@ -4947,5 +4968,10 @@
     "release/b-validation-compatibility-matrix.json",
     "release/b-validation-config.json"
   ],
-  "required_security_manual_guard_input": "docs/manual/zh-CN/admin/03-configuration-security-and-access.md"
+  "required_security_manual_guard_input": "docs/manual/zh-CN/admin/03-configuration-security-and-access.md",
+  "additional_installed_qualification_inputs": [
+    "frontend/scripts/require-toolchain.mjs",
+    "scripts/qualify-ubuntu22-fresh-install.sh",
+    "scripts/release-qualification-identity.py"
+  ]
 }

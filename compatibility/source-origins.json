@@ -48,7 +48,7 @@
       "original_commit": "a10aa9cf517ce187a95f5c7e20be0f8c8fdbe6c6",
       "original_tree": "cfa632be74105d1be00bb8b88d1536af3f82340f",
       "admitted_source_manifest": "compatibility/fpv14-linux-amd64/source-manifest.json",
-      "source_manifest_sha256": "acd45c086ab84904780e662be604855c419486446bd9f76a4ccb4420fb085555",
+      "source_manifest_sha256": "578b5cf7a2eb43e1c86c0e7a80086ffeb4fdf2edf7bfb89eb3d5df078c99ccee",
       "source_access_requires_private_Git": false
     },
     {
@@ -56,7 +56,7 @@
       "original_commit": "164582cab0e7f169c265c2494d04920c61af833d",
       "original_tree": "6190f7c7f708ea1aca4a116d60aade273c3db5ab",
       "admitted_source_manifest": "compatibility/fpv17-linux-amd64/source-manifest.json",
-      "source_manifest_sha256": "cd63b7665b0952e5d1c365e1f654bc8520ae8dc1e6d49bac93c6fef1e5cc808c",
+      "source_manifest_sha256": "bbc7f4024f182acf87f062c249fa8cce6f66bb9b952e90eed1c809564e923dec",
       "source_access_requires_private_Git": false
     }
   ],

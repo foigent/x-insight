@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Payload Policy Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload_capture_mode"],
+  "properties": {
+    "payload_capture_mode": {
+      "enum": ["none", "metadata_only", "hash_only", "redacted", "reference_only", "full_content"]
+    },
+    "redaction_state": {
+      "enum": ["not_applicable", "not_redacted", "redacted", "failed", "unknown"]
+    },
+    "payload_ref": { "type": "string" },
+    "retention_policy_ref": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}

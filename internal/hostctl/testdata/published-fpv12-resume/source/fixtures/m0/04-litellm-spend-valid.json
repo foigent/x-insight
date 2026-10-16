@@ -1,0 +1,57 @@
+{
+  "name": "litellm-spend-valid",
+  "expected": "accepted",
+  "event": {
+    "id": "00000000-0000-0000-0000-000000000004",
+    "schema_version": "m0.1",
+    "source_system_id": "33333333-3333-3333-3333-333333333333",
+    "adapter_manifest_id": "44444444-4444-4444-4444-444444444444",
+    "source_type": "litellm",
+    "source_version": "unknown",
+    "source_event_id": "spend-001",
+    "source_event_type": "spend_log",
+    "source_ref": "litellm:local:spend_logs:spend-001",
+    "idempotency_key": "adapter-litellm:33333333-3333-3333-3333-333333333333:litellm:local:spend_logs:spend-001:usage.cost.recorded:spend-001",
+    "import_cursor": "spend_logs:spend-001",
+    "event_type": "usage.cost.recorded",
+    "stage": "usage",
+    "severity": "info",
+    "capture_mode": "db_import",
+    "occurred_at": "2026-07-08T01:10:05Z",
+    "ingested_at": "2026-07-08T01:10:06Z",
+    "request_id": "req-litellm-001",
+    "org_ref": "team-a",
+    "payload_capture_mode": "metadata_only",
+    "correlation": {
+      "request_id": "req-litellm-001"
+    },
+    "identity": {
+      "org_id": "team-a",
+      "actor_type": "service",
+      "actor_ref": "litellm:user:svc-1"
+    },
+    "usage": {
+      "prompt_tokens": 30,
+      "completion_tokens": 15,
+      "total_tokens": 45,
+      "cost_cents": 5,
+      "latency_ms": 350,
+      "usage_source": "spend_log",
+      "usage_confidence": "direct"
+    },
+    "payload_policy": {
+      "payload_capture_mode": "metadata_only",
+      "redaction_state": "not_applicable"
+    },
+    "field_provenance": {
+      "correlation": "direct",
+      "identity": "direct",
+      "usage": "direct",
+      "payload_policy": "suppressed"
+    },
+    "raw_source_excerpt": {
+      "model": "gpt-4o-mini",
+      "spend_cents": 5
+    }
+  }
+}

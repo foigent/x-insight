@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x-insight.local/schemas/release/release-signature-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "algorithm", "key_id", "manifest_sha256", "signature_base64"],
+  "properties": {
+    "schema_version": { "const": "xinsight.release-signature.v1" },
+    "algorithm": { "const": "ed25519" },
+    "key_id": { "type": "string", "pattern": "^ed25519:sha256:[a-f0-9]{64}$" },
+    "manifest_sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "signature_base64": { "type": "string", "minLength": 88, "maxLength": 88 }
+  }
+}

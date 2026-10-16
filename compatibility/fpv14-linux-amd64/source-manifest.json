@@ -4468,6 +4468,20 @@
       "origin_blob": "15358c99fbe7d730d574e7f6ad93af3a2c5f2c4d"
     },
     {
+      "path": "scripts/qualify-ubuntu22-fresh-install.sh",
+      "bytes": 20582,
+      "sha256": "9ce4ca36c14a67b99f4e1ae4b9430f6815dc0c3c8b4587472d21171ba82e00a6",
+      "git_mode": "100755",
+      "origin_blob": "1b89ffeca5dce300fe07e1583a3ea16abc6fcd50"
+    },
+    {
+      "path": "scripts/release-qualification-identity.py",
+      "bytes": 4526,
+      "sha256": "1edaeb88503b69537c9accd789902c102ef524f4edaa1c9405c6c9b50c974575",
+      "git_mode": "100644",
+      "origin_blob": "97edb84c046a1a4cf7a531558824b1b37149618e"
+    },
+    {
       "path": "scripts/validate_managed_environment.py",
       "bytes": 1166,
       "sha256": "e236baa3e72ef2322b00fb9a4c942ceaabf1d836dcabb3b5b2872a3cd1926ff8",
@@ -4637,5 +4651,9 @@
     "docs/manual/zh-CN/release-notes/compatibility-matrix.md",
     "release/b-validation-compatibility-matrix.json",
     "release/b-validation-config.json"
+  ],
+  "additional_installed_qualification_inputs": [
+    "scripts/qualify-ubuntu22-fresh-install.sh",
+    "scripts/release-qualification-identity.py"
   ]
 }

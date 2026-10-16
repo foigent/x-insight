@@ -1,0 +1,55 @@
+{
+  "schema_version": "xinsight.compatibility-matrix.v1",
+  "product_version": "0.2.0-dev.fpv12",
+  "manual_version": "0.2.0-dev.fpv12/manual-r1",
+  "release_channel": "release_candidate",
+  "database_schema": "44",
+  "config_schema": "xinsight.config.v1",
+  "api_versions": [
+    "xinsight.investigation.v1",
+    "xinsight.access.v1"
+  ],
+  "evidence_schema_versions": [
+    "m0.1"
+  ],
+  "receipt_schema_versions": [
+    "xinsight.import-receipt.v1",
+    "foigent.operational-receipt.v2",
+    "xinsight.admin-credential-rotation-receipt.v1",
+    "xinsight.unirouter-campaign-package-import-receipt.v1"
+  ],
+  "schema_contract": {
+    "schema_version": "xinsight.schema-contract.v2",
+    "semantic_sha256": "sha256:07dbb90f7d8712fd13f143ed0313f97f5467049e86d515399add70c82f156b69",
+    "migration_set_sha256": "sha256:25ca8feb6b3ddaef4308d1d4f941582b1ae2c143c8b9c8293e741b4e4f60ab42"
+  },
+  "supported_upgrade_from_versions": [
+    "0.2.0-dev.b2",
+    "0.2.0-dev.d1",
+    "0.2.0-dev.d2",
+    "0.2.0-dev.fpv1",
+    "0.2.0-dev.fpv2",
+    "0.2.0-dev.fpv3",
+    "0.2.0-dev.fpv4",
+    "0.2.0-dev.fpv5",
+    "0.2.0-dev.fpv11"
+  ],
+  "supported_legacy_sources": [],
+  "supported_host": {
+    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "architecture": "amd64",
+    "service_manager": "systemd",
+    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+  },
+  "postgresql": {
+    "major": 16
+  },
+  "bootstrap_trust": {
+    "field_authority": "user_authorized_isolated_validation",
+    "customer_self_upgrade": false,
+    "private_key_retained": true,
+    "self_authentication": false,
+    "first_tool": "xinsight-release"
+  },
+  "field_qualification": "FPV12/schema44 is a local candidate. Existing eight managed upgrade-source declarations are retained, and FPV11/schema43 is added as the current deployed predecessor. Every declared path to this exact candidate requires its own managed upgrade/check, interrupted recovery, restore, rollback rejection and Linux systemd credential qualification. Historical FPV9 to FPV11 evidence is unchanged and does not qualify FPV11 to FPV12. No signed release, CI, Target, ordinary-account or joint integration completion is asserted."
+}

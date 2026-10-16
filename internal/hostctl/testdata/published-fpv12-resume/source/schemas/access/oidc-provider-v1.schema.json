@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foigent.example/x-insight/schemas/access/oidc-provider-v1.schema.json",
+  "title": "X-Insight provider-neutral OIDC configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "provider_key",
+    "issuer",
+    "client_id",
+    "redirect_path",
+    "scopes",
+    "subject_claim",
+    "pkce_required",
+    "authorization_code_only",
+    "enabled"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.oidc-provider.v1"
+    },
+    "provider_key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{2,63}$"
+    },
+    "issuer": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "client_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "redirect_path": {
+      "const": "/api/v1/access/oidc/callback"
+    },
+    "scopes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "contains": {
+        "const": "openid"
+      },
+      "items": {
+        "type": "string",
+        "pattern": "^[^\\s]+$",
+        "maxLength": 128
+      }
+    },
+    "subject_claim": {
+      "const": "sub"
+    },
+    "role_claim": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^\\S(?:.*\\S)?$"
+    },
+    "role_mapping": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 64,
+      "propertyNames": {
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^\\S(?:.*\\S)?$"
+      },
+      "additionalProperties": {
+        "enum": [
+          "investigator",
+          "operator",
+          "access_operator",
+          "platform_admin"
+        ]
+      }
+    },
+    "pkce_required": {
+      "const": true
+    },
+    "authorization_code_only": {
+      "const": true
+    },
+    "enabled": {
+      "type": "boolean"
+    }
+  },
+  "dependentRequired": {
+    "role_mapping": [
+      "role_claim"
+    ]
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "role_claim"
+        ]
+      },
+      "then": {
+        "required": [
+          "role_mapping"
+        ]
+      }
+    }
+  ]
+}

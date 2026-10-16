@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "xinsight://integration/openinference-bounded-offline-authorization/v1",
+  "title": "X-Insight OpenInference bounded-offline authorization v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "authorization_id",
+    "environment",
+    "purpose",
+    "not_before",
+    "expires_at",
+    "target",
+    "product",
+    "import",
+    "data_policy",
+    "runtime_boundary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.openinference-bounded-offline-authorization.v1"
+    },
+    "authorization_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$"
+    },
+    "environment": { "const": "nonproduction" },
+    "purpose": { "const": "openinference_trace_study" },
+    "not_before": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_ref", "machine_id_sha256"],
+      "properties": {
+        "target_ref": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "machine_id_sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "commit"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "import": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_path",
+        "bundle_sha256",
+        "bundle_id",
+        "operation_id",
+        "producer_instance",
+        "org_ref",
+        "project_ref",
+        "max_records"
+      ],
+      "properties": {
+        "bundle_path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "bundle_sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "bundle_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "operation_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "producer_instance": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "tenant_ref": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "org_ref": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "project_ref": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "max_records": { "type": "integer", "minimum": 1, "maximum": 10 }
+      }
+    },
+    "data_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["payload_capture_mode", "raw_payload_present"],
+      "properties": {
+        "payload_capture_mode": { "const": "metadata_only" },
+        "raw_payload_present": { "const": false }
+      }
+    },
+    "runtime_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delivery_mode", "network_listener", "feed_activation", "cursor_checkpoint"],
+      "properties": {
+        "delivery_mode": { "const": "bounded_offline" },
+        "network_listener": { "const": false },
+        "feed_activation": { "const": false },
+        "cursor_checkpoint": { "const": false }
+      }
+    }
+  }
+}

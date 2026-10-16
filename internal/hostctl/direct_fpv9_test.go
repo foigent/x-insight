@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -79,23 +78,9 @@ func runDirectFPV9ExactReproductionCheckAndResume(t *testing.T, interruptionPhas
 			t.Fatalf("locally reproduced binary differs from exact Target: %s %v", digest, err)
 		}
 	}
-	// This bridge is frozen to the published FPV11/schema43 predecessor. Read
-	// its original payload metadata and migrations, never the moving release.
-	// CI checks out full history; an unavailable exact commit is a failure.
-	const fpv11Source = "9c58e07f011918c4a0aed2f876ce4baa9fb12b5e"
-	source := t.TempDir()
-	archive := filepath.Join(t.TempDir(), "fpv11-source.tar")
-	archiveCommand := exec.Command("git", "archive", "--format=tar", "--output="+archive, fpv11Source,
-		"migrations", "deploy", "schemas", "fixtures", "internal/webui/manual/zh-CN",
-		"release/d-validation-config.json", "release/d-validation-compatibility-matrix.json",
-		"release/d-validation-notes.md", "internal/hostctl/development_schema_contract.json")
-	archiveCommand.Dir = "../.."
-	if output, err := archiveCommand.CombinedOutput(); err != nil {
-		t.Fatalf("archive exact published FPV11 source: %v %s", err, output)
-	}
-	if output, err := exec.Command("tar", "-xf", archive, "-C", source).CombinedOutput(); err != nil {
-		t.Fatalf("extract exact published FPV11 source: %v %s", err, output)
-	}
+	// Keep the exact published FPV11 metadata and migrations without requiring
+	// its original private Git history in the independent source repository.
+	source := publishedFPV11ResumeSource(t)
 	payload := filepath.Join(root, "artifacts", "fpv11-payload")
 	for _, directory := range []string{"migrations", "deploy", "schemas", "fixtures"} {
 		if err := os.CopyFS(filepath.Join(payload, directory), os.DirFS(filepath.Join(source, directory))); err != nil {
