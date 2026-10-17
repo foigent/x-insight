@@ -6,7 +6,9 @@ This guide targets the current development source. It does not install a custome
 
 Use Go 1.25.12, Node.js 22.23.1, npm 10.9.8, Git, Python 3, and a POSIX shell. Database tests need a **dedicated, disposable PostgreSQL 16 instance** with a test administrator allowed to create roles and databases. Tests may create, migrate, restore, and drop their own fixture databases. Do not point them at business data. Installed-host qualification additionally requires its declared Linux/systemd environment.
 
-Clone the repository through your normal authorized Git route, then run these commands from its root:
+The public repository can be cloned over anonymous HTTPS with `git clone https://github.com/foigent/x-insight.git`. Check out the exact commit when reproducing a recorded result. GitHub's [exact-commit source archives](https://docs.github.com/en/rest/repos/contents#download-a-repository-archive-tar) also contain the complete source needed for the ordinary commands below, but have no `.git` database. The signed-release builder later in this guide requires a real, clean Git checkout; do not create a substitute commit to satisfy it.
+
+Run these commands from the source root:
 
 ```sh
 go version
@@ -23,6 +25,51 @@ go vet ./...
 go test -p 1 ./...
 go run ./cmd/xinsight-importer fixtures run
 ```
+
+For a cold dependency/build check, use a new disposable source directory and
+fresh empty directories for `GOMODCACHE`, `GOCACHE`, `npm_config_cache` and
+`PLAYWRIGHT_BROWSERS_PATH`. Point `npm_config_userconfig` and
+`npm_config_globalconfig` to **two distinct empty files** while retaining the
+project's `frontend/.npmrc`. Use the pinned tools and explicit Go settings:
+
+```sh
+export GOTOOLCHAIN=local GOENV=/dev/null GOWORK=off GOAUTH=off
+export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org GOFLAGS=-mod=readonly
+```
+
+Keep signing, provider, database and hosted-job credentials out of that process.
+Preserve existing user caches and settings. Materialize the lock, then run the
+manual, type, coverage and frontend build commands above:
+
+```sh
+npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
+```
+
+Use that flag only for dependency installation: project `precheck` and
+`prebuild` toolchain guards must still run. The current lock marks only the two
+`fsevents` packages with install scripts; a future lock change needs its own
+review. Before the first Go source operation, the new module/build caches must
+still be empty. For the ordinary Linux cross-compile, choose a new output path:
+
+```sh
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -buildvcs=false -o /absolute/new-cold-output/ ./cmd/...
+```
+
+This produces seven source command binaries, not a versioned, signed release
+bundle. Keep the existing notice and protected-runtime checks:
+
+```sh
+python3 scripts/collect-third-party-notices.py --check
+bash scripts/verify-protected-runtime.sh
+```
+
+For the existing synthetic browser suite, use the same fresh
+`PLAYWRIGHT_BROWSERS_PATH` for
+`node node_modules/playwright/cli.js install chromium` from `frontend` and
+`npm --prefix frontend run test:e2e` from the root. Browser/system prerequisites
+must already be available for this recipe. If they are missing, prepare them
+separately using the supported platform installation instructions. Keep the
+existing project assertions and record skips separately from passes.
 
 Without a database opt-in, database tests skip: this verifies only the offline subset. `frontend` enforces the exact Node/npm versions. Do not disable that guard. The UI and manuals are embedded into the Go server, so rebuild them before building or running the server after a frontend change.
 
@@ -111,7 +158,7 @@ scripts/build-signed-release.sh output/current-preparation --profile=development
 scripts/build-signed-release.sh output/current-preparation --profile=development-d --prepare-only
 ```
 
-Choose a new output path. `--dry-run` checks release preconditions without looking up a signing key. `--prepare-only` builds an unsigned, non-installable preparation and stops before signing. A release requires a separately authorized trust authority and exact-artifact verification. CI-generated ephemeral keys and artifacts are explicitly non-publishable.
+Choose a new output path. `--dry-run` checks release preconditions without looking up a signing key. `--prepare-only` builds an unsigned, non-installable preparation and stops before signing. A release requires a separately authorized trust authority and exact-artifact verification. CI-generated ephemeral keys and packages are qualification outputs. Public downloadability does not establish owner release authority or authorize customer installation.
 
 For an approved managed distribution, follow [signed distribution and installation](signed-distribution.md). It covers independent bootstrap/trust, the current FPV19 profile, portable metadata and the installed UniRouter pair; formal downloads and that pair remain pending.
 
