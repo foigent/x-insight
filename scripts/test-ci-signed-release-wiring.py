@@ -128,8 +128,12 @@ def check(source: str) -> None:
     require("verified-signed-payload" not in host, "historical host check consumed current candidate")
 
     upload = step(signed, "Upload explicitly non-publishable CI qualification artifact")
-    for required in ("xinsight-signed-a/build-result.json", "rc13-signed/build-result.json", "verified-rc13-payload.campaign-authority.verify.json", "xinsight-host-qualification/qualification-result.json"):
+    for required in ("xinsight-signed-a/*.tar.gz", "xinsight-signed-a/bootstrap/xinsight-release-linux-amd64-*",
+                     "xinsight-signed-a/build-result.json", "ci-trusted-release-keys.json",
+                     "verified-rc13-payload.campaign-authority.verify.json", "xinsight-host-qualification/qualification-result.json"):
         require(required in upload, f"CI evidence path missing: {required}")
+    for forbidden in ("rc13-signed/*.tar.gz", "rc13-signed/bootstrap/", "rc13-signed/build-result.json", "signing-key.json"):
+        require(forbidden not in upload, f"runner-local historical binary or private key entered public CI artifact: {forbidden}")
     fresh_verify = step(fresh, "Verify and extract exact signed candidate")
     require("xinsight-signed-a/build-result.json" in fresh_verify, "fresh install must consume current candidate")
     require("--profile=development-d" in fresh_verify, "fresh install verifier profile missing")
@@ -1026,6 +1030,10 @@ def check_fpv17_upgrade_lane() -> None:
 if __name__ == "__main__":
     source = WORKFLOW.read_text(encoding="utf-8")
     check(source)
+    for forbidden in ("rc13-signed/*.tar.gz", "rc13-signed/bootstrap/xinsight-release-linux-amd64-*",
+                      "rc13-signed/build-result.json", "ci-signing-key.json"):
+        anchor = "${{ runner.temp }}/xinsight-signed-a/build-result.json"
+        expect_rejected(source, anchor, anchor + "\n            ${{ runner.temp }}/" + forbidden)
     check_installed_failure_diagnostic()
     check_installed_result_contract()
     check_fpv17_upgrade_lane()

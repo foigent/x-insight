@@ -738,9 +738,6 @@ jobs:
             ${{ runner.temp }}/xinsight-signed-a/*.tar.gz
             ${{ runner.temp }}/xinsight-signed-a/bootstrap/xinsight-release-linux-amd64-*
             ${{ runner.temp }}/xinsight-signed-a/build-result.json
-            ${{ runner.temp }}/rc13-signed/*.tar.gz
-            ${{ runner.temp }}/rc13-signed/bootstrap/xinsight-release-linux-amd64-*
-            ${{ runner.temp }}/rc13-signed/build-result.json
             ${{ runner.temp }}/ci-trusted-release-keys.json
             ${{ runner.temp }}/verified-signed-payload.campaign-authority.derive.json
             ${{ runner.temp }}/verified-signed-payload.campaign-authority.verify.json

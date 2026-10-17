@@ -1,15 +1,25 @@
-X-Insight CI qualification artifact — NOT FOR INSTALLATION OR PUBLICATION
+X-Insight CI qualification output — NOT A FORMAL RELEASE OR CUSTOMER INSTALLER
 
-This artifact is signed by a per-run ephemeral CI key solely to prove deterministic
-build, signature verification, extraction, binary identity and offline-manual gates.
-It is not signed by the field/production release authority and is not an approved
-customer artifact. The private CI key is not uploaded or retained.
+In a public repository, GitHub makes these qualification outputs available to
+repository readers. Public downloadability does not make them an approved release
+or establish trust in the per-run CI public key. This disclosure must be included
+in the repository publication decision; an artifact name is not access control.
 
-The adjacent bootstrap xinsight-release binary is likewise only a deterministic
-CI output. A field bootstrap requires a separately approved out-of-band digest
-or signature receipt for that tool and the trusted public-key store.
+The ephemeral signature proves only deterministic build, signature verification,
+extraction, binary identity and offline-manual gates. Consumers must not import
+this CI trust store into field or production trust. The private CI key is neither
+uploaded nor retained. Synthetic qualification data is not customer evidence.
 
-The accepted first-customer exception is produced only by the separate manual
-Owner-Supervised Trial Release workflow. It requires exact current main plus a
-successful matching push CI run and emits its own strict workflow/CI/hash-bound
-record. This ordinary CI artifact never becomes that delivery.
+Current-profile packages retain LICENSE, NOTICE and dependency attribution.
+Frozen RC13 binaries and their raw build records remain local to the qualifying
+job; the artifact retains their bounded qualification reports. Frozen source,
+build, signature, transition and recovery checks remain mandatory and unchanged.
+
+The adjacent bootstrap xinsight-release binary is also only a deterministic CI
+output. A field bootstrap requires a separately approved independent digest or
+signature receipt for that tool and the trusted public-key store.
+
+The separate Owner-Supervised Trial Release workflow remains a distinct approval
+and trust boundary. It requires exact current main plus successful matching push
+CI and its own strict workflow/CI/hash-bound record. This ordinary CI artifact
+never becomes that delivery, a formal public release or an authorized install.
