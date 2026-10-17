@@ -43,7 +43,7 @@ The first three named-Target candidates each failed closed and were preserved:
    exact historical rc.3 previous bundle. No operation, backup, migration or
    activation was created, and the Target remained on stable Phase 1.
 
-PR [#49](https://github.com/foigent/x-insight/pull/49) fixed the rc.4 P1 by
+PR [#49](https://github.com/foigent/x-insight-private-history/pull/49) fixed the rc.4 P1 by
 binding required bundle entries to the signed manifest's product version. Only
 exact historical `0.2.0-rc.3` may omit the later managed-launcher drop-in;
 current and unknown versions fail closed. Historical pack/verify/extract,
@@ -58,8 +58,8 @@ This is a Phase 2 release-compatibility P1 and does not reopen Phase 1.
 | --- | --- |
 | PR #49 branch commit | `c8aa4ce81f95502a63f991844ab6c64ff59bb02e` |
 | Merged main | `27e05df26ff7976301a245f9120176e6ca70430d` |
-| Exact-main CI | [29348263612](https://github.com/foigent/x-insight/actions/runs/29348263612), success |
-| Owner-supervised workflow | [29348552251](https://github.com/foigent/x-insight/actions/runs/29348552251), success |
+| Exact-main CI | [29348263612](https://github.com/foigent/x-insight-private-history/actions/runs/29348263612), success |
+| Owner-supervised workflow | [29348552251](https://github.com/foigent/x-insight-private-history/actions/runs/29348552251), success |
 | GitHub artifact ID | `8317137184` |
 | Signed bundle SHA-256 | `7e951542cf96fc2dbb3d71ccfe5c50fabadf4e1fd0fa8760fe973fd81279afa4` |
 | Signed manifest SHA-256 | `fa252cf75721f7c0ec670c8f662427d6c39c38ac2e5963550fae10b8a2d459c2` |

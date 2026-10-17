@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x-insight.local/schemas/integration/import-receipt.schema.json",
+  "title": "X-Insight Import Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "artifact",
+    "result",
+    "checked_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "xinsight.import-receipt.v1"
+    },
+    "exchange_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "instance"],
+      "properties": {
+        "system": { "type": "string", "minLength": 1 },
+        "instance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "sha256", "generated_at"],
+      "properties": {
+        "schema_version": { "type": "string", "minLength": 1 },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "approval_manifest_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "generated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "request_ids",
+        "input_events",
+        "accepted",
+        "duplicate_noop",
+        "rejected",
+        "quarantined",
+        "rerun_duplicate_noop",
+        "capture_gap_events"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["validated", "persisted", "rejected"]
+        },
+        "request_ids": { "type": "integer", "minimum": 0 },
+        "input_events": { "type": "integer", "minimum": 0 },
+        "accepted": { "type": "integer", "minimum": 0 },
+        "duplicate_noop": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 },
+        "quarantined": { "type": "integer", "minimum": 0 },
+        "rerun_duplicate_noop": { "type": "integer", "minimum": 0 },
+        "capture_gap_events": { "type": "integer", "minimum": 0 },
+        "persisted_inserted": { "type": "integer", "minimum": 0 },
+        "persisted_duplicate_noop": { "type": "integer", "minimum": 0 },
+        "persistence_conflicts": { "type": "integer", "minimum": 0 },
+        "readback_events": { "type": "integer", "minimum": 0 },
+        "readback_capture_gaps": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "checked_at": { "type": "string", "format": "date-time" },
+    "warning_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "approval_manifest_hash_missing",
+          "persistence_not_requested",
+          "source_capture_gaps_present",
+          "source_exchange_id_missing"
+        ]
+      }
+    }
+  }
+}

@@ -21,6 +21,8 @@ Two historical provenance metadata files use explicitly labelled private-locatio
 
 Public dependency access uses exact pinned public repositories with read-only job credentials; ordinary PR validation must not require a maintainer GitHub App secret. A release-relevant fork PR must run the same current signed-artifact and fresh-install gates. Documentation-only changes keep the existing narrow route. Negative tests reject missing, skipped, canceled, and failed required lanes. `Backend Tests` remains the protected aggregate check; hosted protection settings are not changed by source files.
 
+The [signed-distribution guide](signed-distribution.md) reuses the general current-profile builder, independent bootstrap/trust and existing verify/extract/install commands. Its authority, official assets/channel, installed UR pair and acceptance remain pending; the current `release_candidate` channel and version stay unchanged.
+
 The manual workflow for an owner-supervised delivery has a separate authorization and trust boundary. CI ephemeral signatures do not authorize public distribution or customer self-upgrade. The historical rc13 profile and prior immutable release identities remain historical; use `--profile=development-d` for this candidate.
 
 Public visibility, publishing releases, deleting artifacts, rewriting history, credential rotation, and changes to repository settings require their own approval. Finding a disclosure issue does not authorize deleting its evidence. Private audit details should stay outside the public repository.

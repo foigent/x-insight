@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -17,6 +18,9 @@ CONTRACT_ROOT = pathlib.PurePosixPath(
 )
 VERSIONS_ROOT = CONTRACT_ROOT / "versions"
 ZERO_SHA = "0" * 40
+# Exact existing frozen 0.1.0 file paths, Git modes and raw-byte hashes.
+# This binds the first independent snapshot; subsequent history keeps its predecessor checks.
+INITIAL_FROZEN_VERSIONS_SHA256 = "75f948e9dba5879d4c3f8953d362d548df8017c508f5dedbaed826295dadbb1c"
 
 
 class HistoryError(ValueError):
@@ -45,10 +49,41 @@ def require_commit(repo: pathlib.Path, revision: str, label: str) -> None:
         ) from error
 
 
+def validate_initial_snapshot(repo: pathlib.Path, head: str) -> None:
+    if git(repo, "rev-parse", "HEAD") != head:
+        raise HistoryError("initial snapshot head is not the checked-out commit")
+    if git(repo, "--no-optional-locks", "status", "--porcelain", "--untracked-files=all", "--", str(VERSIONS_ROOT)):
+        raise HistoryError("initial frozen versions must match the clean checked-out commit")
+    tree = subprocess.check_output(
+        ["git", "-C", str(repo), "ls-tree", "-r", "-z", head, "--", str(VERSIONS_ROOT)]
+    )
+    files = []
+    for entry in tree.split(b"\0"):
+        if not entry:
+            continue
+        metadata, raw_path = entry.split(b"\t", 1)
+        mode, kind, _ = metadata.decode("ascii").split()
+        if mode != "100644" or kind != "blob":
+            raise HistoryError("initial frozen version entries must be ordinary non-executable files")
+        path = raw_path.decode("utf-8")
+        raw = subprocess.check_output(["git", "-C", str(repo), "show", f"{head}:{path}"])
+        files.append({"path": path, "git_mode": mode, "sha256": hashlib.sha256(raw).hexdigest()})
+    actual = hashlib.sha256(json.dumps(
+        sorted(files, key=lambda item: item["path"]), sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()
+    if actual != INITIAL_FROZEN_VERSIONS_SHA256:
+        raise HistoryError("initial frozen version file set does not match the locked existing baseline")
+
+
 def comparison_base(
     repo: pathlib.Path, event: str, base: str, head: str
 ) -> tuple[str, str]:
     require_commit(repo, head, "head")
+    if event == "push" and base == ZERO_SHA:
+        if git(repo, "rev-list", "--parents", "-n", "1", head).split() != [head]:
+            raise HistoryError("non-root push requires an explicit available predecessor")
+        validate_initial_snapshot(repo, head)
+        return base, head
     require_commit(repo, base, "push" if event == "push" else "pull_request")
     if event == "pull_request":
         try:
@@ -60,16 +95,12 @@ def comparison_base(
 
 
 def changed_status(repo: pathlib.Path, base: str, head: str) -> list[tuple[str, str]]:
-    output = git(
-        repo,
-        "diff",
-        "--name-status",
-        "--no-renames",
-        base,
-        head,
-        "--",
-        str(CONTRACT_ROOT),
-    )
+    if base == ZERO_SHA:
+        output = git(repo, "diff-tree", "--root", "--no-commit-id", "-r",
+                     "--name-status", "--no-renames", head, "--", str(CONTRACT_ROOT))
+    else:
+        output = git(repo, "diff", "--name-status", "--no-renames", base, head,
+                     "--", str(CONTRACT_ROOT))
     changes: list[tuple[str, str]] = []
     for line in output.splitlines():
         if not line:
@@ -80,6 +111,8 @@ def changed_status(repo: pathlib.Path, base: str, head: str) -> list[tuple[str, 
 
 
 def version_existed(repo: pathlib.Path, base: str, candidate: pathlib.PurePosixPath) -> bool:
+    if base == ZERO_SHA:
+        return False
     relative = candidate.relative_to(VERSIONS_ROOT)
     if len(relative.parts) < 2:
         return True
@@ -339,6 +372,49 @@ def self_test() -> None:
             "addition to historical version",
         )
         cases += 1
+
+    source_version = pathlib.Path(__file__).resolve().parents[1] / pathlib.Path(str(VERSIONS_ROOT)) / "0.1.0"
+    for mutation in ("none", "modify", "delete", "add", "mode", "manifest-rehash"):
+        with tempfile.TemporaryDirectory(prefix="draft-initial-root-") as name:
+            repo = pathlib.Path(name)
+            git(repo, "init", "-q")
+            git(repo, "config", "user.email", "draft-root@example.invalid")
+            git(repo, "config", "user.name", "Draft Root Test")
+            version = repo / pathlib.Path(str(VERSIONS_ROOT)) / "0.1.0"
+            shutil.copytree(source_version, version)
+            fixture = sorted((version / "fixtures").rglob("*.json"))[0]
+            manifest = version / "draft-manifest.json"
+            if mutation == "modify":
+                fixture.write_bytes(fixture.read_bytes() + b"\n")
+            elif mutation == "delete":
+                fixture.unlink()
+            elif mutation == "add":
+                (version / "unapproved.json").write_text("{}\n")
+            elif mutation == "mode":
+                fixture.chmod(0o755)
+            elif mutation == "manifest-rehash":
+                value = json.loads(manifest.read_text())
+                value["consumer_baseline"]["commit"] = "f" * 40
+                manifest.write_text(json.dumps(value) + "\n")
+            root = repo / pathlib.Path(str(CONTRACT_ROOT))
+            (root / "latest.json").write_text(json.dumps({
+                "manifest_path": "versions/0.1.0/draft-manifest.json",
+                "manifest_content_sha256": sha256_file(manifest),
+                "runtime_eligible": False, "compatibility_commitment": "none",
+            }) + "\n")
+            head = commit_all(repo, "independent initial snapshot fixture")
+            if mutation == "none":
+                validate(repo, "push", ZERO_SHA, head)
+                expect_rejected(lambda: validate(repo, "pull_request", ZERO_SHA, head), "zero PR base")
+                cases += 1
+                (repo / "README.md").write_text("normal follow-up\n")
+                child = commit_all(repo, "normal follow-up fixture")
+                validate(repo, "push", head, child)
+                expect_rejected(lambda: validate(repo, "push", ZERO_SHA, child), "parented zero-base bypass")
+                cases += 2
+            else:
+                expect_rejected(lambda: validate(repo, "push", ZERO_SHA, head), "initial " + mutation)
+            cases += 1
 
     print(f"draft-evidence-history self-test: {cases} cases passed")
 

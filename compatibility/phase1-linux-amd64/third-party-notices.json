@@ -1,0 +1,133 @@
+{
+  "role": "phase1",
+  "origin_commit": "b9e5811cc53a5cb06614956e66a1c54756617f0a",
+  "components": [
+    {
+      "name": "github.com/jackc/pgx/v5",
+      "version": "v5.10.0",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/github.com_jackc_pgx_v5/LICENSE",
+          "sha256": "467f95e074fe23079a5623ed652619682692041b8551da27e3c2ddb9659a1507",
+          "source": "exact cached module github.com/jackc/pgx/v5@v5.10.0/LICENSE",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgpassfile",
+      "version": "v1.0.0",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/github.com_jackc_pgpassfile/LICENSE",
+          "sha256": "adb1663fda031df8f4344aa68f299fd87d80353e31339406742ded21dae65702",
+          "source": "exact cached module github.com/jackc/pgpassfile@v1.0.0/LICENSE",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/pgservicefile",
+      "version": "v0.0.0-20240606120523-5a60cdf6a761",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/github.com_jackc_pgservicefile/LICENSE",
+          "sha256": "fc505773403fe869ed64cc2235cdd13988a427bb7e3a7e7004a3f4b27420f8fc",
+          "source": "exact cached module github.com/jackc/pgservicefile@v0.0.0-20240606120523-5a60cdf6a761/LICENSE",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/text",
+      "version": "v0.29.0",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/golang.org_x_text/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": "exact cached module golang.org/x/text@v0.29.0/LICENSE",
+          "root_text_byte_equal": true
+        },
+        {
+          "path": "licenses/golang.org_x_text/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": "exact cached module golang.org/x/text@v0.29.0/PATENTS",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "github.com/jackc/puddle/v2",
+      "version": "v2.2.2",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/github.com_jackc_puddle_v2/LICENSE",
+          "sha256": "2d50e98a4900b4d6457a38d39c1432fdc156fc2f7b365f2e33ec9344acbb0057",
+          "source": "exact cached module github.com/jackc/puddle/v2@v2.2.2/LICENSE",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "golang.org/x/sync",
+      "version": "v0.17.0",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/golang.org_x_sync/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": "exact cached module golang.org/x/sync@v0.17.0/LICENSE",
+          "root_text_byte_equal": true
+        },
+        {
+          "path": "licenses/golang.org_x_sync/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": "exact cached module golang.org/x/sync@v0.17.0/PATENTS",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "github.com/santhosh-tekuri/jsonschema/v6",
+      "version": "v6.0.2",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/github.com_santhosh-tekuri_jsonschema_v6/LICENSE",
+          "sha256": "c8858a5a76440bbca484e134cf7df46385d090dd18b2c58e650f939258802e5b",
+          "source": "exact cached module github.com/santhosh-tekuri/jsonschema/v6@v6.0.2/LICENSE",
+          "root_text_byte_equal": true
+        }
+      ]
+    },
+    {
+      "name": "Go standard library and runtime",
+      "version": "go1.25.11",
+      "redistributed_in": "historical Go binaries",
+      "license_texts": [
+        {
+          "path": "licenses/Go_standard_library_and_runtime/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": "actual cached go1.25.11 runtime/LICENSE",
+          "root_text_byte_equal": true
+        },
+        {
+          "path": "licenses/Go_standard_library_and_runtime/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": "actual cached go1.25.11 runtime/PATENTS",
+          "root_text_byte_equal": true
+        }
+      ]
+    }
+  ],
+  "components_count": 8,
+  "license_text_count": 11,
+  "older_versions_needing_separate_notice_rows": true,
+  "frozen_old_package_not_rewritten_to_add_notices": true,
+  "root_LICENSE_NOT_a_rights_attestation": true
+}

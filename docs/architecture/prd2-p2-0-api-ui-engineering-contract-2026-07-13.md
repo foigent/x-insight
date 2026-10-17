@@ -469,7 +469,7 @@ guessed into executable production code.
 - Local and CI recorded separately, with no Target/External/Production claim.
 
 P2-0 satisfied this exit gate in PR
-[#29](https://github.com/foigent/x-insight/pull/29) and was squash-merged as
+[#29](https://github.com/foigent/x-insight-private-history/pull/29) and was squash-merged as
 `4b6dca44a0947c22bd4a6059a0c96fbb475c4da8` after all three GitHub Actions jobs
 passed. Later implementation evidence is recorded separately in
 [P2-1 local backend and 1x diagnostic](../evidence/prd2/p2-1-local-backend-and-1x-diagnostic-2026-07-13.md)

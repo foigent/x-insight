@@ -1,0 +1,71 @@
+{
+  "binding_version": "xinsight.foigent-projection-binding.v1",
+  "protocol": {
+    "version": "1.1.2",
+    "tag": "v1.1.2",
+    "commit": "fd82aeca9877bea8064b25c365a3cdcdd0bb3d16",
+    "release_digest": "sha256:0b414d5d59e5a7ca5c05505cb58d7992c544537da1c84a57256ec205618d9cd1"
+  },
+  "schemas": {
+    "event_envelope": {
+      "path": "schemas/event-envelope.v1.schema.json",
+      "sha256": "sha256:6942e85d9b5d8b08ff9828b970c317596394184ef29908cbf2b8fc792187cf26"
+    },
+    "model_request_completed": {
+      "path": "schemas/model-request-completed.v2.schema.json",
+      "sha256": "sha256:75e5af3fe8a433054988c6afa3faf5a9a9fbe03a300c8d1d5a869912ecd9154e"
+    },
+    "connector_manifest": {
+      "path": "schemas/connector-manifest.v1.schema.json",
+      "sha256": "sha256:59c405086310d0dfb2aaff37e55d73853e04319e6ccf659c66f98d8ba704a205"
+    },
+    "connector_lifecycle": {
+      "path": "schemas/connector-lifecycle.v1.schema.json",
+      "sha256": "sha256:bd5c730587041ddc7ad6f66bca4deca35edf5f9b5b92b761ac53701f37e18d5e"
+    },
+    "event_batch": {
+      "path": "schemas/event-batch.v1.schema.json",
+      "sha256": "sha256:8e2133922bcb77cf032309290593665df1bf56cfa47e433dd573d0e42f36eef9"
+    },
+    "checkpoint": {
+      "path": "schemas/connector-checkpoint.v1.schema.json",
+      "sha256": "sha256:8be2fd290d6db8d288a9b10ac6d9aa0b55a66ff21ea0fb55ac0af2d1b66bf800"
+    },
+    "operational_receipt": {
+      "path": "schemas/operational-receipt.v1.schema.json",
+      "sha256": "sha256:3c3b99e009e208456039d3bfe26d84af7e3f1af23589e7fa62a1e1a61e0fb3c6"
+    },
+    "connector_error": {
+      "path": "schemas/connector-error.v1.schema.json",
+      "sha256": "sha256:f449ba6314f1f730be5a0b188dc6d2cc2704e8f5d84a4eebecac576221e4ca56"
+    }
+  },
+  "reference_manifest": {
+    "path": "manifests/foigent.litellm.spend-logs-1.0.0.json",
+    "sha256": "sha256:86a10565a8c66abe5b31d6c39e853cebf5e9b90721d6784ea0bf7c28d2c20693"
+  },
+  "compatibility": {
+    "projection_contract_sha256": "sha256:72bb90b6a5ddf0f44f7773a7378c0f7f458438f9fc1363d31a65602c0547f088",
+    "lifecycle_mapping_sha256": "sha256:f1980ad31b1b3be978b39dee854f9e9e1accf99fa266615fe5a43f10dc115503",
+    "identity_mapping_sha256": "sha256:a14c7ed4fe5475cf4ad50da32731824eb8b85fb249dcd5b4bc5b7556d6b33305",
+    "reference_vector_sha256": "sha256:9997bcade1f65f613e2176266a35b43aef64547c3ed4ba87e61de94080803dc7",
+    "canonical_vector_sha256": "sha256:50fc8e8be08c37381611d6423e29780894741fb108fc4569df7c895452e5d4db",
+    "conformance_contract_sha256": "sha256:1863e2f72c9dcd7e65a18a4ce42cd463a16749c5ee3e5f420936ed2ebef199a5"
+  },
+  "connector": {
+    "connector_id": "foigent.litellm.spend-logs",
+    "connector_version": "1.0.0",
+    "source_product": "litellm",
+    "event_type": "model.request.completed",
+    "schema_ref": "foigent://events/model/request-completed/v2",
+    "schema_version": "2",
+    "source_schema": "foigent.litellm.spend-log.v1",
+    "source_schema_sha256": "sha256:bc6360ac33f17f57dc7845b8d6dc413736a635d6e1fb14b16dde1a9ae8ea0949"
+  },
+  "projection": {
+    "profile_id": "xinsight.foigent-envelope-to-m0.litellm-spend-log.v1",
+    "source_system_id": "71ee805a-997c-5265-badb-4e453f30d4e0",
+    "adapter_manifest_id": "ae560b8a-eb62-5756-b8d1-be164a82232b",
+    "cursor_key": "litellm.spend-logs.v1"
+  }
+}

@@ -85,14 +85,27 @@ def check(source: str) -> None:
     historical = step(signed, "Rebuild and verify frozen rc13 signed candidate")
     for required in (
         f"XINSIGHT_RC13_COMMIT: {RC13_COMMIT}",
-        'git worktree add --detach "$rc13_source" "$XINSIGHT_RC13_COMMIT"',
-        'test "$(git -C "$rc13_source" rev-parse HEAD)" = "$XINSIGHT_RC13_COMMIT"',
-        '"$rc13_source/scripts/build-signed-release.sh" "${RUNNER_TEMP}/rc13-signed"',
+        'python3 scripts/reproduce-signed-predecessor-source.py --build rc13',
+        '"$GITHUB_WORKSPACE/compatibility/rc13-linux-amd64/source" "$rc13_source" "${RUNNER_TEMP}/rc13-signed"',
         'test "$commit" = "$XINSIGHT_RC13_COMMIT"',
-        '"$rc13_source/scripts/verify-signed-release.sh"',
+        'python3 scripts/reproduce-signed-predecessor-source.py --verify rc13 "$rc13_source"',
+        '"$artifact" "${RUNNER_TEMP}/ci-trusted-release-keys.json"',
         '"${RUNNER_TEMP}/verified-rc13-payload"',
     ):
         require(required in historical, f"frozen rc13 binding missing: {required}")
+    require('git worktree' not in historical and 'git -C "$rc13_source"' not in historical,
+            "frozen rc13 must use admitted bundled inputs without private ancestry")
+    phase1 = step(signed, "Reproduce and verify exact Phase 1 legacy artifact")
+    for binding in ('python3 scripts/reproduce-phase1-source.py',
+                    '"$PWD/compatibility/phase1-linux-amd64/source"',
+                    '"${RUNNER_TEMP}/phase1-source" "${RUNNER_TEMP}/phase1-dist"',
+                    'sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1',
+                    'XINSIGHT_EXPECT_GO_VERSION: go1.25.11'):
+        require(binding in phase1, "Phase 1 exact source/package binding missing: " + binding)
+    require("go-version: '1.25.11'" in step(signed, "Set up exact historical Phase 1 Go") and
+            signed.index("Set up exact historical Phase 1 Go") < signed.index("Reproduce and verify exact Phase 1 legacy artifact") <
+            signed.index("Rebuild and verify frozen rc13 signed candidate"),
+            "Phase 1 and RC13 must retain their original Go1.25.11 toolchain")
     require(
         signed.index("Rebuild and verify frozen rc13 signed candidate")
         < signed.index("Restore current Go after historical reproduction")
@@ -197,7 +210,7 @@ def check_direct_fpv9(source: str, reproduction: str | None = None) -> None:
             "host qualification must use shared exact reproduction")
     require('scripts/reproduce-direct-fpv9.sh "${RUNNER_TEMP}/unit-fpv9-source" "${RUNNER_TEMP}/unit-fpv9-bin"' in unit_inputs,
             "backend qualification must reproduce its exact unit-test inputs")
-    require("fetch-depth: 0" in step(backend, "Checkout code"), "backend must retain the closed predecessor commit")
+    require("fetch-depth: 0" in step(backend, "Checkout code"), "backend must retain complete CI comparison history")
     require("XI_FPV9_REPRO_DIR: ${{ runner.temp }}/unit-fpv9-bin" in step(backend, "Run tests"),
             "exact resume tests must receive reproduced binaries instead of skipping")
     for identity in (
@@ -229,7 +242,7 @@ def check_direct_fpv9(source: str, reproduction: str | None = None) -> None:
         require(excluded not in upload, f"unsafe qualification upload path: {excluded}")
 
 
-def check_managed_fpv11(source: str) -> None:
+def check_managed_fpv11(source: str, qualification: str | None = None) -> None:
     managed = job(source, "managed_fpv11_upgrade")
     changes = job(source, "changes")
     gate = job(source, "ci_gate")
@@ -243,8 +256,8 @@ def check_managed_fpv11(source: str) -> None:
             "managed qualification must not acquire private credentials")
     preflight_name = "Check exact published managed predecessor source"
     preflight = step(managed, preflight_name)
-    for binding in ("git cat-file -e '9c58e07f011918c4a0aed2f876ce4baa9fb12b5e^{commit}'",
-                    "git show 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e:release/d-validation-config.json",
+    for binding in ('python3 scripts/reproduce-signed-predecessor-source.py --check-source-directory fpv11 "$GITHUB_WORKSPACE/compatibility/fpv11-linux-amd64/source"',
+                    'open("compatibility/fpv11-linux-amd64/source/release/d-validation-config.json")',
                     'c["product_version"]=="0.2.0-dev.fpv11"',
                     'c["database_schema"]=={"current":"43","min":"43","max":"43"}'):
         require(binding in preflight, f"exact available predecessor preflight missing: {binding}")
@@ -253,7 +266,9 @@ def check_managed_fpv11(source: str) -> None:
     build = step(managed, "Build and verify current FPV12 and frozen managed FPV11")
     for binding in ('scripts/build-signed-release.sh "${RUNNER_TEMP}/managed-fpv11-signed" --profile=development-d',
                     'test "$commit" = "$GITHUB_SHA"',
-                    'git worktree add --detach "$old_source" 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e',
+                    'python3 scripts/reproduce-signed-predecessor-source.py --build fpv11',
+                    '"$GITHUB_WORKSPACE/compatibility/fpv11-linux-amd64/source" "$old_source" "${RUNNER_TEMP}/managed-fpv11-old-signed"',
+                    'python3 scripts/reproduce-signed-predecessor-source.py --verify fpv11 "$old_source" "$old_artifact"',
                     'test "$old_commit" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e',
                     'managed-fpv11-old-signed/build-result.json', 'managed-fpv11-old-payload',
                     'scripts/verify-signed-release.sh'):
@@ -264,8 +279,11 @@ def check_managed_fpv11(source: str) -> None:
                     '"${RUNNER_TEMP}/managed-fpv11-old-payload"', '"${RUNNER_TEMP}/managed-fpv11-source"'):
         require(binding in runtime, f"managed runtime input missing: {binding}")
     require("qualify-ubuntu22-direct-fpv9.sh" not in managed, "normal managed upgrade used unmanaged conversion")
-    qualification = (WORKFLOW.parent.parent.parent / "scripts/qualify-ubuntu22-managed-fpv11.sh").read_text()
-    require('test "$(git -C "$OLD_SOURCE" rev-parse HEAD)" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e' in qualification and
+    require('git worktree' not in build and 'git cat-file' not in preflight and 'git show' not in preflight,
+            "managed predecessor must not require private Git ancestry")
+    if qualification is None:
+        qualification = (WORKFLOW.parent.parent.parent / "scripts/qualify-ubuntu22-managed-fpv11.sh").read_text()
+    require('python3 "$ROOT/scripts/reproduce-signed-predecessor-source.py" --check-built-source-directory fpv11 "$OLD_SOURCE"' in qualification and
             "'predecessor_commit':'9c58e07f011918c4a0aed2f876ce4baa9fb12b5e'" in qualification and
             "'classification':'ci_synthetic_not_target'" in qualification,
             "managed predecessor input and CI-only receipt identity disagree")
@@ -1033,7 +1051,9 @@ if __name__ == "__main__":
             continue
         raise AssertionError(f"unsafe qualification wiring accepted: {old}")
     for old, new in [("      - managed_fpv11_upgrade\n", ""), ("MANAGED_FPV11_REQUIRED:", "UNUSED_MANAGED_REQUIRED:"),
-                     ("git cat-file -e '9c58e07f011918c4a0aed2f876ce4baa9fb12b5e^{commit}'", "true"),
+                     ('--check-source-directory fpv11 "$GITHUB_WORKSPACE/compatibility/fpv11-linux-amd64/source"', 'true'),
+                     ('--build fpv11', '--build fpv14'),
+                     ('--verify fpv11 "$old_source"', '--verify fpv14 "$old_source"'),
                      ('c["product_version"]=="0.2.0-dev.fpv11"', 'c["product_version"]=="unqualified"'),
                      ('c["database_schema"]=={"current":"43","min":"43","max":"43"}', 'True'),
                      ('test "$old_commit" = 9c58e07f011918c4a0aed2f876ce4baa9fb12b5e', 'test "$old_commit" = unpinned'),
@@ -1045,6 +1065,15 @@ if __name__ == "__main__":
         except ValueError:
             continue
         raise AssertionError(f"unsafe managed qualification accepted: {old}")
+    qualification = (WORKFLOW.parents[2] / 'scripts/qualify-ubuntu22-managed-fpv11.sh').read_text()
+    for old, new in [('--check-built-source-directory fpv11 "$OLD_SOURCE"', 'true'),
+                     ('--check-built-source-directory fpv11', '--check-built-source-directory fpv14')]:
+        require(old in qualification, "missing managed source-admission mutation target")
+        try:
+            check_managed_fpv11(source, qualification.replace(old, new, 1))
+        except ValueError:
+            continue
+        raise AssertionError("unadmitted managed predecessor source accepted")
     reproduction = REPRODUCTION.read_text(encoding="utf-8")
     old_digest = "80573c95149f5b9827b06f264f8d70e436a29ea1d8e93ddb6f1f46a75f4866d7"
     require(old_digest in reproduction, "missing exact reproduction digest")
@@ -1065,6 +1094,11 @@ if __name__ == "__main__":
     expect_rejected(source, "needs.changes.outputs.current_release_required == 'true'))", "needs.changes.outputs.current_release_required == 'true' && github.event.pull_request.head.repo.full_name == github.repository))")
     expect_rejected(source, "p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh'", "'scripts/qualify-ubuntu22-fresh-install.sh'")
     expect_rejected(source, f"XINSIGHT_RC13_COMMIT: {RC13_COMMIT}", "XINSIGHT_RC13_COMMIT: unpinned")
+    expect_rejected(source, '--build rc13', '--build fpv11')
+    expect_rejected(source, '--verify rc13 "$rc13_source"', '--verify fpv11 "$rc13_source"')
+    expect_rejected(source, '"$GITHUB_WORKSPACE/compatibility/rc13-linux-amd64/source"', '"$GITHUB_WORKSPACE/compatibility/fpv11-linux-amd64/source"')
+    expect_rejected(source, 'python3 scripts/reproduce-phase1-source.py', 'true')
+    expect_rejected(source, 'sha256:3e3794338d690fe5b12de46600e17d455baeceab0b79300af260baf78d0346b1', 'sha256:unpinned')
     expect_rejected(source, '"${RUNNER_TEMP}/verified-rc13-payload" \\', '"${RUNNER_TEMP}/verified-signed-payload" \\')
     expect_rejected(source, '"${RUNNER_TEMP}/fresh-install-payload" \\\n            --profile=development-d', '"${RUNNER_TEMP}/fresh-install-payload"')
     print("current development-d, frozen rc13 and exact FPV9 CI wiring: pass")

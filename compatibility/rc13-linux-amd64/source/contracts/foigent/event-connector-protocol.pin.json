@@ -1,0 +1,40 @@
+{
+  "pin_version": "foigent.protocol-pin.v2",
+  "product": "xinsight",
+  "protocol_version": "2.0.2",
+  "release_digest": "sha256:99f8a541b6d33b0a74d2e4c06aa312c6d6c88c35a4bfb1d4d34b98b4e4e2e8e8",
+  "authority": {
+    "repository": "https://github.com/foigent/event-connector-spec",
+    "repository_id": 1313391565,
+    "tag": "v2.0.2"
+  },
+  "components": {
+    "shared_ci_action": "sha256:a3e05a99664bbd173d77582a7d5542cdae86323618a6cd1c70d3d3254eeda8f3",
+    "protocol_spec": "sha256:4a8efd02b07c29f4ce19fb30bd5fa9f256254ba6cfe92420bf8e6a268b22702d",
+    "predecessor_release_manifest": "sha256:fa097dfa08ba318334f78f4690f65247f080e86fde5695742b3ad49aaeba6a60",
+    "event_envelope_schema": "sha256:6942e85d9b5d8b08ff9828b970c317596394184ef29908cbf2b8fc792187cf26",
+    "capture_gap_schema": "sha256:1a5be69da99f62033ceadf05f66d45296d1d5f8b662830f77c0fc6af49edaec8",
+    "connector_manifest_schema": "sha256:ce1e8e84b49e50d0740366e42c64a6899b27834c3cf83116a63a35d3c1a901e5",
+    "connector_lifecycle_schema": "sha256:b2b8475605fe58e75b97ebe2c6fdab567647757a64112dfeed1b1d4b48afefd0",
+    "connector_checkpoint_schema": "sha256:80bf1e98b24424a25a14985f36aa179c838363c4deb540c7521b20582eccdd6b",
+    "event_batch_schema": "sha256:36e7da64aa6c33e74e60379274d8426459f1e2ee520e44d0d935fc794b4925da",
+    "connector_error_schema": "sha256:bae3e9a0ee4096feb01655e1f9fc0e4032b3656c0cd0e2a7cad78ec7379a3dee",
+    "operational_receipt_schema": "sha256:d2d091c2571d54df7a65329da049f13a4d7465af38b7916e4ae79e57255a04b6",
+    "domain_catalog": "sha256:7adfd8210a0dc52e205c714aea0d5e7a26b7617b45cf6e27cbb2ca9d382633fa",
+    "openinference_source_schema": "sha256:b5f4da5b586ca4d34af716d52215955c843e5b824f7af7fdbc9a1dfda728b29a",
+    "openinference_payload_schema": "sha256:b40e06b7ddc0f5c2800aa81c7562f3d79e35074fd9ba692cb663741491e2c0ce",
+    "openinference_connector_manifest": "sha256:363123d5837741ed78c134e305593d3fd0fdf68040cebff068d3f76d5bc62a1b",
+    "openinference_otlp_source_mapping": "sha256:0120993d85b821b8e17757f54b5878a1b3d71f573cacb53a2246d9419c320c70",
+    "openinference_event_mapping": "sha256:7811a3f1d4cdb80385a72b17e6940dc16b29b995d216c681dba0e4377e6eb44f",
+    "xinsight_openinference_projection": "sha256:d5abcabffeb8bb368e5c188b7ed5179b5674092e9421af2c38e548bfdbec7077",
+    "openinference_compatibility_matrix": "sha256:0dd606acf3ee1111987d2d74a2f8ad3b9881ca5daf4ad5920351ba5c643e4f60",
+    "reference_projection_contract": "sha256:c812a9c70d55ad0413650218eab6f968fd44974e1e7d77a147d58f62e18e8b03",
+    "consumer_lifecycle_mapping": "sha256:f1980ad31b1b3be978b39dee854f9e9e1accf99fa266615fe5a43f10dc115503",
+    "consumer_identity_mapping": "sha256:a14c7ed4fe5475cf4ad50da32731824eb8b85fb249dcd5b4bc5b7556d6b33305",
+    "reference_compatibility_vector_bundle": "sha256:5cd40aa6c0256a70ad7317c05e078759685e0469be77a3e960a976adc3158e8e",
+    "v1_to_v2_compatibility_matrix": "sha256:bdc2527ca947bf7b6a9c1feb2d5a97a9426b5b3ec602690a2d7b23d3f85ace52",
+    "conformance_contract": "sha256:f820936448590144156c2e499134eb4b3142ca0265275b6e9bdf1e5cd7855e14",
+    "vector_bundle": "sha256:9e50bb4570dcc1ff07157ad6198641e937357b641ae052cddcb3420b52ad11ed",
+    "conformance_kit_runner": "sha256:a7fb4d8fb4013f8aae1bbf86c517cd52f33438366ad843e5438c48ac8e4914f2"
+  }
+}

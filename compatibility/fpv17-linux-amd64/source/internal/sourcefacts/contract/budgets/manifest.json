@@ -1,0 +1,20 @@
+{
+  "event_feed": false,
+  "files": {
+    "budget-catalog.schema.json": "sha256:f001375169a6e2f7c4cd024c5615ddfcec3b35d82c491beb893d91aa86ee771d",
+    "budget-document.schema.json": "sha256:ff963e7f04da8ba5766fea2820dda4809da731139973b9f92fe32a7cc1f91e17",
+    "budget-reading.schema.json": "sha256:b74e9db1fee51e531b22e2b372aa066704b837a7974d36a65834d40acef5c9c2",
+    "golden-readings.json": "sha256:1a26e6bcbd9c2692398d8fee1e2bd3c787c34b9d38c237641aa98a3afd769988"
+  },
+  "financial_authority": "original_gateway_journal_or_bound_enterprise_allocation",
+  "profiles": [
+    "unirouter.budget-definition.v1",
+    "unirouter.budget-period-summary.v1",
+    "unirouter.budget-alert.v1"
+  ],
+  "retention": "receiver_retains_readings_no_event_cursor",
+  "schema_version": "unirouter.budget-contract-manifest.v1",
+  "source_schema": "unirouter.budget-snapshot.v1",
+  "status": "local_candidate",
+  "transport": "authorized_current_snapshots"
+}

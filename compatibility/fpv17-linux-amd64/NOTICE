@@ -1,0 +1,13 @@
+Original fpv17 predecessor source
+
+The source/ directory preserves the exact selected original bytes and modes
+from commit 164582cab0e7f169c265c2494d04920c61af833d. This directory contains build and
+qualification inputs, not original Git ancestry. Public snapshot identity is
+separate. The root LICENSE and NOTICE and third-party-notices.json describe
+applicable notices; this record does not grant or attest redistribution rights.
+Original historical packages are not rewritten to add notices.
+
+The admitted metadata supplies the original commit, timestamp and package
+input selection to the original build/verify recipe. Product versions, schema
+contracts, signing, generated-asset equality and runtime verification remain.
+Full native package rebuilding and host qualification are not yet proven.

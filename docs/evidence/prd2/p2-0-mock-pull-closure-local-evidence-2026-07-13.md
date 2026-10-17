@@ -92,7 +92,7 @@ and manifest SHA-256
 That CI archive identifies a PR merge ref; it is not a promoted SemVer field
 artifact.
 
-PR [#33](https://github.com/foigent/x-insight/pull/33) passed a second complete
+PR [#33](https://github.com/foigent/x-insight-private-history/pull/33) passed a second complete
 Actions run `29260908364` after the documentation evidence update and
 squash-merged to `main` as
 `cc084b396a50aa032f74e8eb8d4dd5d127d468a6`.

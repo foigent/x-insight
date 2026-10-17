@@ -1,0 +1,42 @@
+[Unit]
+Description=X-Insight execution investigation service
+After=network-online.target
+Wants=network-online.target
+ConditionPathIsSymbolicLink=/opt/x-insight/current
+ConditionPathIsReadWrite=/var/lib/x-insight
+
+[Service]
+Type=simple
+User=xinsight
+Group=xinsight
+WorkingDirectory=/opt/x-insight/current
+EnvironmentFile=/etc/x-insight/xinsight.env
+EnvironmentFile=-/etc/x-insight/trusted-tls-proxy.env
+EnvironmentFile=-/etc/x-insight/xinsight-connector-id.env
+EnvironmentFile=-/etc/x-insight/xinsight-connector.env
+LoadCredential=postgres-reader.dsn:/etc/x-insight/database/current/postgres-reader.dsn
+LoadCredential=postgres-workspace.dsn:/etc/x-insight/database/current/postgres-workspace.dsn
+LoadCredential=access-accounts.json:/etc/x-insight/access-accounts.json
+ExecStartPre=+/usr/bin/env -i /opt/x-insight/current/bin/xinsightctl connector-target-config validate
+ExecStart=/opt/x-insight/control/xinsight-launcher
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

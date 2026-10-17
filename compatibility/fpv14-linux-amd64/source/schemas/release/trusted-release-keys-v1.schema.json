@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x-insight.local/schemas/release/trusted-release-keys-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "keys"],
+  "properties": {
+    "schema_version": { "const": "xinsight.trusted-release-keys.v1" },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key_id", "algorithm", "public_key_base64", "status", "not_before", "description"],
+        "properties": {
+          "key_id": { "type": "string", "pattern": "^ed25519:sha256:[a-f0-9]{64}$" },
+          "algorithm": { "const": "ed25519" },
+          "public_key_base64": { "type": "string", "minLength": 44, "maxLength": 44 },
+          "status": { "enum": ["active", "revoked"] },
+          "not_before": { "type": "string", "format": "date-time" },
+          "not_after": { "type": "string", "format": "date-time" },
+          "description": { "type": "string", "minLength": 1, "maxLength": 256 }
+        }
+      }
+    }
+  }
+}

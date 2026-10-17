@@ -1,0 +1,15 @@
+model_list:
+  - model_name: xinsight-ci-model
+    litellm_params:
+      model: openai/xinsight-ci-upstream-model
+      api_base: http://xinsight-litellm-upstream:18081/v1
+      api_key: sk-xinsight-ci-upstream-not-secret
+      max_retries: 0
+    model_info:
+      input_cost_per_token: 0.000001
+      output_cost_per_token: 0.000002
+
+litellm_settings:
+  drop_params: true
+  turn_off_message_logging: true
+  log_raw_request_response: false

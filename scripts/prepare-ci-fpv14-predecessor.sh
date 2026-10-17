@@ -12,15 +12,15 @@ OLD_SIGNED="$RUNNER_TEMP/installed-fpv14-signed"
 OLD_PAYLOAD="$RUNNER_TEMP/installed-fpv14-payload"
 CI_TRUST="$RUNNER_TEMP/xinsight-fpv14-ci-trust"
 test ! -e "$OLD_SOURCE" && test ! -e "$CI_TRUST"
+python3 "$ROOT/scripts/reproduce-signed-predecessor-source.py" --check-source-directory fpv14 "$ROOT/compatibility/fpv14-linux-amd64/source"
 mkdir -m 0700 "$CI_TRUST"
-git -C "$ROOT" worktree add --detach "$OLD_SOURCE" "$OLD_COMMIT"
-test "$(git -C "$OLD_SOURCE" rev-parse HEAD)" = "$OLD_COMMIT"
 (cd "$ROOT"; go run ./cmd/xinsight-release keygen --private-key "$CI_TRUST/signing-key.json" --trust-store "$CI_TRUST/old-trust.json" --created-at 2000-01-01T00:00:00Z)
-XINSIGHT_RELEASE_SIGNING_KEY="$CI_TRUST/signing-key.json" "$OLD_SOURCE/scripts/build-signed-release.sh" "$OLD_SIGNED" --profile=development-d
+XINSIGHT_RELEASE_SIGNING_KEY="$CI_TRUST/signing-key.json" \
+  python3 "$ROOT/scripts/reproduce-signed-predecessor-source.py" --build fpv14 "$ROOT/compatibility/fpv14-linux-amd64/source" "$OLD_SOURCE" "$OLD_SIGNED"
 OLD_ARTIFACT="$OLD_SIGNED/xinsight-v0.2.0-dev.fpv14-linux-amd64-$OLD_COMMIT.tar.gz"
 test -f "$OLD_ARTIFACT"
 XINSIGHT_RELEASE_TOOL="$OLD_SIGNED/bootstrap/xinsight-release-linux-amd64-$OLD_COMMIT" \
-  "$OLD_SOURCE/scripts/verify-signed-release.sh" "$OLD_ARTIFACT" "$CI_TRUST/old-trust.json" "$OLD_PAYLOAD" --profile=development-d
+  python3 "$ROOT/scripts/reproduce-signed-predecessor-source.py" --verify fpv14 "$OLD_SOURCE" "$OLD_ARTIFACT" "$CI_TRUST/old-trust.json" "$OLD_PAYLOAD"
 # Preserve the original package bytes in a root-owned path readable from the
 # installed controller's strict namespace; do not change the frozen old source.
 STAGED_OLD_ARTIFACT=/opt/xinsight-ci-artifacts/fpv14.tar.gz

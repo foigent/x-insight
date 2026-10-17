@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Identity Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "org_id": { "type": "string" },
+    "project_id": { "type": "string" },
+    "actor_type": {
+      "enum": ["human", "service", "agent", "api_key", "system", "unknown"]
+    },
+    "actor_ref": { "type": "string" },
+    "owner_ref": { "type": "string" },
+    "api_key_ref": { "type": "string" },
+    "key_type": { "type": "string" },
+    "team_ref": { "type": "string" },
+    "end_user_ref": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}

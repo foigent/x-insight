@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Decision Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision_kind": {
+      "enum": [
+        "admission",
+        "auth",
+        "quota",
+        "budget",
+        "routing",
+        "provider",
+        "billing",
+        "access",
+        "payload_capture",
+        "trace_sampling",
+        "retry",
+        "failover",
+        "policy",
+        "policy_simulation",
+        "unknown"
+      ]
+    },
+    "decision_result": {
+      "enum": ["allowed", "rejected", "selected", "failed", "skipped", "simulated_match", "simulated_no_match", "unknown"]
+    },
+    "decision_reason": { "type": "string" },
+    "policy_ref": { "type": "string" },
+    "rule_ref": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}

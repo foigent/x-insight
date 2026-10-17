@@ -1,0 +1,26 @@
+{
+  "schema_version": "xinsight.budget-offline-authorization.v1",
+  "collection_id": "00000000-0000-4000-8000-000000000001",
+  "environment": "test",
+  "target_ref": "replace-with-approved-target",
+  "machine_id_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "product_version": "replace-with-exact-version",
+  "product_commit": "replace-with-exact-commit",
+  "target_database_schema": "36",
+  "source_commit": "a84ac2726e079796ade0af573b575b7c11bbdfbc",
+  "source_manifest_sha256": "sha256:fda20f94998a2a21e4fc1183f5575da7333ca5fd794bf28c26d2112cec9cf54f",
+  "source_system_id": "00000000-0000-4000-8000-000000000002",
+  "source_instance": "replace-with-bound-source",
+  "org_id": "1",
+  "project_id": "1",
+  "scope_generation": "1",
+  "profiles": [
+    "unirouter.budget-definition.v1",
+    "unirouter.budget-period-summary.v1",
+    "unirouter.budget-alert.v1"
+  ],
+  "not_before": "2000-01-01T00:00:00.000000Z",
+  "expires_at": "2000-01-01T01:00:00.000000Z",
+  "bundle_path": "/approved/staging/budget-bundle.json",
+  "bundle_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

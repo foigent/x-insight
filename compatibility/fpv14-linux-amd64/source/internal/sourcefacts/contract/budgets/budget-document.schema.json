@@ -1,0 +1,689 @@
+{
+  "$defs": {
+    "alert": {
+      "additionalProperties": false,
+      "properties": {
+        "budget_at_trigger": {
+          "$ref": "#/$defs/money"
+        },
+        "budget_version_state": {
+          "const": "version_unknown"
+        },
+        "delivery_cutoff": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "delivery_state": {
+          "enum": [
+            "not_configured",
+            "pending",
+            "delivered",
+            "failed"
+          ],
+          "type": "string"
+        },
+        "event_ref": {
+          "pattern": "^notification_events:[1-9][0-9]{0,18}$",
+          "type": "string"
+        },
+        "human_read": {
+          "const": "not_observed"
+        },
+        "last_delivery_at": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "period_kind": {
+          "enum": [
+            "daily",
+            "monthly"
+          ],
+          "type": "string"
+        },
+        "period_start": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "source_updated_at": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "spent_at_trigger": {
+          "$ref": "#/$defs/money"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "acknowledged",
+            "resolved"
+          ],
+          "type": "string"
+        },
+        "status_cutoff": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "threshold_percent": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "type": "string"
+        },
+        "trigger_evidence": {
+          "enum": [
+            "unknown",
+            "original_event_amounts",
+            "original_legacy_event_cents"
+          ],
+          "type": "string"
+        },
+        "triggered_at": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_ref",
+        "triggered_at",
+        "trigger_evidence",
+        "budget_version_state",
+        "status",
+        "source_updated_at",
+        "status_cutoff",
+        "delivery_state",
+        "delivery_cutoff",
+        "human_read"
+      ],
+      "type": "object"
+    },
+    "alerts": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "enum": [
+            "project_budget_notifications",
+            "not_modeled_by_original_authority"
+          ],
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/alert"
+          },
+          "maxItems": 50,
+          "type": "array"
+        },
+        "has_more": {
+          "type": "boolean"
+        },
+        "next_cursor": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "coverage",
+        "entries",
+        "has_more"
+      ],
+      "type": "object"
+    },
+    "comparison": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "remaining"
+                  ]
+                },
+                {
+                  "required": [
+                    "utilization_numerator"
+                  ]
+                },
+                {
+                  "required": [
+                    "utilization_denominator"
+                  ]
+                },
+                {
+                  "required": [
+                    "threshold_state"
+                  ]
+                }
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "state": {
+                "const": "comparable"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "remaining",
+              "utilization_numerator",
+              "utilization_denominator",
+              "threshold_state"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "remaining": {
+          "$ref": "#/$defs/signed_money"
+        },
+        "state": {
+          "enum": [
+            "not_comparable",
+            "inactive_budget",
+            "coverage_gap",
+            "invalid_amount",
+            "unit_mismatch",
+            "comparable"
+          ],
+          "type": "string"
+        },
+        "threshold_state": {
+          "enum": [
+            "below",
+            "at",
+            "above"
+          ],
+          "type": "string"
+        },
+        "utilization_denominator": {
+          "pattern": "^[1-9][0-9]{0,77}$",
+          "type": "string"
+        },
+        "utilization_numerator": {
+          "pattern": "^(0|[1-9][0-9]{0,77})$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "type": "object"
+    },
+    "coverage": {
+      "additionalProperties": false,
+      "properties": {
+        "certified_from": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "coverage_epoch": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "type": "string"
+        },
+        "materialization_pending": {
+          "pattern": "^(0|[1-9][0-9]{0,18})$",
+          "type": "string"
+        },
+        "materialized_awaiting_ack": {
+          "pattern": "^(0|[1-9][0-9]{0,18})$",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "enum": [
+              "period_not_configured",
+              "writer_uncertified",
+              "period_before_certification",
+              "restore_gap",
+              "financial_journal_unavailable",
+              "unattributable_financial_outbox",
+              "financial_materialization_pending",
+              "financial_materialization_gap",
+              "no_allocation_run",
+              "unit_mismatch",
+              "allocation_partial"
+            ],
+            "type": "string"
+          },
+          "maxItems": 12,
+          "type": "array"
+        },
+        "restore_boundary": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "uncertified",
+            "known_subtotal_with_gap",
+            "complete_settled_as_of",
+            "unknown",
+            "no_allocation_run",
+            "unit_mismatch",
+            "exact",
+            "partial"
+          ],
+          "type": "string"
+        },
+        "writer_contract": {
+          "enum": [
+            "unirouter.gateway-financial-journal.v2",
+            "enterprise_finance.report_only"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "reasons",
+        "writer_contract",
+        "materialization_pending",
+        "materialized_awaiting_ack"
+      ],
+      "type": "object"
+    },
+    "definition": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "$ref": "#/$defs/money"
+        },
+        "approval_state": {
+          "enum": [
+            "draft",
+            "approved",
+            "closed"
+          ],
+          "type": "string"
+        },
+        "authority_ref": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "change_kind": {
+          "enum": [
+            "observed_baseline",
+            "created",
+            "value_changed",
+            "authority_version"
+          ],
+          "type": "string"
+        },
+        "changed_at": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "fiscal_period_ref": {
+          "maxLength": 80,
+          "minLength": 1,
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "gateway_project",
+            "enterprise_project"
+          ],
+          "type": "string"
+        },
+        "original_cents": {
+          "pattern": "^(0|-?[1-9][0-9]{0,18})$",
+          "type": "string"
+        },
+        "original_period": {
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string"
+        },
+        "period_kind": {
+          "enum": [
+            "unknown",
+            "none",
+            "daily",
+            "monthly",
+            "fiscal_period"
+          ],
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "type": "string"
+        },
+        "runtime_effect": {
+          "const": "report_only"
+        },
+        "setting_state": {
+          "enum": [
+            "unset",
+            "unsupported",
+            "active",
+            "inactive_zero",
+            "inactive_period_none",
+            "not_approved"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "revision",
+        "setting_state",
+        "period_kind",
+        "authority_ref",
+        "changed_at",
+        "change_kind",
+        "runtime_effect"
+      ],
+      "type": "object"
+    },
+    "money": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "type": "string"
+        },
+        "scale": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "type": "string"
+        },
+        "value_minor": {
+          "pattern": "^(0|[1-9][0-9]{0,77})$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value_minor",
+        "currency",
+        "scale"
+      ],
+      "type": "object"
+    },
+    "signed_money": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "type": "string"
+        },
+        "scale": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "type": "string"
+        },
+        "value_minor": {
+          "pattern": "^(0|-?[1-9][0-9]{0,77})$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value_minor",
+        "currency",
+        "scale"
+      ],
+      "type": "object"
+    },
+    "summary": {
+      "additionalProperties": false,
+      "properties": {
+        "allocation_run_ref": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "amount_cutoff": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "authority": {
+          "enum": [
+            "usage_finalization_journal.settled.charged_cost_micros",
+            "enterprise_finance_allocation_results.project_slice"
+          ],
+          "type": "string"
+        },
+        "committed_state": {
+          "const": "not_modeled"
+        },
+        "comparison": {
+          "$ref": "#/$defs/comparison"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "excluded": {
+          "items": {
+            "enum": [
+              "asynchronous_media_charge_facts",
+              "calculated_cost",
+              "wallet_balance",
+              "legacy_project_counter",
+              "historical_call_log_baseline",
+              "gateway_journal",
+              "other_allocation_targets",
+              "organization_totals"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "forecast_state": {
+          "const": "not_modeled"
+        },
+        "known_subtotal": {
+          "$ref": "#/$defs/money"
+        },
+        "period_end": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "period_start": {
+          "format": "date-time",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "period_state": {
+          "enum": [
+            "not_configured",
+            "original_utc_period",
+            "open",
+            "preliminary",
+            "reconciled",
+            "closed"
+          ],
+          "type": "string"
+        },
+        "unresolved_economics": {
+          "$ref": "#/$defs/unresolved"
+        }
+      },
+      "required": [
+        "period_state",
+        "amount_cutoff",
+        "authority",
+        "coverage",
+        "comparison",
+        "unresolved_economics",
+        "excluded",
+        "committed_state",
+        "forecast_state"
+      ],
+      "type": "object"
+    },
+    "unresolved": {
+      "additionalProperties": false,
+      "properties": {
+        "financial_holds": {
+          "pattern": "^(0|[1-9][0-9]{0,18})$",
+          "type": "string"
+        },
+        "open_reservations": {
+          "pattern": "^(0|[1-9][0-9]{0,18})$",
+          "type": "string"
+        },
+        "reserved_at_read": {
+          "$ref": "#/$defs/money"
+        },
+        "scope": {
+          "enum": [
+            "all_current_project_reservations_as_of_read",
+            "enterprise_project_allocation"
+          ],
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "not_observed",
+            "none_observed",
+            "unresolved",
+            "unknown",
+            "not_modeled"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "open_reservations",
+        "financial_holds",
+        "scope"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://unirouter.local/contracts/source-budgets/v1/budget-document.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "unirouter.budget-definition.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/definition"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "unirouter.budget-period-summary.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/summary"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "unirouter.budget-alert.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/alerts"
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "binding_revision": {
+      "pattern": "^([1-9][0-9]{0,18})?$",
+      "type": "string"
+    },
+    "body": {},
+    "budget_ref": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "definition_revision": {
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "maxLength": 40,
+      "type": "string"
+    },
+    "org_id": {
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "type": "string"
+    },
+    "profile": {
+      "enum": [
+        "unirouter.budget-definition.v1",
+        "unirouter.budget-period-summary.v1",
+        "unirouter.budget-alert.v1"
+      ],
+      "type": "string"
+    },
+    "project_id": {
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "type": "string"
+    },
+    "reading_cutoff": {
+      "format": "date-time",
+      "maxLength": 40,
+      "type": "string"
+    },
+    "reading_id": {
+      "pattern": "^ur-budget-reading-[a-f0-9]{32}$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "unirouter.budget-snapshot.v1"
+    },
+    "source_instance": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_instance",
+    "org_id",
+    "project_id",
+    "reading_id",
+    "reading_cutoff",
+    "observed_at",
+    "budget_ref",
+    "definition_revision",
+    "binding_revision",
+    "profile",
+    "body"
+  ],
+  "type": "object"
+}

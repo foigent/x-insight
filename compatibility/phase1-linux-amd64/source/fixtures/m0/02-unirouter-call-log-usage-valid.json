@@ -1,0 +1,60 @@
+{
+  "name": "unirouter-call-log-usage-valid",
+  "expected": "accepted",
+  "event": {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "schema_version": "m0.1",
+    "source_system_id": "11111111-1111-1111-1111-111111111111",
+    "adapter_manifest_id": "22222222-2222-2222-2222-222222222222",
+    "source_type": "unirouter",
+    "source_version": "prd4",
+    "source_event_id": "2001",
+    "source_event_type": "call_log",
+    "source_ref": "unirouter:local:call_logs:2001",
+    "idempotency_key": "adapter-unirouter:11111111-1111-1111-1111-111111111111:unirouter:local:call_logs:2001:usage.tokens.recorded:2001",
+    "import_cursor": "call_logs:2001",
+    "event_type": "usage.tokens.recorded",
+    "stage": "usage",
+    "severity": "info",
+    "capture_mode": "db_import",
+    "occurred_at": "2026-07-08T01:00:05Z",
+    "ingested_at": "2026-07-08T01:05:01Z",
+    "request_id": "req-unirouter-001",
+    "org_ref": "org-1",
+    "project_ref": "project-1",
+    "payload_capture_mode": "metadata_only",
+    "correlation": {
+      "request_id": "req-unirouter-001"
+    },
+    "identity": {
+      "org_id": "org-1",
+      "project_id": "project-1",
+      "actor_type": "api_key",
+      "actor_ref": "api_key:key-1"
+    },
+    "usage": {
+      "prompt_tokens": 12,
+      "completion_tokens": 8,
+      "total_tokens": 20,
+      "cost_cents": 2,
+      "latency_ms": 213,
+      "usage_source": "provider",
+      "usage_confidence": "direct"
+    },
+    "payload_policy": {
+      "payload_capture_mode": "metadata_only",
+      "redaction_state": "not_applicable"
+    },
+    "field_provenance": {
+      "correlation": "direct",
+      "identity": "direct",
+      "usage": "direct",
+      "payload_policy": "declared"
+    },
+    "raw_source_excerpt": {
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "usage_source": "provider"
+    }
+  }
+}

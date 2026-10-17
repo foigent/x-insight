@@ -213,14 +213,14 @@ PR #120 首轮前端 CI 在总览组件测试失败：新增断言写死了本�
 
 1. **真实运行证据：** 总体在原 M4 `xi-acceptance` 上完成 Flash 续轮 run `20cfd856-9053-4f15-907c-43062c260648`，整批新增供应商调用 6/20；成功 run 的两个 UR 请求均为 200、已结算。XI 自动收到 16 事件、8 正文和 2 条准确 UR 关系。原 reviewer 实际读回工具返回 179 B 与同一请求 `provider_request` 22,713 B。证据位于 `/private/tmp/ur-deepseek-current-flash-20261008/` 的 `m4-native-result-continuation.json`、`ur-flash-outcome-final-readback.json`、`account-recovery/xi-history-readback.json`、`xi-browser-body-final.json`。这纠正下节 10 月 7 日“DeepSeek 无路由”的历史前态，不推定所有历史请求或其他模型都成功。
 2. **源码候选与风险边界：** PR115 head `e6171cd450f34c3eb4b386f48602f4f80eabc777` 上的本地补丁分别修正 `agent_end` 对模型错误的任务终态误报、可选缺失 `read` 对文件内容的误报，并为同一受管安装加入显式原生插件目录切换。安装器在原生切换前核对旧／新 package 与 manifest、原安装身份、现有两把密钥和 16 KiB 状态持久化能力。首轮本地插件 60 项、Go 合同定向和前端类型／页面定向检查通过；八个产品／测试／合同文件由 CI 路由判为 `release-relevant`。GitHub 交付以 PR116 的准确 PR／CI 回执为准；M4 仍是旧 `27a5` 插件，真实 Gateway 升级及回退尚未验收。旧 XI 事件不可变，新分类只适用于未来来源观察。
-3. **PR116 首轮失败与原入口修正：** 初次 head `04f31f28c28d1cc9d13a33dee6eab92899cd9255` 的 [CI 37813137149](https://github.com/foigent/x-insight/actions/runs/37813137149) 在 `Verify deterministic committed assets` 及签名候选构建处发现前端源改动却未提交新的 `internal/webui/dist`。推送前运行过 `git diff --check`、`scripts/verify-protected-runtime.sh`、插件／Go／前端定向测试与 CI 路由自检；这些入口没有重建后比对已暂存资源。修正补齐生成物，并沿现有前端 CI 入口以 Node 22.23.1／npm 10.9.8、当前锁文件 `npm ci`、`npm run build` 和 `git diff --exit-code -- internal/webui/dist` 核对，另有类型检查和页面定向 3 项通过。受保护运行时门禁未改；首轮失败 CI 保留为失败证据。
+3. **PR116 首轮失败与原入口修正：** 初次 head `04f31f28c28d1cc9d13a33dee6eab92899cd9255` 的 [CI 37813137149](https://github.com/foigent/x-insight-private-history/actions/runs/37813137149) 在 `Verify deterministic committed assets` 及签名候选构建处发现前端源改动却未提交新的 `internal/webui/dist`。推送前运行过 `git diff --check`、`scripts/verify-protected-runtime.sh`、插件／Go／前端定向测试与 CI 路由自检；这些入口没有重建后比对已暂存资源。修正补齐生成物，并沿现有前端 CI 入口以 Node 22.23.1／npm 10.9.8、当前锁文件 `npm ci`、`npm run build` 和 `git diff --exit-code -- internal/webui/dist` 核对，另有类型检查和页面定向 3 项通过。受保护运行时门禁未改；首轮失败 CI 保留为失败证据。
 4. **安装器替身误判与真实前态：** OpenClaw 2026.9.5 原生 `plugins install --link --force` 对 `plugins.load.paths` 仅追加新目录；旧、新同 ID 显式路径并存时，加载选择仍为旧目录。原替身只改变安装索引 `rootDir`，未模拟路径追加和旧源胜出。修正用实际 `plugins inspect --json` 的 `plugin.rootDir` 与顶层 `install.sourcePath/installPath` 分别检查选中源和安装记录，确认后才通过原生 `config set plugins.load.paths --strict-json --expect-current-json` 精确替换旧目录并保留其他路径；reload 后再检查本地选中源，最后更新受保护状态。安装回复丢失若记录已是目标则跳过重复安装；CAS 冲突、第三来源、旧源仍被 CLI 导入时不写完成状态，正向与回滚均覆盖。Node 22.23.1 下全插件 63 项、最终安装器定向 17 项通过。`inspect --runtime` 是 CLI 进程的导入检查，不是 Gateway 实际采用的独立证明；后者需原生 reload 回执与升级后的新事件。
 
 下节保留 10 月 7 日当时的状态与改动，不作为当前 Flash 路由或插件采用结论。
 
 ## 2026-10-07 — 历史前态：M4单 Agent 工作链与 PR115 交付收尾
 
-1. **目标、结果与证据层：** 目标是在原 M4 OpenClaw 2026.9.5 上沿原 UR Key102／org2／project86 验证单 Agent 客户工作链，并交付选定 Agent、宿主插件生命周期和正文代理边界修复。本批仅将 `xi-acceptance` 选为 XI 受管 Agent，新增 XI 插件为 `xi-work-events`；原 16 个 Agent 保持，本机共 17 个 Agent。总体已移除 ECS 额外 OpenClaw，不再需要此前假设的 ECS 专用模型 key。总体回报 GLM 7 次真实供应商调用，文件结果及 reviewer 正文已核验；DeepSeek 现网无可用路由，没有 DeepSeek 供应商成功或拒绝结论。[PR115](https://github.com/foigent/x-insight/pull/115) head `e6171cd450f34c3eb4b386f48602f4f80eabc777` 的[全部适用 PR CI 37610953975](https://github.com/foigent/x-insight/actions/runs/37610953975)成功，已合并为 main `83a16a54ba31c244cd6d5e1986d842d904ac3888`／tree `a10ee2105e68a5ae3127336234ecdaa42e467b36`。该 main head 的原生 [CI 37614771582](https://github.com/foigent/x-insight/actions/runs/37614771582)整体 success：分类、签名资格、新装／旧装资格和 Backend Tests 成功；Frontend、Backend/API、PG16 rotation、FPV9／FPV11 依路由 skipped。CI 的签名候选是非发布资格，不是 Target 安装或正式签发。
+1. **目标、结果与证据层：** 目标是在原 M4 OpenClaw 2026.9.5 上沿原 UR Key102／org2／project86 验证单 Agent 客户工作链，并交付选定 Agent、宿主插件生命周期和正文代理边界修复。本批仅将 `xi-acceptance` 选为 XI 受管 Agent，新增 XI 插件为 `xi-work-events`；原 16 个 Agent 保持，本机共 17 个 Agent。总体已移除 ECS 额外 OpenClaw，不再需要此前假设的 ECS 专用模型 key。总体回报 GLM 7 次真实供应商调用，文件结果及 reviewer 正文已核验；DeepSeek 现网无可用路由，没有 DeepSeek 供应商成功或拒绝结论。[PR115](https://github.com/foigent/x-insight-private-history/pull/115) head `e6171cd450f34c3eb4b386f48602f4f80eabc777` 的[全部适用 PR CI 37610953975](https://github.com/foigent/x-insight-private-history/actions/runs/37610953975)成功，已合并为 main `83a16a54ba31c244cd6d5e1986d842d904ac3888`／tree `a10ee2105e68a5ae3127336234ecdaa42e467b36`。该 main head 的原生 [CI 37614771582](https://github.com/foigent/x-insight-private-history/actions/runs/37614771582)整体 success：分类、签名资格、新装／旧装资格和 Backend Tests 成功；Frontend、Backend/API、PG16 rotation、FPV9／FPV11 依路由 skipped。CI 的签名候选是非发布资格，不是 Target 安装或正式签发。
 2. **偏差与分类：** 原 XI HTTPS NGINX server 的通用 8 KiB 限额先于 Go 的 32 MiB 正文界限返回 413，导致八份原 `model_input` 正文缺口；这是代理配置与真实接收链缺口，不是模型提供方失败。总体另行修复 Target 精确正文 location 后，一份新的 35,784 字节 `model_input` 已接受，原八份不回填。第一次新 PR CI 的旧 `hostctl` replay 锁测试未观察到 `FOR SHARE` waiter；这是测试同步竞态，非七文件代理补丁改变了 DB 产品代码。`Backend Tests` 随前置 Backend job 失败而按合同失败；最终修复后准确 PR CI 两者均通过。DeepSeek 无路由属于 UR pre-provider 路由事实，不改写成供应商拒绝或 XI 正文失败。
 3. **错误假设与漏检原因：** 早期把 ECS 新 OpenClaw／新模型 key 当成必要前提，忽略原 M4 及原 UR Key102 已可承载授权范围内的 GLM 文件任务。仅有 Go 正文上限单测和本地插件队列测试，看不到外层 NGINX 的 8 KiB 限制；此前联合安装夹具也未从正式模板抽取精确正文 location。replay 测试让已完成回执的快速第二事务与另起的 `FOR UPDATE` 竞争，不能稳定保证行锁先到；首轮简化虽可通过首事务过期断言，却丢失“预约已通过、重放第二事务锁后过期”的独立负例，因此复核后保留后者。源码合并亦不会自动替换 M4 已载入的旧 `27a5` 插件或 Target 包。
 4. **原入口修正及正反例：** PR115 在 `integrations/openclaw-xinsight/install.mjs` 固定选定 Agent，并让原生 install／enable／reload 使用 600 秒生命周期期限、其余调用仍为 60 秒；原 `install.test.mjs` 覆盖未知 Agent、其他 Agent 工作区放凭据、超时后重试和 reload 未确认。`deploy/xinsight-nginx-ip.conf.example` 只放宽精确正文 URL 至 32 MiB、关闭 NGINX 请求缓冲，其他 URL 保持 8 KiB；原 `scripts/qualify-ubuntu22-installed-joint.sh` 在真实 NGINX 的新装／旧装两模式先写非秘密收据再断言：正文 16 KiB／32 MiB 匿名 401、32 MiB＋1 字节 413、普通入口 16 KiB 413，四次 curl 均退出 0。`body-outbox.test.mjs` 证实 413 为终态 `body_too_large` 而非 `body_invalid_item`。`internal/hostctl/source_facts_offline_check_test.go` 的 replay 先排队同一 source advisory lock，再释放预约 INSERT gate，让第二事务在授权行锁之后读取时钟；总体在 Go 1.25.12／PG16.14 对四个子场景 `-race` 实跑 0 SKIP 全通过，并故意移除第二事务 authorize，replay 负例随即失败（`/private/tmp/ur-xi-m4-openclaw-20261007/replay-pg16-verification.json`）。本地插件 53／53、保护 gate、CI 路由自检通过；PR CI 的 Backend/API、Frontend、PG16 rotation、非发布签名资格及两种安装资格全部成功。两份精确 NGINX 收据分别在 `/private/tmp/xi-pr115-ci-e6171cd-20261007/new_install/_temp/xinsight-installed-joint-qualification/nginx-body-ingress.json` 和同根 `adopt_existing/_temp/xinsight-installed-joint-qualification/nginx-body-ingress.json`，摘要同为 `sha256:cd33d0aad06b0a197459f4097b36c3a8b9eb4b2b5e24ac86285cfc910eee750b`；匿名 401 仅证代理放行，不证 32 MiB 密文托管。
@@ -252,12 +252,12 @@ PR #120 首轮前端 CI 在总览组件测试失败：新增断言写死了本�
 
 ## 2026-10-06 — FPV16/schema45 控制凭据生命周期（当前 Local 候选）
 
-- **PR112 第四轮 CI 与下一候选：** [主 CI 37456275687](https://github.com/foigent/x-insight/actions/runs/37456275687) 在准确 XI `ccae058eec55fb4db073ed1ae79a38610322047f`、UR `41e580c08fafc4d3ed193784620566934785c01f` 上的 Backend and API Validation、Frontend Tests、PostgreSQL 16 Admin Credential Rotation、Signed V2 Release Qualification 成功；[协议 CI 37456275803](https://github.com/foigent/x-insight/actions/runs/37456275803) 两项成功。新装与 `adopt_existing` 的安全收据均有 `setup client action=status phase=dial category=socket_missing` 3 次，随后越过 XI 过期状态 GET、XI 管理员恢复签发和 UR 恢复预览；均在 `credential_offline_expiry` 的 UR 恢复确认 POST 返回 HTTP 503，终态 `lifecycle_ur_human_confirmation`。该轮 XI 只识别 `code` 包络，因此将 UR 的 `error` 机器码记为 `unclassified`；`Backend Tests` 汇总门随安装资格失败。旧连接的前驱恢复、升级及历史保持，新装/旧连接的自动轮换和两种丢响应阶段已通过；已准备操作跨期恢复、最终撤销及整条生命周期未执行通过。新轮首次证明控制器重启窗口确有 socket 尚未出现，且有界就绪探测能越过该窗口；它不能反推上一轮 503 的全部底层原因。Local XI `e7c9fc9` 仅让原安全诊断识别 UR 独立 `error` 包络的精确固定机器码，仍拒绝双包络和任意错误文字，未改两产品公共 API。UR 总体在本地 PG16 正式 handler 复核：旧候选恢复预览 200、确认 503，审计 action 长于 `VARCHAR(50)` 触发 SQLSTATE `22001`，操作未落库；修正候选 `ef52a29f2d463a8c5b136f9f18fdd975c88a0c26` 确认 202，同票据同操作重复确认仍保留审计，跨安装 409 不写入。XI 的 installed-service UR checkout、HEAD 校验与 wiring 断言现精确指向该 UR 候选；新组合尚无 CI 或 installed Linux 回执，不据本地 PG 结果宣称联合链通过。
-- **PR112 第三轮 CI 与后续 Local 修正：** [主 CI 37452218312](https://github.com/foigent/x-insight/actions/runs/37452218312) 的 Backend and API Validation、Frontend Tests、PostgreSQL 16 Admin Credential Rotation、Signed V2 Release Qualification 均成功；`Backend Tests` 汇总门因两条安装资格路径失败而失败。新装与 `adopt_existing` 的各自安全收据均在 `credential_offline_expiry` 首次 setup 状态 GET 返回 503／`connector_control_unavailable`，最终阶段为 `lifecycle_expiry_status`；此前两条路径的轮换、丢响应与服务重启阶段已通过，恢复 POST 尚未执行。源码核查发现联合 driver 在重启 `Type=simple` 控制器后仅确认新 InvocationID 和独立 Web 登录，未证明控制器 socket/状态接口就绪；原 Host 路径已有短时就绪证明。Local 提交 `cfb1909` 在重启边界增加 2 秒内同一只读 setup GET 的合法响应证明，只对精确 503／`connector_control_unavailable` 于该短窗口重试，其他 HTTP/非法响应立即失败；过期应有的 `needs_action` 允许，原恢复与负向验收不改。同批后续 Local 增量还在 setup Unix 客户端的 dial/deadline/write/read/decode/response 及 Owner status 的 read_record/read_policy 边界记录固定 action、phase、category 和白名单 SQLSTATE；原安装资格安全导出只聚合精确允许的固定字段，不导出原错误、路径或身份。Go1.25.12 定向 race 测试、vet、原 CI wiring/保护/发布脚本入口与差异检查通过。截至第三轮，修正及新增诊断尚无 installed Linux CI 回执；该轮安全收据没有底层错误，不能断言该轮 503 的根因一定是 socket 启动竞态。
-- **PR112 第二轮 CI 与本地修复边界：** [主 CI 37446168330](https://github.com/foigent/x-insight/actions/runs/37446168330) 的 Frontend、Signed V2、管理员凭据轮换 job 成功；Backend and API job 的 28 个顶层失败集中在 schema45 当前授权列表遗漏、迁移到当前版仍固定按 schema44 计数，以及 M44 历史恢复测试误跑到 M45。Local 提交 `94bf1eb` 补足显式兼容列表、保留 35–44 历史输入和 schema46 负例、让预算授权与 DB admission 共用一个 predicate，并把原版本/授权短检查接在 Backend 与 installed 两个 CI 入口的 Go setup 后。原失败的 API/DB/Hostctl 定向用例在隔离 PG16 和明确 Go1.25.12 下全部 PASS；四包短检查、CI wiring 和定向 vet PASS。第一次本地 PG 尝试缺记录范围，第二次 DSN 缺夹具要求的显式密码，属于夹具输入错误；纠正后通过，不计产品缺陷。本地 PG16 已正常停止，临时 loopback trust 已恢复为 reject。上述结果不等于新 CI 通过。
+- **PR112 第四轮 CI 与下一候选：** [主 CI 37456275687](https://github.com/foigent/x-insight-private-history/actions/runs/37456275687) 在准确 XI `ccae058eec55fb4db073ed1ae79a38610322047f`、UR `41e580c08fafc4d3ed193784620566934785c01f` 上的 Backend and API Validation、Frontend Tests、PostgreSQL 16 Admin Credential Rotation、Signed V2 Release Qualification 成功；[协议 CI 37456275803](https://github.com/foigent/x-insight-private-history/actions/runs/37456275803) 两项成功。新装与 `adopt_existing` 的安全收据均有 `setup client action=status phase=dial category=socket_missing` 3 次，随后越过 XI 过期状态 GET、XI 管理员恢复签发和 UR 恢复预览；均在 `credential_offline_expiry` 的 UR 恢复确认 POST 返回 HTTP 503，终态 `lifecycle_ur_human_confirmation`。该轮 XI 只识别 `code` 包络，因此将 UR 的 `error` 机器码记为 `unclassified`；`Backend Tests` 汇总门随安装资格失败。旧连接的前驱恢复、升级及历史保持，新装/旧连接的自动轮换和两种丢响应阶段已通过；已准备操作跨期恢复、最终撤销及整条生命周期未执行通过。新轮首次证明控制器重启窗口确有 socket 尚未出现，且有界就绪探测能越过该窗口；它不能反推上一轮 503 的全部底层原因。Local XI `e7c9fc9` 仅让原安全诊断识别 UR 独立 `error` 包络的精确固定机器码，仍拒绝双包络和任意错误文字，未改两产品公共 API。UR 总体在本地 PG16 正式 handler 复核：旧候选恢复预览 200、确认 503，审计 action 长于 `VARCHAR(50)` 触发 SQLSTATE `22001`，操作未落库；修正候选 `ef52a29f2d463a8c5b136f9f18fdd975c88a0c26` 确认 202，同票据同操作重复确认仍保留审计，跨安装 409 不写入。XI 的 installed-service UR checkout、HEAD 校验与 wiring 断言现精确指向该 UR 候选；新组合尚无 CI 或 installed Linux 回执，不据本地 PG 结果宣称联合链通过。
+- **PR112 第三轮 CI 与后续 Local 修正：** [主 CI 37452218312](https://github.com/foigent/x-insight-private-history/actions/runs/37452218312) 的 Backend and API Validation、Frontend Tests、PostgreSQL 16 Admin Credential Rotation、Signed V2 Release Qualification 均成功；`Backend Tests` 汇总门因两条安装资格路径失败而失败。新装与 `adopt_existing` 的各自安全收据均在 `credential_offline_expiry` 首次 setup 状态 GET 返回 503／`connector_control_unavailable`，最终阶段为 `lifecycle_expiry_status`；此前两条路径的轮换、丢响应与服务重启阶段已通过，恢复 POST 尚未执行。源码核查发现联合 driver 在重启 `Type=simple` 控制器后仅确认新 InvocationID 和独立 Web 登录，未证明控制器 socket/状态接口就绪；原 Host 路径已有短时就绪证明。Local 提交 `cfb1909` 在重启边界增加 2 秒内同一只读 setup GET 的合法响应证明，只对精确 503／`connector_control_unavailable` 于该短窗口重试，其他 HTTP/非法响应立即失败；过期应有的 `needs_action` 允许，原恢复与负向验收不改。同批后续 Local 增量还在 setup Unix 客户端的 dial/deadline/write/read/decode/response 及 Owner status 的 read_record/read_policy 边界记录固定 action、phase、category 和白名单 SQLSTATE；原安装资格安全导出只聚合精确允许的固定字段，不导出原错误、路径或身份。Go1.25.12 定向 race 测试、vet、原 CI wiring/保护/发布脚本入口与差异检查通过。截至第三轮，修正及新增诊断尚无 installed Linux CI 回执；该轮安全收据没有底层错误，不能断言该轮 503 的根因一定是 socket 启动竞态。
+- **PR112 第二轮 CI 与本地修复边界：** [主 CI 37446168330](https://github.com/foigent/x-insight-private-history/actions/runs/37446168330) 的 Frontend、Signed V2、管理员凭据轮换 job 成功；Backend and API job 的 28 个顶层失败集中在 schema45 当前授权列表遗漏、迁移到当前版仍固定按 schema44 计数，以及 M44 历史恢复测试误跑到 M45。Local 提交 `94bf1eb` 补足显式兼容列表、保留 35–44 历史输入和 schema46 负例、让预算授权与 DB admission 共用一个 predicate，并把原版本/授权短检查接在 Backend 与 installed 两个 CI 入口的 Go setup 后。原失败的 API/DB/Hostctl 定向用例在隔离 PG16 和明确 Go1.25.12 下全部 PASS；四包短检查、CI wiring 和定向 vet PASS。第一次本地 PG 尝试缺记录范围，第二次 DSN 缺夹具要求的显式密码，属于夹具输入错误；纠正后通过，不计产品缺陷。本地 PG16 已正常停止，临时 loopback trust 已恢复为 reject。上述结果不等于新 CI 通过。
 - **installed 故障诊断（本地候选）：** 本轮新装安全产物的 `credential_offline_expiry/server_error` 只证明该阶段发生 5xx，旧连接安全产物没有可定位的 stage receipt；尚不能归因为宿主锁、seed 文件、SQL 或服务启动窗口。原 Unix 客户端和宿主 seed 边界现仅以固定 action、phase、category 记录 dial/write/read、锁忙、授权/文件、数据库已知 SQLSTATE 与上下文到期，不记录原错误、路径、票据、地址或 SQL 参数；正式 HTTP 合同不变。真实 Engine seed 文件路径的同请求重入、冲突、到期、锁忙以及 Unix 客户端定向测试在 Go1.25.12 下 PASS。仍待新 installed Linux 回执区分实际故障层，不把日志分类或单元测试冒充根因。
 
-- **PR112 首次 CI 定点修复（待重跑）：** [CI 37442036845](https://github.com/foigent/x-insight/actions/runs/37442036845) 的前端 job 在 TypeScript、OpenAPI、535 项组件测试及 OpenClaw bridge 通过后，被 `npm audit` 新公告拦下：锁文件 `source-map-js` 1.2.1 命中 GHSA-68fv-2mgg-jv7q。仅锁文件更新至官方修复版 1.2.2；准确 Node 22.23.1/npm 10.9.8 下 `npm ci`、完整 `test:coverage`（36 文件/535 测试）、`check`、OpenAPI、audit（0 漏洞）、license 和 build PASS，已提交资产无差异。管理员口令轮换与全新安装分别在 schema45 的 `VerifyRoleBoundaries` 被拒，原因是正式授予 workspace 的 M45 初始化函数漏入 digest 权限校验白名单；现让授予与校验复用精确三函数列表。Backend and API job 两个新 PG 用例在 `ApplyGrants` 前未独立创建 CI 干净集群所需的受限角色；现三个需角色的生命周期用例统一调用正式角色夹具，清理顺序为先删一次性数据库再删本次创建的角色。本地共享 PG16 已核实存在三个受限角色，这解释此前新用例为何越过该缺口；其 Unix socket fixture 不符合正式夹具对预置角色的显式本地 TCP 边界，本轮专用 PG16.14 Unix-only 干净实例中，两条新用例各自在零预置项目角色前态下单独 PASS，已修改入口的原首兑用例也从零角色前态 PASS；每例结束后角色数均回到 0，原始测试日志保存在 `/private/tmp/xi-pr112-clean-pg16.EC2nJn/`。旧本地 PG16 运行已证明 schema44 来源/45 目标完整权限校验、reader/PUBLIC/grant-option 额外权限拒绝及修复、同安装过期恢复。`adopt_existing` 的安全回执只定位到 `candidate_upgrade/failed/operation_failed`，未导出底层错误码，不能归因为已修权限问题；汇总 Backend Tests 是前置任务失败后的合同门失败。保护摘要经复核更新且两套 gate PASS；修复后 CI 尚无回执，不将本地结果写成 CI 通过。
+- **PR112 首次 CI 定点修复（待重跑）：** [CI 37442036845](https://github.com/foigent/x-insight-private-history/actions/runs/37442036845) 的前端 job 在 TypeScript、OpenAPI、535 项组件测试及 OpenClaw bridge 通过后，被 `npm audit` 新公告拦下：锁文件 `source-map-js` 1.2.1 命中 GHSA-68fv-2mgg-jv7q。仅锁文件更新至官方修复版 1.2.2；准确 Node 22.23.1/npm 10.9.8 下 `npm ci`、完整 `test:coverage`（36 文件/535 测试）、`check`、OpenAPI、audit（0 漏洞）、license 和 build PASS，已提交资产无差异。管理员口令轮换与全新安装分别在 schema45 的 `VerifyRoleBoundaries` 被拒，原因是正式授予 workspace 的 M45 初始化函数漏入 digest 权限校验白名单；现让授予与校验复用精确三函数列表。Backend and API job 两个新 PG 用例在 `ApplyGrants` 前未独立创建 CI 干净集群所需的受限角色；现三个需角色的生命周期用例统一调用正式角色夹具，清理顺序为先删一次性数据库再删本次创建的角色。本地共享 PG16 已核实存在三个受限角色，这解释此前新用例为何越过该缺口；其 Unix socket fixture 不符合正式夹具对预置角色的显式本地 TCP 边界，本轮专用 PG16.14 Unix-only 干净实例中，两条新用例各自在零预置项目角色前态下单独 PASS，已修改入口的原首兑用例也从零角色前态 PASS；每例结束后角色数均回到 0，原始测试日志保存在 `/private/tmp/xi-pr112-clean-pg16.EC2nJn/`。旧本地 PG16 运行已证明 schema44 来源/45 目标完整权限校验、reader/PUBLIC/grant-option 额外权限拒绝及修复、同安装过期恢复。`adopt_existing` 的安全回执只定位到 `candidate_upgrade/failed/operation_failed`，未导出底层错误码，不能归因为已修权限问题；汇总 Backend Tests 是前置任务失败后的合同门失败。保护摘要经复核更新且两套 gate PASS；修复后 CI 尚无回执，不将本地结果写成 CI 通过。
 
 - **PR112 CI fixture pin：** 第三轮 CI 使用准确 UR 输入 `d798af8323543c6dcca346cb62827cd278e206f5`，第四轮使用 `41e580c08fafc4d3ed193784620566934785c01f`；当前 Local 候选将 installed-service 矩阵的 UR checkout `ref`、实际 HEAD 校验与 CI wiring 断言同步更新至已由总体复核的新 HEAD `ef52a29f2d463a8c5b136f9f18fdd975c88a0c26`。新输入尚无 XI CI 回执；原 FPV14 前驱及安装模式语义未改。
 
@@ -282,7 +282,7 @@ PR #120 首轮前端 CI 在总览组件测试失败：新增断言写死了本�
 
 ## 2026-10-06 — FPV15 已部署，持续连接身份到期阻塞（前态）
 
-- 总体仍为本批唯一源码写入者；两项目原执行窗口负责只读核查。源码 main `fda71f56cc1ff57a9e966a3552c51bc20703ab6b` / tree `ff444700a5b5f9d0ceea81331f16abb75f4fa507`，[PR111](https://github.com/foigent/x-insight/pull/111) 已合并。R13 PR 主/协议及准确 main [CI37361043494](https://github.com/foigent/x-insight/actions/runs/37361043494)、[协议37361043548](https://github.com/foigent/x-insight/actions/runs/37361043548) 全部适用检查成功；协议首次 Go 依赖代理 HTTP/2 故障，仅失败作业重跑通过，源码未变。
+- 总体仍为本批唯一源码写入者；两项目原执行窗口负责只读核查。源码 main `fda71f56cc1ff57a9e966a3552c51bc20703ab6b` / tree `ff444700a5b5f9d0ceea81331f16abb75f4fa507`，[PR111](https://github.com/foigent/x-insight-private-history/pull/111) 已合并。R13 PR 主/协议及准确 main [CI37361043494](https://github.com/foigent/x-insight-private-history/actions/runs/37361043494)、[协议37361043548](https://github.com/foigent/x-insight-private-history/actions/runs/37361043548) 全部适用检查成功；协议首次 Go 依赖代理 HTTP/2 故障，仅失败作业重跑通过，源码未变。
 - **Artifact/Target：** FPV15 bundle `sha256:4988fe090114224bb1c391311452df4c8266c98a19db8a156dad98dbba2c6c28`，37,931,666 bytes。原实例正式 `upgrade --check` 十项通过；前后服务、配置及受验数据库状态相同。升级 operation `20261005T235338Z-43bbf98befb1b984` completed，FPV14→FPV15/schema44；正式私有备份 `sha256:8dca828ccdff99c6d6a0f1773f16214aca3cb2284d74d77bcaa6ae56471c191a` 实际文件摘要匹配。主服务、controller、feed 均运行新制品；controller 加载正式三目录写入边界，CAP0/NNP/ProtectSystem=strict 保持。
 - **保持项：** 原账号、正文 key、部署身份与数据库 schema/实例保持；25 条 evidence、41 条 source facts、73 条 observations、52 条 manifests、52 条 receipts 原行逐项摘要相同。来源仍处恢复后暂停，不能把升级就绪当作接入完成。
 - **当前确定阻塞：** 原安装的 control identity 状态 active、poll/ack 完整，但其 24 小时期限于 `2026-10-05T16:47:11.680889Z` 到期；关联 token 同期到期且未撤销。`internal/db/connector_managed_read.go` 正确拒绝过期身份，managed.Tick/projects.Refresh 因而尚未进入原 worker 恢复。setup 独立记录的 custody_loading 并非完整根因。未修改期限、重建安装或直接恢复数据库状态。
@@ -299,8 +299,8 @@ PR #120 首轮前端 CI 在总览组件测试失败：新增断言写死了本�
 ## 2026-10-06 — FPV15 PR 冻结时记录（历史）
 
 - 目标：管理员确认后，现有/新建连接和未来项目自动采集事实及正文；沿正式服务限制完成安装、升级恢复、重启与实际读取，再继续已授权的真实工作链验收。
-- 总体负责：本次 UR/XI 协调任务；XI 实施/复核沿现有 `XI执行-客户工作链-20260920`。当前源码候选为 [PR111](https://github.com/foigent/x-insight/pull/111) 的 R13 测试修正，产品修复为 R11 `df27880f25455d46c60b957997799d375fd99f4e`；前一轮 R10 head `e7ed5a6b8aec3dc70ecb0786794410407cfda83d`；FPV15/schema44，基线 `a10aa9cf517ce187a95f5c7e20be0f8c8fdbe6c6`。
-- 当前 CI：R11 [37353091290](https://github.com/foigent/x-insight/actions/runs/37353091290) 的新装及准确 FPV14 备份/恢复/升级/旧连接接续 Linux 链均通过；三组真实 PG 接管用例亦通过。R12 [37357500464](https://github.com/foigent/x-insight/actions/runs/37357500464) 前置回归在4分39秒暴露新增 HTTP 测试的另一处错误：邀请与 UR 正文实际读取已通过，但测试把能力检查次数误定为2，正式路径为4。R13 按受验行为要求能力检查为正、正文读取为1，切换后及本地副本缺失时仍严格要求两类UR请求均为0；不改产品或权限。此时钟/调用次数夹具遗漏由作者及复核承担，静态通过不等于PG验证。最终实际CI仍待。
+- 总体负责：本次 UR/XI 协调任务；XI 实施/复核沿现有 `XI执行-客户工作链-20260920`。当前源码候选为 [PR111](https://github.com/foigent/x-insight-private-history/pull/111) 的 R13 测试修正，产品修复为 R11 `df27880f25455d46c60b957997799d375fd99f4e`；前一轮 R10 head `e7ed5a6b8aec3dc70ecb0786794410407cfda83d`；FPV15/schema44，基线 `a10aa9cf517ce187a95f5c7e20be0f8c8fdbe6c6`。
+- 当前 CI：R11 [37353091290](https://github.com/foigent/x-insight-private-history/actions/runs/37353091290) 的新装及准确 FPV14 备份/恢复/升级/旧连接接续 Linux 链均通过；三组真实 PG 接管用例亦通过。R12 [37357500464](https://github.com/foigent/x-insight-private-history/actions/runs/37357500464) 前置回归在4分39秒暴露新增 HTTP 测试的另一处错误：邀请与 UR 正文实际读取已通过，但测试把能力检查次数误定为2，正式路径为4。R13 按受验行为要求能力检查为正、正文读取为1，切换后及本地副本缺失时仍严格要求两类UR请求均为0；不改产品或权限。此时钟/调用次数夹具遗漏由作者及复核承担，静态通过不等于PG验证。最终实际CI仍待。
 - Target 边界：最近现场证据为 2026-10-05 的 FPV14/schema44；正式 controller 发布 systemd 配置受只读目录限制。FPV15 尚未合并、正式签发或部署；本次文档更新没有重新探测或修改 Target。
 - 下一动作：R13 测试修正通过本地编译和复核后推送，收取同一候选全部适用 CI 结果；通过后按已授权 GitHub 流程交付。新正式签名身份与精确升级方案需单独核对授权，不能从 CI 成功推导为已部署。
 
@@ -1504,10 +1504,10 @@ separate and pending/out of scope as recorded below
 Base and exact release source: `main` at
 `27e05df26ff7976301a245f9120176e6ca70430d`
 Branch: `codex/prd2-rc5-target-evidence`
-Release PR: [#49](https://github.com/foigent/x-insight/pull/49)
-Source CI: [29348263612](https://github.com/foigent/x-insight/actions/runs/29348263612)
+Release PR: [#49](https://github.com/foigent/x-insight-private-history/pull/49)
+Source CI: [29348263612](https://github.com/foigent/x-insight-private-history/actions/runs/29348263612)
 Owner workflow:
-[29348552251](https://github.com/foigent/x-insight/actions/runs/29348552251)
+[29348552251](https://github.com/foigent/x-insight-private-history/actions/runs/29348552251)
 
 ## Closed Scope
 
@@ -1943,7 +1943,7 @@ Status: Complete for the X-Insight-owned P2-4 implementation slice; merged and
 main CI verified; named Target and field release authority remain separate gates
 Base: `main` at `a0194e7`
 Branch: `codex/prd2-p2-4a-release-foundation`
-PR: [#35](https://github.com/foigent/x-insight/pull/35) merged as
+PR: [#35](https://github.com/foigent/x-insight-private-history/pull/35) merged as
 `7d56a36fcce255be152621a39c48645be6d7549c`
 
 ## Active Scope
@@ -1990,7 +1990,7 @@ PR: [#35](https://github.com/foigent/x-insight/pull/35) merged as
   used to claim the exact signed release build. Exact-toolchain signed evidence
   belongs to the new CI job.
 - GitHub Actions run
-  [29278281737](https://github.com/foigent/x-insight/actions/runs/29278281737)
+  [29278281737](https://github.com/foigent/x-insight-private-history/actions/runs/29278281737)
   passed Backend, Frontend, exact Phase 1 artifact reproduction, signed-v2
   double-build, exact legacy adopt/upgrade/application rollback/re-upgrade/
   isolated restore on one clean Ubuntu 22.04 VM, and fresh install plus
@@ -2004,7 +2004,7 @@ PR: [#35](https://github.com/foigent/x-insight/pull/35) merged as
   It uses an ephemeral CI key and is not a field artifact.
 - PR #35 squash-merged to `main` as
   `7d56a36fcce255be152621a39c48645be6d7549c`. Main push run
-  [29279421355](https://github.com/foigent/x-insight/actions/runs/29279421355)
+  [29279421355](https://github.com/foigent/x-insight-private-history/actions/runs/29279421355)
   repeated all five jobs successfully, including both clean-VM host paths.
 
 These are execution-owner self-tests, not independent acceptance. A supported-
@@ -2062,7 +2062,7 @@ Target, External integration, field usability and Production remain Pending.
 
 GitHub delivery:
 
-- PR [#33](https://github.com/foigent/x-insight/pull/33) passed Actions runs
+- PR [#33](https://github.com/foigent/x-insight-private-history/pull/33) passed Actions runs
   `29260630135` and `29260908364`;
 - branch commits were `872dd2051900de617c50ac8e3f1d7ccfc00890c5`
   and `0f2dc415b23ece67bc5f69c74b62f989ac5e0772`; and
@@ -2157,7 +2157,7 @@ verification, not independent acceptance.
 
 GitHub delivery:
 
-- PR [#31](https://github.com/foigent/x-insight/pull/31) passed `Frontend
+- PR [#31](https://github.com/foigent/x-insight-private-history/pull/31) passed `Frontend
   Tests`, PostgreSQL 16 `Backend Tests` and Go 1.25.11 `Linux Release Artifact`
   in Actions run `29258723199`;
 - the PR merge-ref release artifact SHA-256 was
@@ -2279,7 +2279,7 @@ GitHub delivery completed before P2-2/P2-3 began:
 
 - local branch commit
   `26b2c95f69ec7c0c3a19d77d8f9a2be815eed6d9`;
-- PR [#30](https://github.com/foigent/x-insight/pull/30): squash-merged after
+- PR [#30](https://github.com/foigent/x-insight-private-history/pull/30): squash-merged after
   `Frontend Tests`, `PostgreSQL 16 Backend` and
   `Linux Go 1.25.11 Release` all passed; and
 - squash merge commit
@@ -2398,7 +2398,7 @@ GitHub delivery:
 
 - branch `codex/prd2-p2-0-foundation`, head commit
   `4cc7410` before squash;
-- PR [#29](https://github.com/foigent/x-insight/pull/29): squash-merged;
+- PR [#29](https://github.com/foigent/x-insight-private-history/pull/29): squash-merged;
 - GitHub Actions `Frontend Tests`, `Backend Tests` and `Linux Release Artifact`
   all passed; and
 - squash merge commit
@@ -2466,9 +2466,9 @@ GitHub delivery:
 
 - primary branch `codex/prd2-field-clarifications`; head commit
   `03013ca60ebe2013ce5f6cabf644cef4dd3a1d56`;
-- PR [#27](https://github.com/foigent/x-insight/pull/27): squash-merged;
+- PR [#27](https://github.com/foigent/x-insight-private-history/pull/27): squash-merged;
 - GitHub Actions run
-  [29243306540](https://github.com/foigent/x-insight/actions/runs/29243306540):
+  [29243306540](https://github.com/foigent/x-insight-private-history/actions/runs/29243306540):
   pass; `Backend Tests` completed in 55 seconds and `Linux Release Artifact`
   completed in 49 seconds; and
 - squash merge commit `12936a267af8ef17149ac7ee05cb3826ac86e09f`;
@@ -2590,10 +2590,10 @@ Branch: `codex/prd2-field-validation-plan`
 
 - Primary branch: `codex/prd2-field-validation-plan`; head commit
   `222150cd79d4f35f998290ed94a708edc992863b`.
-- PR [#25](https://github.com/foigent/x-insight/pull/25): merged after both
+- PR [#25](https://github.com/foigent/x-insight-private-history/pull/25): merged after both
   required jobs passed.
 - GitHub Actions run
-  [29242073651](https://github.com/foigent/x-insight/actions/runs/29242073651):
+  [29242073651](https://github.com/foigent/x-insight-private-history/actions/runs/29242073651):
   PASS. `Backend Tests` completed in 49 seconds and `Linux Release Artifact`
   completed in 47 seconds.
 - Squash merge commit:
@@ -2746,10 +2746,10 @@ Branch: `codex/phase2-batch0-boundary-innovation`
 - GitHub CLI `2.73.0`: authenticated to `foigent/x-insight`; default branch
   `main`; no open PR existed before this batch's publication.
 - Branch: `codex/phase2-batch0-boundary-innovation`.
-- PR [#23](https://github.com/foigent/x-insight/pull/23): merged. Head commit:
+- PR [#23](https://github.com/foigent/x-insight-private-history/pull/23): merged. Head commit:
   `b3eaec2fdb16ee6c0e5f512aa012be09fd46f02b`.
 - GitHub Actions run
-  [29237871021](https://github.com/foigent/x-insight/actions/runs/29237871021):
+  [29237871021](https://github.com/foigent/x-insight-private-history/actions/runs/29237871021):
   PASS. `Backend Tests` and `Linux Release Artifact` completed successfully.
 - Squash merge commit:
   `62696244ae3d996c68af0a0afd1aab23916a86ac`. Local `main` and

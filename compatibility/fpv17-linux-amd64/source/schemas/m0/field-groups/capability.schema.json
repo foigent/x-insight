@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capability Field Group",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "capability_type": {
+      "enum": ["model_call", "tool_call", "data_access", "api_call", "policy_check", "unknown"]
+    },
+    "model": { "type": "string" },
+    "requested_model": { "type": "string" },
+    "provider": { "type": "string" },
+    "channel": { "type": "string" },
+    "target_ref": { "type": "string" },
+    "extensions": { "type": "object", "additionalProperties": true }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "X-Insight M0 Quarantine Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "reason", "status", "created_at"],
+  "properties": {
+    "id": { "type": "string" },
+    "source_system_id": { "type": "string" },
+    "adapter_manifest_id": { "type": "string" },
+    "idempotency_key": { "type": "string" },
+    "reason": { "type": "string" },
+    "status": { "enum": ["open", "reviewed", "ignored"] },
+    "safe_excerpt": { "type": "object", "additionalProperties": true },
+    "created_at": { "type": "string" }
+  }
+}

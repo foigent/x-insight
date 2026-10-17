@@ -1,0 +1,781 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "unirouter.source-fact.v1"
+    },
+    "source_instance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "org_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "unirouter.execution-context.v1",
+        "unirouter.execution-identity.v1",
+        "unirouter.cost-basis.v1"
+      ]
+    },
+    "stage": {
+      "enum": [
+        "authenticated",
+        "admission",
+        "dispatch",
+        "terminal"
+      ]
+    },
+    "source_fact_id": {
+      "type": "string",
+      "pattern": "^uf1_[0-9a-f]{64}$"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^uf1_[0-9a-f]{64}$"
+    },
+    "previous_revision": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "previous_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "correction_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "occurred_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    },
+    "recorded_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    },
+    "capture_status": {
+      "enum": [
+        "available",
+        "not_captured"
+      ]
+    },
+    "core": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "org_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "project_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "api_key_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "key_type": {
+          "type": "string",
+          "enum": [
+            "shared",
+            "personal",
+            "service"
+          ]
+        },
+        "credential_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "credential_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "workload_application_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "auth_kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "auth_epoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "protocol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "captured_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+        }
+      },
+      "required": [
+        "request_id",
+        "org_id",
+        "project_id",
+        "api_key_id",
+        "key_type",
+        "auth_kind",
+        "auth_epoch",
+        "operation",
+        "protocol",
+        "captured_at"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "owner_user_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "grant_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "grant_revision": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "grant_subject_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "grant_subject_user_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "grant_subject_workload_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "sponsor_user_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "workflow_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "root_agent_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "agent_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "parent_agent_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authority_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authority_read": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "actual_human": {
+          "const": "unknown"
+        },
+        "lineage": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "required": [
+        "actual_human",
+        "authority_read"
+      ]
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "terminal_status": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "economic_reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "completed_execution",
+                "async_media_charge_fact"
+              ]
+            },
+            "source_instance": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "org_id": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "project_id": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "request_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "revision": {
+              "const": "1"
+            },
+            "snapshot_sha256": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "publication_status": {
+              "type": "string",
+              "enum": [
+                "published_by_i01",
+                "not_published_by_i01",
+                "not_applicable"
+              ]
+            },
+            "calculated_amount_path": {
+              "const": "money.calculated_cost_micros"
+            },
+            "charged_amount_path": {
+              "const": "money.charged_cost_micros"
+            },
+            "charge_fact_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 96
+            }
+          },
+          "required": [
+            "source",
+            "source_instance",
+            "org_id",
+            "project_id",
+            "request_id",
+            "revision",
+            "publication_status"
+          ]
+        },
+        "basis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "billing_mode": {
+              "type": "string",
+              "enum": [
+                "prepaid_enforced",
+                "cost_observation"
+              ]
+            },
+            "mode_source": {
+              "type": "string",
+              "enum": [
+                "reservation",
+                "persisted_reservation"
+              ]
+            },
+            "pricing_authority": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "pricing_version": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 256
+            },
+            "pricing_state": {
+              "type": "string",
+              "enum": [
+                "priced",
+                "unpriced",
+                "unknown"
+              ]
+            },
+            "rate_card_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "rate_card_version": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "rate_card_layer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "input_rate_micros_per_million": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$"
+            },
+            "cache_read_rate_micros_per_million": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$"
+            },
+            "cache_creation_rate_micros_per_million": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$"
+            },
+            "output_rate_micros_per_million": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$"
+            },
+            "price_multiplier": {
+              "type": "string",
+              "maxLength": 64,
+              "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+            },
+            "currency": {
+              "const": "CNY"
+            },
+            "amount_scale": {
+              "const": "1000000"
+            },
+            "execution_snapshot_hash": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "unit_rates": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "meter": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_.-]{1,63}$"
+                  },
+                  "unit_quantity": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,18}$"
+                  },
+                  "amount_minor": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$"
+                  },
+                  "currency": {
+                    "const": "CNY"
+                  },
+                  "amount_scale": {
+                    "const": "1000000"
+                  },
+                  "component_hash": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "meter",
+                  "unit_quantity",
+                  "amount_minor",
+                  "currency",
+                  "amount_scale",
+                  "component_hash"
+                ]
+              }
+            }
+          },
+          "required": [
+            "billing_mode",
+            "mode_source",
+            "pricing_authority",
+            "pricing_version",
+            "pricing_state",
+            "input_rate_micros_per_million",
+            "cache_read_rate_micros_per_million",
+            "cache_creation_rate_micros_per_million",
+            "output_rate_micros_per_million",
+            "price_multiplier",
+            "currency",
+            "amount_scale",
+            "unit_rates"
+          ]
+        },
+        "basis_status": {
+          "type": "string",
+          "enum": [
+            "available",
+            "persisted_legacy",
+            "not_captured",
+            "not_applicable"
+          ]
+        },
+        "journal_billing_mode": {
+          "type": "string",
+          "enum": [
+            "prepaid_enforced",
+            "cost_observation"
+          ]
+        },
+        "journal_mode_source": {
+          "type": "string",
+          "enum": [
+            "journal_payload",
+            "legacy_interpretation.v1"
+          ]
+        },
+        "media_amount_state": {
+          "enum": [
+            "not_eligible",
+            "pricing_pending_media_rate_card"
+          ]
+        }
+      },
+      "required": [
+        "model",
+        "terminal_status",
+        "economic_reference",
+        "basis_status"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "basis_status": {
+                "type": "string",
+                "enum": [
+                  "available",
+                  "persisted_legacy"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "basis"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "basis"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "economic_reference": {
+                "properties": {
+                  "source": {
+                    "const": "completed_execution"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "economic_reference": {
+                "required": [
+                  "snapshot_sha256",
+                  "calculated_amount_path",
+                  "charged_amount_path"
+                ],
+                "properties": {
+                  "publication_status": {
+                    "type": "string",
+                    "enum": [
+                      "published_by_i01",
+                      "not_published_by_i01"
+                    ]
+                  }
+                },
+                "not": {
+                  "required": [
+                    "charge_fact_ref"
+                  ]
+                }
+              }
+            },
+            "not": {
+              "required": [
+                "media_amount_state"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "media_amount_state"
+            ],
+            "not": {
+              "required": [
+                "basis"
+              ]
+            },
+            "properties": {
+              "economic_reference": {
+                "properties": {
+                  "publication_status": {
+                    "const": "not_applicable"
+                  }
+                },
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "snapshot_sha256"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "calculated_amount_path"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "charged_amount_path"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_instance",
+    "org_id",
+    "project_id",
+    "request_id",
+    "profile",
+    "stage",
+    "source_fact_id",
+    "revision",
+    "event_id",
+    "occurred_at",
+    "recorded_at",
+    "capture_status"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unirouter://source-facts/v1",
+  "oneOf": [
+    {
+      "properties": {
+        "profile": {
+          "const": "unirouter.execution-context.v1"
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "identity"
+            ]
+          },
+          {
+            "required": [
+              "cost"
+            ]
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "capture_status": {
+                "const": "available"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "core"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "core"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "profile": {
+          "const": "unirouter.execution-identity.v1"
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "core"
+            ]
+          },
+          {
+            "required": [
+              "cost"
+            ]
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "capture_status": {
+                "const": "available"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "identity"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "identity"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "profile": {
+          "const": "unirouter.cost-basis.v1"
+        },
+        "stage": {
+          "const": "terminal"
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "core"
+            ]
+          },
+          {
+            "required": [
+              "identity"
+            ]
+          }
+        ]
+      },
+      "required": [
+        "cost"
+      ]
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "revision": {
+            "const": "1"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "previous_revision"
+              ]
+            },
+            {
+              "required": [
+                "previous_hash"
+              ]
+            },
+            {
+              "required": [
+                "correction_reason"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "previous_revision",
+          "previous_hash",
+          "correction_reason"
+        ]
+      }
+    }
+  ],
+  "$comment": "Additional semantic checks: positive IDs fit signed int64; UTF-8 byte and control-character bounds; exact source/event identity and predecessor; scope equality; sorted unique rates; canonical source bytes. Source quantities remain strings."
+}

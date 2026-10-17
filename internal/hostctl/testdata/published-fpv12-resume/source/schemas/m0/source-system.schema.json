@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "X-Insight M0 Source System",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_key", "source_type", "display_name", "status"],
+  "properties": {
+    "source_key": { "type": "string", "minLength": 1 },
+    "source_type": { "type": "string", "minLength": 1 },
+    "display_name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string" },
+    "owner_ref": { "type": "string" },
+    "deployment_ref": { "type": "string" },
+    "status": { "enum": ["active", "inactive", "error"] }
+  }
+}

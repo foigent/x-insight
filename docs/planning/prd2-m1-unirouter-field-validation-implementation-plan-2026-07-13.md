@@ -126,11 +126,11 @@ trigger.
 ## Implementation Progress
 
 - P2-0 contract/toolchain/same-origin foundation was Local and CI verified and
-  squash-merged in PR [#29](https://github.com/foigent/x-insight/pull/29) as
+  squash-merged in PR [#29](https://github.com/foigent/x-insight-private-history/pull/29) as
   `4b6dca44a0947c22bd4a6059a0c96fbb475c4da8`.
 - P2-1 migration, provenance, bounded investigation APIs and resource limits
   passed Local and PostgreSQL 16 CI verification and squash-merged through PR
-  [#30](https://github.com/foigent/x-insight/pull/30) as
+  [#30](https://github.com/foigent/x-insight-private-history/pull/30) as
   `b754100a4eee9024707fe9c189c71ee579966a04`.
 - The P2-1 diagnostic loaded 100,000 executions, 1,000,000 events and 200,000
   gaps on local PostgreSQL 18. Warm sequential search p95 was `247.093 ms` after
@@ -139,14 +139,14 @@ trigger.
 - P2-2/P2-3 feature UI passed deterministic semantic tests, real Go API/
   PostgreSQL browser tests, local historical Gate A success/denial product
   reads and GitHub CI. PR
-  [#31](https://github.com/foigent/x-insight/pull/31) squash-merged as
+  [#31](https://github.com/foigent/x-insight-private-history/pull/31) squash-merged as
   `582e9692fc0d35f2e93c4105a891e09207bb5f8d`. P2-4 release/upgrade/manual
   subsequently merged through PR #35; the `N=1` P2-5 field proof remains
   pending. Live pull transport is deferred as a whole from the first formal
   version; re-entry requires a new User decision and a joint versioned
   contract.
 - P2-4 GitHub run
-  [29278281737](https://github.com/foigent/x-insight/actions/runs/29278281737)
+  [29278281737](https://github.com/foigent/x-insight-private-history/actions/runs/29278281737)
   passed exact-toolchain signed double-build, exact Phase 1 artifact
   reproduction, legacy adopt/upgrade/application rollback/re-upgrade/isolated
   restore on one clean Ubuntu 22.04/PostgreSQL 16 VM and fresh install plus

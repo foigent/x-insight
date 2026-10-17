@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x-insight.local/schemas/release/release-manifest-v2.schema.json",
+  "title": "X-Insight Release Manifest V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "product_name",
+    "product_version",
+    "release_channel",
+    "commit",
+    "build_toolchain",
+    "target_os",
+    "target_arch",
+    "cgo_enabled",
+    "artifact_path",
+    "artifact_digest",
+    "artifact_size_bytes",
+    "signature",
+    "created_at",
+    "supported_upgrade_from_versions",
+    "supported_legacy_sources",
+    "application_compatibility",
+    "database_schema",
+    "migration_checksums",
+    "config_schema",
+    "api_versions",
+    "evidence_schema_versions",
+    "receipt_schema_versions",
+    "manual",
+    "rollback",
+    "files"
+  ],
+  "properties": {
+    "schema_version": { "const": "xinsight.release-manifest.v2" },
+    "product_name": { "const": "x-insight" },
+    "product_version": { "$ref": "#/$defs/semver" },
+    "release_channel": { "enum": ["release_candidate", "stable"] },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "build_toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["go_version", "node_version", "npm_version"],
+      "properties": {
+        "go_version": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "node_version": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "npm_version": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "target_os": { "const": "linux" },
+    "target_arch": { "const": "amd64" },
+    "cgo_enabled": { "const": false },
+    "artifact_path": { "const": "payload.tar.gz" },
+    "artifact_digest": { "$ref": "#/$defs/sha256" },
+    "artifact_size_bytes": { "type": "integer", "minimum": 1, "maximum": 268435456 },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "trust_reference"],
+      "properties": {
+        "algorithm": { "const": "ed25519" },
+        "key_id": { "$ref": "#/$defs/key_id" },
+        "trust_reference": { "const": "/etc/x-insight/trusted-release-keys.json" }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "supported_upgrade_from_versions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/semver" }
+    },
+    "supported_legacy_sources": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/legacy_source" }
+    },
+    "application_compatibility": { "$ref": "#/$defs/application_compatibility" },
+    "database_schema": { "$ref": "#/$defs/schema_range" },
+    "migration_checksums": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/migration" }
+    },
+    "config_schema": { "$ref": "#/$defs/schema_range" },
+    "api_versions": { "$ref": "#/$defs/version_list" },
+    "evidence_schema_versions": { "$ref": "#/$defs/version_list" },
+    "receipt_schema_versions": { "$ref": "#/$defs/version_list" },
+    "manual": { "$ref": "#/$defs/manual" },
+    "rollback": { "$ref": "#/$defs/rollback" },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2000,
+      "items": { "$ref": "#/$defs/file" }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "key_id": { "type": "string", "pattern": "^ed25519:sha256:[a-f0-9]{64}$" },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9]{6}_[a-z0-9_]+$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "schema_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current", "min", "max"],
+      "properties": {
+        "current": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "min": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "max": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "application_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["database_schema_min", "database_schema_max", "config_schema_min", "config_schema_max"],
+      "properties": {
+        "database_schema_min": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "database_schema_max": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "config_schema_min": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "config_schema_max": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "version_list": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+    },
+    "manual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "version"],
+      "properties": {
+        "language": { "const": "zh-CN" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?/manual-r[1-9][0-9]*$" }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["application_rollback_compatible", "barriers"],
+      "properties": {
+        "application_rollback_compatible": { "type": "boolean" },
+        "barriers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+        }
+      }
+    },
+    "legacy_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release_id",
+        "commit",
+        "artifact_sha256",
+        "manifest_sha256",
+        "release_layout",
+        "database_schema",
+        "config_schema",
+        "service_layout",
+        "application_database_schema_min",
+        "application_database_schema_max",
+        "compatible_config_schemas",
+        "migration_checksums"
+      ],
+      "properties": {
+        "release_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "artifact_sha256": { "$ref": "#/$defs/sha256" },
+        "manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "release_layout": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "database_schema": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "config_schema": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "service_layout": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "application_database_schema_min": { "type": "string", "pattern": "^[1-9][0-9]*$", "maxLength": 32 },
+        "application_database_schema_max": { "type": "string", "pattern": "^[1-9][0-9]*$", "maxLength": 32 },
+        "compatible_config_schemas": { "$ref": "#/$defs/version_list" },
+        "migration_checksums": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/migration" }
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes", "mode"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^[A-Za-z0-9._/-]+$", "minLength": 1, "maxLength": 512 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size_bytes": { "type": "integer", "minimum": 0, "maximum": 134217728 },
+        "mode": { "enum": ["0644", "0755"] }
+      }
+    }
+  }
+}

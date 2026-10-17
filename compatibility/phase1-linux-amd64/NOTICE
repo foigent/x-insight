@@ -1,0 +1,5 @@
+Phase 1 compatibility source inputs
+
+66 exact original source/package inputs from repository ID1293678433, commit b9e5811cc53a5cb06614956e66a1c54756617f0a, are locked in source-manifest.json. Original private Git ancestry is not included or fabricated. The original builder recipe uses this source origin and recorded source timestamp, retaining actual builder platform metadata. Exact frozen legacy archive and manifest digests can be verified only on a real Linux amd64 builder with Go1.25.11.
+
+third-party-notices.json maps8 identified Go components to11 full retained license/patent texts at the repository root. The older Go1.25.11, x/text v0.29.0 and x/sync v0.17.0 versions are explicit; their text bytes were checked against the cached original-version sources. These notices accompany the compatibility source; the frozen legacy package bytes are not rewritten. The historical commit did not include a project LICENSE/NOTICE, and owner redistribution rights remain pending.

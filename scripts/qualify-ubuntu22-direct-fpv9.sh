@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ "$#" -eq 3 ] && [ "$1" = --check-old-inputs ]; then
+  exec python3 "$ROOT/scripts/check-fpv9-source.py" "$2" --binaries "$3" --allow-private-worktree
+fi
 
 # One exact, disposable FPV9 direct-run predecessor. This script is deliberately
 # not a generic unmanaged-install converter or a Target runbook.
@@ -23,7 +27,11 @@ for input in "$@"; do
 done
 test -f "$TARGET_ARTIFACT" && test -d "$TARGET_PAYLOAD" && test -f "$TRUST_STORE"
 test -d "$OLD_SOURCE/migrations" && test -x "$OLD_BIN_DIR/xinsight-server" && test -x "$OLD_BIN_DIR/xinsight-importer"
-test "$(git -C "$OLD_SOURCE" rev-parse HEAD)" = 8ee764accbda21f21b489e01a4ab7751571beed4
+if [ -f "$ROOT/compatibility/fpv9-linux-amd64/source-manifest.json" ]; then
+  python3 "$ROOT/scripts/check-fpv9-source.py" "$OLD_SOURCE" --binaries "$OLD_BIN_DIR" --allow-private-worktree
+else
+  test "$(git -C "$OLD_SOURCE" rev-parse HEAD)" = 8ee764accbda21f21b489e01a4ab7751571beed4
+fi
 test "$(sha256sum "$OLD_BIN_DIR/xinsight-server" | cut -d' ' -f1)" = 80573c95149f5b9827b06f264f8d70e436a29ea1d8e93ddb6f1f46a75f4866d7
 test "$(sha256sum "$OLD_BIN_DIR/xinsight-importer" | cut -d' ' -f1)" = c6b71ded9aa3fac35c8099aba222e13edb8772a77616f6ab3bb53094cbbcfda8
 test "$(python3 "$ROOT/scripts/release-qualification-identity.py" --matrix "$TARGET_PAYLOAD/release/compatibility-matrix.json" --field product_version)" = 0.2.0-dev.fpv11

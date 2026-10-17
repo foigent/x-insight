@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="xinsight-product-version" content="0.3.0-rc.13">
+  <meta name="xinsight-manual-version" content="0.3.0-rc.13/manual-r13">
+  <meta name="xinsight-manual-source-sha256" content="sha256:250ae54d8f1e383ae740604687eedfac4115bdd17b8508e6f1883d6c637af365">
+  <title>X-Insight 0.3.0-rc.13 简体中文产品手册</title>
+  <link rel="icon" href="manual-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <a class="skip-link" href="#manual-content">跳到手册正文</a>
+  <header class="manual-header">
+    <p class="eyebrow">X-Insight · release-matched offline manual</p>
+    <h1>简体中文产品手册</h1>
+    <p>产品版本 <strong>0.3.0-rc.13</strong> · 手册版本 <strong>0.3.0-rc.13/manual-r13</strong></p>
+    <p class="boundary">内部单部署租户 · loopback-only · metadata-only · no raw · 尚非 Production verified</p>
+    <a class="product-link" href="/executions">返回执行调查</a>
+  </header>
+  <div class="manual-layout">
+    <nav class="toc" aria-label="手册目录">
+      <strong>目录</strong>
+      <a href="#manual-start">手册使用说明</a>
+      <a href="#version-boundary">版本与支持边界</a>
+      <a href="#overview-terms">产品概览与术语</a>
+      <a href="#install-first-start">安装与首次启动</a>
+      <a href="#security-access">配置、安全与访问</a>
+      <a href="#upgrade-restore">升级、迁移、回滚与恢复</a>
+      <a href="#trial-exit">试用退出、保留与移交</a>
+      <a href="#investigation-workflow">执行调查工作流</a>
+      <a href="#provenance-gaps">来源、溯源与采集缺口</a>
+      <a href="#cli-api-errors">CLI、API 与错误合同</a>
+      <a href="#diagnostics">维护、诊断与排障</a>
+      <a href="#compatibility">兼容矩阵与候选发布说明</a>
+    </nav>
+    <main id="manual-content">
+      <section class="chapter" aria-labelledby="manual-start">
+<h2 id="manual-start">手册使用说明</h2>
+<p>本手册只适用于与其一同签名发布的 X-Insight <code>0.3.0-rc.13</code>，手册版本为 <code>0.3.0-rc.13/manual-r13</code>。先核对发布 manifest、二进制 <code>version --json</code>、 兼容矩阵和本页页脚中的版本；任一不一致都应停止安装或升级。</p>
+<blockquote>当前版本是内部、单部署租户的现场候选，不是公网、多租户或 Production verified 产品。</blockquote>
+<p>第一客户采用 <code>owner_supervised_trial</code>。你不需要理解或保管签名私钥：产品 owner 只确认版本和 现场窗口，Codex 负责从准确 GitHub <code>main</code>/CI 生成、核对、传输、安装和保存 receipt。客户不 能自行升级；第二客户或自助升级前会另行建立正式发布权威。</p>
+<p>管理员先阅读“版本与支持边界”“安装与首次启动”“配置、安全与访问”和 “升级、回滚与恢复”。调查操作员可从“执行调查工作流”开始。稳定协议名、 JSON 字段、CLI 参数和 error code 保留英文，以便与实际输出逐字对应。</p>
+<h3>三条操作原则</h3>
+<ul>
+<li>不把 fixture/synthetic 结果称作真实生产证明；批准的 sanitized metadata 也不等于 raw 数据。</li>
+<li>不从缺失事件推断未观察到的事实；证据不足时显示 <code>gap</code> 或 <code>unknown</code>。</li>
+<li>不用递归、通配符或批量删除处理试用数据、备份、receipt 或 evidence。</li>
+</ul>
+<h3>当前数据进入方式</h3>
+<p>当前生产意图的数据路径是独立 <code>xinsight-feed.service</code> 通过固定私有 HTTP endpoint 拉取 <code>unirouter.completed-execution.v1</code>。worker 默认不启用；只有写入当前 schema 23、配置私有 endpoint、用 target-local <code>xinsightctl feed-credential</code> 生成并原子激活 feed-only token、 绑定 importer credential，并完成受控 activation 后才可启动。raw token 不离开 X target； UniRouter 只登记严格 public verifier bundle。worker 按 at-least-once 逐项幂等提交，整页 成功后推进 durable cursor，不在 UniRouter 请求热路径上。fixture 与历史 sanitized snapshot sidecar 仍可用于明确的测试/调查，不是 live transport。</p>
+<p>第二轮或后续 campaign 不复用第一轮 delivery epoch。schema 22 的 root-only <code>xinsightctl connector-epoch</code> 在 worker inactive+disabled、Cursor=high-watermark 且无错误时， 先生成 SHA-256 绑定计划，再在同一数据库事务中归档旧 checkpoint epoch 并激活新 source instance/Cursor。可变交付状态仍不进入 M0 identity/hash 或 Event-linked provenance； epoch 激活也不会自动启动 Feed。</p>
+<p>rc.11 还提供受约束的离线 <code>unirouter import-campaign-package</code> 路径，用于已经预授权、 content-addressed 的 Source-evidence package。它先验证准确的 X 签名发布 manifest、运行中 importer 字节、产品 scope/verification receipt、Neutral N1 授权、purpose-separated Source trust 和不可变 producer package，之后才加载 importer 数据库绑定。该路径没有 endpoint、worker、 Cursor、Checkpoint 或 credential 输入，也不会把带 <code>runtime_close_marker_unavailable</code> 的 partial member 声称为 complete。</p>
+<p>rc.12 引入且当前版本保留 <code>xinsight-connector-controller.service</code>：UniRouter 继续调用公开 HTTPS redeem/poll/result API，Web 只在 result durable commit 后通过固定 root:xinsight Unix socket 发送 typed wake。controller 使用独立 admin DSN credential，并在 Web 之前启动；它不接受任意 path、unit、SQL、shell、URL 或 DSN。worker 仍只在 phase-3 active authority 的 fresh readback 后最后启动。</p>
+<p>rc.12 引入且当前版本保留第二个独立、缺省 dormant 的 <code>xinsight-litellm-feed.service</code>，从准确私有 HTTPS <code>/spend/logs/v2</code> 读取达到 start-time eligibility fence 的 LiteLLM spend-log metadata；这不声明 row <code>endTime</code> terminal finality。它使用独立六字段非 secret config、 独立的非管理员 team observer API key（团队允许 <code>/spend/logs</code>，key 只允许 <code>/spend/logs/v2</code>）、独立 product registry identity 和独立 durable checkpoint，不修改 completed-execution worker 或 Read API。首次启用、启停、永久错误恢复、key rotation 和 rc.11 rollback 的准确步骤见“配置、安全与访问”；没有 Target/External 证明时 不能把 Local/CI 实现称为已联调或 Production。</p>
+<h3>当前访问方式</h3>
+<p>rc.13 新增、当前版本保留 X-Insight 自有的本地账户、内存 Session、RBAC 与最小化审计。所有调查 UI/API 必须先建立产品 Session；<code>investigator</code> 可读 Evidence，<code>operator</code> 还可查看和撤销 Session。 账户只由 root 通过 systemd credential 离线配置，产品不提供 Web 建号、改密码或改角色。</p>
+<p>Session cookie 固定为 <code>__Host-xinsight_session</code>，带 <code>Secure</code>、<code>HttpOnly</code>、 <code>SameSite=Strict</code> 和 <code>Path=/</code>，无 <code>Domain</code>；状态变更还要求同源 HTTPS 与 Session-bound CSRF。当前版本支持一个明确 opt-in 的同机 loopback TLS terminator 合同：固定 <code>XINSIGHT_EXTERNAL_ORIGIN</code>，只信任来自 loopback 的准确 forwarded proto/host，并继续让 应用只监听 <code>127.0.0.1:8080</code>。Target 登录仍必须逐次证明证书、Host/Origin、Secure cookie、 匿名 303/401、authenticated readback 与公网只开放 80/443；HTTP SSH tunnel、代理自身登录页 或 loopback HTTP 都不是 Target 登录证明。</p>
+<h3>当前调查工作台</h3>
+<p>schema 16–20 的 Case、Finding、Evidence/Gap citation、sealed Evidence Pack、Saved View、 来源声明的 Session、Compare、Feedback、Alert-to-Case、版本维度、Gap resolution 和 Known/Unknown Discovery 都是产品本地调查对象。它们引用 M0 Evidence 的稳定 ID/hash，不会 改写来源事实；Discovery 输出始终是带 evidence refs、limitations 和 abstention 的假设，不会 自动执行策略或关闭 Gap。</p>
+<p>当前调查界面按“运行态势—调查—分析—信任与访问”组织。<code>/inbox</code> 的运行态势使用同一组固定 <code>as_of/from/to</code> 聚合 Alert、execution、Gap、四个独立覆盖口径和来源声明的 Runtime Path；不会从 Execution 搜索第一页制造全局趋势，也不复制 MaaS 控制台的运营指标。Alert 按 observed 窗口筛选并 读取当前状态，不声称重建历史状态；未关联 execution 的 Alert 不会借用其他 Trace。Connector 当前 trust/checkpoint 与固定 Evidence 统计分开显示，前者不进入事件 hash。</p>
+<p>Execution Story 首屏按“发起者—动作—经过系统—终点”展示来源可证明的路径；没有来源 identity 或 declared parent 时明确显示未知，不会用时间相邻补线。桌面因果图和小屏关系列表表达同一组 <code>edges[]</code>。完整覆盖、语义说明、Saved View 和 Finding 编辑采用渐进披露；记录了 Gap 或完整性未 闭合时仍默认展开。Connector 页面把来源契约、可变交付运行状态和 Checkpoint 摘要分开，后两者 不冒充 Evidence。</p>
+<p>产品仓已固定不可变 Foigent Protocol <code>v2.0.2</code> 用于共享 CI 与 source-neutral 合同验证。该 PATCH 使远程 composite Action 可在无 <code>.git</code>、无权威仓历史、 无产品侧私有仓凭据的 snapshot 中运行；Event/Connector Schema、vectors、reports、投影输出 和 M0 identity/hash 相对 <code>v2.0.1</code> 保持不变。现有 UniRouter/LiteLLM worker 仍使用各自已验证 的 v1 runtime binding。 OpenInference 已有 metadata-only bounded-offline 解析/投影、不可变 completed operational receipt 与离线导入命令。rc.5 只增加 exact root-owned expiring non-production authorization： 它绑定 target machine ID、release commit/version、bundle path/SHA、operation、producer、scope 和最多 10 条 record；没有授权会在 bundle、credential、数据库之前 fail closed。它不启用 production bootstrap、入站 OTLP listener、Feed、Cursor 或 Checkpoint。Investigation 新增 <code>Trace Journey</code> 只读投影，在不改变 M0 request/event/hash 的前提下，以 exact source/scope/trace 跨 execution 展示来源声明的父子 Span 路径。</p>
+<h3>需要保留的证据</h3>
+<p>每次安装、升级、回滚、恢复和现场调查都应保留：准确 release/commit、manifest 与 artifact SHA-256、bootstrap/trust-store SHA-256、GitHub workflow/CI、签名 key ID、 <code>xinsightctl</code> receipt、兼容性/监听检查、使用的数据 proof class，以及 Local、CI、Target、External integration、Production 各自状态。</p>
+</section>
+      <section class="chapter" aria-labelledby="version-boundary">
+<h2 id="version-boundary">版本与支持边界</h2>
+<h3>版本身份</h3>
+<div class="table-scroll"><table><thead><tr><th>项目</th><th>当前值</th></tr></thead><tbody><tr><td>产品版本</td><td><code>0.3.0-rc.13</code></td></tr><tr><td>手册版本</td><td><code>0.3.0-rc.13/manual-r13</code></td></tr><tr><td>数据库 schema</td><td><code>23</code></td></tr><tr><td>配置 schema</td><td><code>xinsight.config.v1</code></td></tr><tr><td>Investigation API</td><td><code>xinsight.investigation.v1</code></td></tr><tr><td>Access API</td><td><code>xinsight.access.v1</code></td></tr><tr><td>Evidence schema</td><td><code>m0.1</code></td></tr><tr><td>Import receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>、<code>xinsight.unirouter-campaign-package-import-receipt.v1</code></td></tr><tr><td>发布渠道</td><td><code>release_candidate</code></td></tr></tbody></table></div>
+<p>准确 commit、构建时间、Go 工具链和手册版本以每个二进制的 <code>version --json</code> 及签名 manifest 为准，不从文件名猜测。</p>
+<h3>唯一受支持现场形态</h3>
+<ul>
+<li>Ubuntu 22.04 LTS、Linux <code>amd64</code>/x86_64、systemd。</li>
+<li>同一私有主机上的独立 PostgreSQL 16 Compose，数据库仅监听 <code>127.0.0.1:5432</code>。</li>
+<li>PostgreSQL 数据根固定为 <code>/data/x-insight/postgres</code>，容器内 <code>PGDATA</code> 固定为</li>
+<p><code>/var/lib/postgresql/data</code>；不得把已有根目录当成新的 <code>pgdata/</code> 子目录重新初始化。</p>
+<li><code>xinsight-server</code> 由 systemd 管理，保持 reader-only 且仅监听 <code>127.0.0.1:8080</code>。</li>
+<li><code>xinsight-connector-controller.service</code> 以 root 运行，只从独立 admin DSN systemd credential</li>
+<p>读取数据库 authority，并在固定 <code>/run/x-insight/connector-controller.sock</code> 提供 <code>root:xinsight</code>、<code>0660</code> 的 typed wake/inspect 边界；Web 不获得 admin DSN、systemd、SQL、shell、 任意 path/unit/URL 能力。该服务必须在 <code>xinsight.service</code> 前启动。</p>
+<li>受管 installer 以 root-only <code>0600</code> generate-once 创建独立</li>
+<p><code>/etc/x-insight/xinsight-connector-id.env</code>；upgrade/rollback/re-upgrade 原字节保留同一 stable deployment ID。受支持的 root CLI 只在另一个 <code>/etc/x-insight/xinsight-connector.env</code> 写入规范 HTTPS UniRouter install origin，不能改写 identity。只有 target 与独立 TLS 配置中的 X-Insight external origin 同时有效时，Connector invitation 才启用；仅有 ID 或 ID+TLS 均保持 disabled。</p>
+<li><code>xinsight-server</code> 还必须读取独立的 root-provisioned</li>
+<p><code>/etc/x-insight/access-accounts.json</code> systemd credential；它只含严格 <code>xinsight.local-accounts.v1</code>、稳定 subject、规范化 username、角色、disabled 状态和 Argon2id hash，不含明文密码。</p>
+<li>独立 <code>xinsight-feed.service</code> 使用 importer role，从一个固定的 UniRouter 私有</li>
+<p>completed-execution endpoint 拉取 metadata；它不开放入站 listener，也不复用 server role。</p>
+<li>feed token 由 X-Insight target 本地生成；UniRouter 只登记 Frozen Registration Bundle V1</li>
+<p>的 prefix 与 verifier，不接收 raw token。credential prepare/activate/rotation 只能由 root <code>xinsightctl feed-credential</code> 生命周期完成。</p>
+<li>新联调 campaign 不得手工删除或覆盖旧 Cursor。root 只能在 worker 已存在、inactive、disabled，</li>
+<p>且数据库状态为无错误的 Cursor=high-watermark 边界时使用 <code>xinsightctl connector-epoch</code>；旧 epoch 完整归档且不可变，新 epoch 原子激活后仍不会自动启用或启动 worker。</p>
+<li>独立 <code>xinsight-litellm-feed.service</code> 使用同一 importer role、独立 LiteLLM API key 和独立</li>
+<p>source/adapter/cursor identity，从准确私有 HTTPS <code>/spend/logs/v2</code> 拉取达到 start-time eligibility fence 的 metadata；这不是 row <code>endTime</code> terminal finality 声明。unit 缺省 dormant，不与 completed-execution worker 共用 config、credential 或 checkpoint，也不打包 LiteLLM source infrastructure。</p>
+<li>Investigation UI/API 由 X-Insight 本身的 Session/RBAC 保护；<code>investigator</code> 只有</li>
+<p><code>evidence.read</code>，<code>operator</code> 另有 Session 列表与撤销权限。Web 服务只获得 reader 与受限 workspace 数据库角色；workspace 只能写产品本地调查记录，不能修改 Evidence、Connector 状态或 migration ledger。Web 服务没有 importer、admin、账户管理或运行时控制权限。</p>
+<li>认证状态变更只接受同源 HTTPS。当前版本支持 direct TLS，或显式启用的同机 loopback TLS</li>
+<p>terminator：<code>XINSIGHT_TRUSTED_TLS_PROXY_MODE=loopback</code> 与唯一 <code>XINSIGHT_EXTERNAL_ORIGIN=https://HOST_OR_IP</code> 必须同时存在；代理必须覆盖并固定 <code>X-Forwarded-Proto</code>/<code>X-Forwarded-Host</code>，应用继续只监听 loopback。HTTP tunnel、代理登录页 或未固定 origin 的 forwarded header 不能冒充产品认证证明。</p>
+<li>不是完全 air-gapped：发布包、信任根和已固定 PostgreSQL image 可经批准的私有路径传入。</li>
+<li>只使用 fixture/synthetic、严格 live contract metadata 或获得批准的历史 sanitized</li>
+<p>metadata；不保存 raw prompt/response。</p>
+<li>第一客户为 <code>owner_supervised_trial</code>：产品 owner 与 Codex 执行所有安装/升级；一次性签名私钥不交付、不保留，客户不能自助升级。这不是持久商业发行权威。</li>
+</ul>
+<p>其他 Linux、ARM、外部 PostgreSQL、Kubernetes、HA/DR 或完整 air-gap 不能由上述结果推导， 需要独立资格验证。</p>
+<h3>状态词不能互换</h3>
+<div class="table-scroll"><table><thead><tr><th>状态</th><th>只证明什么</th></tr></thead><tbody><tr><td>Local</td><td>当前开发工作区内的测试或演练通过</td></tr><tr><td>CI</td><td>GitHub CI 的冻结 runner、工具链和服务矩阵通过</td></tr><tr><td>Target</td><td>指定非生产现场主机上的准确 artifact 和路径通过</td></tr><tr><td>External integration</td><td>与准确外部组件和 versioned contract 的联调通过</td></tr><tr><td>Production</td><td>生产边界、负载、安全、运行和恢复要求通过</td></tr></tbody></table></div>
+<p>本候选的 Target、External integration 和 Production 状态以随版本发布说明及现场 receipt 为准。没有记录就是未验证，不能以 Local/CI 替代。</p>
+<h3>明确不支持</h3>
+<ul>
+<li>X-Insight 应用或 PostgreSQL 直接公网监听、多租户 SaaS、Production verified、零停机或</li>
+<p>自动跨大版本 PostgreSQL 升级。经批准的同机 HTTPS terminator 只能代理 reader-only 产品 UI/API，不能代理数据库、importer、feed、admin 或主机控制面。</p>
+<li>New API、one-api、policy simulation、通用 durable import jobs、public collectors、第三方</li>
+<p>代码插件运行时。当前版本保留 completed-execution、LiteLLM spend-log 与 UniRouter Execution Evidence V2 三个已验证运行时注册；OpenInference 只允许 root-owned、短时、绑定 exact target/build/bundle/operation 的非生产 bounded-offline metadata 导入。没有该 manifest、 任一绑定漂移或任何 listener/feed/Cursor/Checkpoint 扩权都 fail closed；它不是通用插件运行时。</p>
+<li>raw payload storage、自动 receipt transport、自动 exporter/outbox、durable deep link。</li>
+<li>pre-billing rejection、late revision、public POST collector/push、direct UniRouter DB、</li>
+<p>CDC、customer backfill，以及把 approval-manifest/artifact 当作 live transport。</p>
+<li>多 worker HA/leader election；V1 只支持一个受管 pull worker。</li>
+<li>从 UI 执行 root 权限安装或升级。</li>
+<li>OIDC/SSO、可信代理身份 assertion、X-IAM runtime、Web 创建账户/重置密码/改角色、</li>
+<p>persistent Session 或多节点 Session 共享。当前只保留未来 provider seam。</p>
+<li>第二客户、第三方安装或无人值守/自助升级；这些场景必须先决定持久 KMS/HSM、keyless 或 offline 发布权威。</li>
+</ul>
+</section>
+      <section class="chapter" aria-labelledby="overview-terms">
+<h2 id="overview-terms">产品概览与术语</h2>
+<p>X-Insight 是异步调查与证据解释平面。它从持久化 evidence events 派生 execution、timeline、 selected-node、source/provenance 和 capture-gap 视图；UI node 不是新的事实源，也不会回写 来源事实。</p>
+<h3>核心对象</h3>
+<div class="table-scroll"><table><thead><tr><th>术语</th><th>含义</th><th>不代表</th></tr></thead><tbody><tr><td>execution</td><td>由稳定相关标识聚合的一次执行视图</td><td>新生成的一份来源日志</td></tr><tr><td>evidence event</td><td>带来源、时间、字段组和 provenance 的规范化证据</td><td>对完整真实过程的保证</td></tr><tr><td>timeline</td><td>按规范化有效时间稳定排序的 evidence events</td><td>已证明的因果链</td></tr><tr><td>declared parent</td><td>来源声明的父事件关系</td><td>X-Insight 独立证明的因果关系</td></tr><tr><td>source</td><td>evidence 的来源系统与版本身份</td><td>预留字段已经是 adapter</td></tr><tr><td>provenance</td><td>字段如何获得或为何不可见</td><td>字段值必然正确</td></tr><tr><td>capture gap</td><td>已知缺失、不可获得、无权限或未采集的证据边界</td><td>对缺失内容的猜测</td></tr><tr><td>proof class</td><td><code>synthetic_fixture</code> 或批准证据类别</td><td>Production verified</td></tr><tr><td>freshness</td><td>source/import/search 水位和完整性状态</td><td>自动实时同步承诺</td></tr><tr><td>story</td><td>outcome-first 的确定性执行摘要</td><td>LLM 补写的原因或意图</td></tr><tr><td>journey summary</td><td>发起者、动作、来源声明系统路径与终点的四步摘要</td><td>对缺失身份或关系的猜测</td></tr><tr><td>causal DAG</td><td>只由来源声明 parent 构造的可导航图</td><td>把时间相邻节点推断为因果</td></tr><tr><td>case</td><td>调查员管理的本地 dossier</td><td>新的 Evidence 或对来源事实的改写</td></tr><tr><td>finding</td><td>带分类、状态和明确 Evidence/Gap citation 的调查陈述</td><td>自动成为已证实事实</td></tr><tr><td>evidence pack</td><td>Case 某个 sealed revision 的确定性 JSON/HTML 导出</td><td>raw source dump 或可变 live view</td></tr><tr><td>authoritative session</td><td>来源明确提供的 Session/Thread 及 execution link</td><td>按时间接近自动聚类的会话</td></tr><tr><td>discovery hypothesis</td><td>有 support score、Evidence refs、limitations/abstention 的候选模式</td><td>校准概率、策略结论或自动执行指令</td></tr><tr><td>connector trust view</td><td>分离展示来源契约、交付运行状态和 Checkpoint 摘要</td><td>把 cursor、retry 或 worker 状态写入 Evidence</td></tr></tbody></table></div>
+<h3>时间与因果</h3>
+<p><code>effective_at</code> 用于产品 timeline 的稳定顺序；<code>occurred_at</code>、<code>ingested_at</code> 和来源时间用于 解释采集过程。多个时间不一致时，UI 会标注，而不是改写来源。declared parent 未解析时， 仍保留声明和 gap，不把相邻事件画成已证实因果。</p>
+<h3>数据最小化</h3>
+<p>当前产品只面向 metadata。任何 request ID、actor、model、policy、usage、错误和来源引用都 必须先通过批准的 sanitized 规则。<code>metadata_only</code> 描述捕获模式，不保证每个字段都安全； custodian 仍需审查输入。</p>
+<h3>Known / Unknown 纪律</h3>
+<p>调查 UI 把声明分为直接观察、来源声明、确定性派生、假设与未知。Capture Gap 是可查询的一等 Evidence 边界；设置 resolution state 只记录调查进展，不删除 Gap，也不把未知变成已知。 Compare 中 <code>Missing</code>、<code>Partial</code> 与数值 <code>0</code> 不可互换。Discovery 证据不足时必须 abstain，不能 为了填满图表生成结论。</p>
+<h3>产品本地对象与不可变 Evidence</h3>
+<p>Case、Finding、Annotation、Saved View、service identity、Feedback、Alert link 和 Gap resolution 存在于产品本地 Workspace/分析层。Evidence citation 同时保存稳定 ID、hash/source ref snapshot 与 relation；Finding 可以分别关联 supports、contradicts、context 或 limits 的 Evidence/Gap。sealed Case 固定 revision、digest 与 pack bytes，之后不能静默编辑。</p>
+</section>
+      <section class="chapter" aria-labelledby="install-first-start">
+<h2 id="install-first-start">安装与首次启动</h2>
+<p>本章描述受控现场候选的单机安装，不是面向未知环境的一键安装器。安装由 Codex 与产品 owner 执行；需要主机、访问或策略事实时向客户 IT 提出明确要求。</p>
+<blockquote>第一客户采用 <code>owner_supervised_trial</code>：产品 owner 不创建、不保存、也不输入签名私钥。</blockquote>
+<blockquote>Codex 从准确 GitHub <code>foigent/x-insight</code> 的 <code>main</code>/CI 发布记录取得并核对安装包，客户不能自行升级。</blockquote>
+<h3>安装前客户条件</h3>
+<ul>
+<li>一台 Ubuntu 22.04 x86_64 私有主机，root/sudo、systemd、<code>ss</code>、Docker Engine 与 Compose plugin。</li>
+<li>已通过批准私有路径提供准确的 owner-supervised delivery 和 pinned PostgreSQL 16 image。</li>
+<li>PostgreSQL 16 client 的 <code>pg_dump</code>、<code>pg_restore</code>、<code>createdb</code> 可用且 major 为 16。</li>
+<li>X-Insight 应用和 PostgreSQL 不开放公网监听；如需现场公网登录，只允许经批准的同机 HTTPS</li>
+<p>terminator 暴露 80/443，并固定唯一 external origin。</p>
+<li>已确定 trial data custodian、sanitized 数据范围、七天退出保留和现场时间窗。</li>
+</ul>
+<h3>第一客户的信任引导</h3>
+<p>你不需要生成密钥、保管 U 盘或执行签名命令。Codex 在 GitHub 手动发布流程中完成以下工作：</p>
+<ol>
+<li>只接受准确的当前 <code>main</code> commit 和同一 commit 已成功的 <code>CI</code> push run；</li>
+<li>自动生成一次性 Ed25519 key 并构建 signed-v2 release；</li>
+<li>在组装交付目录前删除私钥；</li>
+<li>只交付 artifact、bootstrap verifier、公开 trust store、build result、边界说明、<code>SHA256SUMS</code> 和 <code>owner-supervised-trial-release.json</code>；</li>
+<li>在本地和目标主机分别核对 commit、workflow run 与 SHA-256。</li>
+</ol>
+<p>这套公开 trust store 只证明本次受监督交付，不会授权未来版本。第二客户、第三方安装或无人值守/ 自助升级前，必须另行建立持久 KMS/HSM、keyless 或 offline 发布权威。</p>
+<p>交付下载后先核对严格文件集与 checksums。下面命令由 Codex 执行，产品 owner 只确认目标版本和 现场窗口：</p>
+<pre><code>sha256sum --check SHA256SUMS
+chmod 0755 xinsight-release-linux-amd64-COMMIT
+sudo install -o root -g root -m 0644 trusted-release-keys.json /etc/x-insight/trusted-release-keys.json</code></pre>
+<p><code>owner-supervised-trial-release.json</code> 中的 artifact、bootstrap 和 trust-store SHA-256 必须与准确 GitHub workflow run 记录以及目标主机计算结果一致。任一不一致都停止安装。私钥文件不在允许的 七文件 delivery 中；发现额外文件也停止。<code>xinsightctl</code> 不单独引入，而是从已验签 release payload 中获得。</p>
+<h3>验签并解出现场 payload</h3>
+<p>先用已核对 hash 的 bootstrap 工具做只读验签，再解到一个尚不存在的绝对目录；<code>extract</code> 拒绝覆盖已有 路径，并在验签失败时不解包：</p>
+<pre><code>xinsight-release version --json
+xinsight-release verify --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit COMMIT --expected-version 0.3.0-rc.13
+xinsight-release extract --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/xinsight-0.3.0-rc.13-COMMIT --expected-commit COMMIT --expected-version 0.3.0-rc.13</code></pre>
+<p>随后核对 staging 内 <code>bin/xinsightctl version --json</code> 与 manifest 完全一致。后续模板和安装命令 都只使用这个已验证 staging，不从其他 archive 或工作区复制。</p>
+<h3>准备服务账号与 PostgreSQL</h3>
+<p>创建无登录的 <code>xinsight</code> 系统账号。把发布包内经过验证的 <code>postgres.compose.yml</code> 和 <code>postgres.env.example</code> 作为模板放到 <code>/etc/x-insight</code>。<code>postgres.env</code> 必须为 root-only， 将所有 <code>REPLACE_WITH_FIELD_SECRET</code> 替换为现场生成的唯一强密码。</p>
+<pre><code>sudo useradd --system --home /var/lib/x-insight --shell /usr/sbin/nologin xinsight
+sudo install -d -m 0755 /etc/x-insight /var/lib/x-insight /data/x-insight
+sudo install -d -m 0700 /etc/x-insight/database/sets/initial
+sudo install -d -m 0700 /data/x-insight/postgres
+POSTGRES_IMAGE='postgres:16.14-alpine3.24@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777'
+sudo docker image inspect &quot;$POSTGRES_IMAGE&quot; &gt;/dev/null
+POSTGRES_UID=&quot;$(sudo docker run --rm --entrypoint id &quot;$POSTGRES_IMAGE&quot; -u postgres)&quot;
+POSTGRES_GID=&quot;$(sudo docker run --rm --entrypoint id &quot;$POSTGRES_IMAGE&quot; -g postgres)&quot;
+if ! [[ &quot;$POSTGRES_UID&quot; =~ ^[1-9][0-9]*$ ]] || ! [[ &quot;$POSTGRES_GID&quot; =~ ^[1-9][0-9]*$ ]]; then
+  echo '固定 PostgreSQL image 未返回有效的 postgres UID/GID' &gt;&amp;2
+  exit 1
+fi
+sudo chown -- &quot;$POSTGRES_UID:$POSTGRES_GID&quot; /data/x-insight/postgres
+sudo docker compose -f /etc/x-insight/postgres.compose.yml config
+sudo docker compose -f /etc/x-insight/postgres.compose.yml up -d</code></pre>
+<p>如果目录已存在，不重复创建或覆盖；先核对 owner、mode 和内容。PostgreSQL bind mount 的 owner 必须与固定 image 内的 <code>postgres</code> UID/GID 一致，不能凭其他 tag 的 UID 猜测，也不能 使用递归 <code>chown</code>。如果 <code>docker image inspect</code> 失败，先通过批准路径取得并核对上述完整 digest， 不要改用浮动 tag。</p>
+<p>在 root-only 编辑器中分别创建下列四个单行 DSN 文件，密码必须互不相同，主机必须是 <code>127.0.0.1</code>，数据库必须是同一个空的专用 <code>xinsight</code> 数据库：</p>
+<pre><code>/etc/x-insight/database/sets/initial/postgres-admin.dsn
+/etc/x-insight/database/sets/initial/postgres-reader.dsn
+/etc/x-insight/database/sets/initial/postgres-workspace.dsn
+/etc/x-insight/database/sets/initial/postgres-importer.dsn</code></pre>
+<p>对应用户固定为 <code>xinsight_admin</code>、<code>xinsight_reader</code>、<code>xinsight_workspace</code>、 <code>xinsight_importer</code>。将四个文件设为 <code>0600</code>、目录设为 <code>0700</code>，再让 <code>/etc/x-insight/database/current</code> 成为指向该绝对目录的 符号链接。不要把 DSN 放进 shell history、systemd Environment 或产品日志。</p>
+<h3>准备 root-only 本地账户 credential</h3>
+<p>当前版本在任何 <code>install --check</code>、<code>adopt --check</code> 或 <code>upgrade --check</code> 前都要求准确 <code>/etc/x-insight/access-accounts.json</code>。它不是发布包内的默认账户文件，也不能由 Web 首次启动 向导生成。只使用已验签 staging 内的 CLI，在目标主机交互式生成稳定 subject 与 Argon2id hash：</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl access generate-subject
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl access hash-password</code></pre>
+<p><code>hash-password</code> 必须在交互 TTY 隐藏读取两次密码；不要使用 pipe、stdin redirect、 environment、命令参数、command substitution、共享 clipboard 或 transcript。随后在同一 主机的 root-only 编辑流程中按“配置、安全与访问”的严格 JSON 形状创建文件，并核对它是 root:root、regular、single-link、非 symlink、<code>0600</code>。占位 hash、空账户集、缺失 <code>disabled</code> 或默认可登录账户都不允许。最后只输出非秘密计数做校验：</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl access validate \
+  --file /etc/x-insight/access-accounts.json</code></pre>
+<p>若此 credential 缺失、权限/identity 漂移或 JSON 不严格，preflight 必须在创建 operation、 备份、迁移、切换 release 或启停服务前停止。</p>
+<h3>只读检查与安装</h3>
+<p>使用已验证 staging 内的工具再次验证 artifact，不在 preflight 失败后继续：</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl version --json
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl verify --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl install --check --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl install --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz</code></pre>
+<p><code>install --check</code> 要求准确 Ubuntu/CPU、可信签名、空 PostgreSQL 16 数据库、四个独立角色 凭据、严格本地账户 credential、host tools、磁盘余量和无既存 managed/unmanaged 安装。 任何失败都应先解决明确检查，不能通过改名、忽略 digest 或放宽 listener 绕过。</p>
+<p>成功的首次 <code>install</code> 还会以 root-only <code>0600</code> 创建 <code>/etc/x-insight/xinsight-connector-id.env</code>，其中只有一次生成的 <code>XINSIGHT_CONNECTOR_DEPLOYMENT_ID=xid_...</code>。不要手工创建、复制或编辑该 identity 文件，也不要在 后续配置、升级、回滚或重升级时替换该值。此时 UniRouter target 尚未配置，Connector invitation 与 Feed worker 都保持 inactive；安装不会 enable/start worker，也不会发起 UniRouter 请求。</p>
+<h3>首次启动验证</h3>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl status
+sudo systemctl status xinsight-connector-controller.service --no-pager
+sudo systemctl status xinsight.service --no-pager
+curl --fail --silent --show-error http://127.0.0.1:8080/readyz
+curl --silent --show-error --max-redirs 0 --dump-header - --output /dev/null http://127.0.0.1:8080/executions
+curl --silent --show-error --max-redirs 0 --dump-header - http://127.0.0.1:8080/api/v1/executions?limit=1
+ss -ltn</code></pre>
+<p>只允许 <code>127.0.0.1:8080</code> 和 <code>127.0.0.1:5432</code>；<code>0.0.0.0</code>、<code>::</code> 或公网地址是阻断。 <code>xinsight-connector-controller.service</code> 必须先于 Web active，固定 Unix socket 必须为 <code>root:xinsight</code>、<code>0660</code>，且 controller 只加载 admin DSN credential。<code>readyz</code> 必须同时匹配产品、schema、PostgreSQL major、手册版本和 <code>representative_read: &quot;ok&quot;</code>。匿名 <code>/executions</code> 必须只返回 no-store <code>303 Location: /login</code>；匿名 Investigation API 必须返回 <code>401 authentication_required</code> 且不含 Evidence。安装 receipt 还必须有 <code>representative_read</code> 与 <code>anonymous_access_boundary</code> 两项 <code>pass</code>。</p>
+<p>这一步只证明 loopback readiness 和匿名访问门禁。若启用同机 TLS terminator，先从已验签 payload 的 <code>trusted-tls-proxy.env.example</code> 与 <code>xinsight-nginx-ip.conf.example</code> 生成两个 target-specific root-owned 文件，不修改模板本身：</p>
+<pre><code>/etc/x-insight/trusted-tls-proxy.env
+/etc/nginx/sites-available/x-insight</code></pre>
+<p>前者只能含 <code>XINSIGHT_TRUSTED_TLS_PROXY_MODE=loopback</code> 和唯一规范化 <code>XINSIGHT_EXTERNAL_ORIGIN=https://HOST_OR_IP</code>。Nginx 必须覆盖 forwarded proto/host、清空 通用 <code>Forwarded</code>、只代理到 <code>127.0.0.1:8080</code>，并把 HTTP 限定为 ACME challenge 后重定向 HTTPS。证书必须公开可信且自动续期；若使用 Let’s Encrypt IP certificate，它是约六天的 short-lived certificate，必须核验续期 timer 与 reload hook。公网安全组和 UFW 只允许 80/443，应用 8080、PostgreSQL 5432 和 SSH 不新增公网规则。</p>
+<p>只配置上述 TLS/external origin 不会启用 Connector，也不会阻止 Web 启动。完整 Connector target 配置另见“配置、安全与访问”：使用 root-only <code>connector-target-config set</code> 保留 installer 生成的 identity 文件，并在独立 <code>/etc/x-insight/xinsight-connector.env</code> 原子写入批准的 UniRouter HTTPS origin；不要直接编辑任一 managed Connector 文件。缺少 target 时系统明确保持 disabled。</p>
+<p>Target 验收必须从外部浏览器证明 <code>/login</code>、Secure/HttpOnly/SameSite cookie、HSTS、同源 login/logout、authenticated search/detail/Investigation/Chronology/Proof、匿名 303/401、 证书有效期和续期 dry-run。HTTP SSH tunnel、localhost HTTP、一般私网或代理自身登录页都不能 建立该证明。手册身份从已验签 payload 的 <code>/opt/x-insight/current/manual/zh-CN/index.html</code> 核对。</p>
+</section>
+      <section class="chapter" aria-labelledby="security-access">
+<h2 id="security-access">配置、安全与访问</h2>
+<h3>配置与 secret 边界</h3>
+<p><code>/etc/x-insight/xinsight.env</code> 只允许 <code>XINSIGHT_MIGRATIONS_DIR=/opt/x-insight/current/migrations</code>。 Reader、Workspace、Importer 和 Admin DSN 分别保存在 <code>/etc/x-insight/database/sets/...</code> 的 root-only 文件中；<code>current</code> 符号链接原子选择当前 credential set。systemd 只通过 <code>LoadCredential</code> 把 reader 与最小权限 workspace DSN 交给服务。Web 服务用 reader 查询 Evidence，用 workspace 写入 Case/Finding/Annotation/Gap resolution 等产品本地调查记录； workspace 角色不能修改 Evidence identity/hash、Connector 交付状态或迁移账本。Web 服务不得 获得 importer/admin DSN、feed key 或 Source key。</p>
+<h4>One-click Connector target 配置</h4>
+<p>受管安装会 generate-once 创建 <code>/etc/x-insight/xinsight-connector-id.env</code>，mode 为 <code>0600</code>，并在 install/upgrade/re-upgrade 中校验后原字节保留。该 installer-owned identity 文件只允许一个 key：</p>
+<pre><code>XINSIGHT_CONNECTOR_DEPLOYMENT_ID=xid_INSTALLER_GENERATED_22_BASE64URL_CHARS</code></pre>
+<p>受支持的 root CLI 只在另一个 root-only <code>/etc/x-insight/xinsight-connector.env</code> 原子写入一个 target key：</p>
+<pre><code>XINSIGHT_UNIROUTER_INSTALL_ORIGIN=https://APPROVED_UNIROUTER_ORIGIN</code></pre>
+<p>不要创建、复制或编辑 identity 文件。deployment ID 不是 bearer credential，但它是 installation/replay 绑定的稳定部署身份；不得按发布版本、服务重启或 Connector 重试轮换。 <code>deploy/xinsight-connector.env.example</code> 只说明 target 形状，不是待复制到 <code>/etc</code> 的配置。UniRouter origin 必须是规范化 HTTPS origin：无 userinfo、path、query 或 fragment。</p>
+<p>完整启用条件分布在三个 root-owned 配置面：</p>
+<ul>
+<li><code>/etc/x-insight/xinsight-connector-id.env</code> 只提供 installer 生成的稳定 deployment ID；</li>
+<li><code>/etc/x-insight/xinsight-connector.env</code> 只提供 CLI 设置的 UniRouter install origin；</li>
+<li><code>/etc/x-insight/trusted-tls-proxy.env</code> 提供准确</li>
+<p><code>XINSIGHT_EXTERNAL_ORIGIN=https://APPROVED_XINSIGHT_ORIGIN</code>，并按本章网络边界启用可信同机 TLS terminator。</p>
+</ul>
+<p><code>xinsight.service</code> 依次加载 TLS、identity 与 target 文件。UniRouter install origin 缺失时，即使 stable ID 已生成且已经配置 TLS/external origin，Connector 仍明确 disabled，Web 可正常启动且不会 产生 Connector 流量。一旦 target 文件存在，三项必须同时有效；缺失 ID、缺失 X-Insight external origin 或任一 origin 非规范 HTTPS 都会 fail closed 并阻止服务启动。配置文件本身不会 activate/enable/start Feed worker；worker 仍只能在独立三阶段 authority 的最后一步启动。</p>
+<p>受支持的应用顺序如下；先完成并核对本章后述的 trusted TLS 文件，再由准确 current release CLI 验证稳定 ID/owner/mode/key allowlist 与 TLS external origin，最后原子设置 target：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl connector-target-config validate
+sudo /opt/x-insight/current/bin/xinsightctl connector-target-config set \
+  --unirouter-origin https://APPROVED_UNIROUTER_ORIGIN
+sudo /opt/x-insight/current/bin/xinsightctl connector-target-config validate
+sudo systemctl restart xinsight.service</code></pre>
+<p>不要用编辑器、<code>sed</code>、重定向或复制模板改写 managed Connector 文件。<code>set</code> 只接受规范 HTTPS origin，只更新 target 文件，无法写入 identity key；写入使用完成 sync 的 staging 与原子 rename， 不会留下半文件覆盖当前 target。每次 Web 启动还会通过 root-only、clean-environment <code>ExecStartPre</code> 再次校验三个文件的 owner/mode/key、deployment ID 形状以及 full target 的 TLS 前件； 任一漂移都会在 Web 进程前失败。上述 restart 是独立现场授权动作；仅写配置仍不启动 worker 或发送 流量。</p>
+<h3>本地账户、Session 与 RBAC</h3>
+<p>当前版本的账户 authority 是一个 root-provisioned、只读的 systemd credential： <code>/etc/x-insight/access-accounts.json</code>。<code>xinsight.service</code> 只以 <code>LoadCredential=access-accounts.json:/etc/x-insight/access-accounts.json</code> 读取它；不允许 把账户 JSON、password 或 hash 放进 <code>xinsight.env</code>、其他 environment、argv、仓库、 receipt、日志或工单。</p>
+<p>文件必须是 root 或实际 service EUID 所有的 regular、single-link、非 symlink 文件， mode 只能是 <code>0400</code> 或 <code>0600</code>。大小上限 64 KiB、账户上限 100；服务启动时会在 open 前后复核 identity/metadata，并对 duplicate key、unknown field、trailing JSON、重复 subject、 重复规范化 username 或不合规 hash fail closed。没有默认账户；空账户集也会拒绝启动。</p>
+<p>严格形状如下；占位 hash 不能直接使用：</p>
+<pre><code>{
+  &quot;schema_version&quot;: &quot;xinsight.local-accounts.v1&quot;,
+  &quot;accounts&quot;: [
+    {
+      &quot;subject_id&quot;: &quot;xs_REPLACE_WITH_32_LOWER_HEX&quot;,
+      &quot;username&quot;: &quot;operator.one&quot;,
+      &quot;role&quot;: &quot;operator&quot;,
+      &quot;disabled&quot;: false,
+      &quot;password_hash&quot;: &quot;$argon2id$v=19$m=19456,t=2,p=1$REPLACE_WITH_SALT$REPLACE_WITH_HASH&quot;
+    }
+  ]
+}</code></pre>
+<p><code>subject_id</code> 必须匹配 <code>xs_[a-z0-9]{16,64}</code>，且以后不因 username 变化而复用给另一身份。 username 必须是已经 trim/lowercase 的 3..64 字符 ASCII <code>[a-z0-9._-]</code>；角色只允许 <code>investigator|operator|access_operator|platform_admin</code>。每个账户的五个字段都必须显式存在； <code>disabled</code> 必须是 JSON boolean，缺失、<code>null</code> 或字符串都会 fail closed，不能用隐含默认值。 密码 hash 只接受准确 Argon2id v19： memory <code>19456</code> KiB、iterations <code>2</code>、parallelism <code>1</code>、16-byte salt、32-byte key。</p>
+<p>离线 root workflow：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl access generate-subject
+sudo /opt/x-insight/current/bin/xinsightctl access hash-password
+sudo /opt/x-insight/current/bin/xinsightctl access validate \
+  --file /etc/x-insight/access-accounts.json</code></pre>
+<p><code>hash-password</code> 只在交互 TTY 隐藏读取两次 password；stdin/pipe、flag、environment 和 非交互输入都会拒绝。密码最少 12 bytes、最多 1024 bytes。命令只输出 Argon2id PHC string；该 hash 仍是敏感配置材料，只能在同一目标主机的 root-only 编辑流程中处理，不得进入 shell history、command substitution、共享 clipboard/transcript、截图、日志或聊天。 <code>validate</code> 只输出 schema 与角色/disabled 计数，不输出 username、subject 或 hash。</p>
+<p>配置变更只能由另行授权的 root operator 原子写入并复核 owner/mode/regular/nlink 后重启 服务；产品没有 Web 建号、password reset、改角色或写回文件能力。<code>disabled=true</code> 会阻止新 登录，但既有内存 Session 必须通过 restart 或 operator revoke 失效；因此禁用账户的受控 procedure 应同时处理既有 Session。</p>
+<p>产品 Session：</p>
+<ul>
+<li>cookie value 为 256-bit 随机 opaque token，服务端只以 SHA-256 digest 作 key；</li>
+<li>cookie 固定名 <code>__Host-xinsight_session</code>，<code>Secure</code>、<code>HttpOnly</code>、</li>
+<p><code>SameSite=Strict</code>、<code>Path=/</code>、无 <code>Domain</code>；</p>
+<li>每次成功登录都轮换 cookie 并撤销请求携带的旧 Session；</li>
+<li>idle timeout 30 分钟、absolute timeout 8 小时、每 subject 最多 5 个、单进程最多 500 个；</li>
+<li>Session 只在内存中，进程重启全部失效；logout 与 operator revoke 会立即撤销；</li>
+<li>所有认证状态变更要求单一同源 HTTPS <code>Origin</code>、同源 fetch、严格 JSON，以及</li>
+<p>Session-bound <code>X-CSRF-Token</code>。</p>
+</ul>
+<p>登录失败对 unknown username、错误 password 与 disabled account 使用同一响应。默认门禁为 每个规范化 username 在 15 分钟窗口内最多 5 次失败、全进程在 1 分钟窗口内最多 50 次失败； 另有独立的 Argon2id verification admission，默认最多 4 个并发。达到任一边界都在进入新的 password verification 前返回 <code>429 authentication_rate_limited</code>；这与调查 API 的 32 并发 上限相互独立，不能用扩大通用 API 容量替代 password verification 的内存边界。</p>
+<p>角色边界：</p>
+<div class="table-scroll"><table><thead><tr><th>角色</th><th>权限</th></tr></thead><tbody><tr><td><code>investigator</code></td><td><code>evidence.read</code>、<code>evidence.cite</code>、<code>investigation.write</code></td></tr><tr><td><code>operator</code></td><td><code>evidence.read</code>、<code>evidence.cite</code>、<code>investigation.write</code>、<code>access.sessions.read</code>、<code>access.sessions.revoke</code>、<code>connector.installations.manage</code></td></tr><tr><td><code>access_operator</code></td><td><code>evidence.read</code>、<code>evidence.cite</code>、<code>investigation.write</code>、<code>access.sessions.read</code>、<code>access.sessions.revoke</code></td></tr><tr><td><code>platform_admin</code></td><td><code>evidence.read</code>、<code>evidence.cite</code>、<code>investigation.write</code>、<code>access.sessions.read</code>、<code>access.sessions.revoke</code>、<code>service_identities.read</code>、<code>service_identities.revoke</code>、<code>connector.installations.manage</code></td></tr></tbody></table></div>
+<p>只有 <code>operator</code> 与 <code>platform_admin</code> 具有 <code>connector.installations.manage</code>；创建 Connector invitation 还要求同源 HTTPS 与 Session-bound CSRF mutation authorization。四个角色都没有 migration、 importer/feed writer、DB admin、Source credential、runtime 启停、Evidence 写/删或账户管理权限。Access audit 只记录 event/time、已知 stable subject、 role、permission、result 和 correlation；不得包含 raw unknown username、IP、password/hash、 Session/CSRF、DSN/key、request body 或 Evidence 内容。</p>
+<p><code>/etc/x-insight/xinsight-feed.env</code> 允许原有三个非 secret 值和一个可选的映射模式：</p>
+<pre><code>XINSIGHT_UNIROUTER_FEED_ENDPOINT=https://PRIVATE-UNIROUTER-HOST/api/v1/integrations/xinsight/completed-executions
+XINSIGHT_UNIROUTER_FEED_POLL_INTERVAL=5s
+XINSIGHT_UNIROUTER_FEED_ALLOW_PRIVATE_TUNNEL_HTTP=false
+XINSIGHT_UNIROUTER_FEED_MAPPING_MODE=legacy</code></pre>
+<p>映射模式缺省或设为 <code>legacy</code> 时只执行现有 direct DTO→M0 路径，且不会初始化共享 Reference projector。<code>shadow</code> 仍只由 legacy 路径写入 EvidenceStore，并在内存中执行 Reference Envelope→M0 精确比较；任何 mismatch、projection error 或比较遥测输出失败都 不得阻断 legacy 收敛和正常 cursor 推进，但 mismatch/error 会令当前 worker 进程的 promotion eligibility 保持 false，直到进程重启。<code>neutral_canary</code> 先比较两条路径，只有 精确一致时由 neutral 路径作为唯一 writer；mismatch/error 在任何 item 写入和 page checkpoint 之前 permanent fail closed。三种模式共用同一 HTTP feed、worker、 EvidenceStore、durable cursor/high-watermark 和 credential；切换模式不重置或重写任何状态。</p>
+<p><code>xinsight-feed.service</code> 通过 systemd credentials 单独读取 <code>postgres-importer.dsn</code> 与 <code>unirouter-feed.key</code>。service key 必须是 project-bound <code>service</code> key、purpose=<code>xinsight.feed.read</code>，并由 UniRouter 绑定非空 network/IP allowlist；不得交给 model-gateway route。不要把 key 写进 env 文件。</p>
+<h4>LiteLLM Reference Connector</h4>
+<p>LiteLLM 使用独立的 <code>/etc/x-insight/xinsight-litellm-feed.env</code>，其中准确只有六个非 secret 字段：</p>
+<pre><code>XINSIGHT_LITELLM_FEED_ENDPOINT=https://PRIVATE-LITELLM-HOST/spend/logs/v2
+XINSIGHT_LITELLM_FEED_POLL_INTERVAL=30s
+XINSIGHT_LITELLM_FEED_SOURCE_INSTANCE=STABLE-LITELLM-INSTANCE
+XINSIGHT_LITELLM_FEED_TENANT_REF=
+XINSIGHT_LITELLM_FEED_ORG_REF=CANONICAL-DECIMAL-ORG
+XINSIGHT_LITELLM_FEED_PROJECT_REF=CANONICAL-DECIMAL-PROJECT</code></pre>
+<ul>
+<li><code>ENDPOINT</code> 必须是准确 HTTPS URL、无 userinfo/query/fragment，且 path 只能是</li>
+<p><code>/spend/logs/v2</code>；worker 禁用代理与 redirect，并使用 system root 验证证书。</p>
+<li><code>POLL_INTERVAL</code> 为 <code>1s..1m</code>，缺省 <code>30s</code>；它不改变 60 秒 start-time eligibility</li>
+<p>delay。每轮 <code>F=floor_microsecond(T-60s)</code>，实际 HTTP inclusive <code>end_date</code> <code>Q=floor_second(F)</code>；<code>Q &lt; startTime &lt;= F</code> 延后到重叠轮次，row <code>endTime</code> 不参与查询 fence 或 checkpoint。</p>
+<li><code>SOURCE_INSTANCE</code> 是 1..128 字节的稳定 UTF-8 source instance，不能在同一 durable</li>
+<p>checkpoint 上更换。</p>
+<li><code>TENANT_REF</code> 可为空；非空时是 1..128 字节 UTF-8，并成为不可漂移的 scope binding。</li>
+<li><code>ORG_REF</code> 与 <code>PROJECT_REF</code> 必须是无前导零的正十进制字符串，并与唯一产品 registry/</li>
+<p>checkpoint scope 精确一致。</p>
+</ul>
+<p>被连接的 Source 必须准确固定为 LiteLLM <code>v1.93.0</code>、容器 digest <code>sha256:a1745e629abfb17d434426ff48b115f54f4f4c4a0f5af241de569e93c63c411e</code>， 以及官方 Source commit <code>052b5a2169d8d3082e1d66e69f200a72b0c1e274</code>，并在其受管配置中显式保留：</p>
+<pre><code>litellm_settings:
+  turn_off_message_logging: true
+  log_raw_request_response: false</code></pre>
+<p>这两个 Source 侧设置不能由 X sanitizer 替代。组件资格使用唯一 prompt/response sentinel， 在真实请求和真实 <code>/spend/logs/v2</code> 持久化完成后，分别扫描 LiteLLM Source DB、LiteLLM 容器日志、<code>/spend/logs/v2</code> 原始响应和 X Evidence；任一层出现 sentinel 都必须 fail closed， 不得启用 worker 或以“X 最终没有保存 raw 内容”降级放行。 同一四层扫描还必须把当次生成的目标 traffic key、observer key 和其他团队 traffic key 原始值作为 secret sentinels，逐一证明明文出现次数为零；断言不得打印这些 key。</p>
+<p>X 读取 Source 的身份必须是 LiteLLM 非管理员团队成员，并同时满足两个独立门禁：</p>
+<ul>
+<li>该成员所属团队准确包含 <code>team_member_permissions=[&quot;/spend/logs&quot;]</code>；</li>
+<li>该成员的独立 observer key 准确包含 <code>allowed_routes=[&quot;/spend/logs/v2&quot;]</code>。</li>
+</ul>
+<p>observer key 只能读取该成员获准团队的 spend logs，不能调用 <code>/v1/chat/completions</code> 或其他 LLM/management route。模型流量必须使用另一把 team-bound traffic key；LiteLLM master key 只能用于受控的团队/成员/key 初始化或清理，严禁作为 X credential、模型流量 key 或 <code>/spend/logs/v2</code> 日常读取 key。组件资格必须额外证明： observer 精确读取目标团队两条记录、LLM route 返回拒绝、第二个未授权团队的一条记录不会 出现在 observer 响应或 X Evidence 中。</p>
+<p>组件资格中的 observer LLM 负向调用只允许一次请求、零重试。正常合格结果是严格 JSON HTTP <code>403</code>。仅对上述准确 <code>v1.93.0</code> 与准确容器 digest，若这一个负向调用返回 <code>RemoteDisconnected</code>，可以记录为版本绑定的 <code>pinned fail-closed degraded error semantics</code>，但不得称为 HTTP <code>403</code>，也不得将本地 outcome marker 冒充 Source response。 此例外之后必须立即证明 LiteLLM 与确定性上游进程健康、同一 observer key 的 <code>/spend/logs/v2</code> 白名单读取成功、Source SpendLogs 仍为 <code>0</code>、上游 chat POST 计数仍为 <code>0</code>，否则组件资格失败。LiteLLM 版本、容器 digest、官方 Source commit 或负向测试形状 发生任何变化时，必须删除该例外并恢复严格 JSON HTTP <code>403</code> 资格证明；不得把这个 CI 资格例外扩展为生产 Connector transport 语义。</p>
+<p>observer API key 只能位于 <code>/etc/x-insight/litellm-feed.key</code>，由 <code>xinsight-litellm-feed.service</code> 通过独立 systemd credential <code>litellm-feed.key</code> 读取。源文件和 systemd credential copy 都必须是 root 或实际 service EUID 所有的 regular、<code>0400</code> 或 <code>0600</code>、<code>nlink=1</code> 文件；symlink、hard link、group/world 权限及其他 mode 都会 fail closed。key 不得进入上述六字段、argv、日志、receipt 或仓库。</p>
+<p>fresh install/upgrade 只安装 unit；缺省状态是 loaded、inactive、disabled，且不创建 env/key、 不发请求。第一次启用顺序固定为：</p>
+<ol>
+<li>在 root-only 编辑器中写入并逐字段核对六个非 secret 值；</li>
+<li>在 LiteLLM 侧创建/核对非管理员团队成员、<code>/spend/logs</code> 团队权限和仅允许</li>
+<p><code>/spend/logs/v2</code> 的独立 observer key；以 root 创建准确 key 文件，核对 owner/mode/regular/nlink，不输出内容，且明确拒绝 master/traffic key；</p>
+<li>核对 importer DSN credential、私有 HTTPS 路由、证书和 product registry；</li>
+<li>先执行 <code>systemctl start xinsight-litellm-feed.service</code>，不要求 enable；</li>
+<li>用 <code>systemctl status</code>、sanitized journal、durable Connector status 和 Read API 证明 activation</li>
+<p>forward、完整 page 后 checkpoint 推进及 evidence 可见。</p>
+</ol>
+<p>日常启停只使用：</p>
+<pre><code>sudo systemctl status xinsight-litellm-feed.service --no-pager
+sudo systemctl stop xinsight-litellm-feed.service
+sudo systemctl start xinsight-litellm-feed.service</code></pre>
+<p>retryable transport/408/429/5xx 使用 bounded backoff。schema、scope、cursor、content conflict、 认证等永久错误会让当前进程 fail closed；修正准确根因后必须 <code>systemctl restart xinsight-litellm-feed.service</code>，不能清空或手工推进 checkpoint。 LiteLLM key 不热加载：轮换时先停止或隔离 source，原子替换准确 key 文件，再 restart 并做 同一 scope/checkpoint 的只读证明。</p>
+<p>rc.12 应用回滚到 rc.11 时，生命周期会 stop 并移除 rc.11 不支持的 <code>xinsight-litellm-feed.service</code> unit，再 daemon-reload；它故意保留 <code>xinsight-litellm-feed.env</code>、<code>litellm-feed.key</code> 与数据库中的 durable checkpoint，且不会启动 任何替代 worker。重新升级到支持版本前不得手工运行 importer 或复用这些状态到其他 scope。</p>
+<h4>Receiver-generated feed credential</h4>
+<p>feed credential 必须在准确 X-Insight target 上由 root 本地生成。UniRouter 只接收 <code>prepare</code> 输出的 Frozen Registration Bundle V1，不接收 raw token：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl feed-credential prepare
+sudo /opt/x-insight/current/bin/xinsightctl feed-credential status</code></pre>
+<p><code>prepare</code> 的 stdout 是严格六字段 public JSON：<code>schema_version</code>、<code>token_format</code>、 <code>verifier_scheme</code>、<code>key_prefix</code>、<code>verifier_sha256</code>、<code>operation_id</code>。原始 token 是 32-byte <code>crypto/rand</code> 值编码成准确 <code>ur-xf1-</code> + 64 个小写十六进制字符，只写入 <code>/etc/x-insight/unirouter-feed.key.next</code>。该文件必须是 root:root <code>0600</code>、regular、 single-link、非 symlink；非 secret 可恢复状态位于 <code>/var/lib/x-insight/control/feed-credential-operation.json</code>。</p>
+<p>初次激活顺序固定为：X <code>prepare</code>；Uni 在 paused 状态登记 public bundle；X 使用 <code>.next</code> 中的 staged token 对准确私有 endpoint 做认证预检，并且只接受严格 <code>completed_execution_feed.connection_paused</code>、<code>retryable=true</code> 的 <code>503</code> envelope； 随后才使用 bundle 中的准确 operation/verifier 原子替换并 restart；Uni 再 promote 并 resume：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl feed-credential activate \
+  --operation-id PUBLIC_OPERATION_ID \
+  --verifier-sha256 PUBLIC_VERIFIER_SHA256</code></pre>
+<p><code>activate</code> 使用 <code>xinsight-feed.env</code> 中与 worker 相同的固定 endpoint、system-root TLS、 no-proxy/no-redirect 和 bounded timeout 语义，在 process memory 中使用 <code>.next</code> token。 <code>401</code>、<code>403</code>、<code>200</code>、非严格 envelope 或 transport failure 都必须在替换前失败，保留旧 live credential、<code>.next</code> 和 prepared state；systemd unit 已 active 也不能替代该证明。 预检通过后才原子替换 <code>/etc/x-insight/unirouter-feed.key</code> 并执行 <code>systemctl restart xinsight-feed.service</code>；它不把 secret 放进 argv/env，也不 enable unit。 如果进程在 replace/restart/state-finalize 之间中断，用同一 operation/verifier 重跑 <code>activate</code>，不得生成新 token。若 activation barrier 尚未跨越，可准确取消 pending：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl feed-credential abort \
+  --operation-id PUBLIC_OPERATION_ID \
+  --verifier-sha256 PUBLIC_VERIFIER_SHA256</code></pre>
+<p>rotation 时旧 live credential 必须保持 active；暂停 Uni source 后，用 status 中的准确 active operation/verifier 绑定 replacement prepare：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl feed-credential prepare \
+  --expected-active-operation-id CURRENT_PUBLIC_OPERATION_ID \
+  --expected-active-verifier-sha256 CURRENT_PUBLIC_VERIFIER_SHA256</code></pre>
+<p>随后仍按“Uni stage paused → X staged-token authenticated paused 503 → atomic activate/restart → Uni promote/revoke old/resume”完成。永久 401 会让 worker fail closed 并保持 durable cursor； 修复 credential 后的 restart 从同一 cursor 重试，不得 reset/backfill 数据库。</p>
+<p>不要把 DSN、密码、token 或 raw evidence 写入：</p>
+<ul>
+<li>release artifact、手册、receipt、install-state 或 operation journal；</li>
+<li>shell history、命令参数、systemd Environment、截图或工单正文；</li>
+<li>Git 仓库、共享 cooperation 目录或未经批准的诊断包。</li>
+</ul>
+<h3>网络与访问</h3>
+<p>X-Insight 进程和 PostgreSQL 都必须 loopback-only。当前版本的身份验证、Session 与上述 RBAC 仍由 X-Insight 自己执行；TLS terminator 不是身份 authority，也不能注入用户/角色 assertion。</p>
+<p>默认不信任任何 forwarded header。只有 root 创建严格 <code>/etc/x-insight/trusted-tls-proxy.env</code> 并重启服务后，才启用同机代理：</p>
+<pre><code>XINSIGHT_TRUSTED_TLS_PROXY_MODE=loopback
+XINSIGHT_EXTERNAL_ORIGIN=https://APPROVED_HOST_OR_IP</code></pre>
+<p>文件只能有这两个非 secret 值，必须 root:root regular、非 symlink、mode <code>0600</code>。origin 必须 是无 path/query/fragment/userinfo 的规范化 HTTPS origin。后端只接受 loopback remote、唯一 <code>X-Forwarded-Proto: https</code>、唯一且与 origin 相同的 <code>X-Forwarded-Host</code>、准确 Host/Origin、 same-origin fetch 和空通用 <code>Forwarded</code>。Nginx 必须覆盖而不是追加客户端 forwarded headers， 其他 server block/default host 必须拒绝。任一不匹配都按非 TLS fail closed。</p>
+<p>Target 还要验证 certificate/key ownership 与自动 renewal、Nginx request bounds、应用/DB listener 仍为 loopback、公共安全组和 UFW 仅 80/443、HTTP 只做 ACME/HTTPS redirect，以及 旧 release rollback。HTTP SSH tunnel、一般私网、代理自身 login page 或 localhost HTTP 都 不等于 X-Insight Secure-cookie Target 证明，也不得通过去掉 <code>Secure</code> 或放宽 same-origin/CSRF 来绕过。</p>
+<p>feed endpoint 默认必须是固定 HTTPS URL。只有部署证据能够证明固定 literal address 承载于已认证的 loopback/RFC1918/Tailscale/ULA 私有 tunnel 时，才可把 <code>XINSIGHT_UNIROUTER_FEED_ALLOW_PRIVATE_TUNNEL_HTTP</code> 明确设为 <code>true</code>；一般私网地址本身不 等于已认证 tunnel。worker 禁用环境代理与 redirect，并限制 connect/header/request timeout、response header、page body 与 page count。systemd 默认拒绝公网 egress；实际 endpoint 与 tunnel 属性仍须在受控部署中逐字核对。</p>
+<h3>数据准入</h3>
+<p>fixture/synthetic 用于功能证明，不含真实用户事实。internal-real development metadata 是 项目自有非生产环境中真实发生、但不含客户事实的执行元数据；customer sanitized metadata 则是客户批准后保留调查所需最小字段的真实来源元数据。后两类都必须明确字段范围、 custodian、用途、保留时间和退出动作，并使用独立 trial database。三类都不得包含 raw prompt/response。</p>
+<p>在导入前检查：</p>
+<ul>
+<li>source 与 proof class 可追溯；request/trace/actor/model/policy 标识已按批准规则处理；</li>
+<li>自由文本、header、body、tool argument、附件和 secret 已排除；</li>
+<li>文件权限和传入路径满足客户政策；导入 receipt 不复制原始 payload；</li>
+<li>历史 internal-real/customer sanitized artifact 与其 exact approval manifest 先共同通过</li>
+<p><code>unirouter preflight-sanitized</code>；live pull 则必须通过固定 DTO、payload SHA、source instance、opaque cursor/high-watermark 与 contracted-pull provenance，不得携带 artifact/ approval-manifest/exchange 字段；</p>
+<li>不因存在 <code>source_type</code> 或 schema 预留字段而声称已实现 adapter。</li>
+</ul>
+<h3>缓存与清理权限</h3>
+<p>X-Insight 当前没有用户权限缓存控制面。谁可启用、读取、清除身份/权限缓存由 X-IAM 或客户 IAM 的 authority 决定；X-Insight 只记录获准输入的结果/证据。任何未来 cache invalidation contract 必须版本化、可审计，不能让调查 UI 获得实时授权写权限。</p>
+</section>
+      <section class="chapter" aria-labelledby="upgrade-restore">
+<h2 id="upgrade-restore">升级、迁移、回滚与恢复</h2>
+<p>升级是 root-only、单节点、受监督维护窗口操作。产品 UI 不持有 systemd、release directory、 credential 或数据库备份权限。</p>
+<p>第一客户的升级仍由产品 owner 与 Codex 执行。产品 owner 不操作签名密钥；Codex 先核对准确 GitHub <code>main</code>/CI/workflow 和 delivery SHA-256，再运行下面的 preflight 与升级命令。客户不能 自行选择或安装一个未记录的包。</p>
+<h3>正常升级</h3>
+<p>先按“安装与首次启动”的信任引导，用已核对 hash 的 bootstrap 验签并把 next release 解到 尚不存在的 <code>/approved/staging/xinsight-NEXT-COMMIT</code>。跨版本升级必须由这个已验证目标 payload 内的控制器执行，先 preflight：</p>
+<pre><code>sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl version --json
+sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl upgrade --check --artifact /approved/path/NEXT-RELEASE.tar.gz
+sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl upgrade --artifact /approved/path/NEXT-RELEASE.tar.gz</code></pre>
+<p>preflight 验证签名/revocation、平台、准确支持的来源版本、当前 release 无漂移、schema/config 兼容、PG16 client、磁盘、备份空间、无其他 writer/session、loopback listener，以及当前 root-only <code>/etc/x-insight/access-accounts.json</code> 的严格 identity/mode/content。credential 必须先用目标 staging 的 <code>xinsightctl access validate</code> 校验；缺失或漂移要在 journal、备份、 迁移和服务变更前 fail closed。升级按顺序持久化 journal、禁用 importer、备份、 expand-first migration、切换 immutable symlink、启动并证明 readiness/代表性读取与匿名 认证门禁，最后写 sanitized receipt。</p>
+<p>不得用 <code>/opt/x-insight/current/bin/xinsightctl upgrade</code> 代替目标控制器。旧版本控制器只知道 自身发布时存在的 runtime file inventory，可能在数据库和应用升级成功后漏装 next release 新增的 systemd unit。目标控制器仍会严格验证当前与目标 artifact、支持路径和现有受管状态； 使用目标控制器不是跳过 preflight。</p>
+<p>若 feed worker 已存在，upgrade/rollback/restore 会先持久化其 present/active/enabled 状态并 stop/drain，再关闭 importer LOGIN；迁移与产品读取验证通过、importer LOGIN 恢复后， 只按原状态恢复受支持版本的 worker。active 与 enabled 独立保留；例如升级前 active+disabled，升级后仍为 active+disabled。fresh install 只安装 unit，不自动 enable/start。</p>
+<p>受管 Connector identity/config 与 release 文件分离：<code>/etc/x-insight/xinsight-connector-id.env</code> 只能 包含合法 stable deployment ID，<code>/etc/x-insight/xinsight-connector.env</code> 只能包含可选的规范 HTTPS UniRouter origin。<code>upgrade --check</code> 会在任何 journal、备份、迁移或服务动作前分别验证已存在的文件； 实际 upgrade 按原字节保留两者，不生成新 ID、不覆盖 target。来自尚无 identity 文件的受支持旧版本时， preflight 接受缺失状态，upgrade 在安装 runtime files 时只生成一次 deployment ID，仍保持 target 未配置、 worker inactive/disabled。生成使用完成 fsync 的 staging、no-clobber 发布与目录 sync；中断恢复只发布 完整文件，不会让空/半写最终路径阻塞 resume。应用回滚不删除 identity/target，随后 re-upgrade 继续复用 同一 ID 和 target。仅配置 TLS external origin 也是独立有效状态，不会被当成部分 Connector 配置。</p>
+<p>本版本只接受 manifest 中准确 allowlist 的 Phase 1 legacy artifact 或准确 <code>0.2.0-rc.3</code>/<code>0.2.0-rc.4</code>/<code>0.2.0-rc.5</code>/<code>0.2.0-rc.6</code>/<code>0.2.0-rc.7</code>/<code>0.2.0-rc.8</code>/<code>0.2.0-rc.9</code>/<code>0.2.0-rc.10</code>/<code>0.2.0-rc.11</code>/<code>0.2.0-rc.12</code>/<code>0.2.0-rc.13</code>/<code>0.2.0-rc.14</code>/<code>0.2.0-rc.15</code>、 <code>0.3.0-rc.2</code>、<code>0.3.0-rc.3</code>、<code>0.3.0-rc.4</code>、<code>0.3.0-rc.5</code>、<code>0.3.0-rc.6</code>、<code>0.3.0-rc.7</code>、<code>0.3.0-rc.8</code>、<code>0.3.0-rc.9</code>、<code>0.3.0-rc.10</code>、<code>0.3.0-rc.11</code> 或 <code>0.3.0-rc.12</code>；commit 一致但 artifact/manifest digest 不一致仍应拒绝。后续仍只允许 manifest 明确列出的来源版本，不支持任意跨版本跳跃。</p>
+<p><code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code> 与准确 Phase 1 legacy 来源合法使用 reader/importer/admin 三凭据布局；rc.3 首次引入的目标控制器必须兼容这个来源事实。 <code>upgrade --check</code>/<code>adopt --check</code> 只读验证三条 DSN、角色、端点、密码隔离和旧权限边界，并在 report 中明确显示 <code>workspace_bridge_required</code>，不得生成密码、创建角色或切换 symlink。</p>
+<p>实际 adopt/upgrade 在 durable journal 内生成独立 <code>xinsight_workspace</code> 密码，原样复制三条旧 DSN 到新的 root-only <code>0700</code> credential set，四个文件均为 <code>0600</code>。upgrade 必须先完成并验证 数据库备份，再创建/验证 Workspace 最小权限角色并原子切换 <code>/etc/x-insight/database/current</code>；旧 credential set 保持不变。角色扩展阶段开始后属于数据库 barrier，只允许 <code>recover</code>/<code>resume</code>，不允许 <code>abort</code> 伪装成未变更。存在但无效的 <code>postgres-workspace.dsn</code>、未知来源缺失该文件或任一继承 DSN 漂移都必须 fail closed。 <code>0.3.0-rc.2</code>–<code>0.3.0-rc.12</code> 来源已经是严格四凭据布局，不触发兼容桥。</p>
+<p>一次性签名试点跨版本升级时，preflight 必须同时验证当前/previous release 与 next release。 因此 Codex 会在目标主机上建立只含两次交付公开公钥的临时 transition trust store，逐一核对 key ID、状态、有效期和文件 SHA-256 后再原子安装到固定 trust path；私钥从不进入目标主机， 已有 key 的 revoked/expired 状态也不得改写。该双公钥 store 必须保留到应用回滚验证完成且旧 release 正式退出 rollback window，之后才能以一条明确文件替换操作收窄为当前公钥，并把前后 hash 写入清理证据。不能先覆盖为 next-only trust，否则升级无法证明 previous；也不能在仍需 回滚时提前移除 previous key。这是 User+Codex 的受监督内部步骤，不要求客户管理密钥。</p>
+<h3>Phase 1 首次受管接管</h3>
+<p>真实 Phase 1 目标可能仍使用旧超管 <code>xinsight</code>、<code>POSTGRES_PASSWORD_FILE</code>、 <code>/data/x-insight/postgres</code> 和两键 <code>xinsight.env</code>。这不是可以跳过的差异。首次接管只允许产品 owner 与 Codex 在维护窗口执行以下有序桥接：</p>
+<ol>
+<li>核对当前 symlink、legacy artifact/manifest、PostgreSQL 16.14 image digest、根</li>
+<p><code>PGDATA=/var/lib/postgresql/data</code>、数据源 <code>/data/x-insight/postgres</code> 和 loopback listener；</p>
+<li>若 migration path 指向旧 release 目录，只有在两键文件、当前 final Phase 1 identity 与</li>
+<p>readiness 都准确匹配时，才原子归一化为 <code>/opt/x-insight/current/migrations</code>；</p>
+<li>安装 major 16 的 <code>pg_dump</code>、<code>pg_restore</code>、<code>createdb</code>，先生成 owner-only custom-format</li>
+<p>backup，核对 SHA-256 并通过 <code>pg_restore --list</code>；</p>
+<li>在目标内生成互不相同的 <code>xinsight_admin</code>、<code>xinsight_reader</code>、<code>xinsight_importer</code> 密码，</li>
+<p>创建 root-only versioned credential set 与 <code>postgres.env</code>；不得把密码放入命令参数、日志、 Markdown 或共享目录；</p>
+<li>由现有受核实的 <code>xinsight</code> 超管只创建/验证新的 <code>xinsight_admin</code>；reader/importer 的创建、</li>
+<p>hardening、grants 与 writer gate 必须交给 <code>xinsightctl adopt</code> 的 durable journal；</p>
+<li>用已验签 <code>0.3.0-rc.13</code> staging 的 <code>xinsightctl access generate-subject|hash-password</code> 在交互</li>
+<p>root-only 流程中创建 <code>/etc/x-insight/access-accounts.json</code>，核对 regular/single-link/ root:root <code>0600</code> 并运行 <code>access validate</code>；不存在默认可登录账户；</p>
+<li>先 <code>adopt --check</code>，再 <code>adopt</code>；成功后服务应保持 stopped，紧接着执行 <code>upgrade --check</code></li>
+<p>与 <code>upgrade</code>，不能把已接管但未升级的状态当作可用服务状态。</p>
+</ol>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl access validate --file /etc/x-insight/access-accounts.json
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl adopt --check --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz --legacy-artifact /approved/path/xinsight-release-linux-amd64-b9e5811cc53a5cb06614956e66a1c54756617f0a.tar.gz
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl adopt --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz --legacy-artifact /approved/path/xinsight-release-linux-amd64-b9e5811cc53a5cb06614956e66a1c54756617f0a.tar.gz
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl upgrade --check --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl upgrade --artifact /approved/path/xinsight-v0.3.0-rc.13-linux-amd64-COMMIT.tar.gz</code></pre>
+<p>Phase 1 命名 Target 可能保留准确的 <code>/etc/systemd/system/xinsight.service.d/10-release-layout.conf</code>。本版本只接受项目已记录的 准确内容，并保留它作为历史配置；同时从签名 payload 安装 <code>99-xinsight-managed-launcher.conf</code>，使有效 <code>ExecStart</code> 始终指向 <code>/opt/x-insight/control/xinsight-launcher</code>。任何其他 active <code>.conf</code>、已知文件内容漂移或 非普通文件都会让 preflight 停止。工具还会把既有 <code>/opt/x-insight/control</code> 和 systemd drop-in 目录恢复为 <code>0755</code>，而不是只修复新建目录。升级、回滚和恢复 receipt 中的 <code>service_launcher</code> 必须为 <code>pass</code>；这保证回滚到 Phase 1 时由 launcher 把 systemd reader credential 转换成旧应用认识的进程环境，而不会把旧应用误判为“数据库未配置”。</p>
+<p>接管期间保留旧 <code>xinsight</code> 账号、旧 Compose 文件、secret file、备份和 legacy release，以支持 已声明的应用回滚窗口；不得在同一数据目录同时启动旧/新两个 PostgreSQL 容器。新 release 会 把与 <code>/data/x-insight/postgres</code> 和根 <code>PGDATA</code> 一致的受管 Compose 写入 <code>/etc/x-insight</code>，但 应用升级本身不重建正在运行的数据库容器。数据库容器切换或旧超管降权是回滚窗口后的独立维护 动作，不属于首次接管。</p>
+<h3>中断恢复</h3>
+<p>跨版本 operation 完成前，必须继续使用启动该 operation 的同一个已验证目标控制器；中断点 可能仍在切换 current symlink 之前，不能退回旧 current 控制器：</p>
+<pre><code>sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl status
+sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl recover
+sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl resume</code></pre>
+<p><code>status</code> 显示当前 managed identity 和 active operation；<code>recover</code> 只读判断 durable phase 与 允许动作；<code>resume</code> 从已记录边界幂等继续。operation 成功并且 <code>status</code> 不再有 active journal 后，日常状态与后续当前版本操作才切回 <code>/opt/x-insight/current/bin/xinsightctl</code>。 只有 <code>recover</code> 明确允许且尚未越过不可安全撤销 barrier 时，才可用同一目标控制器执行 <code>abort</code>：</p>
+<pre><code>sudo /approved/staging/xinsight-NEXT-COMMIT/bin/xinsightctl abort</code></pre>
+<p>不要手工删除 active-operation、改 symlink 或编辑 receipt 来伪造完成。</p>
+<h3>应用回滚</h3>
+<p>当数据库 schema 仍处于 prior application manifest 声明的兼容范围、配置兼容、previous release 无漂移且备份仍有效时，先检查再切回准确 previous binary：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl rollback --check --previous
+sudo /opt/x-insight/current/bin/xinsightctl rollback --previous --reason-code field_validation</code></pre>
+<p>允许 reason code 为 <code>failed_readiness</code>、<code>field_validation</code>、<code>operator_request</code>。应用回滚不执行 down migration；数据库保持 expand-first 后的 schema。若 prior binary 不声明兼容，应拒绝， 不能强制切换。</p>
+<p><code>0.3.0-rc.13</code> 当前 schema 为 23；既有应用只声明到 schema 20，当前单一 manifest rollback policy 不按每个来源版本放宽。因此 <code>0.3.0-rc.13</code> manifest 的 <code>application_rollback_compatible</code> 为 <code>false</code>，<code>rollback --check</code> 会 fail closed；需要回到 旧应用时必须使用下面的隔离恢复，不能因迁移看似“只有新增列”而扩大旧 manifest 的 <code>database_schema_min/max</code>。schema 16–23 包含 Workspace、Agent Access、分析扩展、 bounded-offline provenance 约束、immutable completed operational receipt、不可变 checkpoint epoch history、Connector installation 与三阶段 control operation；这些 additive 事实也不能扩大旧应用的 rollback 合同。</p>
+<h3>隔离数据库恢复</h3>
+<p>数据库损坏、迁移后的数据状态必须回到备份，或应用回滚不兼容时，恢复到一个新的 <code>xinsight_restore_*</code> 数据库，验证后再原子切换 credential set；不覆盖当前数据库：</p>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl restore --check --backup /var/backups/x-insight/EXACT.dump --backup-sha256 sha256:EXACT --new-database xinsight_restore_YYYYMMDD
+sudo /opt/x-insight/current/bin/xinsightctl restore --backup /var/backups/x-insight/EXACT.dump --backup-sha256 sha256:EXACT --new-database xinsight_restore_YYYYMMDD --reason-code database_recovery</code></pre>
+<p>允许 reason code 为 <code>database_recovery</code>、<code>field_validation</code>、<code>operator_request</code>。失败时工具必须 恢复原 credential link；原数据库和 backup 保留，直到 custodian 做明确处置。</p>
+<h3>PostgreSQL admin credential rotation</h3>
+<p><code>database-admin-credential</code> 是 root-only 的管理凭据生命周期，不是账号密码、Connector credential、 DATA_RESET 或数据库恢复工具。它只替换四角色 active database set 的 <code>xinsight_admin</code> 成员； <code>xinsight_reader</code>、<code>xinsight_workspace</code>、<code>xinsight_importer</code> 三个 DSN 必须逐字节继承。执行窗口要求主服务 正在运行且 PID 稳定、两个 Feed worker present/inactive/disabled、其他 <code>xinsight_admin</code> session 为零。 先取得不含 secret 的 preview：</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl database-admin-credential preview \
+  --authorization-ref decision://EXACT-AUTHORITY \
+  --reason-code local_tooling_exposure</code></pre>
+<p>preview 绑定准确 release/commit/schema/config/protocol、active set 和四成员 metadata/canonical digest、 PostgreSQL 16 与 admin role identity、34 表/migration/connector/checkpoint/account/config 指纹，以及精确 worker/PID 状态。它不会输出 DSN、密码或 verifier。批准后把以下严格 JSON 写入 root-owned、single-link、 regular、<code>0400</code> 或 <code>0600</code> 的绝对路径文件；不要把内容改成 argv 参数：</p>
+<pre><code>{
+  &quot;schema_version&quot;: &quot;xinsight.admin-credential-rotation-request.v1&quot;,
+  &quot;preview_sha256&quot;: &quot;sha256:EXACT-PREVIEW&quot;,
+  &quot;authorization_ref&quot;: &quot;decision://EXACT-AUTHORITY&quot;,
+  &quot;reason_code&quot;: &quot;local_tooling_exposure&quot;
+}</code></pre>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl database-admin-credential apply \
+  --request-file /root/xinsight-approved/admin-credential-rotation.json</code></pre>
+<p>successor 先在 managed sets 同父目录的唯一 <code>0700</code> staging 中完整写入并同步四个 <code>0600</code> 成员，验证三项 继承原字节、admin identity 不变且 secret 不复用后，才原子 rename 到 journal 的最终目录。最终目录一旦 存在只按不可变完成态验证，绝不原地修补。verifier 变更前可以 <code>xinsightctl abort</code>；变更后只能 <code>xinsightctl resume</code>，不得把 predecessor 重新激活。产品在受控 predecessor transaction 中紧邻更新前 再次确认其他 admin session 为零；更新后原子切换 active set，终止竞态/恢复残留 session，并证明 fresh successor 成功、fresh predecessor 得到预期 authentication rejection。成功后 predecessor set 只保留为 sealed/inactive，删除由另一个 exact-path retention 操作决定；本生命周期不删除任何文件或目录。</p>
+<p>会话静默只统计 PostgreSQL <code>backend_type=client backend</code> 的 <code>xinsight_admin</code>，不能把 logical replication launcher 等数据库后台进程算成管理员工作，也不能终止它们。preflight 只做有界只读观察，不会终止已知 并发工作；最终 verifier transaction 会再次原子核对其它 admin client session 为零。若 <code>ALTER ROLE</code> 已提交、 但进程在 journal 写入前失联，后续 <code>abort</code>/<code>resume</code> 必须重新探测 predecessor/successor 认证状态：一旦确认 successor 已成为权威，<code>abort</code> 必须拒绝并把操作持久化为 resume-only，<code>resume</code> 不得重复更新 verifier。</p>
+<p>receipt/journal 只有 alias、metadata 和 digest。<code>demo.operator</code> 文件/verifier、产品表、schema ledger、 service identity、Connector credential/config、Cursor/Checkpoint 与 protocol pin 必须不变；主服务不重启， 两个 Feed worker 不启动/enable，poll/traffic 为零。</p>
+<h3>第二轮联调 fresh-database clean baseline</h3>
+<p><code>clean-baseline</code> 不是通用清库工具，只用于联合裁决后的 full-product 第二轮联调基线。执行前必须 先让双方 traffic quiescent，并在 X-Insight 两个 Feed worker 均 present、inactive、disabled 时 生成 schema-current PostgreSQL 16 custom-format backup，记录绝对路径和 SHA-256，并单独通过 PostgreSQL 16 <code>pg_restore --list</code>。rc.7 upgrade 前的 schema-19 backup 或任何未在当前窗口生成的 旧 backup 都不能替代这一步。</p>
+<p>DATA_RESET 与 BOOTSTRAP 是两次独立授权、两份 preview 和两份 durable receipt。DATA_RESET 不得 接受 next source/cursor/epoch。先只读预览 fresh DB cutover 与 credential retirement：</p>
+<p>在生成 DATA_RESET preview 前，先用当前已验签 binary 读取 release expected contract，并对当前库 做 root-only、只读 introspection：</p>
+<pre><code>/opt/x-insight/current/bin/xinsightctl schema-contract expected
+sudo /opt/x-insight/current/bin/xinsightctl schema-contract inspect</code></pre>
+<p><code>valid=true</code> 才表示 named semantic contract、schema 23、PostgreSQL 16 与完整 migration-set 收敛。 <code>column_layout_matches=false</code> 只说明物理 ordinal 不同，不参与 authorization；任何 <code>missing_object</code>、<code>unexpected_object</code>、<code>semantic_property_drift</code> 或 release identity mismatch 仍会 给出脱敏对象身份与 digest，并阻止 preview。命令不输出 DDL、行数据或 credential。</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl clean-baseline data-reset-preview \
+  --rollback-backup /var/backups/x-insight/EXACT-SCHEMA23.dump \
+  --rollback-backup-sha256 sha256:EXACT \
+  --new-database xinsight_clean_YYYYMMDD</code></pre>
+<p>preview 必须逐项给出 34 个 public table 的 <code>current_rows/protected_rows/rows_to_zero</code> 与稳定 semantic digest，并证明 exact schema/FK/trigger/namespace/function/extension/type contract、一个 release source、两个 release adapter、旧 binding identity 的 raw-free 摘要与历史最大 epoch、账号唯一性， 以及 UniRouter active/staged/operation-state、LiteLLM credential/environment 五个文件的存在性元数据。 LiteLLM environment 属于旧 campaign source/org/project scope。任何 unknown object、catalog drift、 已存在目标数据库、worker 状态变化、backup/hash 漂移、账号不唯一或 credential 文件类型/owner/ mode/link 漂移都停止。准确 DATA_RESET baton 只允许：</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl clean-baseline data-reset-apply \
+  --rollback-backup /var/backups/x-insight/EXACT-SCHEMA23.dump \
+  --rollback-backup-sha256 sha256:EXACT \
+  --new-database xinsight_clean_YYYYMMDD \
+  --preview-sha256 sha256:EXACT-PREVIEW \
+  --reason-code second_integration_data_reset</code></pre>
+<p>DATA_RESET 不把 backup restore 到 live 新库，也不对 live 数据执行 TRUNCATE、CASCADE 或手工 history 删除。它只创建全新数据库并运行当前 release migrations；新库保留 schema ledger、release source/adapter catalog；所有旧 Evidence、Gap、Provenance、 Case、Alert、Analysis、Receipt、Quarantine、Connector state、service identity/token 与 product row 为零，且 <code>adapter_import_states</code>、epoch operation/history 必须严格为 <code>0/0/0</code>。它以 sealed digest 把 fresh rollback backup、旧 binding identity 摘要与历史最大 epoch 写入 receipt，不复制旧 history 到 live DB。文件访问面只保留 <code>demo.operator</code> 的 subject/username/role/disabled/password verifier 原字节，其他账号移除；主服务 PID 必须更换，使旧内存 Session 失效。</p>
+<p>在任何 live cutover 前，apply 会在 quiesced 旧库的独占维护边界中把所选 custom-format dump restore 到 operation 唯一命名的临时 <code>xinsight_restore_*</code> 数据库。PostgreSQL major、完整 migration ledger、 静态角色授权、schema contract 与 34 张表的逐行稳定 semantic digest 必须和已授权、停稳后重读的 旧库 preview 完全相同。临时 restore 数据库随后必须删除并证明不存在，backup SHA 与 <code>pg_restore --list</code> 必须再次通过，才能把 sealed isolated-restore proof 写入 durable DATA_RESET receipt。restore、摘要比较、临时库删除或 backup 再验证任一失败都 fail closed；不会生成或激活新 credential set 来完成这次临时验证。</p>
+<p>同一 operation 内还会把 UniRouter receiver active/staged/operation-state、LiteLLM credential 与 LiteLLM environment 五个 canonical 文件逐一移入 product-owned quarantine；receipt 前失败恢复精确 原状态，receipt 后逐个移除 quarantine 并证明五个 canonical path 均不存在。流程只读取文件元数据， 不读取或输出 credential/config 内容，也不生成 replacement。若出现 symlink、 多 hard-link、owner/mode/type 漂移或 canonical/quarantine 双写，fail closed。 任何不属于当前 operation 的旧 quarantine 文件也会被视为未清 credential state 并停止。</p>
+<p>LiteLLM systemd unit 本身保留且继续 inactive+disabled。当前 Paths 合同没有 OpenInference 等价持久 credential/config 文件，因此 DATA_RESET 不虚构新路径；OpenInference 产品数据由全局 fresh database 归零。只有 DATA_RESET journal completed、严格空库/账号/connector credential/config readback 仍与 durable receipt 相同后， 协调者才可单独签发 BOOTSTRAP baton。checkpoint request 必须使用 <code>xinsight.connector-checkpoint-epoch-prepare.v1</code>，绑定准确 source system、adapter manifest、cursor key、 worker unit、新 source instance、空 bootstrap Cursor/high-watermark 与 authorization reference；文件必须 absolute、root-owned、single-link、regular、<code>0400</code>/<code>0600</code>，raw Cursor 不进入 argv、日志或共享证据：</p>
+<pre><code>sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl clean-baseline checkpoint-bootstrap-preview \
+  --data-reset-operation-id EXACT-DATA-RESET-OPERATION \
+  --data-reset-receipt-sha256 sha256:EXACT-DATA-RESET-RECEIPT \
+  --checkpoint-request-file /root/xinsight-approved/second-integration-checkpoint.json
+
+sudo /approved/staging/xinsight-0.3.0-rc.13-COMMIT/bin/xinsightctl clean-baseline checkpoint-bootstrap-apply \
+  --data-reset-operation-id EXACT-DATA-RESET-OPERATION \
+  --data-reset-receipt-sha256 sha256:EXACT-DATA-RESET-RECEIPT \
+  --checkpoint-request-file /root/xinsight-approved/second-integration-checkpoint.json \
+  --preview-sha256 sha256:EXACT-BOOTSTRAP-PREVIEW \
+  --reason-code second_integration_checkpoint_bootstrap</code></pre>
+<p>BOOTSTRAP preview 输出 canonical checkpoint request SHA-256；该 digest 同时绑定 authorization reference 与完整 request 内容，apply 中 staged root-only request 必须逐字节得到同一 digest。</p>
+<p>BOOTSTRAP 从 sealed historical maximum 严格推导 <code>max+1</code>，拒绝 receipt 中出现过的 source/cursor identity，并只写入一个 inactive/idle、零 counter、无 epoch operation/history 的 state。它要求两个 worker 继续 inactive+disabled，五个 connector credential/config path 继续为空，不启动/enable/poll， 也不生成 credential/config。该 UniRouter-only BOOTSTRAP 不生成 LiteLLM replacement；新 receiver credential 仍由后续独立 credential prepare/register/activate authority 控制。</p>
+<p>receipt 前任何失败会删除 operation 的临时 restore 数据库，并恢复旧 database-set link、完整旧账号 文件、importer login 和主服务；新严格空库不删除，保留供取证且不得复用。此时旧库仍只是本次 cutover 的临时 rollback source。durable receipt 已写入后只允许 exact readback <code>resume</code>：再次证明 live link 只指向严格空库、retained dump 的 path/SHA/PG16 archive 与 sealed restore proof 未漂移， 并确认旧库没有 session 后精确 <code>DROP DATABASE</code> 旧库，再证明旧库与临时 restore 库都不存在且 dump 仍通过验证。缺少 dump 或 restore proof 时，必须在旧库删除前停止。之后才移除含其他账号的单文件 前驱备份与 connector quarantine；不允许 abort 已跨过 receipt 的 cutover。</p>
+<p>成功 completed 后，目标只保留这一个已验证 custom-format dump 作为 pre-reset rollback artifact； 不会同时保留 predecessor 数据库或隔离 restore 数据库。该流程不会创建/旋转任何 connector credential/config，不启动/enable worker，也不请求或生成 Feed/test traffic；这些必须由后续 BOOTSTRAP/TRAFFIC baton 分别授权。</p>
+<h3>决策表</h3>
+<div class="table-scroll"><table><thead><tr><th>情况</th><th>动作</th></tr></thead><tbody><tr><td>operation 中断，journal 完整</td><td><code>recover</code> 后按 allowed action <code>resume</code> 或有限 <code>abort</code></td></tr><tr><td>新 binary readiness 失败，prior application 仍兼容当前 schema</td><td>application rollback</td></tr><tr><td>数据需要回到备份，或 prior application 不兼容</td><td>restore-to-new-database</td></tr><tr><td>签名、digest、来源版本或当前文件漂移</td><td>停止；不迁移、不激活</td></tr><tr><td>PostgreSQL major 不是 16</td><td>本版本不自动升级；停止并另行规划</td></tr></tbody></table></div>
+</section>
+      <section class="chapter" aria-labelledby="trial-exit">
+<h2 id="trial-exit">试用退出、保留与移交</h2>
+<p>当前默认：专用 sanitized trial database 和相关备份保留到现场结束后七个自然日，然后由 custodian 明确选择移交或受控退役。X-Insight 不自动删除客户数据、artifact、backup、receipt 或 evidence。</p>
+<h3>现场结束清单</h3>
+<ul>
+<li>冻结准确 release/commit、artifact/manifest hash、key ID、兼容矩阵和手册版本。</li>
+<li>导出安装/升级/恢复 receipt、Target 监听/readiness 和调查任务结果。</li>
+<li>将 fixture 与批准 sanitized evidence 分开列出，记录 custodian、路径、数据库、备份和期限。</li>
+<li>明确继续保留、移交给客户，或退役；未决定时不删除。</li>
+<li>External integration、Production 和独立手册盲测未运行时保持 <code>Not run</code>。</li>
+</ul>
+<h3>受控退役规则</h3>
+<p>删除前先列出所有副本并核对每个准确路径、类型、owner、hash/数据库身份和保留约束。每次只 处理一个明确文件路径或一个明确数据库对象；禁止递归、通配符、批量删除和未经复核的脚本。 每次动作后立即写新的清理证据，不修改或回写历史 receipt/evidence。</p>
+<p>目录、PostgreSQL data directory、整个 backup tree 或多份 artifact 需要批量处置时，停止自动 操作，由客户 IT/用户按其变更流程手工完成。保留 receipts、hashes、sanitized evidence 和 persisted normalized evidence，除非 custodian 的明确决定逐项覆盖它们。</p>
+<h3>移交最小包</h3>
+<p>移交包只包含批准内容：版本/签名 receipt、兼容矩阵、操作 receipt、安全审查后的日志片段、 数据清单和保留决定。不得包含 private signing key、数据库密码、raw prompt/response、未批准 snapshot 或内部开发规划文档。</p>
+</section>
+      <section class="chapter" aria-labelledby="investigation-workflow">
+<h2 id="investigation-workflow">执行调查工作流</h2>
+<h3>登录与 Session</h3>
+<p>只从已批准的单一内部 HTTPS origin 打开 X-Insight。登录表单只接受管理员离线分配的 username/password；浏览器和服务端审计都不应显示密码、hash、Session cookie 或 CSRF token。 登录成功会建立新的产品 Session，并使同一浏览器提交的旧 Session 失效。</p>
+<p>Session 的 idle timeout 为 30 分钟、absolute timeout 为 8 小时；服务进程重启会使全部 Session 失效。结束调查时使用产品内“退出登录”，不要只关闭标签页。<code>investigator</code> 只能访问 Evidence；<code>operator</code> 可在“会话管理”查看最小化 Session metadata，并按非 secret <code>session_ref</code> 撤销 Session。该页面不是账户、密码、角色、数据库或 worker 管理界面。</p>
+<p>登录页若运行在 HTTP、跨 origin、证书/hostname 未验证的入口，必须停止；不要关闭浏览器 cookie 安全属性，也不要把 SSH HTTP tunnel 或代理登录页当作 X-Insight 产品登录。</p>
+<h3>导航与页面层级</h3>
+<p>桌面左侧导航按“运行态势”“调查”“分析”“信任与访问”“帮助”分组。中文名称描述用户任务， 次级英文名称对应稳定产品路由。窄屏使用页首“菜单”按钮打开抽屉；选择页面后抽屉自动关闭。 不要把当前登录角色、<code>仅元数据 · 不展示原文</code> 或“来源/导入/投影/因果”边界当成可关闭的装饰。</p>
+<p>“运行态势”不是 MaaS 指标副本。先固定时间与来源范围，再从开放 Alert、Evidence Gap、四个独立 覆盖口径和来源声明的 Runtime Path 下钻。execution/Gap/coverage 使用固定 Evidence 快照； Connector trust/checkpoint 和 Case/Saved View 是当前工作区状态。Alert 的 observed 时间受窗口约束， 但当前 state 不等于历史状态重建。没有关联 execution 时应进入 Discovery 或关联 Case，不得用另一 条 execution 的 Trace 补位。</p>
+<h3>数据准备</h3>
+<p>首次产品演示优先使用仓库 fixture。需要真实现场问题时，只使用客户批准的 sanitized metadata。UniRouter/LiteLLM pull workers 虽已作为独立 dormant service 打包，但没有当前 Target activation receipt 时不得启动；受控 sidecar import 仍须走下述 manifest/preflight。 OpenInference 只允许由产品 owner/Codex 在命名非生产目标执行 exact bounded-offline import。 每次必须有 root-owned、最多两小时、绑定 target/build/bundle/operation/scope 的授权 manifest； bundle 必须是 metadata-only 且不含 prompt/response attribute。没有该授权时，命令在 bundle、 credential 和数据库之前 fail closed。它不是 live collector，也不授权 Feed 或 Production。</p>
+<p>内部真实开发数据或客户批准的 sanitized metadata 在任何持久化前，必须先运行不写数据库的 限定预检：</p>
+<pre><code>/opt/x-insight/current/bin/xinsight-importer unirouter preflight-sanitized \
+  --snapshot /approved/path/sanitized-snapshot.json \
+  --approval-manifest /approved/path/approval-manifest.json \
+  --max-request-ids 20 \
+  --max-events 200</code></pre>
+<p>只有 <code>status=pass</code> 才能进入后续导入。预检会读取并计算真实 approval manifest 的 SHA-256， 核对 snapshot v2 中声明的 hash、source instance、批准 request/scenario、批次上限、每个 request 的 org-bound source row、单一 org、counts、artifact hash、source ref 与 payload policy，并对 明显的 email、phone、IP、URL、credential 和未批准自由文本输出不含 metadata key 或 artifact 字段原值的固定 finding path/code。JSON report 不保存输入路径；文件系统失败的 stderr 可能 包含 operator 提供的精确路径，只能留在私有执行日志。它是额外的 fail-closed 护栏，不等于 通用 DLP，也不能替代精确数据授权和私下逐字段复核。<code>source_event_hash</code> 仅检查为 producer-declared 64-hex；X-Insight 不把它表述成本地重算结果。</p>
+<pre><code>sudo env XINSIGHT_IMPORTER_POSTGRES_DSN_FILE=/etc/x-insight/database/current/postgres-importer.dsn \
+  /opt/x-insight/current/bin/xinsight-importer unirouter gate-a-check \
+  --snapshot /approved/path/sanitized-snapshot.json \
+  --approval-manifest /approved/path/approval-manifest.json \
+  --schema /opt/x-insight/current/schemas/m0/evidence-event.schema.json \
+  --receipt-schema /opt/x-insight/current/schemas/integration/import-receipt.schema.json \
+  --persist \
+  --receipt-output /approved/path/import-receipt.json</code></pre>
+<p>输入与 receipt 路径必须是逐一批准的明确路径。重复导入相同 snapshot 应保持幂等；失败或 quarantine 不能被描述成已持久化成功。<code>--receipt-output</code> 只属于 <code>gate-a-check</code>；该路径必须 尚不存在，工具拒绝覆盖既有 receipt。</p>
+<p>sanitized batch 的 <code>gate-a-check</code> 必须携带同一 manifest。工具会在同一进程先完成预检，再将 实际 import bytes 的 SHA-256 与预检 hash 比较；两次读取间发生任何 byte 变化都会在持久化前 停止。省略 manifest 的既有兼容路径不能用于本流程，也不能产生 internal-real 验证结论。 只有本次实际 manifest preflight 通过，持久化 provenance 才能标为 <code>operator_approved</code>；snapshot 自报非空 hash/exchange ID 不足以提升证明等级。</p>
+<h3>搜索 execution</h3>
+<p>在 <code>/executions</code> 使用 request ID、request ID prefix、source、outcome、has gaps 和时间范围。 默认窗口为服务端 <code>as_of</code> 向前 24 小时，最大跨度 31 天，每页最多 100。搜索结果显示 proof class、freshness、事件数和 gap 数；它们是固定 <code>as_of</code> 下的视图。</p>
+<p>Saved View 创建位于折叠的次级动作中，只保存筛选与呈现方式。结果在紧凑桌面或移动宽度会从表格 改为带字段标签的卡片，但 source、outcome、Evidence 状态、payload 和 Gap 语义不变；无需横向 拖动页面才能读取完整记录。<code>0 无已记录缺口</code> 是当前快照的中性陈述，不是来源完整性保证。</p>
+<p>如果没有结果：先核对时间范围、source 和 proof class，再核对 import receipt 与 readiness。 不要假设“无结果”表示 UniRouter 没有执行。</p>
+<h3>阅读 Story、DAG 与 Chronology</h3>
+<p>先读 outcome-first Story：谁/哪个系统发起、做了什么、来源明确声明经过哪些节点、在哪里结束， 以及哪些结论受 Gap 限制。再检查 causal DAG；边只能来自 API <code>edges[]</code> 与来源 parent 声明， unresolved parent/orphan 必须可见。Chronology 只回答时间顺序，不把相邻 node 画成因果。</p>
+<p>Story 中“发起者—动作—经过系统—终点”四步摘要只使用 Evidence identity、request identity 和 来源声明父子边。如果发起者、完整路径或终态关系未声明，对应步骤显示未知/未解析；不要把该提示 解释为系统故障。桌面 DAG 使用完整内容宽度，小屏使用等价的顺序关系列表，不会为了塞入 SVG 而缩小到不可读。两种呈现都选择同一个 Evidence node，并驱动同一详情面板。</p>
+<p>若来源提供同一 exact source/org/project/trace 的多个 Span，<code>Trace Journey</code> 会跨 M0 execution 显示来源声明路径。每个节点仍保留自己的 execution/event/hash；点击跨 execution 节点会进入它 自己的 fixed <code>as_of</code> Evidence。只有唯一可解析 <code>parent_span_id</code> 才连边；同 trace、时间接近或 相同模型都不足以证明因果；未解析节点之间显示断点而不是箭头，来源声明形成 cycle 时完整性 失败。<code>source_timeline_complete=false</code> 表示 bounded export 外仍可能有未知 Span，即使可见 parent 全部解析也不能写成完整业务链路。</p>
+<p>四个 completeness 轴分别是 Source、Import、Projection、Causal。任一为 partial/unknown 时， 不能用其他轴的 current 状态替代。freshness、Cursor、high-watermark、retry 与 ingestion time 属于运行状态，不进入 M0 hash 或 event-linked provenance。</p>
+<p>四轴完整且没有记录 Gap 时，“证据覆盖与完整性”默认折叠，只显示阶段计数和四轴结论；存在 Gap 或任一轴未闭合时默认展开。折叠不删除证据，也不扩大完整性声明。</p>
+<h3>打开 detail 与 timeline</h3>
+<p>选择 execution 后先看摘要：request/source/outcome、事件/gap 数、payload capture mode 和 freshness。timeline 按 <code>effective_at</code> 稳定排序；时间异常与 unresolved declared parent 单独标记。 相邻 node 不是自动因果。</p>
+<p>分页继续使用服务端返回的 opaque cursor 和同一个 <code>as_of</code>。cursor 过期时回到搜索重新建立 快照，不拼接或修改 cursor。</p>
+<h3>检查 selected node</h3>
+<p>选择一个 timeline node，依次核对：</p>
+<ol>
+<li>event type、stage、severity 和多个时间；</li>
+<li>correlation、identity、capability、decision、usage、outcome、payload policy；</li>
+<li>每个 field group 的 provenance 标签；</li>
+<li>source system/version、schema、source event/ref 和 hashes；</li>
+<li>declared parent 是否 resolved，以及是否存在对应 capture gap。</li>
+</ol>
+<p>UI 不显示 raw source excerpt。出现需要查看 raw 内容的场景，应退出当前产品范围并走客户批准 流程，不能临时扩大采集。</p>
+<p>Case 引用卡片默认显示缩短的技术引用；展开后才能查看并复制完整 event hash。缩短只改变视觉 层级，不改变 seal 输入、citation snapshot 或 Evidence identity。</p>
+<h3>写结论</h3>
+<p>调查记录至少写 execution ID、固定 <code>as_of</code>、source/proof class、关键 event IDs、provenance、 gap/freshness、观察事实和未知项。结论用“证据显示”“来源声明”“X-Insight 派生”“当前未知” 区分，不把未解析 parent 或缺失 node 写成已证实串谋、故障原因或策略绕过。</p>
+<h3>Case、Finding 与 Evidence Pack</h3>
+<p>把需要共同解释的 execution 加入 Case，再创建 Finding。每个 Finding 明确选择 <code>evidence_backed</code>、<code>deterministic_derived</code>、<code>hypothesis</code> 或 <code>unknown</code>，并逐条关联支持、反驳、 上下文 Evidence 和限制/阻断 Gap。Case-level 引用与 Finding-level 引用不同，不应混用。</p>
+<p>封存前核对 title/statement、relation、Evidence ID/hash snapshot、Gap affected claim、Annotation 和 Alert link。seal 后生成固定 revision/digest；JSON 与 print-first HTML 应按相同 snapshot 导出。用户输入会原样进入 pack，禁止粘贴 raw prompt、credential 或未经批准的来源内容。</p>
+<p>“添加 Finding”默认折叠，避免编辑控件与已保存结论竞争。展开编辑器仍必须选择声明分类；产品 不会把手工陈述静默提升为 <code>evidence_backed</code> 或 <code>deterministic_derived</code>。</p>
+<h3>Session、Compare 与 Saved View</h3>
+<p>只有来源提供稳定 Session/Thread identity 时才展示 Session；时间接近不创建会话。Compare 必须 使用同一固定 <code>as_of</code>，版本/用量/时延/完整性字段中的 <code>Missing</code>、<code>Partial</code> 与 <code>0</code> 分开解释。 Saved View 只保存有界 filters 与 presentation，不保存结果快照；重新打开时仍要核对新的 <code>as_of</code> 与 freshness。</p>
+<h3>Connector 信任与交付状态</h3>
+<p>Connector 页面分三层读取：来源契约（source、Manifest、Fidelity、payload、idempotency）、 交付运行状态（worker、import、page/commit/duplicate-noop）和 Checkpoint 摘要（只显示 digest/ 是否存在，不暴露可变 cursor）。来源契约可兼容不代表 worker 正在运行；worker degraded 也不 改写历史 M0 Evidence。Cursor、high-watermark、page time、retry 与 ingestion time 只属于 checkpoint/status 或非事件关联回执。</p>
+<h3>Discovery 假设</h3>
+<p>Coverage、process、topic、anomaly、coalition 与 authority-drift 输出只用于发现调查方向。先看 method version、sample/minimum、support score、Evidence/execution refs、limitations；样本不足时 必须显示 abstention。调查员可以把候选写入 Finding，但必须保留其假设分类，不能自动关闭 Gap、 改变路由或触发 enforcement。</p>
+</section>
+      <section class="chapter" aria-labelledby="provenance-gaps">
+<h2 id="provenance-gaps">来源、溯源与采集缺口</h2>
+<h3>七种字段状态</h3>
+<div class="table-scroll"><table><thead><tr><th>标签</th><th>含义</th><th>正确说法</th></tr></thead><tbody><tr><td><code>direct</code></td><td>值由规范化来源直接提供</td><td>“来源事件直接提供该值”</td></tr><tr><td><code>derived</code></td><td>X-Insight 由已保存字段按确定规则派生</td><td>“X-Insight 从已记录字段派生”</td></tr><tr><td><code>declared</code></td><td>来源声明该关系/属性，尚非独立证明</td><td>“来源声明 parent/policy”</td></tr><tr><td><code>suppressed</code></td><td>按批准策略有意不展示或不捕获</td><td>“该字段被策略抑制”</td></tr><tr><td><code>gap</code></td><td>已存在具体缺失/不可获得证据</td><td>“存在 capture gap”</td></tr><tr><td><code>unknown</code></td><td>当前证据不能确定</td><td>“当前未知”</td></tr><tr><td><code>not_applicable</code></td><td>该 field group 对此事件不适用</td><td>“此事件不适用该字段组”</td></tr></tbody></table></div>
+<p><code>suppressed</code> 不等于值不存在，<code>gap</code> 不等于系统失败，<code>unknown</code> 不等于默认允许或拒绝， <code>not_applicable</code> 也不能用于隐藏本应存在的证据。</p>
+<h3>Source inspection</h3>
+<p>Source 面板用于核对 <code>source_system_id</code>、source type/display name/version、adapter manifest ID、 schema version、source event identity/ref、event hash、source event hash 和 fidelity。预留的 source type/schema 字段只是兼容性信息，不证明存在可运行 adapter。</p>
+<p>hash 证明保存字节或规范化事件的一致性，不证明发布者真实性、语义完整性或因果关系；发布 artifact 的真实性由独立 Ed25519 trust/signature 链负责。</p>
+<h3>Capture gap</h3>
+<p>Gap 面板区分 confirmed gap 与 candidate gap，并显示 scope、source ref、时间和可用原因。 常见类型包括 <code>permission_denied</code>、<code>not_available_from_source</code>、<code>not_instrumented</code>、 <code>sampled_out</code>、<code>retention_expired</code>。candidate 只能作为排查方向，不能升级成确认事实。</p>
+<p><code>freshness.sync_state=gap</code> 或 <code>timeline_complete=false</code> 表示当前 timeline 不能作为完整过程。此时 可报告已观察事实，但必须同时报告缺口和未知，不得补画“最可能”的 node。</p>
+<h3>Proof class</h3>
+<p><code>synthetic_fixture</code> 只证明产品路径和预期 UI/API 行为。批准 sanitized metadata 可证明特定现场 输入经过受控路径被保存和读取，但不自动成为 External integration 或 Production verified。 状态提升必须有准确 target、contract、artifact 和独立记录。</p>
+</section>
+      <section class="chapter" aria-labelledby="cli-api-errors">
+<h2 id="cli-api-errors">CLI、API 与错误合同</h2>
+<h3>版本与主机生命周期 CLI</h3>
+<p>四个运行二进制支持 <code>version --json</code>：<code>xinsight-server</code>、<code>xinsight-importer</code>、<code>xinsightctl</code>、 <code>xinsight-launcher</code>。root-only 生命周期命令为：</p>
+<pre><code>xinsightctl verify --artifact FILE
+xinsightctl status
+xinsightctl install [--check] --artifact FILE
+xinsightctl adopt [--check] --artifact TARGET --legacy-artifact LEGACY
+xinsightctl upgrade [--check] --artifact FILE
+xinsightctl rollback [--check] --previous [--reason-code CODE]
+xinsightctl restore [--check] --backup FILE --backup-sha256 SHA256 --new-database NAME [--reason-code CODE]
+xinsightctl recover
+xinsightctl resume
+xinsightctl abort
+xinsightctl feed-credential prepare [--expected-active-operation-id ID --expected-active-verifier-sha256 HEX]
+xinsightctl feed-credential status
+xinsightctl feed-credential activate --operation-id ID --verifier-sha256 HEX
+xinsightctl feed-credential abort --operation-id ID --verifier-sha256 HEX
+xinsightctl connector-target-config validate
+xinsightctl connector-target-config set --unirouter-origin HTTPS_ORIGIN
+xinsightctl connector-epoch status (--operation-id ID | --source-system-id UUID --adapter-manifest-id UUID --cursor-key KEY --worker-unit UNIT)
+xinsightctl connector-epoch prepare --request-file ABSOLUTE_ROOT_OWNED_JSON
+xinsightctl connector-epoch activate --operation-id ID --plan-sha256 SHA256
+xinsightctl connector-epoch abort --operation-id ID --plan-sha256 SHA256
+xinsightctl clean-baseline data-reset-preview --rollback-backup FILE --rollback-backup-sha256 SHA256 --new-database NAME
+xinsightctl clean-baseline data-reset-apply --rollback-backup FILE --rollback-backup-sha256 SHA256 --new-database NAME --preview-sha256 SHA256 --reason-code second_integration_data_reset
+xinsightctl clean-baseline checkpoint-bootstrap-preview --data-reset-operation-id ID --data-reset-receipt-sha256 SHA256 --checkpoint-request-file ABSOLUTE_ROOT_OWNED_JSON
+xinsightctl clean-baseline checkpoint-bootstrap-apply --data-reset-operation-id ID --data-reset-receipt-sha256 SHA256 --checkpoint-request-file ABSOLUTE_ROOT_OWNED_JSON --preview-sha256 SHA256 --reason-code second_integration_checkpoint_bootstrap
+xinsightctl database-admin-credential preview --authorization-ref REF --reason-code local_tooling_exposure
+xinsightctl database-admin-credential apply --request-file ABSOLUTE_ROOT_OWNED_JSON
+xinsight-release campaign-authority derive --artifact SIGNED_RELEASE --trust-store RELEASE_TRUST --expected-commit COMMIT --expected-version VERSION --output-directory NEW_DIRECTORY
+xinsight-release campaign-authority verify --artifact SIGNED_RELEASE --trust-store RELEASE_TRUST --product-release PRODUCT_RECEIPT --verifier-release VERIFIER_RECEIPT --expected-commit COMMIT --expected-version VERSION
+xinsight-importer unirouter import-campaign-package --operation-id ID --package PACKAGE --n1-release-manifest N1_MANIFEST --n1-verifier N1_VERIFIER --campaign-manifest MANIFEST --unirouter-ack UNI_ACK --xinsight-ack X_ACK --authorization AUTHORIZATION --authorization-signature AUTHORIZATION_SIG --authorization-trust-set AUTHORIZATION_TRUST --source-evidence-trust-set SOURCE_TRUST --component-scope-receipt X_SCOPE --component-verification-receipt X_VERIFICATION --verifier-release X_VERIFIER_RELEASE --product-release X_PRODUCT_RELEASE --release-artifact SIGNED_X_RELEASE --release-trust-store X_RELEASE_TRUST --evidence-schema M0_SCHEMA</code></pre>
+<p><code>--check</code> 是只读 preflight；mutating command 需要 root。输出 JSON receipt/报告不含 DSN、密码、 token 或 raw evidence。<code>feed-credential prepare</code> 的 stdout 只能是严格 Frozen Registration Bundle V1；<code>status</code> 只包含 public registration、文件 metadata、phase 和恢复动作。两个 <code>connector-target-config</code> 命令不启动 worker、不访问 UniRouter：<code>validate</code> 只读检查 managed identity/target/TLS 文件的 owner/mode/key allowlist、deployment ID 形状与 full target 的 TLS 前件； <code>set</code> 只以规范 HTTPS origin 原子更新独立 target 文件，无法改写 stable ID。两个 <code>abort</code> 属于不同 durable state machine，不能互换。<code>connector-epoch</code> 报告只输出 Cursor 与 high-watermark 的 SHA-256；prepare/activate 要求 worker unit 已存在、inactive、disabled， 且数据库处于无错误的 Cursor=high-watermark 边界。prepare request 使用 <code>xinsight.connector-checkpoint-epoch-prepare.v1</code>，必须是 absolute、root-owned、single-link、 regular、<code>0400</code>/<code>0600</code> JSON；raw Cursor 不进入 argv 或报告。prepared operation 会在数据库 写入路径阻止同一 binding 开始 poll，从而与 state row lock 一起关闭人工并发启动竞态。 activate 原子归档旧 epoch 并建立新 epoch，但不启动或 enable worker。</p>
+<p><code>data-reset-preview</code> 是只读 full-product fresh-database 预览，不接受 checkpoint request 或任何 next source/cursor/epoch。它要求准确 PostgreSQL 16/schema 23、fresh backup SHA 与 <code>pg_restore --list</code>、 两个 present+inactive+disabled worker、严格 <code>demo.operator</code> 账号、尚不存在的 <code>xinsight_clean_*</code> 数据库， 并仅以存在性/文件元数据检查 UniRouter active/staged/operation-state、LiteLLM credential/environment 五个精确 path；不读取或输出内容。<code>data-reset-apply</code> 使用独立固定 reason，创建并切换 <code>adapter_import_states/operation/history=0/0/0</code> 的严格空库，crash-safe 退役这些旧 campaign credential/config state 但不生成 replacement。LiteLLM systemd unit 保留并保持 inactive+disabled； 当前 Paths 合同没有 OpenInference 等价持久文件，命令不虚构该路径。 apply 还必须把准确 dump 隔离 restore 到 operation 唯一临时库，以完整数据库 semantic digest 证明 与停稳 source 相同并先删除临时库，才写 durable receipt。receipt 后只有 retained dump SHA/archive、 restore proof、strict-empty live readback 与旧库零 session 均重验通过，才精确删除 predecessor 数据库； 成功返回的 <code>predecessor_database_absent=true</code>，且只保留该 custom-format dump。缺少 dump/proof 时旧库 不会被删除。</p>
+<p><code>checkpoint-bootstrap-preview|apply</code> 必须消费精确 completed DATA_RESET operation/receipt SHA 和另一 固定 reason，才可从 sealed historical maximum 计算 <code>max+1</code> 并绑定新 UniRouter source/cursor/high-watermark。五个 connector credential/config path 必须继续为空；该命令不生成 LiteLLM credential/environment。 preview 的 canonical request SHA-256 还绑定完整 request 与 authorization reference，apply 的 staged root-only request 必须精确匹配。它只建立一个 inactive/idle、零 counter、无 operation/history 的 state；仍不启动 worker、配置凭据或 poll。两阶段报告不返回 verifier、DSN、credential bytes 或 raw Cursor，命令存在也不代表操作授权。</p>
+<p>本地账户 credential 的离线 root CLI 为：</p>
+<pre><code>xinsightctl access generate-subject
+xinsightctl access hash-password
+xinsightctl access validate --file ABSOLUTE_ACCOUNTS_JSON
+xinsightctl service-identity create --name NAME --expires-at UTC_RFC3339
+xinsightctl service-identity list
+xinsightctl service-identity revoke --id ID --reason REASON
+xinsightctl discovery refresh --as-of UTC_RFC3339 --limit 20..1000 --minimum-sample 20..limit</code></pre>
+<p><code>generate-subject</code> 只生成稳定 opaque subject；<code>hash-password</code> 只在交互 TTY 隐藏读取和确认， 不接受 password flag、stdin/pipe 或 environment；<code>validate</code> 要求 absolute path，并只输出 schema 与角色/disabled 计数。三者都不会创建 Web 账户或写回 credential 文件。</p>
+<p><code>service-identity</code> 与 <code>discovery refresh</code> 都是 root-only，并使用分离的 admin/reader/workspace 数据库身份。service token 只在 create 成功响应中显示一次，数据库只保存 digest；不得写入 Markdown、argv、env 或浏览器。Discovery 固定 <code>as_of</code>、有界 sample 与 minimum sample，结果 写入产品本地分析层，不写 M0 Evidence。</p>
+<p>受管 live worker 的固定入口是：</p>
+<pre><code>xinsight-importer unirouter pull-feed</code></pre>
+<p>它不接受运行参数；endpoint/poll interval 来自受限 env，service key 与 importer DSN 只来自 secret file/systemd credentials。正常情况下由 <code>xinsight-feed.service</code> 管理，不手工 在 shell 中拼接 secret。</p>
+<p>worker 的 durable failure code 是安全的机器字段。<code>completed_execution_feed.cursor_expired</code>、 <code>source_status_401</code>、<code>source_instance_mismatch</code>、<code>contract_page_invalid</code>、 <code>evidence_conflict</code> 等 permanent 状态不会推进 cursor；transport/429/5xx/临时 DB 错误做 bounded backoff。修复 permanent 配置后重启 worker 会从原 durable cursor 再尝试一次。</p>
+<p>OpenInference 预留的 bounded-offline 入口是：</p>
+<pre><code>xinsight-importer openinference import-bundle \
+  --authorization-file ABSOLUTE_ROOT_OWNED_JSON --target-ref EXACT_NONPROD_TARGET \
+  --bundle ABSOLUTE_PATH --operation-id ID --bundle-id ID \
+  --producer-instance ID --org-ref ID --project-ref ID</code></pre>
+<p>授权文件必须是单 hard link、root-owned、<code>0400</code>/<code>0600</code> 的严格 <code>xinsight.openinference-bounded-offline-authorization.v1</code>。它只接受 <code>nonproduction</code>、最多两小时， 并精确绑定 target machine ID SHA-256、当前 release commit/version、bundle path/SHA、operation、 producer、tenant/org/project 与最多 10 条 metadata-only record。任何 prompt/response attribute、 授权中的未知字段、授权或 OTLP 任意层级的重复 JSON 字段、过期或绑定漂移都会在 credential/数据库之前拒绝；值为 false 的四个安全边界字段也必须显式存在。精确重放由 durable operational receipt 收敛；该门禁绝不授权 listener、Feed、Cursor、Checkpoint 或 Production。</p>
+<p>外部 bootstrap <code>xinsight-release</code> 也支持 <code>version --json</code>，并提供 <code>keygen</code>、<code>pack</code>、<code>verify</code>、 <code>extract</code>。现场只使用经独立可信路径批准的 bootstrap 执行 <code>verify</code>/<code>extract</code>；<code>keygen</code>/<code>pack</code> 属于发布方操作，不在用户主机生成生产 signing key。</p>
+<p>发布内 schema contract 只读命令为：</p>
+<pre><code>xinsightctl schema-contract expected
+sudo xinsightctl schema-contract inspect</code></pre>
+<p><code>expected</code> 可在无 host state 时读取签名 binary 内嵌的 generated contract；<code>inspect</code> 使用 root-held admin DB credential 做只读 catalog introspection，但只输出 schema/release identity、对象计数、 semantic/layout digest 与 <code>missing_object</code>/<code>unexpected_object</code>/<code>semantic_property_drift</code> 等脱敏原因。 列身份是 <code>namespace/table/column</code>，ordinal 只进入非权威 layout digest。</p>
+<p><code>database-admin-credential</code> 只允许 root 在独立授权下替换 <code>xinsight_admin</code> credential；preview/apply 输出、journal 与 receipt 只含 alias、metadata 和 digest，不含 DSN、密码或 SCRAM verifier。verifier 变更前允许通用 <code>abort</code>，变更后只允许通用 <code>resume</code>；它不重启服务、不写产品表、不启动 worker 或流量。</p>
+<p><code>campaign-authority derive|verify</code> 不建立第二套发布签名。它复用既有签名发布 manifest，并从准确 <code>bin/xinsight-importer</code> 条目、schema 23、manual-r13、M0 schema 和编译内 consumer contract 确定性派生两个 sidecar receipt。<code>import-campaign-package</code> 把所有 path 只当作有界本地传输定位：准确 release/runtime/product/N1/Source/package/member 验证全部在加载 importer DSN 前完成。replay 复用既有 schema-20 bounded-offline operation receipt；相同 operation/request 为 no-op，request drift 或 Evidence conflict 失败关闭。命令不含 network endpoint、worker、Cursor、Checkpoint 或 credential surface。</p>
+<h3>Investigation API</h3>
+<div class="table-scroll"><table><thead><tr><th>方法与路径</th><th>用途</th></tr></thead><tbody><tr><td><code>GET /healthz</code></td><td>进程 liveness</td></tr><tr><td><code>GET /readyz</code></td><td>DB、schema、PostgreSQL、版本与手册兼容 readiness</td></tr><tr><td><code>GET /api/v1/executions</code></td><td>bounded execution search</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}</code></td><td>execution detail</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/investigation</code></td><td>outcome Story、来源声明 DAG、completeness 与 unprovable claims</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/trace-journey</code></td><td>同 source/org/project/trace 跨 execution 的来源声明 Span 路径；不改 M0 identity/hash</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/timeline</code></td><td>evidence-derived timeline</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/events/{event_id}</code></td><td>selected-node/source/provenance detail</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/gaps</code></td><td>capture-gap inspection</td></tr><tr><td><code>GET /api/v1/sources</code></td><td>bounded source options</td></tr><tr><td><code>GET /api/v1/connectors</code></td><td>Connector trust/read-only lifecycle projection</td></tr><tr><td><code>GET /api/v1/sessions</code>、<code>GET /api/v1/sessions/{session_id}</code></td><td>来源声明的 Session/Thread 与 execution links</td></tr><tr><td><code>GET /api/v1/compare</code></td><td>同一 fixed <code>as_of</code> 的 execution 对比；Missing/Partial/0 分离</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/feedback</code></td><td>来源评价/反馈读取</td></tr><tr><td><code>GET /api/v1/executions/{execution_id}/versions</code></td><td>prompt/app/policy/model/connector 版本维度</td></tr><tr><td><code>GET /api/v1/alerts</code></td><td>有界 Alert 列表</td></tr><tr><td><code>POST /api/v1/alerts/{alert_id}/case</code></td><td>human-only Alert-to-Case 关联</td></tr><tr><td><code>GET /api/v1/discovery/hypotheses</code></td><td>有证据、限制与 abstention 的候选假设</td></tr><tr><td><code>GET/POST /api/v1/cases</code>、<code>GET /api/v1/cases/{case_id}</code></td><td>Case 列表、创建和 dossier 读取</td></tr><tr><td><code>POST /api/v1/cases/{case_id}/{executions,findings,evidence,gaps,annotations}</code></td><td>human-only Workspace 写入</td></tr><tr><td><code>POST /api/v1/cases/{case_id}/seal</code></td><td>immutable Case revision/digest</td></tr><tr><td><code>GET /api/v1/cases/{case_id}/evidence-pack.{json,html}</code></td><td>sealed deterministic Evidence Pack</td></tr><tr><td><code>GET/POST /api/v1/saved-views</code></td><td>bounded filter/presentation 保存，不保存结果快照</td></tr><tr><td><code>GET /api/v1/service-identities</code>、<code>POST .../{id}/revoke</code></td><td>operator 只读列表/撤销；创建只允许 root CLI</td></tr><tr><td><code>POST /api/v1/gaps/{gap_id}/resolution</code></td><td>human-only Gap 调查状态；不删除或关闭 Evidence Gap</td></tr></tbody></table></div>
+<p><code>/readyz</code> 还会使用 reader DSN 执行一个有界、零数据返回的代表性读取，准确覆盖 <code>source_systems</code>、<code>evidence_events</code>、<code>capture_gaps</code>、<code>import_provenance</code> 和 <code>import_provenance_events</code>。成功只返回 <code>representative_read: &quot;ok&quot;</code>；任一表的 reader grant 漂移都会令 readiness 失败，不返回表内容。</p>
+<p>Search filters 是 <code>request_id</code>、<code>request_id_prefix</code>、<code>source_system_id</code>、<code>outcome</code>、<code>has_gaps</code>、 <code>from</code>、<code>to</code>、<code>limit</code>、<code>cursor</code>。默认/最大 page limit 为 50/100；最大时间跨度 31 天。 时间必须是 UTC RFC3339。cursor 最大 2048 bytes、opaque、绑定 endpoint/filter/execution 与 服务端 <code>as_of</code>，有效期 24 小时；它不是授权 token。</p>
+<h3>Access API</h3>
+<div class="table-scroll"><table><thead><tr><th>方法与路径</th><th>用途与权限</th></tr></thead><tbody><tr><td><code>POST /api/v1/access/login</code></td><td>建立或轮换 Session；公开路径，但只接受同源 HTTPS 严格 JSON</td></tr><tr><td><code>GET /api/v1/access/session</code></td><td>返回当前 Session metadata 与 Session-bound CSRF token</td></tr><tr><td><code>POST /api/v1/access/logout</code></td><td>撤销当前 Session；要求同源 HTTPS 与 CSRF</td></tr><tr><td><code>GET /api/v1/access/sessions</code></td><td>operator 查看所有当前内存 Session</td></tr><tr><td><code>POST /api/v1/access/sessions/{session_ref}/revoke</code></td><td>operator 撤销指定 Session；要求同源 HTTPS 与 CSRF</td></tr></tbody></table></div>
+<p>除 <code>/healthz</code>、<code>/readyz</code>、登录页、登录 API 和当前 <code>index.html</code> 实际引用的静态资产外， 所有 UI/API 都要求产品 Session。未认证 UI 请求严格 <code>303 Location: /login</code>；未认证 API 返回 <code>401 authentication_required</code>。<code>investigator</code> 只有 Evidence 读取权限； Session 列表/撤销由 <code>operator</code> 独占。</p>
+<p>Agent 使用单一 <code>Authorization: Bearer xib_...</code>，不能同时携带浏览器 Session cookie。它只允许 <code>GET /api/v1/executions...</code> 与 <code>GET /api/v1/sources</code>，不能访问 Workspace 写路径、Session 管理、service identity 管理、Discovery refresh 或运行时控制。expired/revoked/invalid token 分别 fail closed，单 identity 另有每秒 5、burst 10 的有界速率门禁。</p>
+<p>登录 request body 上限 4 KiB，只接受准确 <code>username</code>、<code>password</code> 两字段且拒绝 duplicate/ unknown/trailing JSON。失败响应不区分未知 username、错误 password、disabled account 或 不合规账户状态。默认失败门禁为同一规范化 username 15 分钟内 5 次、全进程 1 分钟内 50 次；独立 Argon2id verification admission 最大并发 4。达到任一门禁返回 <code>429 authentication_rate_limited</code> 与 bounded <code>Retry-After</code>，不会启动新的 Argon2 verification。它与下述通用 API 并发上限 32 是两个独立资源边界。</p>
+<p>Session cookie 固定为 <code>__Host-xinsight_session; Secure; HttpOnly; SameSite=Strict; Path=/</code> 且无 <code>Domain</code>。Session idle/absolute timeout 分别为 30 分钟/8 小时；每个 subject 最多 5 个， 单进程最多 500 个，重启全部失效。登录、logout 和 revoke 的 origin/CSRF 失败分别使用 <code>same_origin_required</code> 或 <code>csrf_validation_failed</code>，不能通过 HTTP、代理登录页或移除 <code>Secure</code> 降级绕过。</p>
+<h3>Stable problem contract</h3>
+<p>所有非 2xx API 使用 <code>application/problem+json</code>，包含稳定 <code>code</code>、HTTP <code>status</code>、安全 title、 <code>retryable</code>、correlation ID，并可包含 field reason。不要依赖英文 title 做程序分支。</p>
+<div class="table-scroll"><table><thead><tr><th>HTTP</th><th>code</th><th>操作</th></tr></thead><tbody><tr><td>400</td><td><code>invalid_argument</code>, <code>invalid_cursor</code>, <code>invalid_authentication_request</code></td><td>修正输入；不要重试相同请求</td></tr><tr><td>401</td><td><code>authentication_required</code>, <code>authentication_failed</code>, <code>agent_authentication_failed</code>, <code>agent_credential_expired</code>, <code>agent_credential_revoked</code></td><td>建立/重新建立准确的 Session 或 Agent credential；失败不披露 secret</td></tr><tr><td>403</td><td><code>same_origin_required</code>, <code>csrf_validation_failed</code>, <code>permission_denied</code>, <code>agent_scope_denied</code></td><td>核对 HTTPS origin、CSRF、角色或只读 Agent scope；不要放宽门禁</td></tr><tr><td>404</td><td><code>execution_not_found</code>, <code>event_not_found</code>, <code>session_not_found</code>, <code>case_not_found</code>, <code>route_not_found</code></td><td>核对 ID、<code>as_of</code> 和路径</td></tr><tr><td>409</td><td><code>cursor_mismatch</code></td><td>使用原 filter，或重新搜索</td></tr><tr><td>410</td><td><code>cursor_expired</code></td><td>重新搜索获得新 <code>as_of</code></td></tr><tr><td>429</td><td><code>request_rate_limited</code>, <code>authentication_rate_limited</code>, <code>agent_rate_limited</code></td><td>按 bounded <code>Retry-After</code> 重试</td></tr><tr><td>503</td><td><code>temporarily_overloaded</code>, <code>database_unavailable</code>, <code>access_unavailable</code>, <code>agent_access_unavailable</code>, <code>workspace_unavailable</code></td><td>有界退避并检查 readiness/credential</td></tr></tbody></table></div>
+<p>单进程 API 并发上限为 32，速率为每秒 20、burst 40。当前这些是单节点防护边界，不是 100x 吞吐或 HA 承诺。</p>
+</section>
+      <section class="chapter" aria-labelledby="diagnostics">
+<h2 id="diagnostics">维护、诊断与排障</h2>
+<h3>先区分三类健康</h3>
+<ul>
+<li><code>systemctl status</code>：进程是否由 systemd 运行。</li>
+<li><code>/healthz</code>：HTTP 进程 liveness。</li>
+<li><code>/readyz</code>：数据库可达且产品/schema/PostgreSQL/manual identity 兼容，并且 reader 对五张</li>
+<p>代表性调查表的有界零数据读取通过。</p>
+</ul>
+<p>进程 running 但 readiness 失败时不能对外称服务可用。</p>
+<h3>安全诊断命令</h3>
+<pre><code>sudo /opt/x-insight/current/bin/xinsightctl status
+sudo /opt/x-insight/current/bin/xinsightctl access validate \
+  --file /etc/x-insight/access-accounts.json
+sudo /opt/x-insight/current/bin/xinsightctl recover
+sudo systemctl status xinsight.service --no-pager
+sudo systemctl status xinsight-feed.service --no-pager
+sudo systemctl status xinsight-litellm-feed.service --no-pager
+sudo journalctl -u xinsight.service --since &quot;30 minutes ago&quot; --no-pager
+sudo journalctl -u xinsight-feed.service --since &quot;30 minutes ago&quot; --no-pager
+sudo journalctl -u xinsight-litellm-feed.service --since &quot;30 minutes ago&quot; --no-pager
+curl --fail --silent --show-error http://127.0.0.1:8080/readyz
+ss -ltn
+sudo docker compose -f /etc/x-insight/postgres.compose.yml ps</code></pre>
+<p>分享输出前逐行审查并移除未批准 host/user/path/identifier；不要收集 environment、credential 文件、数据库 dump、raw snapshot 或完整自由文本日志。当前没有自动诊断上传器。</p>
+<h3>常见问题</h3>
+<div class="table-scroll"><table><thead><tr><th>现象</th><th>首查</th><th>不应做</th></tr></thead><tbody><tr><td>owner-supervised delivery 多/少文件或 SHA-256 不一致</td><td>准确 GitHub workflow、main CI、commit、<code>owner-supervised-trial-release.json</code> 和 <code>SHA256SUMS</code></td><td>重新生成 key、删除额外文件后继续或改 checksum</td></tr><tr><td><code>release signature is not trusted</code></td><td>key ID、trust store owner/mode、active/revoked/time</td><td>替换 digest 或跳过验签</td></tr><tr><td><code>fresh install refuses existing...</code></td><td>install-state/current/service/env/launcher 的准确路径</td><td>删除未知安装状态后重试</td></tr><tr><td><code>database credentials...invalid</code></td><td>absolute current link、当前四个普通文件、role/host/db/password 分离；旧三凭据来源只允许由 rc.3 目标控制器在明确 bridge preflight 中识别</td><td>手工补 workspace DSN、把 DSN 放进环境/日志或绕过 journal</td></tr><tr><td><code>another xinsightctl operation is active</code></td><td><code>status</code> 与 <code>recover</code></td><td>删除 lock/journal</td></tr><tr><td>服务因 access credential 拒绝启动</td><td>文件必须 absolute、root/service EUID owned、regular、single-link、非 symlink、mode 为 <code>0400</code> 或 <code>0600</code>；再运行 staging/current 匹配版本的 <code>access validate</code></td><td>打印 JSON/hash、放宽 mode 或创建默认可用账户</td></tr><tr><td><code>access validate</code> 报 missing/unknown/duplicate</td><td>严格核对 schema、每个账户五个必填字段（包括 boolean <code>disabled</code>）、稳定 subject、规范化 username、role 与 Argon2id 参数</td><td>猜测默认值、忽略 unknown field 或手工改 validator</td></tr><tr><td>UI 未登录循环到 <code>/login</code></td><td>核对是否确有 X-Insight HTTPS origin、Secure cookie、产品 Session；匿名 UI 应是 no-store 303，匿名 API 应是严格 401 problem</td><td>用 HTTP tunnel、代理登录页或移除 <code>Secure</code> 绕过</td></tr><tr><td>登录 <code>same_origin_required</code> / <code>csrf_validation_failed</code></td><td>核对 direct TLS、准确 <code>Origin</code>/Host、same-origin fetch 和最新 Session-bound CSRF</td><td>信任任意 forwarded header、关闭 Origin/CSRF</td></tr><tr><td>登录 <code>authentication_failed</code></td><td>在 root-only 流程核对账户是否 disabled、username/hash 和服务是否重启；响应故意不披露具体原因</td><td>从响应推断用户是否存在，或把 password/hash 写入日志</td></tr><tr><td>登录 <code>authentication_rate_limited</code></td><td>遵守 <code>Retry-After</code>，等待 per-principal/global window；核对是否有爆破或并发 Argon2 压力</td><td>并发重试、扩大验证并发或重启循环规避门禁</td></tr><tr><td>Session 意外失效</td><td>核对 30 分钟 idle、8 小时 absolute、operator revoke、账户禁用后的受控 restart/revoke、服务重启</td><td>把内存 Session 当持久授权或多节点共享状态</td></tr><tr><td>readiness <code>database_unavailable</code></td><td>PG container、loopback、reader credential、schema</td><td>将 PostgreSQL 暴露公网</td></tr><tr><td>readiness <code>database_unavailable</code> 且 schema/版本正确</td><td>核对 reader 对六张代表性表（含 <code>connector_operational_receipts</code>）的 <code>SELECT</code> grant；逐表恢复准确 reader 权限</td><td>改为 writer/admin DSN 或跳过代表性读取</td></tr><tr><td><code>cursor_expired</code></td><td>返回搜索页重建快照</td><td>修改/解码后续用 cursor</td></tr><tr><td>feed <code>completed_execution_feed.cursor_expired</code></td><td>保留 durable state，核对 UniRouter retention 与受控重新 activation 决策</td><td>清空/伪造 cursor 或全表 backfill</td></tr><tr><td>feed <code>source_status_401</code></td><td>核对 feed-only service key 的 active/project/purpose/network binding</td><td>把普通 model key 或 admin key 写进 env</td></tr><tr><td>feed <code>contract_*</code> / <code>evidence_conflict</code></td><td>保留 payload SHA 与 worker status，停止推进 cursor，核对双方准确 contract/commit</td><td>跳过 schema、改写 payload 或手工推进 cursor</td></tr><tr><td>LiteLLM <code>source_status_401</code> / <code>source_status_403</code></td><td>保留 key metadata 与 checkpoint，核对独立 API key、HTTPS endpoint 和 scope，再 restart worker</td><td>把 key 放入 env/argv，或用 UniRouter feed key</td></tr><tr><td>LiteLLM <code>source_status_408</code> / <code>429</code> / retryable <code>5xx</code></td><td>核对 bounded backoff、source health 与 20 页/2000 行/8 MiB 窗口</td><td>重启循环、放宽 window 或并行启动第二 worker</td></tr><tr><td>LiteLLM <code>source_*_invalid</code> / <code>mapping_scope_mismatch</code> / <code>evidence_conflict</code></td><td>stop worker，保留 raw-free sanitized error、registry identity 和 checkpoint；修复后 restart</td><td>修改 source row、清 checkpoint、跨 scope 复用状态</td></tr><tr><td>LiteLLM unit absent after rc.12→rc.11 rollback</td><td>这是受支持的降级结果；env/key/checkpoint 应保留，等待重新升级</td><td>从旧 release 手工运行 importer 或复制 unit</td></tr><tr><td>timeline 不完整</td><td>freshness、gap、import receipt、source watermark</td><td>补造缺失 node 或因果</td></tr><tr><td>upgrade activation proof 失败</td><td>receipt/journal、listener、version/schema/manual</td><td>手工改 current symlink</td></tr></tbody></table></div>
+<h3>Receipt 与历史</h3>
+<p>安装状态、operation journal、receipts、backups 和 immutable releases 位于 manifest/工具定义的 固定 host paths。只通过 <code>xinsightctl</code> 状态和恢复动作处理，不能编辑 JSON 把 failed 改成 completed。历史 receipt 是 append-only 证据；新的修复或清理写新记录。</p>
+<h3>升级前后最低核对</h3>
+<p>升级前保存 current identity、preflight、access credential 只读 validation、evidence fingerprint、backup path/hash。升级后保存 receipt、<code>readyz</code> 的 <code>representative_read: &quot;ok&quot;</code>、listener、匿名 UI no-store <code>303 /login</code>、匿名 API 严格六字段 <code>401 authentication_required</code> 和 fingerprint。rc.14 还要核对准确 external origin、loopback 代理来源、证书剩余有效期与自动续期、HSTS、Secure cookie、authenticated search/detail/Investigation/Chronology/Proof，以及公网只开放 80/443。不能退化成 HTTP 登录 来补证。application rollback 或 restore 后按目标版本的历史访问合同重新核对：rc.13/rc.14 要求匿名 303/401；rc.12 及更早版本仍使用其历史匿名代表性读取证明，二者不得混用。</p>
+</section>
+      <section class="chapter" aria-labelledby="compatibility">
+<h2 id="compatibility">兼容矩阵与候选发布说明</h2>
+<h3>0.3.0-rc.13</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>23（单一 additive function EXECUTE privilege hardening migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；独立 trusted TLS proxy env；受管 identity/target 原字节保留</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；响应与 readiness fail-closed 校验强化</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；不放宽 identity/hash/idempotency/Gap/Provenance 校验</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；completed-event wire 不变</td></tr><tr><td>Schema contract</td><td><code>xinsight.schema-contract.v2</code>；schema 23 function owner/ACL/semantic properties 纳入权威摘要</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>、<code>xinsight.admin-credential-rotation-receipt.v1</code>、<code>xinsight.unirouter-campaign-package-import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.3.0-rc.13/manual-r13</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.12</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Local gate 已验证；准确 rc.13 CI、Owner-Supervised delivery、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.13 收敛发布就绪技术债：PostgreSQL function privilege convergence 与 schema-contract 语义覆盖、 API response/readiness fail-closed 校验、Go/前端覆盖率和 fuzz、确定性 Web 资产，以及受认证的真实 HTTPS/PG16 E2E。它只增加 schema 23 权限收敛 migration，不增加协议、receipt、Connector traffic 或新的 UI 语义；既有 UI、 调查逻辑、Known/Unknown Discovery、全景图与 loopback TLS terminator 继续作为同一受支持产品路径。</p>
+<h3>0.3.0-rc.12 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>22（migration 21/22 增加 Connector installation 与三阶段 control contract）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；独立 trusted TLS proxy env；受管 generate-once identity 与 preserve target env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；固定 Connector HTTPS redeem/poll/result 管理端点</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；不放宽 identity/hash/idempotency/Gap/Provenance 校验</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；completed-event wire 不变</td></tr><tr><td>Schema contract</td><td><code>xinsight.schema-contract.v2</code>；database schema 22 的生成权威</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>、<code>xinsight.admin-credential-rotation-receipt.v1</code>、<code>xinsight.unirouter-campaign-package-import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.3.0-rc.12/manual-r12</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.11</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>exact main <code>c23a31c9b7a7658765ff7e069a6e0ba2d4f6308d</code> 已通过 non-publishable CI qualification（CI <code>31525193516</code>；Protocol <code>31525193509</code>）；尚无该 commit 的 Owner-Supervised delivery，Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.12 增加 root-owned <code>xinsight-connector-controller.service</code>，在 Web 前启动并只接受固定 Unix socket typed actions。Web 在公开 HTTPS result 完成 durable commit 后唤醒 controller；wake 丢失由 exact result replay 收敛。三阶段 activation、normal-install epoch、managed config、dormant credential 与 worker-last 复用现有 schema22/store/hostctl 生命周期；普通同步不依赖 Neutral/Assurance/DATA_RESET， 不增加第二套 journal、receipt、协议或 UI 原语。</p>
+<p>受管 installer 现在在独立 <code>/etc/x-insight/xinsight-connector-id.env</code> 创建 root-only stable deployment ID，root CLI 通过 <code>/etc/x-insight/xinsight-connector.env</code> 提供唯一支持的 UniRouter HTTPS install origin 设置路径；systemd 同时加载 identity、target 与 trusted TLS external origin。 upgrade/rollback/re-upgrade 原字节保留 identity/target，target allowlist 无法覆盖 ID，clean-environment root <code>ExecStartPre</code> 在 Web 前校验 owner/mode/key/full-target TLS 前件。仅有 ID 或 ID+TLS、尚未填写 target 时 Connector 保持 disabled，worker 不启动且不产生流量。</p>
+<h3>0.3.0-rc.11 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>20（与 rc.10 相同；无 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；空基线返回显式空 collection</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；不放宽 identity/hash/idempotency/Gap/Provenance 校验</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；产品仓不复制可编辑协议源</td></tr><tr><td>Schema contract</td><td><code>xinsight.schema-contract.v2</code>；生成字节与 rc.10 相同</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>、<code>xinsight.admin-credential-rotation-receipt.v1</code>、<code>xinsight.unirouter-campaign-package-import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.3.0-rc.11/manual-r11</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.10</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>signed campaign-package consumer 为 Local 候选；准确 rc.11 CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.11 增加受约束的离线 UniRouter signed campaign-package import。既有 X 签名 manifest 仍是唯一 release authority；product/verifier receipt 从该 manifest 的 importer 文件身份、schema 20、manual-r11、 M0 schema 与 receipt list 确定性派生，不增加签名域或 hash cycle。operator 输入仅为有界本地 artifact locator 与稳定 operation ID；X release/runtime、Neutral N1、Source trust、producer package 和 member validation 必须在加载 importer DSN 前全部闭合。外层 package completeness 与 partial member <code>runtime_close_marker_unavailable</code> 独立保留。persistence/replay 复用既有 schema-20 bounded-offline operation store 与 receipt；没有 migration、第二套 journal、worker、Cursor/Checkpoint 或 traffic 能力。</p>
+<h3>0.3.0-rc.10 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>20（与 rc.9 相同；无 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；空基线返回显式空 collection</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；不放宽 identity/hash/idempotency/Gap/Provenance 校验</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；产品仓不复制可编辑协议源</td></tr><tr><td>Schema contract</td><td><code>xinsight.schema-contract.v2</code>；生成字节与 rc.9 相同</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>、<code>xinsight.admin-credential-rotation-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.3.0-rc.10/manual-r10</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.9</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>admin credential rotation 为 Local 候选；准确 rc.10 CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.10 新增 root-only <code>xinsightctl database-admin-credential preview|apply</code>。它以版本化 request、preview、 journal 和 receipt 绑定准确 release/schema/config/protocol、四角色 credential-set metadata/digest、零并发 admin session、34 表/migration/connector/checkpoint/account/config 指纹和 dormant worker 状态。successor 先在同父目录唯一 staging 中完整 sync/验证，再原子 rename；最终目录只按不可变完成态读取。产品在同一 predecessor transaction 中紧邻 verifier 更新前再次确认没有其他 admin session，变更后 lifecycle 为 resume-only，并证明 successor fresh connection 成功、predecessor fresh connection 得到认证拒绝。 reader/workspace/importer DSN 原字节、demo.operator verifier、产品数据、schema ledger、connector/checkpoint、 协议和服务 PID 不变；两个 Feed worker 保持 inactive/disabled，restart/product write/poll/traffic 均为零。</p>
+<h3>0.3.0-rc.9 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>20（与 rc.8 相同；无 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；空基线返回显式空 collection</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；不放宽 identity/hash/idempotency/Gap/Provenance 校验</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；产品仓不复制可编辑协议源</td></tr><tr><td>Schema contract</td><td><code>xinsight.schema-contract.v2</code>；named semantic digest 与非权威 column layout digest 分离</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；权限边界不变</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.9/manual-r9</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.8</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>schema contract canonicalization 为 Local 候选；准确 rc.9 CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.9 从 PostgreSQL 16 完整 release migrations 唯一生成 schema contract。列身份固定为 <code>namespace/table/column</code> 并按名称排序，物理 ordinal 只进入非权威 layout digest；类型/Domain、nullable、 default、identity/generated、collation 和 constraints 仍受保护。fresh、支持的升级结果、签名 payload、 binary readback 与现场 introspection 必须收敛；真实语义或未知对象继续返回脱敏对象级原因并失败关闭。 本轮不增加 migration，也不改变 DATA_RESET/BOOTSTRAP/TRAFFIC、protocol、Source/Cursor 或 credential 语义。</p>
+<h3>0.3.0-rc.8 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>20（与 rc.7 相同；fresh database 只运行 release migrations）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；空基线返回显式空 collection</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；fresh baseline 不放宽 identity/hash/idempotency/Gap/Provenance 校验</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；产品仓不复制可编辑协议源</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；clean-baseline 使用 product-local durable operation receipt</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.8/manual-r8</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.7</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>clean baseline 与 Web UI asset parity 为 Local 候选；准确 rc.8 CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.8 增加 exact generated Web UI asset manifest。前端生成、Go embed、签名 binary readback 与实际 served index/JS/CSS 必须逐字节同一；旧 retained asset 不可被服务。复核确认基线 main、本 PR head 与先前观察的 installed runtime JS 原本已经共享 Git blob <code>4c6afd312415a7aaef4d79aa9348a295f055a080</code> 及 SHA-256 <code>bb09119c65eb7c89b9db46d2f76faddfed3c85ce5ade216487faec6bad21cba1</code>； 本轮是预防性 release-integrity hardening，不是修复既有 byte mismatch。先前 HOLD 中的该子前提 据此撤销，其他 HOLD 条件不在本候选发布说明中重裁。</p>
+<p><code>xinsightctl clean-baseline data-reset-preview|data-reset-apply</code> 是 root-only、显式 DATA_RESET authority 下的 fresh-database cutover，不是日常 reset。preview 不接受 source/cursor/epoch input；apply 只创建并 切换严格空库，证明 <code>adapter_import_states</code>、epoch operation/history 及历史表为零，同时 crash-safe 退役 UniRouter active/staged/operation-state 与 LiteLLM credential/environment 五个 campaign-state 文件且不读取内容、不生成 replacement。LiteLLM systemd unit 保留并保持 inactive+disabled；当前 Paths 合同没有 OpenInference 等价持久文件，不新增虚构路径。独立的 <code>checkpoint-bootstrap-preview|checkpoint-bootstrap-apply</code> 必须消费 completed DATA_RESET durable receipt 及其准确 SHA，以不同 authority 绑定新 source/cursor/high-watermark，并从 receipt 封存的历史最大 epoch 推导 <code>max+1</code>；两个 worker 始终 dormant，UniRouter-only BOOTSTRAP 不生成 LiteLLM 配置或凭据。</p>
+<p>apply 先把 fresh dump 隔离 restore 到 operation 唯一的临时库，以完整 schema/migration/34 表 semantic digest 对比停稳 source，随后删除并证明临时库不存在；live 新数据库只运行 release migrations，不 restore、TRUNCATE、CASCADE 或手工删除 history。它保留 release schema/source/adapter catalog；DATA_RESET receipt 时 checkpoint state/operation/history 全部 为零，随后独立 BOOTSTRAP receipt 才写入单一 inactive/idle、零 counter、无 operation/history 的 checkpoint。<code>demo.operator</code> subject/username/role/password verifier 原样保留，其他账号与旧内存 Session 不保留。失败在 durable receipt 前自动恢复旧数据库链接和完整账号文件；新数据库保留供 取证且不可复用。receipt 已落盘只允许精确 resume；只有 retained dump path/SHA/PG16 archive、sealed restore proof、严格空 live link 与旧库零 session 全部重验后，才删除并证明 predecessor/restore 库 不存在，再精确移除含其他账号的单文件前驱备份。缺少 dump/proof 时在旧库删除前 fail closed； successful completion 只保留一个已验证 custom-format dump，不同时保留旧数据库。 该能力不自行授权 Target backup/reset、凭据、 服务操作、Feed poll、测试流量、External integration 或 Production。</p>
+<h3>0.3.0-rc.7 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>20（新增 source-neutral checkpoint epoch operation/history）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；Connector checkpoint 增加 epoch 只读字段</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；epoch delivery state 不进入 event identity/hash</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；共享 Schema/vector/mapping byte 不变</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；epoch history 是 product-local delivery evidence</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.7/manual-r7</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>–<code>0.3.0-rc.6</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>checkpoint epoch 为 Local 候选；准确 rc.7 CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.7 新增 root-only <code>xinsightctl connector-epoch prepare|status|activate|abort</code>。它要求受管 worker 存在且 inactive+disabled，数据库状态 idle+inactive、无错误且 Cursor=high-watermark；prepare 固定 active-state/plan SHA，activate 在单一 serializable transaction 内归档不可变旧 epoch、 原子切换新 source instance 与 quiescent Cursor，并清零新 epoch 的 delivery counters/retry state。 重复 activate 收敛到同一结果；activate 前可精确 abort。</p>
+<p>迁移 20 只增加 product-local mutable-delivery control/evidence，不修改 M0、Gap、Provenance、 Trace Journey、OpenInference、completed-execution DTO、event/hash/idempotency 或现有 Evidence 行。 CLI 报告不返回 raw Cursor/high-watermark，epoch 激活不启动、enable 或配置 Feed，也不授权 UniRouter reset、凭据、流量或第二轮联调。</p>
+<h3>0.3.0-rc.6 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>19（与 rc.5 相同，无新 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；新增向后兼容 Posture GET</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；Posture 只读聚合不修改 event identity/hash</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；共享 Schema/vector/mapping byte 不变</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；可变 delivery state 不进入 M0/hash/provenance</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.6/manual-r6</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>、<code>0.3.0-rc.3</code>、<code>0.3.0-rc.4</code> 或 <code>0.3.0-rc.5</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Evidence Posture release identity 为 Local 候选；准确 rc.6 CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.6 把 <code>/inbox</code> 定义为跨系统 Evidence Posture，而不是 MaaS 运营看板副本。所有 execution、 Gap、coverage 和趋势聚合共用固定 <code>as_of/from/to</code>；Direct time、Identity、Outcome、Causal coverage 保留各自分子、分母与限制，不合成健康分。Runtime Path 只使用来源声明的 Trace Journey parent edge，未关联 execution 的 Alert 明确保持 unlinked。</p>
+<p>MaaS 的吞吐、价格、配额、路由配置和供应商运营指标继续由 MaaS 拥有。X-Insight 只保留能支持 调查的风险、Evidence 覆盖、Gap、来源上下文与路径，并下钻到现有 Execution、Case、Discovery 和 Connector 界面。Connector 当前 trust/checkpoint 与固定 Evidence 快照分开，前者不进入 Event hash 或 Event-linked provenance。</p>
+<p>本候选不增加 migration，不改变 schema 19、数据库四角色、共享 Event/Connector Schema、 Golden vectors、M0/Gap/Provenance/Receipt identity、Trace Journey、OpenInference bounded-offline、 Cursor/Checkpoint 或 Workspace 写模型。升级新增准确 rc.5 来源，同版本替换仍拒绝。</p>
+<h3>0.3.0-rc.5 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>19（与 rc.4 相同，无新 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>；新增向后兼容 Trace Journey GET</td></tr><tr><td>Evidence</td><td><code>m0.1</code>；既有与新增 OpenInference event identity/hash 都由原冻结投影产生</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；共享 Schema/vector/mapping byte 不变</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；授权与 delivery state 不进入 M0/hash/provenance</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.5/manual-r5</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code>、<code>0.3.0-rc.3</code> 或 <code>0.3.0-rc.4</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Trace Journey、一次性授权门、metadata-only 3-span fixture 与相同 operation 幂等重放已在命名非生产 Target 验证；External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.5 在不修改 M0 <code>request_id</code>、event ID/hash 或共享协议映射的前提下，新增 product-local <code>xinsight.trace-journey.v1</code> 只读投影。它由一个已授权 execution 锚定，只聚合同一 <code>source_system_id + org_ref + project_ref + trace_id</code> 的非 Gap Evidence；只有唯一可解析的 <code>parent_span_id</code> 生成跨 execution 边，cycle 明确令完整性失败，未连边节点之间不绘制因果箭头。 UI 直接显示“谁发起—做了什么—经过系统—终点”，同时保留 bounded export 不等于完整来源 时间线的限制。</p>
+<p>OpenInference general runtime 与 Production bootstrap 继续 blocked。唯一新增入口要求 exact root-owned、最多两小时的非生产授权 manifest，绑定 target machine ID、当前 build、bundle path/SHA、operation、producer、scope 与最大 record 数。bundle 必须不含 prompt/response 属性； listener、Feed、Cursor、Checkpoint 均明确为 false。命令在授权、metadata policy、SHA 和 record 上限全部通过后才读取 importer credential 或连接 PostgreSQL；精确重放仍由既有 durable receipt 幂等收敛。两个既有 Feed 默认状态和运行语义不变。</p>
+<p>本候选不增加 migration，不改变 schema 19、数据库四角色、共享 Event/Connector Schema、 Golden vectors、M0/Gap/Provenance/Receipt identity、现有 Cursor/Checkpoint 或 Workspace 写模型。</p>
+<h3>0.3.0-rc.4 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>19（与 rc.3 相同，无新 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code>；identity/hash 不变，Workspace 仅引用 Evidence</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；既有 v1 runtime bindings 保留</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；后者不进入 M0/Provenance/Cursor/Checkpoint</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.4/manual-r4</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>、<code>0.3.0-rc.2</code> 或 <code>0.3.0-rc.3</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>execution search fixed-snapshot 契约 Local 实现/测试通过；CI、Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>rc.4 修复 authenticated execution search 的 fixed-snapshot 重读断点。首轮查询返回 <code>page.as_of</code> 后，前端会把该值写回 URL 并在同一快照重读；rc.3 后端遗漏了 search <code>as_of</code> 允许项，导致第二次请求被错误归类为 <code>invalid_argument</code>。rc.4 在 search 使用既有 24 小时 <code>as_of</code> 校验，并要求显式 <code>as_of</code> 与 Cursor 内快照严格一致；OpenAPI 与回归测试同步冻结该 契约。前端固定快照、分页和 URL 可复核语义不降级。</p>
+<p>本 PATCH 不增加 migration，不改变 schema 19、数据库四角色、Evidence/M0 identity/hash、 Connector、Gap、Provenance、Receipt、Cursor/Checkpoint 或 Workspace 数据模型。rc.3 到 rc.4 使用既有四凭据布局，不触发 Workspace credential bridge。</p>
+<h3>0.3.0-rc.3 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>19（与 rc.2 相同，无新 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code>；identity/hash 不变，Workspace 仅引用 Evidence</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；既有 v1 runtime bindings 保留</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；后者不进入 M0/Provenance/Cursor/Checkpoint</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.3/manual-r3</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact、准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code> 或 <code>0.3.0-rc.2</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>命名非生产 Target 的 rc.15→rc.3 升级、四角色数据库桥接与运行边界已验证；登录后完整 UI 验收被 fixed-snapshot 缺陷阻断；External integration、Production 仍待证</td></tr></tbody></table></div>
+<p>rc.3 只修复真实 rc.15 Target 暴露的三凭据到四角色数据库边界迁移断点。非变更 preflight 明确报告 <code>workspace_bridge_required</code>；mutating adopt/upgrade 生成唯一 Workspace 密码、保留三条 旧 DSN、建立不可变 successor、创建并验证最小权限角色，再原子切换 credential symlink。 角色扩展开始后只允许 recover/resume；旧凭据集、M0、Connector、Gap、Provenance、Cursor、 Checkpoint、Receipt 与 A+C UI 语义不变。</p>
+<p>从 rc.2 升级必须已有严格四凭据布局，不触发兼容桥。rc.3 没有新 migration；旧应用仍不兼容 schema 19，因此 application rollback 继续 fail closed，必要时使用隔离数据库恢复。</p>
+<h3>0.3.0-rc.2 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>19（schema 18 调查能力 + immutable completed Connector Operational Receipt）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code>；identity/hash 不变，Workspace 仅引用 Evidence</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.2</code> immutable product pin；既有 v1 runtime bindings 保留</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>、<code>foigent.operational-receipt.v2</code>；后者不进入 M0/Provenance/Cursor/Checkpoint</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.2/manual-r2</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact 或准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Local implementation/测试通过后方可形成候选；Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>本候选提供 outcome-first Story、来源声明 DAG、独立 Chronology、四轴 completeness、Case/ Finding/Evidence Pack、Agent read/cite、来源声明 Session、Compare、Feedback、Alert-to-Case、 版本维度、Gap resolution 和 Known/Unknown Discovery。Discovery 是带 Evidence、limitations 和 abstention 的确定性假设层，不是自动策略或执行平面。</p>
+<p>rc.2 当时的产品化修订在同一未发布候选内重组任务导航，加入显式移动菜单、四步执行路径 摘要、1024px 结果卡片、小屏来源关系列表、渐进披露和 Connector 三层状态。它不增加 API、 migration、Evidence 字段或因果关系；发布资格继续绑定最终准确 commit/payload，而不是复用 此前候选构建。</p>
+<p>Foigent <code>v2.0.2</code> 已作为不可变发布被产品 pin 采用。该 PATCH 修复远程 composite Action 的 snapshot portability；产品 CI 不再 checkout 私有权威仓，也不需要权威仓历史或产品侧凭据。 Event/Connector Schema、vectors、reports、M0 identity/hash 和产品投影输出相对 <code>v2.0.1</code> 保持不变。OpenInference bounded-offline importer 与 durable completed receipt 已实现并通过 本地 crash/replay 收敛测试，但 runtime 仍因未获运行时激活授权而 fail closed。Local 实现不能替代 Target/External proof。 <code>0.3.0-rc.1</code> 仅保留为未发布的本地历史证据，不在本候选的 upgrade allowlist 中。</p>
+<h3>0.3.0-rc.1 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>18（Case/Workspace、Agent Access、分析扩展与 bounded-offline provenance）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code>；identity/hash 不变，Workspace 仅引用 Evidence</td></tr><tr><td>Shared protocol</td><td>Foigent <code>v2.0.0</code> product pin；既有 v1 runtime bindings 保留</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code>；OpenInference bounded-import receipt 尚未实现</td></tr><tr><td>Manual</td><td><code>0.3.0-rc.1/manual-r1</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact 或准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.15</code>；同版本和任意未列版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Local implementation/测试通过；Target、External integration、Production 仍分别待证</td></tr></tbody></table></div>
+<p>本候选提供 outcome-first Story、来源声明 DAG、独立 Chronology、四轴 completeness、Case/ Finding/Evidence Pack、Agent read/cite、来源声明 Session、Compare、Feedback、Alert-to-Case、 版本维度、Gap resolution 和 Known/Unknown Discovery。Discovery 是带 Evidence、limitations 和 abstention 的确定性假设层，不是自动策略或执行平面。</p>
+<p>Foigent <code>v2.0.0</code> 的产品 pin 已固定，但 OpenInference runtime 仍 fail closed：权威 Manifest 内嵌投影 digest 与同一 release component digest 不一致，且 durable bounded-import receipt 与运行时授权均不存在。Local parser/projection 兼容向量不能替代 Target/External proof。</p>
+<h3>0.2.0-rc.15 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>15（与 rc.14 相同，无新 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code>；严格 UniRouter Execution Evidence V2 input</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.2.0-rc.15/manual-r15</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact 或准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.14</code>；同版本和任意跳版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Local implementation/测试通过；Target HTTPS authenticated flow、External integration、Production 由逐环境 evidence 决定</td></tr></tbody></table></div>
+<p>rc.15 不改变 schema、API、Access Plane、Evidence identity/hash、Connector credential 或 checkpoint。它把空 Projection Gap 的归一化永久放回产品代码，移除目标 Nginx 临时 <code>sub_filter</code> 依赖；客户演示 UI 在 1280px 使用清晰的单列 Investigation/Chronology/Proof 阅读流，HTTPS 入口显示准确的产品 Session 状态，并移除 Phase 编号和内部实现文案。</p>
+<p>同机 loopback TLS terminator 继续是显式 opt-in 合同，不是对任意反向代理 header 的信任。 应用仍只监听 <code>127.0.0.1:8080</code>；固定 external origin、loopback remote、唯一 <code>X-Forwarded-Proto: https</code>、准确 forwarded host、Host/Origin 一致以及无通用 <code>Forwarded</code> header 缺一不可。代理必须覆盖客户端 forwarded headers，只代理 reader-only 产品 UI/API。 HTTP tunnel、代理自身登录页和应用/数据库直接公网监听仍不受支持。</p>
+<h3>0.2.0-rc.14 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>15（additive Execution Evidence V2 产品注册）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code>；可选独立 trusted TLS proxy env</td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code>；严格 UniRouter Execution Evidence V2 input</td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.2.0-rc.14/manual-r14</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact 或准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.13</code>；同版本和任意跳版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Local implementation/测试通过；Target HTTPS authenticated flow、External integration、Production 由逐环境 evidence 决定</td></tr></tbody></table></div>
+<p>rc.14 增加确定性 Trace Investigation projection、Investigation/Chronology/Proof UI、七阶段覆盖、 Evidence/Gaps/citation inspector，以及精确 latency/token/micro-CNY。因果边只来自 source 声明的 parent span；recovery 只在同一执行内观察到有序 failure→retry→fallback→later provider success 且 source/projection complete 时成立。</p>
+<p>同机 loopback TLS terminator 是显式 opt-in 合同，不是对任意反向代理 header 的信任。 应用仍只监听 <code>127.0.0.1:8080</code>；固定 external origin、loopback remote、唯一 <code>X-Forwarded-Proto: https</code>、准确 forwarded host、Host/Origin 一致以及无通用 <code>Forwarded</code> header 缺一不可。代理必须覆盖客户端 forwarded headers，只代理 reader-only 产品 UI/API。 HTTP tunnel、代理自身登录页和应用/数据库直接公网监听仍不受支持。</p>
+<h3>0.2.0-rc.13 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>14（与 rc.12 相同，无新 migration）</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code></td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code></td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.2.0-rc.13/manual-r13</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact 或准确 <code>0.2.0-rc.3</code>–<code>0.2.0-rc.12</code>；同版本和任意跳版本不支持</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>Local implementation/测试进行收口；PR CI、exact-main CI、Target HTTPS authenticated flow、External integration、Production pending</td></tr></tbody></table></div>
+<p>rc.13 在不改变 schema 14、Evidence/Connector wire、reader DSN 身份或两个既有 Connector worker 的前提下，新增产品自有 Access Plane：root-provisioned 严格本地账户 JSON、 Argon2id、内存 Session、<code>investigator|operator</code> RBAC、login/logout/current-session、 operator Session list/revoke，以及最小化不含 username/password/token/Evidence 的审计。 账户文件没有默认可用账户，也没有 Web 建号、password reset、改角色或写回能力；启动、 install/adopt/upgrade/resume/abort 会在任何受管 mutation 前复核准确 credential。</p>
+<p>匿名调查 UI 现在必须返回 no-store <code>303 Location: /login</code>，匿名调查 API 必须返回准确六字段 <code>401 authentication_required</code> problem。<code>/readyz</code> 使用 reader 执行一个有界、零数据返回的 代表性查询，覆盖五张调查表；任何一张表的 SELECT grant 漂移都会 fail closed。静态资源仅 允许当前 <code>index.html</code> 实际引用的哈希文件，仓库中为不做批量删除而保留的历史生成资产不通过 HTTP 暴露。</p>
+<p>Session cookie 固定为 <code>__Host-xinsight_session</code> 的 Secure/HttpOnly/SameSite=Strict host-only cookie；状态变更要求 direct same-origin HTTPS 与 Session-bound CSRF。当前签名候选仍没有 TLS listener、certificate/hostname 或 trusted-proxy contract，因此 Local TLS handler/UI 测试不等于 Target 登录证明。qualification 只允许全 disabled synthetic CI credential 来证明 安装门禁和匿名边界，不生成默认可登录账户；Target HTTPS authentication、External integration 与 Production 均保持 pending。</p>
+<h3>0.2.0-rc.12 历史资格说明</h3>
+<div class="table-scroll"><table><thead><tr><th>维度</th><th>值</th></tr></thead><tbody><tr><td>Host</td><td>Ubuntu 22.04 LTS, Linux amd64, systemd</td></tr><tr><td>PostgreSQL</td><td>16.14 Alpine 3.24 fixed image, same private host, loopback Compose</td></tr><tr><td>Database schema</td><td>14</td></tr><tr><td>Config schema</td><td><code>xinsight.config.v1</code></td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code></td></tr><tr><td>Evidence</td><td><code>m0.1</code></td></tr><tr><td>Receipt</td><td><code>xinsight.import-receipt.v1</code></td></tr><tr><td>Manual</td><td><code>0.2.0-rc.12/manual-r12</code></td></tr><tr><td>Upgrade source</td><td>exact allowlisted Phase 1 artifact or exact <code>0.2.0-rc.3</code>/<code>0.2.0-rc.4</code>/<code>0.2.0-rc.5</code>/<code>0.2.0-rc.6</code>/<code>0.2.0-rc.7</code>/<code>0.2.0-rc.8</code>/<code>0.2.0-rc.9</code>/<code>0.2.0-rc.10</code>/<code>0.2.0-rc.11</code>; same-version and arbitrary version jump unsupported</td></tr><tr><td>First-customer authority</td><td><code>owner_supervised_trial</code>; User+Codex only; no retained private key; no customer self-upgrade</td></tr><tr><td>Field qualification</td><td>LiteLLM Reference Connector implemented locally; PR CI、exact-main CI、Target rc.12 reconciliation、External integration closure、Production pending</td></tr></tbody></table></div>
+<p>rc.12 以 additive/reversible schema 14 新增受约束的 <code>connector_pull</code> provenance mode， 但不改变 completed-execution Feed wire/credential/checkpoint、M0 event identity/hash、 EvidenceStore 写入事务或 Read API。LiteLLM 使用 <code>connector_pull</code>，既有 Reference 继续 使用 <code>completed_execution_pull</code>；down 在存在 <code>connector_pull</code> 行时 fail closed。它以 精确产品注册新增独立 LiteLLM spend-log worker/service/config/credential， 全局 CI authority 与 LiteLLM 产品本地 binding 固定为不可变 Foigent Event Connector Protocol <code>v1.1.2</code>、commit <code>fd82aeca9877bea8064b25c365a3cdcdd0bb3d16</code>、release digest <code>sha256:0b414d5d59e5a7ca5c05505cb58d7992c544537da1c84a57256ec205618d9cd1</code>。 它仅把 LiteLLM v1.93.0 的精确 <code>cache_hit=&quot;None&quot;</code> 映射为 <code>cache_status=&quot;unknown&quot;</code>， 不接受大小写变体或其他字符串。既有 completed-execution 产品本地 runtime binding 继续保持其已验证的 Protocol <code>v1.0.0</code>。两者各自拥有 source/adapter/cursor identity，LiteLLM-only erratum 不改变 completed-execution telemetry/registry/lifecycle，通用 worker/EvidenceStore 不做 source switch。</p>
+<p>LiteLLM Reference V1 严格读取私有 HTTPS <code>/spend/logs/v2</code>，只保留 metadata allowlist， 固定 LiteLLM 配置显式关闭 message 与 raw request/response logging；真实组件 CI 用唯一 sentinel 证明 Source DB、容器日志、<code>/spend/logs/v2</code> 和 X Evidence 四层均无 prompt/response； 同一资格把三把生成的 raw virtual key 作为 secret sentinels 并逐层证明明文为零。 组件 CI 的 master key 只初始化团队/成员/key；目标团队的独立 traffic key 产生成功/失败， 非管理员 observer 成员同时受团队 <code>/spend/logs</code> 权限和 key <code>allowed_routes=[&quot;/spend/logs/v2&quot;]</code> 双重限制。资格必须证明 observer 只读取目标团队两条记录、 不能调用 LLM route，且看不到第二个未授权团队的一条记录；运行时严禁使用 master key。 组件模型以 <code>model_info</code> 固定 input/output token 单价 <code>0.000001</code>/<code>0.000002</code> USD，并在 Source HTTP 与 X M0 两层断言成功样本 3/2/5 tokens、<code>0.000007</code> USD，以及失败样本 0/0/0 tokens、0 USD。 以 60 秒 start-time eligibility delay 收敛：<code>F=floor_microsecond(T-60s)</code>，HTTP inclusive <code>end_date</code> 使用 <code>Q=floor_second(F)</code>，<code>Q &lt; startTime &lt;= F</code> 延后到重叠轮次，row <code>endTime</code> 不参与查询 fence/checkpoint；checkpoint 按 <code>(startTime, request_id UTF-8 bytes)</code> 推进，整窗最多 20 页/2000 行/8 MiB。协议 legacy <code>finality=finalized_after_delay</code> 不投影为 M0 terminal finality。USD spend 仅进入 source-reported extension；M0 主事件为 <code>model.request.succeeded|failed</code> 并带四个明确 gaps。晚到且 <code>startTime</code> 早于已推进 checkpoint 的行不在 V1 可恢复覆盖内；固定 SourceSystemID/AdapterManifestID 只支持一个 LiteLLM instance profile。此候选不宣称 Production-lossless、多实例 registry 或通用 Phase 4 插件运行时。</p>
+<h3>0.2.0-rc.11 历史资格说明</h3>
+<p>rc.11 在既有 completed-execution pull 上采用首个 Reference Connector 产品内兼容桥； <code>legacy|shadow|neutral_canary</code> 保持单 writer、单 cursor，并以既有 M0/Gap/provenance 精确兼容门禁保护历史输出。</p>
+<h3>0.2.0-rc.10 历史资格说明</h3>
+<p>相较 rc.9，rc.10 不改变 schema 13、completed-execution contract、HTTP source、credential、 cursor/high-watermark、EvidenceStore 或 migration set。它只把 outer PostgreSQL <code>TIMESTAMPTZ</code> 与 immutable inner RFC3339 terminal timestamp 的同一 instant 绑定定义为 UTC PostgreSQL 微秒精度：残差严格小于 1µs 兼容，等于或大于 1µs 仍 fail closed；inner bytes/SHA 不重写。rc.9→rc.10 仍由已验签目标 payload 控制器执行，并在 upgrade/recovery 中保留既有 config、active credential、operation state、DB set、durable cursor 和 worker 的 active、enabled 两项原状态；两者独立保留，包括 active+disabled。</p>
+<h3>0.2.0-rc.9 历史资格说明</h3>
+<p>rc.9 不改变 schema 13、completed-execution contract、HTTP source、cursor 或 EvidenceStore。它新增 target-local root-only <code>xinsightctl feed-credential prepare|status|activate|abort</code>：raw token 由 32-byte <code>crypto/rand</code> 生成且不离开 X target，UniRouter 只登记严格六字段 public verifier bundle。 <code>.next</code> 文件采用 exclusive/no-follow/root <code>0600</code>/single-link 校验，exact operation/verifier 绑定、atomic replace 和 durable nonsecret state 使 prepare/activate/abort 跨 crash 可恢复。release qualification 只证明 CLI/schema 与 dormant absent 状态，不执行 <code>prepare</code>、不生成 principal、不启动 worker。</p>
+<h3>0.2.0-rc.8 历史资格说明</h3>
+<p>rc.8 不改变 schema 13 或 completed-execution contract。它修复跨版本升级控制器边界：升级及 其中断恢复必须由已验签并解出的目标 payload 内 <code>xinsightctl</code> 执行，使新 systemd/runtime inventory 能完整落地。其 exact-main Signed V2/Fresh Install 与 Development rc.8/schema13 dormant reconciliation 已通过；feed unit loaded/inactive/disabled，feed env/key/process 均不存在。该历史资格不替代 rc.9 receiver-generated credential 的独立签名发布与 Target reconciliation。</p>
+<p>本候选实现 execution search/detail/timeline、selected-node/source/provenance/gap UI、七种字段 状态、签名 release envelope、checksum/dirty migration ledger、维护锁与可恢复单机生命周期。</p>
+<p>rc.7 相对不可变的 <code>0.2.0-rc.6</code> 新增严格的 <code>unirouter.completed-execution.v1</code> receiver、私有 pull source、durable activation/cursor/ worker state、现有 EvidenceStore 幂等提交、live payload provenance 与独立 writer worker。 V1 是 at-least-once：partial-page persistence 可接受，但只有所有 item inserted 或 duplicate-noop 后才推进 cursor；冲突失败关闭。rc.8 已把该 worker 以 dormant 状态带到 Development；真实 credential registration、activation、双方流量与 API/UI readback 仍须 按单独 joint activation baton 证明。</p>
+<h3>0.2.0-rc.6 历史资格说明</h3>
+<p>本候选还关闭了 <code>0.2.0-rc.1</code> 在首次真实 Target preflight 中暴露的 P1：受管 Compose、 Phase 1 实际数据盘和 Target runbook 现在统一为 <code>/data/x-insight/postgres</code> 与根 <code>PGDATA</code>， 支持形态 legacy qualification 覆盖旧 <code>xinsight</code> 超管到三角色 credential set 的受监督桥接。</p>
+<p>相对 <code>0.2.0-rc.2</code>，本候选还让签名 payload 解包、lifecycle 目录和 systemd/Compose 运行时文件显式恢复合同权限，不再继承操作账户的 <code>umask</code>。rc.2 在命名 Target 的 <code>stage_release</code> 阶段因 <code>umask 077</code> 安全失败，并已在数据库迁移和激活前受控中止；它不获得 Target 状态。</p>
+<p>相对 <code>0.2.0-rc.3</code>，本候选核对并保留准确 Phase 1 release-layout drop-in，再以签名包内 <code>99-xinsight-managed-launcher.conf</code> 固定有效 launcher；未知 active drop-in 会在 preflight 失败。既有产品目录也会恢复准确权限，升级/回滚/恢复会额外证明 systemd 的有效 <code>ExecStart</code>。</p>
+<p>相对 <code>0.2.0-rc.4</code>，本候选把 required payload 清单绑定到签名 manifest 的产品版本：只有 准确历史 <code>0.2.0-rc.3</code> 可不含后来引入的 managed-launcher drop-in，当前与未知版本仍必须包含。 rc.4 在命名 Target 的只读 preflight 阶段发现无法验证 rc.3 previous bundle，未创建 operation、 未备份、未迁移、未激活，现场已恢复到稳定 Phase 1；因此 rc.4 不获得 Target 状态。</p>
+<p>当前包含生产意图的私有 pull worker 和 receiver-generated credential tooling，但尚未由本页 证明 live activation、External integration 或 UI closure。它不包含自动 receipt transport、 raw prompt/response、多租户、公网、HA/DR 或 Production verified；历史 operator-mediated sidecar 不再是 live transport。</p>
+<p>精确 PostgreSQL image index/architecture digest、legacy artifact/manifest digest 和签名 key ID 以同包 <code>release/compatibility-matrix.json</code>、<code>owner-supervised-trial-release.json</code> 与 signed manifest 为准；本页不复制每次 workflow 动态生成的 key ID。</p>
+</section>
+    </main>
+  </div>
+  <footer>
+    <span>X-Insight 0.3.0-rc.13</span>
+    <span>0.3.0-rc.13/manual-r13</span>
+    <span>生成源 sha256:250ae54d8f1e383ae740604687eedfac4115bdd17b8508e6f1883d6c637af365</span>
+  </footer>
+</body>
+</html>

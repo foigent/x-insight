@@ -1,0 +1,409 @@
+name: Foigent Protocol Conformance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - api/openapi/prd2-v1.yaml
+      - contracts/foigent/event-connector-protocol.pin.json
+      - contracts/foigent/xinsight-projection-binding.v1.json
+      - contracts/foigent/xinsight-litellm-projection-binding.v1.json
+      - contracts/openinference/**
+      - contracts/openinference/trace-journey-study.v1.json
+      - contracts/openinference/shared-protocol-compatibility.v1.json
+      - contracts/openinference/shared-protocol-compatibility.v2.json
+      - contracts/openinference/xinsight-projection-binding.v2.json
+      - contracts/completed-execution/v1/**
+      - contracts/execution-evidence/v2/**
+      - contracts/execution-evidence/incubation/**
+      - cmd/xinsight-draft-evidence-validator/**
+      - internal/draftevidence/**
+      - scripts/check-draft-evidence-history.py
+      - cmd/xinsight-launcher/main.go
+      - cmd/xinsight-server/main.go
+      - cmd/xinsightctl/main.go
+      - cmd/xinsightctl/query.go
+      - internal/db/resource_access.go
+      - internal/db/resource_action_offline.go
+      - internal/db/resource_offline.go
+      - internal/db/source_budgets.go
+      - internal/db/source_budgets_restore.go
+      - internal/db/source_contents.go
+      - internal/db/source_facts_managed.go
+      - internal/integration/pullfeed/content_source.go
+      - internal/sourcefacts/budget_contract.go
+      - internal/sourcefacts/budget_offline.go
+      - internal/sourcefacts/config.go
+      - internal/sourcefacts/consumer.go
+      - internal/sourcefacts/content_contract.go
+      - internal/sourcefacts/content_control.go
+      - internal/sourcefacts/contract.go
+      - internal/sourcefacts/observation_contract.go
+      - internal/sourcefacts/observation_envelope.go
+      - internal/sourcefacts/offline.go
+      - internal/workbench/action_witness.go
+      - internal/workbench/openclaw_trajectory.go
+      - internal/workbench/resource_access.go
+      - internal/workspace/execution_context.go
+      - internal/workspace/resource_basis.go
+      - internal/checkpointepoch/**
+      - internal/hostctl/checkpoint_epoch.go
+      - internal/hostctl/checkpoint_epoch_test.go
+      - deploy/xinsight.service
+      - internal/access/accounts.go
+      - internal/access/oidc.go
+      - internal/adapters/litellm/**
+      - internal/adapters/openinference/**
+      - internal/adapters/openinference/compatibility.go
+      - internal/adapters/unirouter/completed_execution.go
+      - internal/adapters/unirouter/execution_evidence_bundle.go
+      - internal/adapters/unirouter/execution_evidence_bundle_test.go
+      - internal/adapters/unirouter/foigent_bridge.go
+      - internal/adapters/unirouter/foigent_bridge_test.go
+      - internal/adapters/unirouter/foigent_neutral_profile.go
+      - internal/adapters/unirouter/foigent_neutral_profile_test.go
+      - internal/adapters/unirouter/foigent_runtime.go
+      - internal/adapters/unirouter/foigent_runtime_test.go
+      - internal/connector/**
+      - internal/connector/operational_receipt_v2.go
+      - internal/integration/openinferenceoffline/**
+      - internal/integration/openinferenceoffline/authorization.go
+      - internal/integration/openinferenceoffline/evidence_committer.go
+      - internal/integration/openinferenceoffline/importer.go
+      - internal/integration/openinferenceoffline/operation_binding.go
+      - internal/integration/openinferenceoffline/postgres_store.go
+      - internal/db/agent_access_store.go
+      - internal/db/analysis_extension_store.go
+      - internal/db/connector_trust_store.go
+      - internal/db/discovery_store.go
+      - internal/db/evidence_store.go
+      - internal/db/investigation_store.go
+      - internal/db/posture_store.go
+      - internal/db/trace_journey_store.go
+      - internal/db/migrate.go
+      - internal/db/product_registry_internal_test.go
+      - internal/db/connector_pull_migration_test.go
+      - internal/db/session_store.go
+      - internal/db/workspace_store.go
+      - migrations/**
+      - schemas/integration/openinference-bounded-offline-authorization-v1.schema.json
+      - schemas/integration/connector-checkpoint-epoch-prepare-v1.schema.json
+      - internal/api/access.go
+      - internal/api/investigation.go
+      - internal/api/problem.go
+      - internal/api/posture.go
+      - internal/api/server.go
+      - internal/api/transport_security.go
+      - internal/api/workspace.go
+      - internal/config/postgres.go
+      - internal/discovery/engine.go
+      - internal/hostctl/database.go
+      - internal/investigation/compare.go
+      - internal/investigation/model.go
+      - internal/investigation/posture.go
+      - internal/investigation/projection.go
+      - internal/integration/pullfeed/evidence_committer.go
+      - internal/integration/pullfeed/feed.go
+      - internal/integration/pullfeed/http_source.go
+      - internal/integration/pullfeed/live_worker.go
+      - internal/integration/pullfeed/phase2b_differential_test.go
+      - internal/integration/pullfeed/reference_committer.go
+      - internal/integration/pullfeed/reference_committer_test.go
+      - internal/integration/pullfeed/reference_committer_postgres_test.go
+      - internal/integration/pullfeed/postgres_state.go
+      - internal/integration/litellmfeed/**
+      - cmd/xinsight-importer/main.go
+      - internal/config/litellm_feed.go
+      - internal/config/litellm_feed_test.go
+      - internal/config/unirouter_feed.go
+      - internal/workspace/model.go
+      - internal/workspace/pack.go
+      - internal/workspace/service_identity.go
+      - deploy/xinsight-feed.env.example
+      - deploy/xinsight-litellm-feed.env.example
+      - deploy/xinsight-litellm-feed.service
+      - scripts/verify-phase2c-reference-runtime.sh
+      - scripts/verify-phase2c-litellm-runtime.sh
+      - scripts/ci/litellm-component-config.yaml
+      - scripts/ci/litellm-component-upstream.py
+      - scripts/ci/run-litellm-component-integration.sh
+      - scripts/ci/run-litellm-postgres-convergence.sh
+      - go.mod
+      - .github/workflows/foigent-protocol-conformance.yml
+  push:
+    branches: [main]
+    paths:
+      - api/openapi/prd2-v1.yaml
+      - contracts/foigent/event-connector-protocol.pin.json
+      - contracts/foigent/xinsight-projection-binding.v1.json
+      - contracts/foigent/xinsight-litellm-projection-binding.v1.json
+      - contracts/openinference/**
+      - contracts/openinference/trace-journey-study.v1.json
+      - contracts/openinference/shared-protocol-compatibility.v1.json
+      - contracts/openinference/shared-protocol-compatibility.v2.json
+      - contracts/openinference/xinsight-projection-binding.v2.json
+      - contracts/completed-execution/v1/**
+      - contracts/execution-evidence/v2/**
+      - contracts/execution-evidence/incubation/**
+      - cmd/xinsight-draft-evidence-validator/**
+      - internal/draftevidence/**
+      - scripts/check-draft-evidence-history.py
+      - cmd/xinsight-launcher/main.go
+      - cmd/xinsight-server/main.go
+      - cmd/xinsightctl/main.go
+      - cmd/xinsightctl/query.go
+      - internal/db/resource_access.go
+      - internal/db/resource_action_offline.go
+      - internal/db/resource_offline.go
+      - internal/db/source_budgets.go
+      - internal/db/source_budgets_restore.go
+      - internal/db/source_contents.go
+      - internal/db/source_facts_managed.go
+      - internal/integration/pullfeed/content_source.go
+      - internal/sourcefacts/budget_contract.go
+      - internal/sourcefacts/budget_offline.go
+      - internal/sourcefacts/config.go
+      - internal/sourcefacts/consumer.go
+      - internal/sourcefacts/content_contract.go
+      - internal/sourcefacts/content_control.go
+      - internal/sourcefacts/contract.go
+      - internal/sourcefacts/observation_contract.go
+      - internal/sourcefacts/observation_envelope.go
+      - internal/sourcefacts/offline.go
+      - internal/workbench/action_witness.go
+      - internal/workbench/openclaw_trajectory.go
+      - internal/workbench/resource_access.go
+      - internal/workspace/execution_context.go
+      - internal/workspace/resource_basis.go
+      - internal/checkpointepoch/**
+      - internal/hostctl/checkpoint_epoch.go
+      - internal/hostctl/checkpoint_epoch_test.go
+      - deploy/xinsight.service
+      - internal/access/accounts.go
+      - internal/access/oidc.go
+      - internal/adapters/litellm/**
+      - internal/adapters/openinference/**
+      - internal/adapters/openinference/compatibility.go
+      - internal/adapters/unirouter/completed_execution.go
+      - internal/adapters/unirouter/execution_evidence_bundle.go
+      - internal/adapters/unirouter/execution_evidence_bundle_test.go
+      - internal/adapters/unirouter/foigent_bridge.go
+      - internal/adapters/unirouter/foigent_bridge_test.go
+      - internal/adapters/unirouter/foigent_neutral_profile.go
+      - internal/adapters/unirouter/foigent_neutral_profile_test.go
+      - internal/adapters/unirouter/foigent_runtime.go
+      - internal/adapters/unirouter/foigent_runtime_test.go
+      - internal/connector/**
+      - internal/connector/operational_receipt_v2.go
+      - internal/integration/openinferenceoffline/**
+      - internal/integration/openinferenceoffline/authorization.go
+      - internal/integration/openinferenceoffline/evidence_committer.go
+      - internal/integration/openinferenceoffline/importer.go
+      - internal/integration/openinferenceoffline/operation_binding.go
+      - internal/integration/openinferenceoffline/postgres_store.go
+      - internal/db/agent_access_store.go
+      - internal/db/analysis_extension_store.go
+      - internal/db/connector_trust_store.go
+      - internal/db/discovery_store.go
+      - internal/db/evidence_store.go
+      - internal/db/investigation_store.go
+      - internal/db/posture_store.go
+      - internal/db/trace_journey_store.go
+      - internal/db/migrate.go
+      - internal/db/product_registry_internal_test.go
+      - internal/db/connector_pull_migration_test.go
+      - internal/db/session_store.go
+      - internal/db/workspace_store.go
+      - migrations/**
+      - schemas/integration/openinference-bounded-offline-authorization-v1.schema.json
+      - schemas/integration/connector-checkpoint-epoch-prepare-v1.schema.json
+      - internal/api/access.go
+      - internal/api/investigation.go
+      - internal/api/problem.go
+      - internal/api/posture.go
+      - internal/api/server.go
+      - internal/api/transport_security.go
+      - internal/api/workspace.go
+      - internal/config/postgres.go
+      - internal/discovery/engine.go
+      - internal/hostctl/database.go
+      - internal/investigation/compare.go
+      - internal/investigation/model.go
+      - internal/investigation/posture.go
+      - internal/investigation/projection.go
+      - internal/integration/pullfeed/evidence_committer.go
+      - internal/integration/pullfeed/feed.go
+      - internal/integration/pullfeed/http_source.go
+      - internal/integration/pullfeed/live_worker.go
+      - internal/integration/pullfeed/phase2b_differential_test.go
+      - internal/integration/pullfeed/reference_committer.go
+      - internal/integration/pullfeed/reference_committer_test.go
+      - internal/integration/pullfeed/reference_committer_postgres_test.go
+      - internal/integration/pullfeed/postgres_state.go
+      - internal/integration/litellmfeed/**
+      - cmd/xinsight-importer/main.go
+      - internal/config/litellm_feed.go
+      - internal/config/litellm_feed_test.go
+      - internal/config/unirouter_feed.go
+      - internal/workspace/model.go
+      - internal/workspace/pack.go
+      - internal/workspace/service_identity.go
+      - deploy/xinsight-feed.env.example
+      - deploy/xinsight-litellm-feed.env.example
+      - deploy/xinsight-litellm-feed.service
+      - scripts/verify-phase2c-reference-runtime.sh
+      - scripts/verify-phase2c-litellm-runtime.sh
+      - scripts/ci/litellm-component-config.yaml
+      - scripts/ci/litellm-component-upstream.py
+      - scripts/ci/run-litellm-component-integration.sh
+      - scripts/ci/run-litellm-postgres-convergence.sh
+      - go.mod
+      - .github/workflows/foigent-protocol-conformance.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-pin:
+    name: X-Insight Protocol Pin
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16.14-alpine3.24@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+        env:
+          POSTGRES_USER: xinsight_admin
+          POSTGRES_PASSWORD: xinsight
+          POSTGRES_DB: xinsight_protocol
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "PGAPPNAME=xinsight_protocol_health pg_isready -q -U xinsight_admin -d xinsight_protocol"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      XINSIGHT_POSTGRES_DSN: postgres://xinsight_admin:xinsight@localhost:5432/xinsight_protocol?sslmode=disable
+    steps:
+      - name: Checkout X-Insight
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Run pinned cross-language Conformance kit and verify X-Insight pin
+        uses: foigent/event-connector-spec/actions/source-neutral-v2@ad8fe7a38c9d7335657630baa8670dd07556b98c
+        with:
+          pin: contracts/foigent/event-connector-protocol.pin.json
+          product: xinsight
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: false
+
+      - name: Validate fixed Execution Evidence Draft Gate
+        run: |
+          go run ./cmd/xinsight-draft-evidence-validator \
+            --repository-root . \
+            --report "${RUNNER_TEMP}/execution-evidence-draft-conformance.json"
+          python3 scripts/check-draft-evidence-history.py --self-test
+
+      - name: Enforce historical Draft fixture and manifest immutability
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            python3 scripts/check-draft-evidence-history.py \
+              --event pull_request --base "$PR_BASE_SHA" --head "$HEAD_SHA"
+          elif [ "$EVENT_NAME" = "push" ]; then
+            python3 scripts/check-draft-evidence-history.py \
+              --event push --base "$PUSH_BASE_SHA" --head "$HEAD_SHA"
+          else
+            python3 scripts/check-draft-evidence-history.py --event current
+          fi
+
+      - name: Upload Execution Evidence Draft conformance report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: execution-evidence-draft-conformance-${{ github.run_id }}
+          path: ${{ runner.temp }}/execution-evidence-draft-conformance.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify Phase 2C single-writer Reference runtime
+        run: bash scripts/verify-phase2c-reference-runtime.sh
+
+      - name: Verify completed-execution runtime and differential compatibility
+        run: >-
+          go test
+          ./internal/connector
+          ./internal/adapters/unirouter
+          ./internal/integration/pullfeed
+          -run '^(TestFoigentReferenceBridge|TestPhase2B|TestCompletedExecutionReferenceRuntime|TestModeAwareCommitter|TestReferenceProjectionComparator|TestReferenceNeutralCanary)'
+          -count=1
+
+      - name: Verify dormant OpenInference bounded-offline receipt boundary
+        run: >-
+          go test
+          ./internal/connector
+          ./internal/adapters/openinference
+          ./internal/integration/openinferenceoffline
+          ./cmd/xinsight-importer
+          -count=1
+
+      - name: Verify LiteLLM Reference runtime boundaries
+        run: bash scripts/verify-phase2c-litellm-runtime.sh
+
+      - name: Verify LiteLLM projection and durable PostgreSQL convergence
+        run: bash scripts/ci/run-litellm-postgres-convergence.sh
+
+  litellm-component:
+    name: LiteLLM v1.93.0 Component Integration
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.14-alpine3.24@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+        env:
+          POSTGRES_USER: xinsight_admin
+          POSTGRES_PASSWORD: xinsight
+          POSTGRES_DB: litellm_component_source
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "PGAPPNAME=litellm_component_source_health pg_isready -q -U xinsight_admin -d litellm_component_source"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      XINSIGHT_POSTGRES_DSN: postgres://xinsight_admin:xinsight@localhost:5432/xinsight_litellm_component?sslmode=disable
+      LITELLM_COMPONENT_SOURCE_POSTGRES_DSN: postgres://xinsight_admin:xinsight@localhost:5432/litellm_component_source?sslmode=disable
+    steps:
+      - name: Checkout X-Insight
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: false
+
+      - name: Install matched PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          /usr/lib/postgresql/16/bin/pg_dump --version
+
+      - name: Run pinned LiteLLM, real PostgreSQL and local-upstream component path
+        run: bash scripts/ci/run-litellm-component-integration.sh
