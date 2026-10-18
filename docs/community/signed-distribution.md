@@ -38,6 +38,25 @@ untrusted package cannot establish that authority. Consumers may instead build
 the verifier from the independently authenticated exact source and pinned
 toolchain. Choosing a checksum is a trust decision, not signature verification.
 
+The owner-approved public key and XI issuance window are recorded in
+[release authority](release-authority.json) and [public trust](trusted-release-keys.json).
+The XI window is 2026-10-18T10:42:42.832Z through 2026-11-17T10:42:42.832Z;
+it asserts no earlier UR activation or original key-generation date. The real
+source timestamp of the formal candidate must fall in this window. These
+source records are preparation, not evidence of an issued or qualified artifact.
+A new owner-only private representation records its actual creation time and
+reuses the same material; never backfill the unknown original material birthday.
+
+The minimum authority channel is the existing protected canonical GitHub
+source plus the owner's direct fingerprint attestation. Consumers pin the real
+source and authority-record commits, and check the public trust/bootstrap hashes
+before execution, or build a verifier from that authenticated exact source.
+The final authority record gains real package/bootstrap hashes only after
+production and independent review. A record cannot embed its own unknown commit.
+Source and Release still share an owner account: this model does not claim an
+independent administrative domain or protection from complete account compromise.
+It does not require a new domain or service by default.
+
 The existing toolchain is Go 1.25.12, Node 22.23.1 and npm 10.9.8. From the approved
 clean source, use a new absolute output directory. These examples describe
 separately authorized operations; they are not an instruction to create a key:
@@ -129,6 +148,21 @@ sudo /approved/new-staging/bin/xinsightctl install --check --artifact /approved/
 sudo /approved/new-staging/bin/xinsightctl install --artifact /approved/candidate.tar.gz
 sudo /opt/x-insight/current/bin/xinsightctl status
 ```
+
+On Ubuntu 22.04 or 24.04, provision the documented system dependencies and a
+dedicated loopback PostgreSQL 16 database. The distributed Compose profile uses
+a pinned PostgreSQL container; it does not replace native systemd application
+installation. The matrix separates runtime prerequisites from the previously
+documented Ubuntu 24.04/native-PG validation environment. Code acceptance is
+not a passing artifact or Target result; exact FPV19 qualification on Ubuntu
+22.04/container PostgreSQL remains pending.
+
+Use an empty database and unused XI application paths/unit names for a fresh
+install. Where XI already exists, use a supported upgrade or first back up and
+retire its exact application objects under your own maintenance/recovery
+procedure. Preserve shared services and databases. A data reset, test-root
+mapping or deletion of only install-state metadata cannot establish fresh
+installation. Record existing OS dependencies in the acceptance scope.
 
 Check is read-only. Install requires separate authorization for the exact host,
 database, service account and credentials. A first install does not connect a

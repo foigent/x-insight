@@ -1,0 +1,14 @@
+{
+  "schema_version": "xinsight.trusted-release-keys.v1",
+  "keys": [
+    {
+      "key_id": "ed25519:sha256:765f38f8a4a4f38bf7e94aa3236c28f74dccac56431ab3a1d035a880f6086116",
+      "algorithm": "ed25519",
+      "public_key_base64": "+WZWz6Gw9Droi/+mLPXpVdREHu6GODhi4TtjL07hrS0=",
+      "status": "active",
+      "not_before": "2026-10-18T10:42:42.832Z",
+      "not_after": "2026-11-17T10:42:42.832Z",
+      "description": "Foigent X-Insight 0.2.0-dev.fpv19 release verification using the owner-approved existing UR Ed25519 material; validity compares the signed source timestamp."
+    }
+  ]
+}

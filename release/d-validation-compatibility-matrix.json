@@ -43,10 +43,10 @@
   ],
   "supported_legacy_sources": [],
   "supported_host": {
-    "os": "Ubuntu 24.04 isolated XI validation guest",
+    "os": "Ubuntu 22.04 or 24.04 (installer runtime prerequisite; exact artifact/topology qualification is separate)",
     "architecture": "amd64",
     "service_manager": "systemd",
-    "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+    "database_topology": "dedicated PostgreSQL 16 database on the same host, loopback only; the distributed Compose profile uses a dedicated pinned PostgreSQL container"
   },
   "postgresql": {
     "major": 16
@@ -56,7 +56,29 @@
     "customer_self_upgrade": false,
     "private_key_retained": true,
     "self_authentication": false,
-    "first_tool": "xinsight-release"
+    "first_tool": "xinsight-release",
+    "scope": "Retained isolated-validation fields do not establish formal release authority; formal distribution uses the owner-attested public authority and pinned public trust record."
   },
-  "field_qualification": "FPV19/schema45 is the English-default bilingual open-source preparation candidate. FPV17 and FPV18 evidence remains bound to its original commit, artifact and environment. Current signed Linux installation, upgrade, real-source integration and Target qualification require their own evidence; local tests are not substitutes."
+  "field_qualification": "FPV19/schema45 is the English-default bilingual open-source preparation candidate. FPV17 and FPV18 evidence remains bound to its original commit, artifact and environment. Current signed Linux installation, upgrade, real-source integration and Target qualification require their own evidence; local tests are not substitutes.",
+  "qualification_environments": {
+    "previously_documented_isolated_profile": {
+      "os": "Ubuntu 24.04 isolated XI validation guest",
+      "architecture": "amd64",
+      "service_manager": "systemd",
+      "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
+    },
+    "previous_profile_boundary": "This records the previously documented Ubuntu24.04/native-PG validation environment, not current FPV19 Target acceptance or a restriction to that topology.",
+    "planned_current_profile": {
+      "os": "Ubuntu22.04",
+      "architecture": "amd64",
+      "service_manager": "systemd",
+      "database_topology": "dedicated PostgreSQL16 container using the distributed pinned Compose profile",
+      "acceptance": "pending exact FPV19 signed-artifact and native Ubuntu22.04/container-PG16 fresh-install qualification; preinstalled dependencies and evidence are recorded separately"
+    }
+  },
+  "formal_release_authority": {
+    "record": "docs/community/release-authority.json",
+    "public_trust": "docs/community/trusted-release-keys.json",
+    "artifact_status": "not yet produced or qualified"
+  }
 }
