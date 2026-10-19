@@ -1217,6 +1217,53 @@ paths:
         '400': {$ref: '#/components/responses/BadRequest'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/WorkspaceNotFound'}
+  /api/v1/connector-control/installations/{installation_id}/sync:
+    parameters:
+      - {name: installation_id, in: path, required: true, schema: {type: string, pattern: '^xci_[A-Za-z0-9_-]{22}$'}}
+    get:
+      tags: [Connectors]
+      operationId: readConnectorSync
+      summary: Read XI local synchronization state without contacting UR
+      x-permission: connector.installations.manage
+      responses:
+        '200': {description: Local state; peer remains separately unknown, content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncStatus'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+    put:
+      tags: [Connectors]
+      operationId: updateConnectorSync
+      summary: Persist XI outbound preference and minimum cadence using a revision CAS
+      x-permission: connector.installations.manage
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncMutation'}}}
+      responses:
+        '200': {description: Preference recorded; inflight work may still be stopping or unknown, content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncStatus'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/ConnectorConflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/connector-control/installations/{installation_id}/sync-once:
+    post:
+      tags: [Connectors]
+      operationId: runConnectorSyncOnce
+      summary: Request one finite sync while Auto is off
+      description: Reuse the exact request_id and body after an unknown response. The budget is 60 seconds, 32 data/control pages and 64 application HTTP attempts. A completed empty category is not polled again; restart never replays a manual task.
+      x-permission: connector.installations.manage
+      parameters:
+        - {name: installation_id, in: path, required: true, schema: {type: string, pattern: '^xci_[A-Za-z0-9_-]{22}$'}}
+        - {$ref: '#/components/parameters/CSRFToken'}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncMutation'}}}
+      responses:
+        '202': {description: Finite request accepted or idempotent result read back, content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncStatus'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/ConnectorConflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
   /api/v1/connector-control/installations/{installation_id}/credentials/rotate:
     post:
       tags: [Connectors]
@@ -3798,6 +3845,58 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    ConnectorSyncMutation:
+      type: object
+      additionalProperties: false
+      required: [expected_revision, request_id, auto_sync]
+      properties:
+        expected_revision: {type: integer, minimum: 1}
+        request_id: {type: string, format: uuid}
+        auto_sync: {type: boolean}
+        cadence_seconds: {type: integer, minimum: 5, maximum: 3600}
+    ConnectorSyncRun:
+      type: object
+      additionalProperties: false
+      required: [request_id, revision, started_at, deadline, pages, attempts, state, items, results]
+      properties:
+        request_id: {type: string}
+        revision: {type: integer, minimum: 1}
+        started_at: {type: string, format: date-time}
+        deadline: {type: string, format: date-time}
+        pages: {type: integer, minimum: 0, maximum: 32}
+        attempts: {type: integer, minimum: 0, maximum: 64}
+        items: {type: integer, minimum: 0}
+        state: {type: string, enum: [running, completed, empty, partial, error, cancelled, expired, interrupted]}
+        results: {type: object, additionalProperties: {type: string, enum: [done, error, more]}}
+    ConnectorSyncSlot:
+      type: object
+      additionalProperties: false
+      required: [worker, revision, busy, started_at, ended_at, last_error]
+      properties:
+        worker: {type: string, enum: [feed, source, activation, projects, credentials]}
+        revision: {type: integer, minimum: 1}
+        busy: {type: boolean}
+        started_at: {type: string, format: date-time}
+        ended_at: {type: [string, 'null'], format: date-time}
+        last_error: {type: string}
+    ConnectorSyncStatus:
+      type: object
+      additionalProperties: false
+      required: [installation_id, last_request_id, auto_sync, cadence_seconds, revision, effective, peer, last_checked_at, last_data_at, last_error, required_workers, workers]
+      properties:
+        installation_id: {type: string, pattern: '^xci_[A-Za-z0-9_-]{22}$'}
+        last_request_id: {type: string}
+        auto_sync: {type: boolean}
+        cadence_seconds: {type: [integer, 'null'], minimum: 5, maximum: 3600}
+        revision: {type: integer, minimum: 1}
+        effective: {type: string, enum: [auto_running, manual_running, stopping, quiet, blocked, unknown]}
+        peer: {type: string, enum: [unknown]}
+        last_checked_at: {type: [string, 'null'], format: date-time}
+        last_data_at: {type: [string, 'null'], format: date-time}
+        last_error: {type: string}
+        required_workers: {type: array, items: {type: string}}
+        workers: {type: array, items: {$ref: '#/components/schemas/ConnectorSyncSlot'}}
+        run: {$ref: '#/components/schemas/ConnectorSyncRun'}
     ConnectorCredentialRequest:
       type: object
       additionalProperties: false

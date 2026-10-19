@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/hostctl"
 	"io"
 	"strconv"
@@ -23,6 +24,7 @@ type ManagedReconciler struct {
 	Now      func() time.Time
 	Random   io.Reader
 	TLSRoots *x509.CertPool
+	SyncWake func()
 }
 
 func (m *ManagedReconciler) now() time.Time {
@@ -101,7 +103,19 @@ func managedWake(b connectorcontrol.ManagedBoundary, wake string) bool {
 	}
 	return false
 }
-func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (Outcome, error) {
+func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out Outcome, resultErr error) {
+	if initial, ok := m.Store.(interface {
+		BeginInitialConnectorSync(context.Context, string, string) error
+	}); ok && wake != "" {
+		if e := initial.BeginInitialConnectorSync(ctx, id, wake); e != nil {
+			return Outcome{}, e
+		}
+	}
+	ctx, finish, gateErr := connectorsync.Work(ctx, m.Store, id, "activation")
+	if gateErr != nil {
+		return Outcome{}, gateErr
+	}
+	defer func() { connectorsync.Progress(ctx, out.State != StateReady, 0); finish(resultErr) }()
 	b, e := m.Store.InspectManagedConnector(ctx, id)
 	if e != nil {
 		return Outcome{}, e
@@ -308,5 +322,15 @@ func (m *ManagedReconciler) AcknowledgeManaged(ctx context.Context, identity str
 		c := bind.Operation.RequestV3.Candidate
 		e = m.Host.WithExistingFeed(ctx, c.WorkerConfig, c.ReceiverRegistration, commit)
 	}
+	if e == nil {
+		if initial, ok := m.Store.(interface {
+			BeginInitialConnectorSync(context.Context, string, string) error
+		}); ok {
+			if localErr := initial.BeginInitialConnectorSync(ctx, result.InstallationID, result.OperationID); localErr == nil && m.SyncWake != nil {
+				m.SyncWake()
+			}
+		}
+	}
+
 	return installation, e
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/foigent/x-insight/internal/adapters/unirouter"
 	"github.com/foigent/x-insight/internal/buildinfo"
 	"github.com/foigent/x-insight/internal/config"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/db"
 	"github.com/foigent/x-insight/internal/evidence"
 	"github.com/foigent/x-insight/internal/exchange"
@@ -402,7 +403,7 @@ func runUniRouterPullFeedContext(ctx context.Context, output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	source, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{
+	source, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true,
 		Endpoint:               runtimeConfig.Endpoint,
 		ServiceKey:             serviceKey,
 		AllowPrivateTunnelHTTP: runtimeConfig.AllowPrivateTunnelHTTP,
@@ -459,6 +460,23 @@ func runUniRouterPullFeedContext(ctx context.Context, output io.Writer) error {
 		return err
 	}
 	worker, err := pullfeed.NewLiveWorker(source, stateStore, committer, pullfeed.LiveWorkerConfig{
+
+		BeginActivation: func(ctx context.Context) (context.Context, func(error), error) {
+			gate := connectorsync.New(database)
+			id, e := gate.Receiver(ctx, serviceKey)
+			if e != nil {
+				return ctx, nil, e
+			}
+			return gate.Begin(ctx, id, "feed", runtimeConfig.PollInterval, "feed:init")
+		},
+		BeginSync: func(ctx context.Context, state pullfeed.PostgresWorkerState) (context.Context, func(error), error) {
+			gate := connectorsync.New(database)
+			id, e := gate.Receiver(ctx, serviceKey)
+			if e != nil {
+				return ctx, nil, e
+			}
+			return gate.Begin(ctx, id, "feed", runtimeConfig.PollInterval)
+		},
 		PollInterval:     runtimeConfig.PollInterval,
 		AuthorizationRef: pullfeed.AcceptedLiveContractRef,
 		Logger:           logger.Log,

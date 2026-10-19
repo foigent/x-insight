@@ -211,7 +211,16 @@ PY
 trap qualification_exit EXIT
 go build -o "$EVIDENCE/fixture" "$ROOT/scripts/ci-fpv15-joint-fixture"
 if [ "$MODE" = adopt_existing ]; then
-  go test -tags=integration -c -o "$EVIDENCE/original-prestate.test" ./internal/db
+  # The predecessor has no schema46 sync tables. Its original live-import
+  # prestate must use the already-reviewed pre-sync implementation, while
+  # every subsequent candidate worker and upgrade check stays current.
+  PRESTATE_COMMIT=2c05fcb38330337b362f36bee7348e2916abf700
+  test "$(git rev-parse "$PRESTATE_COMMIT^{tree}")" = a59f36f034ca8ab7424baaf421246a16788f8ebc
+  PRESTATE_SOURCE="$RUNNER_TEMP/installed-original-prestate-source"
+  test ! -e "$PRESTATE_SOURCE"
+  mkdir -m 0700 "$PRESTATE_SOURCE"
+  git archive "$PRESTATE_COMMIT" | tar -x -C "$PRESTATE_SOURCE"
+  (cd "$PRESTATE_SOURCE"; go test -tags=integration -c -o "$EVIDENCE/original-prestate.test" ./internal/db)
 fi
 (cd "$UR_CHECKOUT"; go test -tags=integration -c -o "$EVIDENCE/ur-joint.test" ./internal/admin)
 
@@ -345,10 +354,10 @@ def installed_joint_passed(returncode, mode, receipts):
     if returncode != 0 or mode not in ('new_install', 'adopt_existing', 'fpv17_upgrade_prestate'):
         return False
     if mode == 'fpv17_upgrade_prestate':
-        required = {'future_project', 'service_restart', 'upgrade_authority', 'formal_upgrade',
+        required = {'collection_intent', 'future_project', 'service_restart', 'upgrade_authority', 'formal_upgrade',
                     'upgrade_continuity', 'upgrade_completed'}
     else:
-        required = {'service_restart', 'credential_lifecycle_baseline',
+        required = {'collection_intent', 'service_restart', 'credential_lifecycle_baseline',
                 'credential_continuous_rotation', 'credential_lost_prepare',
                 'credential_lost_confirm', 'credential_offline_expiry',
                 'credential_expired_prepared', 'credential_revocation_boundary'}

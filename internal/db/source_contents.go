@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/foigent/x-insight/internal/connector"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 	"time"
 )
@@ -41,6 +42,9 @@ func (s *SourceFactsStore) RegisterContentCollection(ctx context.Context, c sour
 		return c, e
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return c, syncErr
+	}
 	if e = requireSourceAdministrator(ctx, tx); e != nil {
 		return c, e
 	}
@@ -81,6 +85,9 @@ func (s *SourceFactsStore) ControlContentCollection(ctx context.Context, id, sta
 		return zero, e
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return zero, syncErr
+	}
 	if e = requireSourceAdministrator(ctx, tx); e != nil {
 		return zero, e
 	}
@@ -158,6 +165,9 @@ func (s *SourceFactsStore) CommitContentManifests(ctx context.Context, expected 
 		return e
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	live, e := lockContentCollection(ctx, tx, expected)
 	if e != nil {
 		return e
@@ -228,6 +238,9 @@ func (s *SourceFactsStore) RecordContentFailure(ctx context.Context, expected so
 		return e
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	live, e := lockContentCollection(ctx, tx, expected)
 	if e != nil {
 		return e
@@ -258,6 +271,9 @@ func (s *SourceFactsStore) RebindContentCollection(ctx context.Context, next sou
 		return next, e
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return next, syncErr
+	}
 	if e = requireSourceAdministrator(ctx, tx); e != nil {
 		return next, e
 	}

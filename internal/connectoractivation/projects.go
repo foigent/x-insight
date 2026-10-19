@@ -9,6 +9,7 @@ import (
 	"github.com/foigent/x-insight/internal/adapters/unirouter"
 	"github.com/foigent/x-insight/internal/config"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/db"
 	"github.com/foigent/x-insight/internal/hostctl"
 	"github.com/foigent/x-insight/internal/integration/pullfeed"
@@ -43,174 +44,204 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 	if e != nil {
 		return e
 	}
-	changes := map[string]sourcefacts.ManagedConfig{}
-	applied := []db.ManagedEnrollment{}
 	var failures []error
 	for _, id := range ids {
-		b, e := p.Store.InspectManagedConnector(ctx, id)
-		if e != nil {
-			failures = append(failures, e)
-			continue
-		}
-		verified, qualified := b.VerifiedSource()
-		if !qualified || b.Installation.Status != "connected" {
-			continue
-		}
-		if e = p.qualifyRoot(ctx, b); e != nil {
-			failures = append(failures, e)
-			continue
-		}
-		// Both public deliveries remain independent; a successful purpose-specific
-		// read is the first evidence of its usable delegated grant.
-		if phase := b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.PolicyMachinePurpose); phase != nil && phase.Operation.Status == "completed" && p.PolicyClient != nil {
-			client, e := p.PolicyClient(ctx, b)
-			if e == nil {
-				_, e = client.PolicyScopes(ctx, "")
+		ctx, finish, gateErr := connectorsync.Work(ctx, p.Store, id, "projects")
+		if gateErr != nil {
+			if !connectorsync.IsControlStop(gateErr) {
+				failures = append(failures, gateErr)
 			}
-			if e != nil && !errors.Is(e, urmachine.ErrUnauthorized) {
+			continue
+		}
+		// Finish before moving to the next connection, including early continues.
+		func() {
+			var connectionErr error
+			changes := map[string]sourcefacts.ManagedConfig{}
+			applied := []db.ManagedEnrollment{}
+			defer func() { finish(connectionErr) }()
+			b, e := p.Store.InspectManagedConnector(ctx, id)
+			if e != nil {
+				connectionErr = e
 				failures = append(failures, e)
+				return
 			}
-		}
-		phase := b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.EnrollmentMachinePurpose)
-		if phase == nil || phase.Operation.Status != "completed" {
-			continue
-		}
-		client, e := p.EnrollmentClient(ctx, b)
-		if e != nil {
-			failures = append(failures, e)
-			continue
-		}
-		projects, e := allEnrollmentProjects(ctx, client)
-		if errors.Is(e, urmachine.ErrUnauthorized) {
-			continue
-		}
-		if e != nil {
-			failures = append(failures, e)
-			continue
-		}
-		b, e = p.Store.InspectManagedConnector(ctx, id)
-		if e == nil {
-			e = p.qualifyRoot(ctx, b)
-		}
-		if e != nil {
-			failures = append(failures, e)
-			continue
-		}
-		for _, project := range projects {
-			for _, enrollment := range project.Enrollments {
-				record := db.ManagedEnrollment{InstallationID: id, EnrollmentID: enrollment.EnrollmentID, SourceInstance: verified.SourceInstance, OrgID: strconv.FormatInt(verified.OrgID, 10), ProjectID: project.ProjectID, Revision: enrollment.Revision, Status: "pending"}
-				if enrollment.FactsStatus == "requires_migration" || enrollment.ContentStatus == "requires_migration" {
-					record.Status = "requires_migration"
-					if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-						failures = append(failures, e)
-					}
-					continue
+			verified, qualified := b.VerifiedSource()
+			if !qualified || b.Installation.Status != "connected" {
+				connectorsync.Progress(ctx, true, 0)
+				return
+			}
+			if e = p.qualifyRoot(ctx, b); e != nil {
+				connectionErr = e
+				failures = append(failures, e)
+				return
+			}
+			// Both public deliveries remain independent; a successful purpose-specific
+			// read is the first evidence of its usable delegated grant.
+			if phase := b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.PolicyMachinePurpose); phase != nil && phase.Operation.Status == "completed" && p.PolicyClient != nil {
+				client, e := p.PolicyClient(ctx, b)
+				if e == nil {
+					_, e = client.PolicyScopes(ctx, "")
 				}
-				old, e := p.Store.ManagedEnrollment(ctx, id, enrollment.EnrollmentID, project.ProjectID)
-				if e != nil && !errors.Is(e, connectorcontrol.ErrNotFound) {
+				if e != nil && !errors.Is(e, urmachine.ErrUnauthorized) {
+					connectionErr = e
 					failures = append(failures, e)
-					continue
 				}
-				if enrollment.FactsStatus == "revoked" || enrollment.ContentStatus == "revoked" {
-					if old.Status != "" {
-						if e = p.revoke(ctx, b, project.ProjectID, enrollment); e != nil {
-							failures = append(failures, e)
-							continue
-						}
-					}
-					factsUsable := enrollment.FactsStatus != "revoked" && enrollment.FactsStatus != "not_requested"
-					contentUsable := enrollment.IncludeContent && enrollment.ContentStatus != "revoked" && enrollment.ContentStatus != "not_requested"
-					if factsUsable || contentUsable {
-						// Each purpose has independent revocation; the unaffected
-						// original collection remains qualified below.
-					} else {
-						record.Status = "revoked"
+			}
+			phase := b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.EnrollmentMachinePurpose)
+			if phase == nil || phase.Operation.Status != "completed" {
+				connectorsync.Progress(ctx, true, 0)
+				return
+			}
+			client, e := p.EnrollmentClient(ctx, b)
+			if e != nil {
+				connectionErr = e
+				failures = append(failures, e)
+				return
+			}
+			projects, e := allEnrollmentProjects(ctx, client)
+			if errors.Is(e, urmachine.ErrUnauthorized) {
+				return
+			}
+			if e != nil {
+				connectionErr = e
+				failures = append(failures, e)
+				return
+			}
+			b, e = p.Store.InspectManagedConnector(ctx, id)
+			if e == nil {
+				e = p.qualifyRoot(ctx, b)
+			}
+			if e != nil {
+				connectionErr = e
+				failures = append(failures, e)
+				return
+			}
+			for _, project := range projects {
+				for _, enrollment := range project.Enrollments {
+					record := db.ManagedEnrollment{InstallationID: id, EnrollmentID: enrollment.EnrollmentID, SourceInstance: verified.SourceInstance, OrgID: strconv.FormatInt(verified.OrgID, 10), ProjectID: project.ProjectID, Revision: enrollment.Revision, Status: "pending"}
+					if enrollment.FactsStatus == "requires_migration" || enrollment.ContentStatus == "requires_migration" {
+						record.Status = "requires_migration"
 						if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
+							connectionErr = e
 							failures = append(failures, e)
 						}
 						continue
 					}
-				}
-				if old.Status == "revoked" {
-					continue
-				}
-				cfg, original, e := p.qualifyOriginalProject(ctx, b, project.ProjectID, enrollment)
-				if e != nil {
-					e = fmt.Errorf("qualify original managed project: %w", e)
-				}
-				if e == nil && !original {
-					if old.Status == "requires_migration" {
-						e = sourcefacts.ErrScopeChanged
-					} else {
-						cfg, e = p.configure(ctx, b, client, project.ProjectID, enrollment)
-						if e != nil {
-							e = fmt.Errorf("configure new managed project: %w", e)
-						}
-					}
-				}
-				if e != nil {
-					if errors.Is(e, sourcefacts.ErrConflict) || errors.Is(e, sourcefacts.ErrScopeChanged) || errors.Is(e, urmachine.ErrConflict) {
-						record.Status = "requires_migration"
-						if save := p.Store.SaveManagedEnrollment(ctx, record, p.now()); save != nil {
-							failures = append(failures, save)
-						}
-						failures = append(failures, fmt.Errorf("managed enrollment requires migration after qualification: %w", e))
-					} else {
+					old, e := p.Store.ManagedEnrollment(ctx, id, enrollment.EnrollmentID, project.ProjectID)
+					if e != nil && !errors.Is(e, connectorcontrol.ErrNotFound) {
+						connectionErr = e
 						failures = append(failures, e)
+						continue
 					}
-					continue
-				}
-				raw, e := json.Marshal(cfg)
-				if e != nil {
-					failures = append(failures, e)
-					continue
-				}
-				record.ConfigurationSHA256 = sourcefacts.Hash(raw)
-				if len(cfg.Contents) > 0 {
-					record.ContentCollectionID = cfg.Contents[0].CollectionID
-				}
-				if old.Status == "active" && old.ConfigurationSHA256 == record.ConfigurationSHA256 && old.Revision == record.Revision {
-					continue
-				}
-				if original {
-					// Original worker and mounts were read back. It already runs
-					// these exact streams; a second partition would duplicate them.
+					if enrollment.FactsStatus == "revoked" || enrollment.ContentStatus == "revoked" {
+						if old.Status != "" {
+							if e = p.revoke(ctx, b, project.ProjectID, enrollment); e != nil {
+								connectionErr = e
+								failures = append(failures, e)
+								continue
+							}
+						}
+						factsUsable := enrollment.FactsStatus != "revoked" && enrollment.FactsStatus != "not_requested"
+						contentUsable := enrollment.IncludeContent && enrollment.ContentStatus != "revoked" && enrollment.ContentStatus != "not_requested"
+						if factsUsable || contentUsable {
+							// Each purpose has independent revocation; the unaffected
+							// original collection remains qualified below.
+						} else {
+							record.Status = "revoked"
+							if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
+								connectionErr = e
+								failures = append(failures, e)
+							}
+							continue
+						}
+					}
+					if old.Status == "revoked" {
+						continue
+					}
+					cfg, original, e := p.qualifyOriginalProject(ctx, b, project.ProjectID, enrollment)
+					if e != nil {
+						e = fmt.Errorf("qualify original managed project: %w", e)
+					}
+					if e == nil && !original {
+						if old.Status == "requires_migration" {
+							e = sourcefacts.ErrScopeChanged
+						} else {
+							cfg, e = p.configure(ctx, b, client, project.ProjectID, enrollment)
+							if e != nil {
+								e = fmt.Errorf("configure new managed project: %w", e)
+							}
+						}
+					}
+					if e != nil {
+						if errors.Is(e, sourcefacts.ErrConflict) || errors.Is(e, sourcefacts.ErrScopeChanged) || errors.Is(e, urmachine.ErrConflict) {
+							record.Status = "requires_migration"
+							if save := p.Store.SaveManagedEnrollment(ctx, record, p.now()); save != nil {
+								failures = append(failures, save)
+							}
+							failures = append(failures, fmt.Errorf("managed enrollment requires migration after qualification: %w", e))
+						} else {
+							connectionErr = e
+							failures = append(failures, e)
+						}
+						continue
+					}
+					raw, e := json.Marshal(cfg)
+					if e != nil {
+						connectionErr = e
+						failures = append(failures, e)
+						continue
+					}
+					record.ConfigurationSHA256 = sourcefacts.Hash(raw)
+					if len(cfg.Contents) > 0 {
+						record.ContentCollectionID = cfg.Contents[0].CollectionID
+					}
+					if old.Status == "active" && old.ConfigurationSHA256 == record.ConfigurationSHA256 && old.Revision == record.Revision {
+						continue
+					}
+					if original {
+						// Original worker and mounts were read back. It already runs
+						// these exact streams; a second partition would duplicate them.
+						record.Status = "active"
+						// Original C keeps its existing source reads until every still
+						// readable historical representation has durable XI custody.
+						// Owner maintenance clears the marker after verifying copies.
+						if record.ContentCollectionID != "" && (old.ContentCollectionID == "" || old.LegacyCCopyPending) {
+							record.Status = "requires_migration"
+							record.LegacyCCopyPending = true
+						}
+						if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
+							connectionErr = e
+							failures = append(failures, e)
+						}
+						continue
+					}
+					// Persist custody-only membership before any worker may commit copied C.
+					pending := record
+					pending.ConfigurationSHA256 = ""
+					if e = p.Store.SaveManagedEnrollment(ctx, pending, p.now()); e != nil {
+						connectionErr = e
+						failures = append(failures, e)
+						continue
+					}
+					changes[id+"-"+enrollment.EnrollmentID+"-project-"+project.ProjectID+".json"] = cfg
 					record.Status = "active"
-					// Original C keeps its existing source reads until every still
-					// readable historical representation has durable XI custody.
-					// Owner maintenance clears the marker after verifying copies.
-					if record.ContentCollectionID != "" && (old.ContentCollectionID == "" || old.LegacyCCopyPending) {
-						record.Status = "requires_migration"
-						record.LegacyCCopyPending = true
-					}
-					if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-						failures = append(failures, e)
-					}
-					continue
-				}
-				// Persist custody-only membership before any worker may commit copied C.
-				pending := record
-				pending.ConfigurationSHA256 = ""
-				if e = p.Store.SaveManagedEnrollment(ctx, pending, p.now()); e != nil {
-					failures = append(failures, e)
-					continue
-				}
-				changes[id+"-"+enrollment.EnrollmentID+"-project-"+project.ProjectID+".json"] = cfg
-				record.Status = "active"
-				applied = append(applied, record)
-			}
-		}
-	}
-	if len(changes) > 0 {
-		if e = p.Host.PublishManagedProjects(ctx, changes); e != nil {
-			failures = append(failures, e)
-		} else {
-			for _, record := range applied {
-				if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-					failures = append(failures, e)
+					applied = append(applied, record)
 				}
 			}
-		}
+			if len(changes) > 0 {
+				if e = p.Host.PublishManagedProjects(ctx, changes); e != nil {
+					connectionErr = e
+					failures = append(failures, e)
+				} else {
+					for _, record := range applied {
+						if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
+							connectionErr = e
+							failures = append(failures, e)
+						}
+					}
+				}
+			}
+		}()
 	}
 	return errors.Join(failures...)
 }
@@ -267,7 +298,7 @@ func (p *ManagedProjects) sourceReader(endpoint, keyFile string) (*pullfeed.HTTP
 	if e != nil {
 		return nil, e
 	}
-	return pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: endpoint, ServiceKey: key, TLSRootCAs: p.TLSRoots, RequestTimeout: 5 * time.Second})
+	return pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true, Endpoint: endpoint, ServiceKey: key, TLSRootCAs: p.TLSRoots, RequestTimeout: 5 * time.Second})
 }
 func (p *ManagedProjects) configure(ctx context.Context, b connectorcontrol.ManagedBoundary, client *urmachine.EnrollmentClient, project string, enrollment urmachine.Enrollment) (sourcefacts.ManagedConfig, error) {
 	cfg := sourcefacts.ManagedConfig{SchemaVersion: sourcefacts.ManagedObservationConfigVersion, PollIntervalSeconds: 30, RetryMaximumSeconds: 300, Profiles: []sourcefacts.ManagedProfileConfig{}}

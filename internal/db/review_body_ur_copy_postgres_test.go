@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,7 @@ import (
 	"github.com/foigent/x-insight/internal/access"
 	"github.com/foigent/x-insight/internal/api"
 	"github.com/foigent/x-insight/internal/connector"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/db"
 	"github.com/foigent/x-insight/internal/hostctl"
 	"github.com/foigent/x-insight/internal/integration/pullfeed"
@@ -89,6 +91,14 @@ func TestURCReviewBodyPostgresFirstExceptionActivationWaitsForUploadGate(t *test
 }
 
 func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
+	testURCReviewBodyPostgresExactManifestAndFixedExpiry(t, false)
+}
+
+func TestURCReviewBodyPostgresLiveSyncPermitAndFormalWorkspaceRole(t *testing.T) {
+	testURCReviewBodyPostgresExactManifestAndFixedExpiry(t, true)
+}
+
+func testURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T, liveSync bool) {
 	if os.Getenv("XINSIGHT_POSTGRES_DSN") == "" {
 		t.Skip("explicit PostgreSQL fixture required")
 	}
@@ -171,7 +181,31 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	header := base64.RawURLEncoding.EncodeToString(canonical(metadata))
 	var available atomic.Bool
 	var fetches atomic.Int64
+	var sourceHTTP atomic.Int64
 	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sourceHTTP.Add(1)
+		if liveSync && r.URL.Path == sourcefacts.ContentCapabilitiesPath {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Cache-Control", "no-store")
+			json.NewEncoder(w).Encode(sourcefacts.ContentCapabilities{SchemaVersion: sourcefacts.ContentCapabilitiesVersion,
+				Profile: sourcefacts.ContentProfile, SourceInstance: c.SourceInstance, OrgID: c.OrgID, ProjectID: c.ProjectID,
+				Status: "active", CredentialStatus: "feed_active", SupportedProtocols: []string{"openai.responses"},
+				ObservationPoints: []string{"client_request"}, CaptureModes: []string{"disabled", "metadata_only", "full_content"},
+				AllowedPurposes: c.AllowedPurposes, ContentScopeRevision: c.ContentScopeRevision, RecoveryEpoch: c.RecoveryEpoch,
+				CoverageFrom: c.CoverageFrom, RetentionFloor: c.CoverageFrom,
+				Limits:    sourcefacts.ContentLimits{MaxSavedBytes: 1024, MaxReadBytes: 1024, MaxBufferBytes: 64, MaxManifestBytes: 65536, MaxManifestItems: 100},
+				Endpoints: sourcefacts.ContentEndpoints{Capabilities: sourcefacts.ContentCapabilitiesPath, Manifests: sourcefacts.ContentEndpointPath, Content: "/api/v1/integrations/xinsight/source/v2/contents/{content_ref}"}})
+			return
+		}
+		if liveSync && r.URL.Path == sourcefacts.ContentEndpointPath {
+			empty := page
+			empty.Items = []sourcefacts.ContentManifestEntry{}
+			empty.AfterSequence = "1"
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Cache-Control", "no-store")
+			json.NewEncoder(w).Encode(empty)
+			return
+		}
 		if r.URL.Path != "/api/v1/integrations/xinsight/source/v2/contents/"+ref.ContentRef ||
 			r.URL.Query().Get("purpose") != "human_review" || r.URL.Query().Get("source_fact_id") != ref.SourceFactID {
 			w.WriteHeader(http.StatusNotFound)
@@ -191,7 +225,7 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 		_, _ = w.Write(body)
 	}))
 	defer source.Close()
-	reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: source.URL + sourcefacts.ContentEndpointPath,
+	reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: liveSync, Endpoint: source.URL + sourcefacts.ContentEndpointPath,
 		ServiceKey: "synthetic-content-key", AllowPrivateTunnelHTTP: true})
 	if err != nil {
 		t.Fatal(err)
@@ -210,10 +244,55 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	if err = workerDB.QueryRowContext(f.ctx, `SELECT current_user`).Scan(&currentRole); err != nil || currentRole != "xinsight_workspace" {
 		t.Fatalf("copy role=%q error=%v", currentRole, err)
 	}
+	copyCtx := f.ctx
+	var liveGate *connectorsync.Store
+	var installation string
+	var finishCopy func(error)
+	var liveImporter *db.SourceFactsStore
+	if liveSync {
+		// The installed worker acquires its live permit as importer, then checks
+		// and seals custody using the separately restricted workspace role.
+		f.bindSyncScope(c.SourceInstance, c.OrgID, c.ProjectID)
+		importerDB := openTestSQL(t, copyCredentials.ImporterDSN)
+		defer importerDB.Close()
+		for _, roleDB := range []*sql.DB{workerDB, importerDB} {
+			for _, column := range []string{"auto_sync", "cadence_seconds", "revision", "request_id", "updated_by"} {
+				_, denied := roleDB.ExecContext(f.ctx, "UPDATE connector_sync_controls SET "+column+"="+column+" WHERE false")
+				var pgErr *pgconn.PgError
+				if !errors.As(denied, &pgErr) || pgErr.Code != "42501" {
+					t.Fatalf("worker gained sync authority column %s: %v", column, denied)
+				}
+			}
+		}
+		liveGate = connectorsync.New(importerDB)
+		var e error
+		installation, e = liveGate.Resolve(f.ctx, c.SourceInstance, c.OrgID, c.ProjectID, false)
+		if e != nil {
+			t.Fatal(e)
+		}
+		cadence := 5
+		if _, e = f.workspace.SyncStore().Change(f.ctx, connectorsync.Request{SchemaVersion: connectorsync.LocalSchema,
+			Action: "set", InstallationID: installation, Actor: "xs_0000000000000000", ExpectedRevision: 1,
+			RequestID: testUUID(t), Auto: true, Cadence: &cadence}); e != nil {
+			t.Fatal(e)
+		}
+		copyCtx, finishCopy, err = liveGate.Begin(f.ctx, installation, "source", time.Minute, "content:"+c.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { finishCopy(nil) }()
+		liveImporter, err = db.OpenSourceFactsStore(copyCredentials.ImporterDSN)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer liveImporter.Close()
+	}
 	for _, statement := range []string{
 		`UPDATE connector_source_enrollments SET legacy_c_copy_pending=false WHERE false`,
 		`UPDATE source_content_manifests SET availability=availability WHERE false`,
 		`UPDATE source_content_collections SET status=status WHERE false`,
+		`UPDATE connector_sync_slots SET owner=owner WHERE false`,
+		`UPDATE connector_sync_runs SET state=state WHERE false`,
 	} {
 		_, updateErr := workerDB.ExecContext(f.ctx, statement)
 		var pgErr *pgconn.PgError
@@ -225,7 +304,34 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 		t.Fatalf("source worker crossed owner custody boundary: %v", err)
 	}
 	limits := sourcefacts.ContentLimits{MaxReadBytes: 32 << 20, MaxBufferBytes: 1 << 20}
-	if _, err = reviewcopy.CopyURCReviewBody(f.ctx, reader, workerStore, c.ID, ref, limits, keys,
+	pollCopies := func(at time.Time) error {
+		clock := func() time.Time { return at }
+		if !liveSync {
+			return reviewcopy.PollURCCopies(copyCtx, reader, workerStore, c.ID, limits, keys, clock)
+		}
+		finishCopy(nil)
+		observed := 0
+		worker := sourcefacts.ManagedWorker{ConfigVersion: sourcefacts.ManagedContentConfigVersion,
+			PollInterval: 30 * time.Second, RetryMaximum: time.Minute, Now: clock,
+			Contents: []sourcefacts.ContentConsumer{{Store: liveImporter, Reader: reader, Expected: c, Now: clock,
+				AfterCommit: func(ctx context.Context, current sourcefacts.ContentCollection, bounded sourcefacts.ContentLimits) error {
+					return reviewcopy.PollURCCopies(ctx, reader, workerStore, current.ID, bounded, keys, clock)
+				}}},
+			Observe: func(_ string, err error) {
+				if err != nil {
+					t.Fatal("managed content poll", err)
+				}
+				observed++
+			},
+			Wait: func(context.Context, time.Duration) error { return context.Canceled }}
+		if e := worker.Run(f.ctx); !errors.Is(e, context.Canceled) || observed != 1 {
+			t.Fatalf("managed content cycle: observed=%d err=%v", observed, e)
+		}
+		var e error
+		copyCtx, finishCopy, e = liveGate.Begin(f.ctx, installation, "source", time.Minute, "content:"+c.ID)
+		return e
+	}
+	if _, err = reviewcopy.CopyURCReviewBody(copyCtx, reader, workerStore, c.ID, ref, limits, keys,
 		func() time.Time { return now }); !errors.Is(err, reviewbody.ErrProjectBindingPending) || fetches.Load() != 0 {
 		t.Fatalf("unbound XI project fetched source or admitted body: err=%v fetches=%d", err, fetches.Load())
 	}
@@ -237,7 +343,7 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	if err != nil || len(candidates) != 1 || candidates[0].Ref.ContentRef != ref.ContentRef {
 		t.Fatalf("committed manifest recovery candidates=%+v error=%v", candidates, err)
 	}
-	if err = reviewcopy.PollURCCopies(f.ctx, reader, workerStore, c.ID, limits, keys, func() time.Time { return now }); err != nil {
+	if err = pollCopies(now); err != nil {
 		t.Fatalf("item failure changed managed metadata result: %v", err)
 	}
 	var attemptStatus string
@@ -254,7 +360,7 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	available.Store(true)
 	quotaScope := "project:" + xiProjectID
 	f.exec(`INSERT INTO review_body_project_usage(quota_scope,stored_bytes) VALUES($1,1024)`, quotaScope)
-	if err = reviewcopy.PollURCCopies(f.ctx, reader, workerStore, c.ID, limits, keys, func() time.Time { return now.Add(61 * time.Second) }); err != nil {
+	if err = pollCopies(now.Add(61 * time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	if fetches.Load() != 1 {
@@ -262,7 +368,7 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	}
 	f.exec(`UPDATE review_body_project_usage SET stored_bytes=0 WHERE quota_scope=$1`, quotaScope)
 	copyAt := now.Add(122 * time.Second)
-	if err = reviewcopy.PollURCCopies(f.ctx, reader, workerStore, c.ID, limits, keys, func() time.Time { return copyAt }); err != nil {
+	if err = pollCopies(copyAt); err != nil {
 		t.Fatal(err)
 	}
 	if err = f.admin.QueryRow(`SELECT status FROM review_body_copy_attempts WHERE collection_id=$1::uuid AND content_ref=$2`, c.ID, ref.ContentRef).Scan(&attemptStatus); err != nil || attemptStatus != "accepted" {
@@ -275,7 +381,10 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	if fetches.Load() != 2 {
 		t.Fatalf("recovered source fetches=%d", fetches.Load())
 	}
-	replay, err := workerStore.CommitURCReviewBody(f.ctx, c.ID, ref, body, keys, copyAt.Add(time.Second))
+	if liveSync && sourceHTTP.Load() != 8 {
+		t.Fatalf("three managed cadence cycles must emit six metadata requests and two due body attempts: HTTP=%d", sourceHTTP.Load())
+	}
+	replay, err := workerStore.CommitURCReviewBody(copyCtx, c.ID, ref, body, keys, copyAt.Add(time.Second))
 	if err != nil || replay.Outcome != "identical_replay" || replay.SHA256 != sourcefacts.Hash(body) {
 		t.Fatalf("replay: %+v %v", replay, err)
 	}
@@ -371,7 +480,7 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 		t.Fatalf("late identity must hold source copy while an account exception may match: %v", err)
 	}
 	beforePendingFetch := fetches.Load()
-	if _, err = reviewcopy.CopyURCReviewBody(f.ctx, reader, workerStore, c.ID, ref, limits, keys,
+	if _, err = reviewcopy.CopyURCReviewBody(copyCtx, reader, workerStore, c.ID, ref, limits, keys,
 		func() time.Time { return copyAt.Add(time.Second) }); !errors.Is(err, reviewbody.ErrIdentityPending) || fetches.Load() != beforePendingFetch {
 		t.Fatalf("pending B identity fetched source bytes: error=%v fetches=%d", err, fetches.Load())
 	}
@@ -445,7 +554,7 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = workerStore.CommitURCReviewBody(f.ctx, c.ID, ref, body, keys, copyAt.Add(time.Second)); !errors.Is(err, reviewbody.ErrScope) {
+	if _, err = workerStore.CommitURCReviewBody(copyCtx, c.ID, ref, body, keys, copyAt.Add(time.Second)); !errors.Is(err, reviewbody.ErrScope) {
 		t.Fatalf("copy commit accepted a collection paused after preflight: %v", err)
 	}
 	if _, err = f.consumerStore.ControlContentCollection(f.ctx, c.ID, "active", paused.Revision, false, paused); err != nil {
@@ -458,10 +567,10 @@ func TestURCReviewBodyPostgresExactManifestAndFixedExpiry(t *testing.T) {
 	}
 	bad := ref
 	bad.SourceSHA256 = sourcefacts.Hash([]byte("wrong"))
-	if _, err = workerStore.CommitURCReviewBody(f.ctx, c.ID, bad, body, keys, now); !errors.Is(err, reviewbody.ErrConflict) {
+	if _, err = workerStore.CommitURCReviewBody(copyCtx, c.ID, bad, body, keys, now); !errors.Is(err, reviewbody.ErrConflict) {
 		t.Fatalf("wrong immutable manifest accepted: %v", err)
 	}
-	if _, err = workerStore.CommitURCReviewBody(f.ctx, c.ID, ref, bytes.Repeat([]byte{'x'}, len(body)), keys, now); !errors.Is(err, reviewbody.ErrIntegrity) {
+	if _, err = workerStore.CommitURCReviewBody(copyCtx, c.ID, ref, bytes.Repeat([]byte{'x'}, len(body)), keys, now); !errors.Is(err, reviewbody.ErrIntegrity) {
 		t.Fatalf("wrong digest accepted: %v", err)
 	}
 	if _, err = f.workspace.ReadReviewBody(f.ctx, f.subject, ref.ContentRef, keys, now.Add(90*time.Minute)); err != nil {

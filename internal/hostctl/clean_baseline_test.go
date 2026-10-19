@@ -17,7 +17,7 @@ import (
 )
 
 func TestCleanBaselineTableContractIsExactAndSorted(t *testing.T) {
-	if len(cleanBaselineTables) != 108 || !sort.StringsAreSorted(cleanBaselineTables) {
+	if len(cleanBaselineTables) != 111 || !sort.StringsAreSorted(cleanBaselineTables) {
 		t.Fatalf("clean-baseline tables=%v", cleanBaselineTables)
 	}
 	var contractTables []string
@@ -62,6 +62,9 @@ func TestCleanBaselineTableContractIsExactAndSorted(t *testing.T) {
 		"connector_installation_source_bindings":  true,
 		"connector_receiver_adoptions":            true,
 		"connector_source_enrollments":            true,
+		"connector_sync_controls":                 true,
+		"connector_sync_runs":                     true,
+		"connector_sync_slots":                    true,
 		"connector_installation_invitations":      true,
 		"connector_control_operations":            true,
 		"connector_control_credentials":           true,

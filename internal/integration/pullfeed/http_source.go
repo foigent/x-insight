@@ -20,6 +20,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 )
 
@@ -107,6 +108,7 @@ func (e *HTTPSourceError) HTTPStatusCode() int     { return e.StatusCode }
 func (e *HTTPSourceError) SourceErrorCode() string { return e.Code }
 
 type HTTPSourceConfig struct {
+	SyncRequired           bool
 	Endpoint               string
 	ServiceKey             string
 	AllowPrivateTunnelHTTP bool
@@ -117,9 +119,10 @@ type HTTPSourceConfig struct {
 }
 
 type HTTPSource struct {
-	endpoint   url.URL
-	serviceKey string
-	client     *http.Client
+	syncRequired bool
+	endpoint     url.URL
+	serviceKey   string
+	client       *http.Client
 }
 
 func NewHTTPSource(config HTTPSourceConfig) (*HTTPSource, error) {
@@ -184,7 +187,7 @@ func NewHTTPSource(config HTTPSourceConfig) (*HTTPSource, error) {
 		},
 	}
 
-	return &HTTPSource{
+	return &HTTPSource{syncRequired: config.SyncRequired,
 		endpoint:   *endpoint,
 		serviceKey: config.ServiceKey,
 		client:     client,
@@ -256,6 +259,14 @@ func (s *HTTPSource) fetchRequestWithPolicy(ctx context.Context, request *http.R
 }
 
 func (s *HTTPSource) fetchRequestBounded(ctx context.Context, request *http.Request, requireNoStore bool, maximum int) ([]byte, error) {
+	if err := connectorsync.BeforeHTTP(ctx, s.syncRequired); err != nil {
+		return nil, err
+	}
+	if !strings.Contains(request.URL.Path, "capabilit") {
+		if err := connectorsync.Page(ctx); err != nil {
+			return nil, err
+		}
+	}
 	response, err := s.client.Do(request)
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -350,6 +361,9 @@ func (s *HTTPSource) VerifyPausedAuthentication(ctx context.Context) error {
 	request, err := s.newRequest(ctx, "", 1)
 	if err != nil {
 		return ErrHTTPSourcePausedAuth
+	}
+	if err := connectorsync.BeforeHTTP(ctx, s.syncRequired); err != nil {
+		return err
 	}
 	response, err := s.client.Do(request)
 	if err != nil {

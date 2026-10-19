@@ -1,7 +1,7 @@
 # Signed distribution and managed installation
 
-The current source candidate is `0.2.0-dev.fpv19`, schema 45, manual
-`0.2.0-dev.fpv19/manual-r1`, with release channel `release_candidate`.
+The current source candidate is `0.2.0-dev.fpv20`, schema 46, manual
+`0.2.0-dev.fpv20/manual-r1`, with release channel `release_candidate`.
 This page describes the existing supported path for an approved distribution.
 No formal public artifact, signing authority or download location has been
 established for this candidate. Publishing a candidate would retain this
@@ -68,7 +68,7 @@ bash scripts/build-signed-release.sh /approved/new-build --profile=development-d
 ```
 
 `--dry-run` checks preconditions without inspecting a signing key. The signed
-build creates `xinsight-v0.2.0-dev.fpv19-linux-amd64-COMMIT.tar.gz`, the separate
+build creates `xinsight-v0.2.0-dev.fpv20-linux-amd64-COMMIT.tar.gz`, the separate
 `bootstrap/xinsight-release-linux-amd64-COMMIT`, and `build-result.json`.
 `COMMIT` means the actual 40-character release commit, never a branch alias.
 `--prepare-only` stops at an unsigned, non-installable payload. CI and native
@@ -101,7 +101,7 @@ the accompanying license texts; keep them intact.
 
 Reuse the CLI's `xinsight.release-verify-result.v1` JSON as portable public
 verification metadata: it includes all three package hashes, key ID, version,
-commit and target. The signed manifest and exact source config bind schema 45,
+commit and target. The signed manifest and exact source config bind schema 46,
 manual-r1, compatibility and the existing schema/migration digests. Publish the
 independently authenticated bootstrap/trust hashes in the authority record.
 No new release schema or signing framework is needed for this path.
@@ -123,8 +123,8 @@ not need the source checkout, Go, Node.js or npm to perform these steps.
 Use the actual approved release commit in place of `APPROVED_40_HEX_COMMIT`:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv19
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv19
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv20
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv20
 sudo /approved/new-staging/bin/xinsightctl version --json
 ```
 
@@ -203,3 +203,7 @@ different facts. Do not sum child attempts into an already authoritative total.
 This full installed pair remains unperformed for the current candidate. The
 existing P3 and installed-CI pins are separate qualification inputs and are not
 a formal UR/XI release pair or a substitute for this consumer walkthrough.
+
+## FPV20 preparation boundary
+
+FPV20 changes source and schema identity. The retained public owner authority record and FPV19 signing inputs remain bound to their approved scope. A new FPV20 signing/qualification record must be reviewed before producing a formal signed artifact; the local communication-control change is not such a record. See the connection synchronization manual for manual defaults and independent local restore controls.

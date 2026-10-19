@@ -95,6 +95,7 @@ func TestObservationHTTPPostgresReceiptAndRevocation(t *testing.T) {
 		t.Fatal(err)
 	}
 	consumer := sourcefacts.Consumer{Store: f.consumerStore, Reader: reader}
+	f.bindSyncScope(sample.SourceInstance, sample.OrgID, sample.ProjectID)
 	streams := map[string]sourcefacts.Stream{}
 	for _, profile := range sourcefacts.ObservationProfiles() {
 		s, err := f.consumerStore.RegisterSourceFactsStream(t.Context(), sourcefacts.Stream{ID: testUUID(t), SourceSystemID: f.source, SourceInstance: sample.SourceInstance, OrgID: sample.OrgID, ProjectID: sample.ProjectID, Profile: profile, ScopeGeneration: "1"})

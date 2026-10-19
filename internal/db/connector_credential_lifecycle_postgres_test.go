@@ -656,7 +656,10 @@ WHERE c.id=$1`, id, installed.Operation.OperationID).Scan(&original)
 	if status := preflight(); status.IngressState != "recovery_required" || status.Reason != "control_credential_expired" {
 		t.Fatal("schema44 expired predecessor", status)
 	}
-	if applied, e := db.RunMigrations(ctx, dsn, migrations); e != nil || applied != 1 {
+	// Exercise the exact lifecycle migration before the independent sync-control
+	// migration. Applying every pending migration here would hide schema45's
+	// own backfill and privilege assertions behind the current schema version.
+	if applied, e := db.RunMigrations(ctx, dsn, connectorMigrationPrefixDir(t, migrations, "000045")); e != nil || applied != 1 {
 		t.Fatalf("schema44 to45 applied=%d err=%v", applied, e)
 	}
 	if err = (hostctl.PostgresManager{}).ApplyGrants(ctx, roleCredentials); err != nil {
@@ -730,6 +733,41 @@ WHERE c.id=$1`, id, installed.Operation.OperationID).Scan(&original)
 	}
 	if _, err = admin.AuthenticateServiceToken(ctx, replacement, time.Now().UTC()); err != nil {
 		t.Fatal("recovered bearer unavailable", err)
+	}
+	var schema45Ledger string
+	if err = adminDB.QueryRowContext(ctx, `SELECT jsonb_agg(to_jsonb(m) ORDER BY version)::text FROM schema_migrations m`).Scan(&schema45Ledger); err != nil {
+		t.Fatal("schema45 ledger", err)
+	}
+	if applied, e := db.RunMigrations(ctx, dsn, migrations); e != nil || applied != 1 {
+		t.Fatalf("schema45 to46 applied=%d err=%v", applied, e)
+	}
+	if applied, e := db.RunMigrations(ctx, dsn, migrations); e != nil || applied != 0 {
+		t.Fatalf("schema46 no-op applied=%d err=%v", applied, e)
+	}
+	var retainedLedger string
+	if err = adminDB.QueryRowContext(ctx, `SELECT jsonb_agg(to_jsonb(m) ORDER BY version)::text FROM schema_migrations m WHERE version<'000046'`).Scan(&retainedLedger); err != nil || retainedLedger != schema45Ledger {
+		t.Fatal("schema46 changed prior migration records", err)
+	}
+	var auto, setupUsed bool
+	var cadence *int
+	var revision int64
+	if err = adminDB.QueryRowContext(ctx, `SELECT auto_sync,setup_used,cadence_seconds,revision FROM connector_sync_controls WHERE installation_id=$1`, id).Scan(&auto, &setupUsed, &cadence, &revision); err != nil || !auto || setupUsed || cadence != nil || revision != 1 {
+		t.Fatal("schema46 did not preserve predecessor collection intent", err)
+	}
+	if snapshot() != original {
+		t.Fatal("schema46 changed original installation, binding or acknowledgement")
+	}
+	if err = adminDB.QueryRowContext(ctx, `SELECT service_identity_id,current_token_digest FROM connector_control_credentials WHERE installation_id=$1`, id).Scan(&boundIdentity, &current); err != nil || boundIdentity != identity || current != connectorcontrol.RawSHA256(replacement) {
+		t.Fatal("schema46 changed recovered credential lineage", err)
+	}
+	if err = (hostctl.PostgresManager{}).ApplyGrants(ctx, roleCredentials); err != nil {
+		t.Fatal("schema46 grants", err)
+	}
+	if err = (hostctl.PostgresManager{}).VerifyRoleBoundaries(ctx, roleCredentials); err != nil {
+		t.Fatal("schema46 role boundary", err)
+	}
+	if status := preflight(); status.IngressState != "ready" {
+		t.Fatal("schema46 recovered predecessor not ready", status)
 	}
 }
 

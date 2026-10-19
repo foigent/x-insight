@@ -100,6 +100,8 @@ func (w ManagedWorker) Run(ctx context.Context) error {
 		}
 	}
 	due := make([]time.Time, len(jobs))
+	last := make([]time.Time, len(jobs))
+	intervals := make([]time.Duration, len(jobs))
 	failures := make([]int, len(jobs))
 	for {
 		if err := ctx.Err(); err != nil {
@@ -109,7 +111,24 @@ func (w ManagedWorker) Run(ctx context.Context) error {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if now().Before(due[i]) {
+			pending := false
+			customCadence := false
+			if p.schedule != nil {
+				interval, once, configured, e := p.schedule(ctx)
+				pending = once
+				customCadence = configured
+				if e == nil {
+					p.interval = interval
+					if p.retry < interval {
+						p.retry = interval
+					}
+					if intervals[i] != interval && !last[i].IsZero() {
+						due[i] = last[i].Add(interval)
+					}
+					intervals[i] = interval
+				}
+			}
+			if !pending && now().Before(due[i]) {
 				continue
 			}
 			more, err := p.run(ctx)
@@ -120,7 +139,7 @@ func (w ManagedWorker) Run(ctx context.Context) error {
 			switch {
 			case err == nil:
 				failures[i] = 0
-				if more {
+				if more && (!customCadence || pending) {
 					delay = 0
 				}
 			case errors.Is(err, ErrUnavailable), errors.Is(err, ErrStreamChanged), errors.Is(err, ErrScopeChanged), errors.Is(err, ErrConflict), errors.Is(err, ErrInvalid):
@@ -134,10 +153,11 @@ func (w ManagedWorker) Run(ctx context.Context) error {
 					}
 				}
 			}
-			if more && err != nil && p.currentRuntime {
+			if more && err != nil && p.currentRuntime && (!customCadence || pending) {
 				delay = 0
 			}
-			due[i] = now().Add(delay)
+			last[i] = now()
+			due[i] = last[i].Add(delay)
 		}
 		earliest := due[0]
 		for _, d := range due[1:] {
@@ -146,6 +166,10 @@ func (w ManagedWorker) Run(ctx context.Context) error {
 			}
 		}
 		delay := earliest.Sub(now())
+		// Local wake checks keep a manual request responsive without UR polling.
+		if delay > time.Second {
+			delay = time.Second
+		}
 		if delay > 0 {
 			if err := wait(ctx, delay); err != nil {
 				return err
@@ -159,6 +183,7 @@ type managedPoll struct {
 	run             func(context.Context) (bool, error)
 	currentRuntime  bool
 	interval, retry time.Duration
+	schedule        func(context.Context) (time.Duration, bool, bool, error)
 }
 
 func (w ManagedWorker) managedJobs() ([]managedPoll, error) {
@@ -178,7 +203,9 @@ func (w ManagedWorker) managedJobs() ([]managedPoll, error) {
 			return nil, ErrInvalid
 		}
 		seen[p.StreamID] = true
-		jobs = append(jobs, managedPoll{id: p.StreamID, currentRuntime: p.CollectCurrentRuntime, interval: w.PollInterval, retry: w.RetryMaximum, run: func(ctx context.Context) (bool, error) {
+		jobs = append(jobs, managedPoll{id: p.StreamID, currentRuntime: p.CollectCurrentRuntime, schedule: func(ctx context.Context) (time.Duration, bool, bool, error) {
+			return jobSchedule(ctx, p.Consumer.Store, "facts", p.StreamID, w.PollInterval)
+		}, interval: w.PollInterval, retry: w.RetryMaximum, run: func(ctx context.Context) (bool, error) {
 			page, err := p.Consumer.PullOnce(ctx, p.StreamID)
 			more := page.HasMore
 			if p.CollectCurrentRuntime {
@@ -200,14 +227,18 @@ func (w ManagedWorker) managedJobs() ([]managedPoll, error) {
 			return nil, ErrInvalid
 		}
 		seen[b.Expected.ID] = true
-		jobs = append(jobs, managedPoll{id: b.Expected.ID, run: b.PullOnce, interval: w.PollInterval, retry: w.RetryMaximum})
+		jobs = append(jobs, managedPoll{id: b.Expected.ID, schedule: func(ctx context.Context) (time.Duration, bool, bool, error) {
+			return jobSchedule(ctx, b.Store, "budget", b.Expected.ID, w.PollInterval)
+		}, run: b.PullOnce, interval: w.PollInterval, retry: w.RetryMaximum})
 	}
 	for _, c := range w.Contents {
 		if !ValidContentCollection(c.Expected) || seen[c.Expected.ID] || c.Store == nil || c.Reader == nil {
 			return nil, ErrInvalid
 		}
 		seen[c.Expected.ID] = true
-		jobs = append(jobs, managedPoll{id: c.Expected.ID, run: c.PullOnce, interval: w.PollInterval, retry: w.RetryMaximum})
+		jobs = append(jobs, managedPoll{id: c.Expected.ID, schedule: func(ctx context.Context) (time.Duration, bool, bool, error) {
+			return jobSchedule(ctx, c.Store, "content", c.Expected.ID, w.PollInterval)
+		}, run: c.PullOnce, interval: w.PollInterval, retry: w.RetryMaximum})
 	}
 
 	return jobs, nil

@@ -38,7 +38,7 @@ func TestBudgetNativeSchema35UpgradeOfflineBackupRestore(t *testing.T) {
 	source := testsourcefacts.RegisterSource(t, admin)
 	captured := testsourcefacts.Load(t, testsourcefacts.Chat)
 	testsourcefacts.PersistMoney(t, ctx, c.ImporterDSN, source, captured)
-	testsourcefacts.Replay(t, admin, c.ImporterDSN, source, captured, "1")
+	testsourcefacts.ReplayPreSync35(t, admin, c.AdminDSN, c.ImporterDSN, source, captured, "1")
 	oldSubject := "xs_d0d0d0d0d0d0d0d0"
 	_, err = admin.Exec(`INSERT INTO workbench_access_grants(subject_id,source_system_id,allow_summary,allow_details,allow_coverage,allow_preferences) VALUES($1,$2::uuid,true,true,true,true)`, oldSubject, source)
 	must(err)

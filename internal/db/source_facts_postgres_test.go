@@ -36,6 +36,7 @@ type sourceFixture struct {
 	pages                          map[string]sourcefacts.Page
 	generation, status, credential string
 	httpStatus                     int
+	httpCalls                      int
 	streams                        map[string]string
 	documents                      map[string]sourcefacts.Document
 	i01                            []byte
@@ -78,6 +79,7 @@ func newSourceFixture(t *testing.T) *sourceFixture {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
+		f.httpCalls++
 		if r.Header.Get("Authorization") != "Bearer "+f.credential {
 			w.WriteHeader(401)
 			return
@@ -111,11 +113,12 @@ func newSourceFixture(t *testing.T) *sourceFixture {
 		json.NewEncoder(w).Encode(p)
 	}))
 	t.Cleanup(server.Close)
-	reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: server.URL + "/api/v1/integrations/xinsight/source-facts", ServiceKey: f.credential, AllowPrivateTunnelHTTP: true})
+	reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true, Endpoint: server.URL + "/api/v1/integrations/xinsight/source-facts", ServiceKey: f.credential, AllowPrivateTunnelHTTP: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	f.consumer = sourcefacts.Consumer{Store: f.consumerStore, Reader: reader}
+	f.bindSyncScope("ur-demo-01", "17", "101")
 	for _, p := range []string{sourcefacts.ContextProfile, sourcefacts.IdentityProfile, sourcefacts.CostProfile} {
 		id := testUUID(t)
 		f.streams[p] = id
@@ -695,4 +698,16 @@ func loadSourceFixtureDocuments(t *testing.T, f *sourceFixture) {
 			f.documents[p] = d
 		}
 	}
+}
+
+// These older consumer fixtures explicitly exercise automatic collection with
+// a verified synthetic connection; production no longer accepts unbound live I/O.
+func (f *sourceFixture) bindSyncScope(source, org, project string) {
+	f.t.Helper()
+	f.bindSyncScopeWithAuto(source, org, project, true)
+}
+
+func (f *sourceFixture) bindSyncScopeWithAuto(source, org, project string, automatic bool) {
+	f.t.Helper()
+	testsourcefacts.BindSyncScope(f.t, f.admin, source, org, project, automatic)
 }

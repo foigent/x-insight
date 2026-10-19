@@ -40,7 +40,7 @@ with combined.open('x') as f: json.dump(dict(schema_version=current['schema_vers
 old_matrix=json.loads((old_payload/'release/compatibility-matrix.json').read_text())
 new_matrix=json.loads((payload/'release/compatibility-matrix.json').read_text())
 assert (old_matrix['product_version'],old_matrix['database_schema'])==('0.2.0-dev.fpv17','45')
-assert (new_matrix['product_version'],new_matrix['database_schema'])==('0.2.0-dev.fpv19','45')
+assert (new_matrix['product_version'],new_matrix['database_schema'])==('0.2.0-dev.fpv20','46')
 assert old_matrix['product_version'] in new_matrix['supported_upgrade_from_versions']
 record=dict(schema_version='xinsight.ci-fpv17-predecessor.v1',old_source=str(source),old_artifact=str(old_artifact),old_payload=str(old_payload),
             combined_trust=str(combined),candidate_ctl=str(payload/'bin/xinsightctl'),candidate_artifact=str(artifact))

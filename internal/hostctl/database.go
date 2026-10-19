@@ -59,6 +59,7 @@ var workspaceUpdateTables = []string{
 }
 
 var importerInsertTables = []string{
+	"connector_sync_slots",
 	"adapter_import_states", "source_systems", "adapter_manifests",
 	"import_provenance", "import_provenance_events", "evidence_events", "capture_gaps",
 	"connector_import_operation_bindings", "connector_operational_receipts",
@@ -85,6 +86,9 @@ type databaseRoleSpec struct {
 }
 
 var importerUpdateColumnGrants = []tableColumnGrant{
+	{table: "connector_sync_slots", columns: []string{"owner", "token", "revision", "busy", "started_at", "ended_at", "last_error"}},
+	{table: "connector_sync_runs", columns: []string{"pages", "attempts", "state", "results", "observed_items"}},
+	{table: "connector_sync_controls", columns: []string{"last_checked_at", "last_data_at", "last_error"}},
 	{table: "source_content_collections", columns: []string{"revision", "cursor_value", "last_sequence", "high_watermark_sequence", "high_watermark", "coverage", "gaps", "retention_floor", "requires_attention", "last_error", "last_attempt_at", "last_success_at"}},
 	{table: "source_budget_collections", columns: []string{"revision", "requires_attention", "last_error", "access_generation", "catalog_revision", "granted_profiles", "cycle", "visible_cycle", "catalog_id", "catalog_cursor", "entry_index", "alerts_cursor", "last_attempt_at", "last_success_at"}},
 	{table: "source_runtime_snapshots", columns: []string{"revision", "generation", "page_ordinal", "cursor_value", "visible_generation", "requires_attention", "last_error", "last_attempt_at", "last_success_at"}},
@@ -108,6 +112,9 @@ var importerUpdateColumnGrants = []tableColumnGrant{
 }
 
 var workspaceUpdateColumnGrants = []tableColumnGrant{
+	// Live custody commits share the importer permit and must lock its control
+	// row and record data time. This grants no sync preference or run authority.
+	{table: "connector_sync_controls", columns: []string{"last_data_at"}},
 	// Row locks for authenticated ingestion require PostgreSQL UPDATE privilege;
 	// ALWAYS triggers deny any workspace-role mutation of authority rows.
 	{table: "work_event_collections", columns: []string{"revision"}},
@@ -761,6 +768,15 @@ to_regclass('public.work_event_install_invitations') IS NOT NULL`, managedWorkIn
 	}
 	statements = append(statements, workspaceColumnGrants...)
 	statements = append(statements, importerColumnGrants...)
+	for _, fn := range syncProjectionFunctions {
+		var present bool
+		if err := tx.QueryRowContext(ctx, `SELECT to_regprocedure($1) IS NOT NULL`, fn).Scan(&present); err != nil {
+			return err
+		}
+		if present {
+			statements = append(statements, `GRANT EXECUTE ON FUNCTION `+fn+` TO xinsight_workspace,xinsight_importer`)
+		}
+	}
 	statements = append(statements, `GRANT EXECUTE ON FUNCTION public.digest(text,text) TO xinsight_reader`)
 	for _, statement := range statements {
 		if _, err := tx.ExecContext(ctx, statement); err != nil {

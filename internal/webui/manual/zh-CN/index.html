@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="xinsight-product-version" content="0.2.0-dev.fpv19">
-  <meta name="xinsight-manual-version" content="0.2.0-dev.fpv19/manual-r1">
-  <meta name="xinsight-manual-source-sha256" content="sha256:927b9e1aedde833d39e449f1731dc783e00c75e2fa50163fb837acaa8910a4e0">
-  <title>X-Insight 0.2.0-dev.fpv19 简体中文产品手册</title>
+  <meta name="xinsight-product-version" content="0.2.0-dev.fpv20">
+  <meta name="xinsight-manual-version" content="0.2.0-dev.fpv20/manual-r1">
+  <meta name="xinsight-manual-source-sha256" content="sha256:ddcac83581a8b3501fee92d79d0c65dcaaa3b4340aa729ea0de59fda7841f5a7">
+  <title>X-Insight 0.2.0-dev.fpv20 简体中文产品手册</title>
   <link rel="icon" href="manual-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="manual.css">
 </head>
@@ -15,7 +15,7 @@
   <header class="manual-header">
     <p class="eyebrow">X-Insight · 对应版本的离线手册</p>
     <h1>简体中文产品手册</h1>
-    <p>产品版本 <strong>0.2.0-dev.fpv19</strong> · 手册版本 <strong>0.2.0-dev.fpv19/manual-r1</strong></p>
+    <p>产品版本 <strong>0.2.0-dev.fpv20</strong> · 手册版本 <strong>0.2.0-dev.fpv20/manual-r1</strong></p>
     <p class="boundary">内部单部署租户 · loopback-only · 正文读取默认关闭 · 按当前授权显式读取并核验 · 尚非 Production verified</p>
     <a class="product-link" href="/executions">返回产品 · 执行调查</a>
   </header>
@@ -31,6 +31,7 @@
       <a href="#current-manual-6">调查、费用与复核</a>
       <a href="#current-manual-7">正文、留存与缺口</a>
       <a href="#current-manual-8">升级、恢复与诊断</a>
+      <a href="#connection-sync">连接同步（FPV20 / schema46）</a>
     </nav>
     <main id="manual-content">
       <section class="chapter" aria-labelledby="current-manual">
@@ -38,11 +39,11 @@
 <p>本手册覆盖完整开发候选的访问、来源采集、执行调查、费用、运行证据和复核。Apache-2.0 开源不取消认证、来源同意、字段权限、签名与审计要求，没有独立付费功能版本。</p>
 <p>X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、调查与复核。UniRouter（UR）独立执行和路由获授权模型请求、应用执行策略、记录用量与经济事实。组合使用时，XI 异步接收获授权的 UR 事实用于分析和审阅，不进入同步请求关键路径。共享协议与 Integration Control 支撑这条连接，不是用户还须另行选择的产品。</p>
 <h3 id="current-manual-1">版本与支持边界</h3>
-<p>产品 <code>0.2.0-dev.fpv19</code>，手册 <code>0.2.0-dev.fpv19/manual-r1</code>。</p>
-<div class="table-scroll"><table><thead><tr><th>项目</th><th>当前合同</th></tr></thead><tbody><tr><td>数据库 schema</td><td>45</td></tr><tr><td>数据库</td><td>PostgreSQL 16，同机 loopback 专用数据库</td></tr><tr><td>应用</td><td>Linux amd64；受管安装使用 systemd</td></tr><tr><td>安装器运行主机前置</td><td>Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证</td></tr><tr><td>原文记载的隔离验证配置</td><td>Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV19 Target 已验</td></tr><tr><td>待取得的原生主机制品资格</td><td>Ubuntu 22.04、专用固定镜像 PostgreSQL16 容器；真正新装证据待取得</td></tr><tr><td>配置</td><td><code>xinsight.config.v1</code></td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>默认语言</td><td>English；语言控件可切换简体中文</td></tr></tbody></table></div>
+<p>产品 <code>0.2.0-dev.fpv20</code>，手册 <code>0.2.0-dev.fpv20/manual-r1</code>。</p>
+<div class="table-scroll"><table><thead><tr><th>项目</th><th>当前合同</th></tr></thead><tbody><tr><td>数据库 schema</td><td>46</td></tr><tr><td>数据库</td><td>PostgreSQL 16，同机 loopback 专用数据库</td></tr><tr><td>应用</td><td>Linux amd64；受管安装使用 systemd</td></tr><tr><td>安装器运行主机前置</td><td>Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证</td></tr><tr><td>原文记载的隔离验证配置</td><td>Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV20 Target 已验</td></tr><tr><td>待取得的原生主机制品资格</td><td>Ubuntu 22.04、专用固定镜像 PostgreSQL16 容器；真正新装证据待取得</td></tr><tr><td>配置</td><td><code>xinsight.config.v1</code></td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code></td></tr><tr><td>默认语言</td><td>English；语言控件可切换简体中文</td></tr></tbody></table></div>
 <p>这是开发候选，不表示公共稳定发行或 Production 验收。仓库还保留 Ubuntu 22.04 CI 安装路径和冻结 rc.13 profile，其制品与结果分别管理。安装必须匹配精确 profile、已验签制品、信任权威及主机资格，不能照搬历史说明。</p>
-<p>安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV19 精确制品在 Ubuntu22.04／容器 PostgreSQL 上的资格仍待验证，已装系统依赖和已完成证据分别记录。</p>
-<p>配置声明的升级来源为 <code>0.2.0-dev.b2</code>、<code>0.2.0-dev.d1</code>、<code>0.2.0-dev.d2</code>、<code>0.2.0-dev.fpv1</code>、<code>0.2.0-dev.fpv2</code>、<code>0.2.0-dev.fpv3</code>、<code>0.2.0-dev.fpv4</code>、<code>0.2.0-dev.fpv5</code>、<code>0.2.0-dev.fpv11</code>、<code>0.2.0-dev.fpv12</code>、<code>0.2.0-dev.fpv13</code>、<code>0.2.0-dev.fpv14</code>、<code>0.2.0-dev.fpv15</code>、<code>0.2.0-dev.fpv16</code>、<code>0.2.0-dev.fpv17</code>、<code>0.2.0-dev.fpv18</code>。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema45 相同也不能据此回退旧二进制。</p>
+<p>安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV20 精确制品在 Ubuntu22.04／容器 PostgreSQL 上的资格仍待验证，已装系统依赖和已完成证据分别记录。</p>
+<p>配置声明的升级来源为 <code>0.2.0-dev.b2</code>、<code>0.2.0-dev.d1</code>、<code>0.2.0-dev.d2</code>、<code>0.2.0-dev.fpv1</code>、<code>0.2.0-dev.fpv2</code>、<code>0.2.0-dev.fpv3</code>、<code>0.2.0-dev.fpv4</code>、<code>0.2.0-dev.fpv5</code>、<code>0.2.0-dev.fpv11</code>、<code>0.2.0-dev.fpv12</code>、<code>0.2.0-dev.fpv13</code>、<code>0.2.0-dev.fpv14</code>、<code>0.2.0-dev.fpv15</code>、<code>0.2.0-dev.fpv16</code>、<code>0.2.0-dev.fpv17</code>、<code>0.2.0-dev.fpv18</code>、<code>0.2.0-dev.fpv19</code>。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema46 新增连接同步控制；不能将 schema45 的旧二进制用于回退。</p>
 <h3 id="current-manual-2">构建与本地试用</h3>
 <p>使用 Go 1.25.12、Node 22.23.1、npm 10.9.8、Python 3 和 PostgreSQL 16。在仓库根目录执行：</p>
 <pre><code>go mod download
@@ -118,12 +119,24 @@ xinsightctl restore --recovery-bundle /absolute/private-backup.tar --recovery-bu
 <p>操作中断后保留原身份，先看状态，再按该 operation 所需参数使用 <code>xinsightctl recover</code> 或 <code>xinsightctl resume</code>，不要当作通用重试按钮。分别诊断签名/版本、credential owner、数据库身份/schema、缺密钥、授权拒绝、来源过期和网络问题，不降低检查绕过阻塞。</p>
 <p>报告问题时提供准确 commit/profile、系统与工具链、脱敏复现、预期/实际结果，并说明 Local、CI、Artifact、Target 或 Production 证据层。公开 issue 不包含真实正文、DSN、token、密码 hash、私有主机身份或原始日志。仓库私有漏洞报告能力尚未确认启用；可不带漏洞细节请求私下联系。贡献与手动 DCO 签署见根目录 <code>SECURITY.md</code> 和 <code>CONTRIBUTING.md</code>。</p>
 </section>
+      <section class="chapter" aria-labelledby="connection-sync">
+<h2 id="connection-sync">连接同步（FPV20 / schema46）</h2>
+<p>在“连接器”中，每条 UR 连接都有持久化的自动同步偏好和本地状态。新连接默认手动；升级保留既有连接的自动行为及配置间隔。安静测试时，需要核对准确连接并显式关闭，不会因升级而暂停所有连接。</p>
+<p>开关覆盖 XI 发出的 Feed、来源事实／事件、当前运行状态、正文、预算和 enrollment／capabilities 维护请求。保存间隔接受 5 至 3600 秒的整数，新开启时默认为 60 秒；这是最小轮询间隔，原有退避和维护周期可能更长。未保存新间隔时继续使用既有配置。打开或刷新状态页面不触发 UR 采集；本地保留期、到期清理、审计和历史阅读继续运行。</p>
+<p>“同步一次”要求关闭自动同步。各适用类别轮转推进，到达本次可观察边界后停止该类别；整次任务最多 60 秒、32 个数据／控制页、64 次应用级 HTTP 尝试，capabilities 与失败尝试也计数。单次任务不会开启自动同步，不会在重启后自动重放。空结果、完成、部分完成、错误、取消、到期和中断分别记录；部分完成不代表覆盖完整。响应丢失后保留原请求 ID 和正文，先确认同一请求或刷新本地状态，再开始新任务。</p>
+<p>“停止同步”先持久化新版本。已获准的请求可能仍在结束，界面会显示“正在停止”或“未确认”；超时、失联本身不能证明静默。旧版本结果不能前移数据库游标或发布新的采集配置；停止之前已提交的证据继续保留，恢复后沿用原有去重。</p>
+<p>最初的 Connect 同意只带一次有界初始化机会，不会开启自动同步，重放 ACK 也不会续期。若某端的有界初始化先于另一端就绪而结束，连接仍显示待完成，需要显式恢复本地动作。XI 从自己的界面或 CLI 恢复出站，UR 从自己的本地入口恢复反向控制轮询；listener 保持可用。XI 本地静默不能证明 UR 静默，不增加跨管理员凭据或隐藏唤醒请求。</p>
+<p>暂停不会撤销授权、清除需要处理的错误或重置游标。源端保留期到期后，缺口仍然保留，继续使用既有显式恢复流程。“最近出站检查”和“最近数据提交”分别显示，不能据此推定已覆盖全部来源数据。</p>
+<p>显式保存 UR 委托策略时，使用原人类账户和不可变操作标识，单独获得最多 60 秒／32 页／64 次尝试的控制通信授权；Auto 仍关闭，采集 worker 不获准运行。未确认的结果只能使用原任务剩余预算回读，重放不续期；终态结果直接在本地读取。预算到期后，显式启动“同步一次”进行远端恢复，保留原策略操作标识。实时策略发现／读取页面也需要 Auto 或“同步一次”，打开页面本身不产生控制任务。凭据恢复继续使用原有人类确认票据及入站协议。有限回执最多保留 32 份；策略预检失败的标识在原生持久操作记录能够防止重建之前不会被淘汰，无法保持上界时拒绝新增任务。</p>
+<p>本地管理员可用 <code>xinsightctl connector-sync status|auto-off|auto-on|once --installation-id ID --actor SUBJECT</code>。必须使用准确 ID 和已有、获准的本地账户 subject；变更另带状态回读的 <code>--expected-revision</code> 和固定 UUID <code>--request-id</code>，开启时可指定 <code>--cadence-seconds</code>。重试沿用原 ID／正文，未确认前不另建任务。</p>
+<p>FPV20 使用新的 schema 和制品身份。本地通过不代替 CI、签名分发、安装及 Target 验收；冻结的 FPV19 制品和签包材料保持原身份。</p>
+</section>
     </main>
   </div>
   <footer>
-    <span>X-Insight 0.2.0-dev.fpv19</span>
-    <span>0.2.0-dev.fpv19/manual-r1</span>
-    <span>生成源 sha256:927b9e1aedde833d39e449f1731dc783e00c75e2fa50163fb837acaa8910a4e0</span>
+    <span>X-Insight 0.2.0-dev.fpv20</span>
+    <span>0.2.0-dev.fpv20/manual-r1</span>
+    <span>生成源 sha256:ddcac83581a8b3501fee92d79d0c65dcaaa3b4340aa729ea0de59fda7841f5a7</span>
   </footer>
 </body>
 </html>

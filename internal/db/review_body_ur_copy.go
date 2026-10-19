@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"regexp"
 	"time"
 
@@ -126,6 +127,9 @@ func (s *WorkspaceStore) CheckURCReviewCopy(ctx context.Context, collectionID st
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	if err = sourceLock(ctx, tx, ref.SourceSystemID); err != nil {
 		return err
 	}
@@ -239,6 +243,9 @@ func (s *WorkspaceStore) CommitURCReviewBody(ctx context.Context, collectionID s
 		return receipt, err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return receipt, syncErr
+	}
 	if err = sourceLock(ctx, tx, ref.SourceSystemID); err != nil {
 		return receipt, err
 	}

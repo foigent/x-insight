@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"strconv"
 	"time"
 
@@ -61,6 +62,9 @@ func (s *SourceFactsStore) CommitSourceFactsPage(ctx context.Context, expected s
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	// Different scope generations can replay the same immutable documents.
 	// Serialize their adjacency checks and inserts, including out-of-order
 	// revisions, so two transactions cannot retain contradictory links.
@@ -131,7 +135,15 @@ func (s *SourceFactsStore) RecordSourceFactsFailure(ctx context.Context, expecte
 	}
 	// This separate transaction records the failed attempt only after the bad
 	// page rolled back, and only if no successful/administrative progress won.
-	result, err := s.db.ExecContext(ctx, `UPDATE source_fact_streams SET last_error=$3,updated_at=$4,revision=revision+1,requires_attention=$8
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = connectorsync.Fence(ctx, tx); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE source_fact_streams SET last_error=$3,updated_at=$4,revision=revision+1,requires_attention=$8
 	 WHERE id=$1::uuid AND revision=$2 AND status='active' AND status=$5
 	 AND NOT requires_attention AND cursor_value=$6 AND high_watermark=$7`, expected.ID, expected.Revision, code, now.UTC(), expected.Status, expected.Cursor, expected.HighWatermark, sourcefacts.NeedsAttention(code))
 	if err != nil {
@@ -144,5 +156,5 @@ func (s *SourceFactsStore) RecordSourceFactsFailure(ctx context.Context, expecte
 	if n != 1 {
 		return sourcefacts.ErrStreamChanged
 	}
-	return nil
+	return tx.Commit()
 }

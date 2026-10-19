@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CANDIDATE_ARTIFACT="$1"
 CANDIDATE_PAYLOAD="$2"
 CTL="$CANDIDATE_PAYLOAD/bin/xinsightctl"
-QUAL="${RUNNER_TEMP:?}/xinsight-fpv17-to-fpv19-qualification"
+QUAL="${RUNNER_TEMP:?}/xinsight-fpv17-to-fpv20-qualification"
 test ! -e "$QUAL"
 mkdir -m 0700 "$QUAL"
 umask 077
@@ -26,7 +26,7 @@ qualification_exit() {
 import json, pathlib, sys
 path, stage, code = pathlib.Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
 assert stage in {'preflight','check_snapshot','check','upgrade','verify'} and 0 < code < 256
-path.write_text(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv19-upgrade-failure.v1',
+path.write_text(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade-failure.v1',
                             'stage':stage,'exit_code':code},sort_keys=True)+'\n')
 PY
   fi
@@ -75,8 +75,8 @@ before,after,check=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:
 assert before==after, 'upgrade --check changed installed state, database, key, grants, config or process'
 assert check['operation']=='upgrade' and check['supported'] and check['mutating'] is False
 assert check['current']['product_version']=='0.2.0-dev.fpv17'
-assert check['target']['product_version']=='0.2.0-dev.fpv19'
-assert check['current']['database_schema']==check['target']['database_schema']=='45'
+assert check['target']['product_version']=='0.2.0-dev.fpv20'
+assert check['current']['database_schema']=='45' and check['target']['database_schema']=='46'
 assert any(c['name']=='control_credential_lifecycle' and c['status']=='pass' for c in check['checks'])
 PY
 sudo systemctl start "${units[@]}"
@@ -96,15 +96,15 @@ for unit in "${units[@]}"; do
   test "$(systemctl is-active "$unit")" = active
   test "$(systemctl show "$unit" --property=InvocationID --value)" != "$(cat "$QUAL/$unit.before-upgrade-invocation")"
 done
-python3 - "$QUAL/before-private.json" "$QUAL/after-upgrade-private.json" "$QUAL/upgrade-check-private.json" "$QUAL/upgrade-receipt-private.json" > "$QUAL/qualification-result.json" <<'PY'
-import collections, json, pathlib, sys
-before,after,check,receipt=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:]]
+python3 - "$QUAL/before-private.json" "$QUAL/after-upgrade-private.json" "$QUAL/upgrade-check-private.json" "$QUAL/upgrade-receipt-private.json" "$CANDIDATE_PAYLOAD" > "$QUAL/qualification-result.json" <<'PY'
+import collections, hashlib, json, pathlib, sys
+before,after,check,receipt=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:5]]
 old=before['status']['install_state']['current']; new=after['status']['install_state']['current']
 assert receipt['kind']=='upgrade' and receipt['status']=='completed'
 assert receipt['before']['commit']==old['commit'] and receipt['after']['commit']==check['target']['commit']
 assert after['status']['managed'] and after['status'].get('active_journal') is None
-assert new['product_version']=='0.2.0-dev.fpv19' and new['commit']==check['target']['commit']
-assert new['database_schema']==after['status']['install_state']['database_schema_current']=='45'
+assert new['product_version']=='0.2.0-dev.fpv20' and new['commit']==check['target']['commit']
+assert new['database_schema']==after['status']['install_state']['database_schema_current']=='46'
 assert after['status']['install_state']['previous']['commit']==old['commit']
 assert after['release']==new['release_dir']!=before['release']
 assert after['server_invocation']!=before['server_invocation']
@@ -113,11 +113,41 @@ assert after['worker_exes']=={unit:after['release']+'/bin/xinsight-importer'
                               for unit in ('xinsight-feed.service','xinsight-source-facts.service')}
 # Poll metadata may advance while the workers are active. Compare immutable
 # rows exactly and active cursor counts without demanding timestamp equality.
-stable=('schema_migrations','workbench_access_grants',
+stable=('workbench_access_grants',
         'work_event_collections','work_event_documents',
         'connector_installation_source_bindings','installation_identity',
-        'table_acl','role_boundary')
+        'role_boundary')
 assert all(after['database'][table]==before['database'][table] for table in stable)
+old_migrations,new_migrations=before['migration_rows'],after['migration_rows']
+assert len(old_migrations)==45 and len(new_migrations)==46
+assert new_migrations[:45]==old_migrations, 'prior ledger rows changed'
+added=new_migrations[45]
+assert added['version']=='000046_add_connector_sync_control' and added['dirty'] is False
+expected='sha256:'+hashlib.sha256((pathlib.Path(sys.argv[5])/'migrations/000046_add_connector_sync_control.up.sql').read_bytes()).hexdigest()
+assert added['checksum_sha256']==expected
+assert before['database']['schema_migrations'].split(':',1)[0]=='45'
+assert after['database']['schema_migrations'].split(':',1)[0]=='46'
+old_acl,new_acl=before['table_acl_rows'],after['table_acl_rows']
+assert all(name in new_acl and new_acl[name]==acl for name,acl in old_acl.items()), 'prior table ACL changed'
+assert set(new_acl)-set(old_acl)=={'connector_sync_controls','connector_sync_slots','connector_sync_runs'}
+privileges=after['sync_privileges']
+tables=('connector_sync_controls','connector_sync_slots','connector_sync_runs')
+assert privileges['owners']=={name:'xinsight_admin' for name in tables}
+expected_tables=[[table,role,'SELECT',False] for table in tables
+                 for role in ('xinsight_reader','xinsight_workspace','xinsight_importer')]
+expected_tables.append(['connector_sync_slots','xinsight_importer','INSERT',False])
+assert sorted(privileges['tables'])==sorted(expected_tables)
+columns={'connector_sync_controls':('last_checked_at','last_data_at','last_error'),
+         'connector_sync_slots':('owner','token','revision','busy','started_at','ended_at','last_error'),
+         'connector_sync_runs':('pages','attempts','state','results','observed_items')}
+expected_columns=[[table,column,'xinsight_importer','UPDATE',False]
+                  for table,names in columns.items() for column in names]
+expected_columns.append(['connector_sync_controls','last_data_at','xinsight_workspace','UPDATE',False])
+assert sorted(privileges['columns'])==sorted(expected_columns)
+expected_functions=[[name,role,'EXECUTE',False]
+                    for name in ('xinsight_sync_scope','xinsight_sync_receiver','xinsight_sync_units')
+                    for role in ('xinsight_workspace','xinsight_importer')]
+assert sorted(privileges['functions'])==sorted(expected_functions)
 for table, rows in before['immutable_rows'].items():
     assert not (collections.Counter(rows)-collections.Counter(after['immutable_rows'][table])), table
 for table in ('source_fact_streams','source_content_collections','adapter_import_states'):
@@ -140,10 +170,11 @@ if old_feed!=new_feed:
     assert len(after['immutable_rows']['workbench_economic_facts'])>len(before['immutable_rows']['workbench_economic_facts'])
 assert after['files']==before['files'], 'original review-body key or host config changed'
 assert any(c['name']=='representative_read' and c['status']=='pass' for c in receipt['checks'])
-print(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv19-upgrade.v1',
+print(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade.v1',
                   'classification':'ci_synthetic_not_target','state':'passed',
-                  'predecessor':'0.2.0-dev.fpv17','target':'0.2.0-dev.fpv19',
-                  'database_schema':'45','check_no_side_effects':True,
+                  'predecessor':'0.2.0-dev.fpv17','target':'0.2.0-dev.fpv20',
+                  'database_schema':'46','check_no_side_effects':True,
+                  'migration46_exact_append_verified':True,'prior_table_acls_preserved':True,
                   'history_cursors_ciphertext_grants_preserved':True,
                   'review_body_key_preserved':True,'new_server_invocation_verified':True,
                   'active_workers_restored_by_upgrade':True,

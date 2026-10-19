@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"regexp"
 	"time"
 )
@@ -39,6 +40,9 @@ func (s *WorkspaceStore) SaveManagedEnrollment(ctx context.Context, r ManagedEnr
 		return e
 	}
 	defer tx.Rollback()
+	if e = connectorsync.Fence(ctx, tx); e != nil {
+		return e
+	}
 	i, e := lockedManagedInstallation(ctx, tx, r.InstallationID)
 	if e != nil {
 		return e

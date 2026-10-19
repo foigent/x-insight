@@ -194,12 +194,15 @@ type OwnerStore interface {
 }
 
 type Manager struct {
-	EnsureCustody   func(context.Context) error
-	Store           OwnerStore
-	URStore         UROperationStore
-	URClient        URPolicyClient
-	URIdentity      urmachine.Identity
-	URClientFactory func(context.Context) (URPolicyClient, urmachine.Identity, error)
+	EnsureCustody func(context.Context) error
+	// Required for explicit control permits in production. It rechecks the
+	// existing root-owned human account, never a flag supplied by a worker.
+	AuthorizeControlActor func(string) error
+	Store                 OwnerStore
+	URStore               UROperationStore
+	URClient              URPolicyClient
+	URIdentity            urmachine.Identity
+	URClientFactory       func(context.Context) (URPolicyClient, urmachine.Identity, error)
 }
 
 func (m Manager) Execute(ctx context.Context, request Request) (Response, error) {

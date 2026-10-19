@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"slices"
 	"time"
 
@@ -146,7 +147,7 @@ type Consumer struct {
 // PullOnce commits all valid documents and their page position atomically.
 // Pending interpretation is durable receipt, so a predecessor on a later page
 // cannot deadlock the feed. There is no hidden reset or retry on a gap.
-func (c Consumer) PullOnce(ctx context.Context, streamID string) (Page, error) {
+func (c Consumer) PullOnce(ctx context.Context, streamID string) (out Page, resultErr error) {
 	if c.Store == nil || c.Reader == nil {
 		return Page{}, ErrUnavailable
 	}
@@ -154,6 +155,11 @@ func (c Consumer) PullOnce(ctx context.Context, streamID string) (Page, error) {
 	if e != nil {
 		return Page{}, e
 	}
+	ctx, finish, gateErr := beginSync(ctx, c.Store, s.SourceInstance, s.OrgID, s.ProjectID, "facts:"+s.ID)
+	if gateErr != nil {
+		return Page{}, gateErr
+	}
+	defer func() { finish(resultErr) }()
 	if s.Status != "active" || s.RequiresAttention {
 		return Page{}, ErrUnavailable
 	}
@@ -165,6 +171,9 @@ func (c Consumer) PullOnce(ctx context.Context, streamID string) (Page, error) {
 		now = c.Now().UTC()
 	}
 	fail := func(code string, err error) (Page, error) {
+		if connectorsync.IsControlStop(err) {
+			return Page{}, err
+		}
 		if e := c.Store.RecordSourceFactsFailure(ctx, s, code, now); e != nil {
 			return Page{}, e
 		}
@@ -200,6 +209,7 @@ func (c Consumer) PullOnce(ctx context.Context, streamID string) (Page, error) {
 		}
 		return Page{}, e
 	}
+	connectorsync.Progress(ctx, p.HasMore, len(p.Items)+len(p.Observations))
 	return p, nil
 }
 

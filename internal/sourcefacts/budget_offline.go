@@ -19,7 +19,7 @@ const MaxBudgetOfflineBytes = 50*MaxBudgetReadingBytes + 128*1024
 // BudgetOfflineSchemaSupported is the shared, explicit compatibility boundary
 // for an offline authorization and its database admission path.
 func BudgetOfflineSchemaSupported(target string) bool {
-	return target == "36" || target == "37" || target == "38" || target == "39" || target == "40" || target == "41" || target == "42" || target == "43" || target == "44" || target == "45"
+	return target == "36" || target == "37" || target == "38" || target == "39" || target == "40" || target == "41" || target == "42" || target == "43" || target == "44" || target == "45" || target == "46"
 }
 
 // Each authorization binds one bounded catalog and its complete, independent

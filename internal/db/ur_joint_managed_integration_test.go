@@ -909,6 +909,10 @@ func runXIManagedJoint(t *testing.T, input urJointConsumerInput, pool *x509.Cert
 		return key
 	}
 	identity := urmachine.Identity{InstallationID: inv.InstallationID, SourceInstance: input.SourceInstance, OrgID: input.OrgID}
+	// This opt-in isolated legacy lifecycle fixture intentionally tests ongoing
+	// collection after setup. Declare that intent for its exact synthetic pair;
+	// the separate sync tests cover the new production manual/finite defaults.
+	f.exec(`UPDATE connector_sync_controls SET auto_sync=true WHERE installation_id=$1`, inv.InstallationID)
 	projects := &connectoractivation.ManagedProjects{Store: f.workspace, Sources: f.consumerStore, Host: e, TLSRoots: pool, EnrollmentClient: func(context.Context, connectorcontrol.ManagedBoundary) (*urmachine.EnrollmentClient, error) {
 		return urmachine.NewEnrollmentClient(input.BaseURL, machineClient(connectorcontrol.EnrollmentMachinePurpose), identity, client)
 	}, PolicyClient: func(context.Context, connectorcontrol.ManagedBoundary) (*urmachine.Client, error) {

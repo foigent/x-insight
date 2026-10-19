@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"regexp"
 	"strconv"
 	"strings"
@@ -416,6 +417,9 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 		return PersistenceReport{}, err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return PersistenceReport{}, syncErr
+	}
 	var writerLockAcquired bool
 	if err := tx.QueryRowContext(ctx, `SELECT pg_try_advisory_xact_lock_shared($1)`, MaintenanceLockKey).Scan(&writerLockAcquired); err != nil {
 		return PersistenceReport{}, err

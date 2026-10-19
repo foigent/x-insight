@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/hostctl"
 	"github.com/foigent/x-insight/internal/integration/urmachine"
 	"github.com/foigent/x-insight/internal/reviewpolicycontrol"
@@ -46,7 +47,7 @@ func managedMachineTransport(ctx context.Context, engine *hostctl.Engine, b conn
 		bearer, transport, e = machineFileTransport(path, c.CAFile, format)
 		return e
 	})
-	return bearer, transport, identity, e
+	return bearer, connectorsync.RequireClient(transport), identity, e
 }
 func managedEnrollmentFactory(engine *hostctl.Engine) func(context.Context, connectorcontrol.ManagedBoundary) (*urmachine.EnrollmentClient, error) {
 	return func(ctx context.Context, b connectorcontrol.ManagedBoundary) (*urmachine.EnrollmentClient, error) {
@@ -89,7 +90,7 @@ func managedPolicyReloadFactory(engine *hostctl.Engine, legacy reviewpolicycontr
 		if e != nil {
 			return nil, identity, e
 		}
-		client, e := urmachine.NewPolicyClient(origin, bearer, identity, transport)
+		client, e := urmachine.NewPolicyClient(origin, bearer, identity, connectorsync.RequireClient(transport))
 		return client, identity, e
 	}
 }

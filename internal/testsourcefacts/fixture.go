@@ -141,6 +141,7 @@ func Replay(t *testing.T, admin *sql.DB, importerDSN, source string, bundle Bund
 	defer store.Close()
 	streams := map[string]string{}
 	for _, p := range bundle.Pages {
+		BindSyncScope(t, admin, first.ProducerInstance, p.Org, p.Project, true)
 		if streams[p.Profile] == "" {
 			// This is a new, explicit fixture registration at the captured stream's
 			// original position, not a reset of an existing consumer checkpoint.
