@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"regexp"
 	"time"
 )
@@ -274,6 +275,9 @@ func (s *PostgresStateStore) Activate(
 		return PostgresWorkerState{}, fmt.Errorf("begin completed-execution worker activation: %w", err)
 	}
 	defer tx.Rollback()
+	if err := connectorsync.Fence(ctx, tx); err != nil {
+		return PostgresWorkerState{}, err
+	}
 	if err := s.requireActiveIdentity(ctx, tx); err != nil {
 		return PostgresWorkerState{}, err
 	}
@@ -350,7 +354,15 @@ func (s *PostgresStateStore) MarkPollStarted(
 	if err := validateStateWrite(s, expectedCursor, startedAt); err != nil {
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = connectorsync.Fence(ctx, tx); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `
 UPDATE adapter_import_states AS state
 SET
   status = 'running',
@@ -388,7 +400,10 @@ WHERE state.source_system_id = $1::uuid
 	if err != nil {
 		return fmt.Errorf("mark completed-execution poll started: %w", err)
 	}
-	return requireSingleStateRow(result)
+	if err = requireSingleStateRow(result); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // CommitPage must be called only after every item in the page has independently
@@ -408,7 +423,15 @@ func (s *PostgresStateStore) CommitPage(
 	if err := validatePageCommit(page); err != nil {
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = connectorsync.CommitFence(ctx, tx); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `
 UPDATE adapter_import_states AS state
 SET
   cursor_value = $4,
@@ -451,7 +474,10 @@ WHERE state.source_system_id = $1::uuid
 	if err != nil {
 		return fmt.Errorf("commit completed-execution page state: %w", err)
 	}
-	return requireSingleStateRow(result)
+	if err = requireSingleStateRow(result); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *PostgresStateStore) MarkFailure(
@@ -470,7 +496,15 @@ func (s *PostgresStateStore) MarkFailure(
 		status = WorkerStatusBackoff
 	}
 	occurredAt := failure.OccurredAt.UTC().Truncate(time.Microsecond)
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = connectorsync.Fence(ctx, tx); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `
 UPDATE adapter_import_states AS state
 SET
   status = 'error',
@@ -504,7 +538,10 @@ WHERE state.source_system_id = $1::uuid
 	if err != nil {
 		return fmt.Errorf("mark completed-execution poll failure: %w", err)
 	}
-	return requireSingleStateRow(result)
+	if err = requireSingleStateRow(result); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *PostgresStateStore) MarkStopping(

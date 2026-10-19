@@ -59,6 +59,9 @@ var cleanBaselineTables = []string{
 	"connector_operational_receipts",
 	"connector_receiver_adoptions",
 	"connector_source_enrollments",
+	"connector_sync_controls",
+	"connector_sync_runs",
+	"connector_sync_slots",
 	"discovery_analysis_runs",
 	"discovery_hypotheses",
 	"evaluation_feedback",
@@ -976,6 +979,8 @@ WITH function_privileges AS (
           OR (proname='xinsight_record_connector_source_binding' AND argument_types='text, text' AND grantee='xinsight_workspace')
           OR (proname='xinsight_redeem_connector_adoption_invitation' AND argument_types='text, text, text, timestamp with time zone, text, text' AND grantee='xinsight_workspace')
           OR (proname='xinsight_initialize_connector_control_credential' AND argument_types='text, text' AND grantee='xinsight_workspace')
+          OR (proname='xinsight_sync_scope' AND argument_types='text, text, text, boolean' AND grantee IN ('xinsight_workspace','xinsight_importer'))
+          OR (proname IN ('xinsight_sync_units','xinsight_sync_receiver') AND argument_types='text' AND grantee IN ('xinsight_workspace','xinsight_importer'))
           OR (proname = 'synthetic_resource_cluster_id' AND argument_types = ''
            AND grantee = 'xinsight_importer')
           OR (proname = 'xinsight_managed_work_install_id' AND argument_types = 'text'

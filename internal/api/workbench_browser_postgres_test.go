@@ -1289,6 +1289,11 @@ func (f *p3BrowserFixture) importChain(t *testing.T, admin *sql.DB) {
 	store, e := db.OpenSourceFactsStore(f.importerDSN)
 	p3CheckError(t, e, "consumer store")
 	defer store.Close()
+	installation, e := connectorcontrol.NewID("xci_", nil)
+	p3CheckError(t, e, "synthetic sync installation")
+	feedKey, e := config.LoadSourceFactsServiceKey(filepath.Join(f.credentials, "completed-feed.key"))
+	p3CheckError(t, e, "synthetic sync receiver")
+	seedBrowserAutomaticSync(t, admin, installation, f.source.SourceInstance, f.source.OrgID, f.source.ProjectID, feedKey)
 	configPath := f.bootstrapSourceProfiles(t, owner, store)
 	managed := f.managed
 	f.child(t, f.importer, "", "completed-feed.jsonl", f.importerEnv(), "unirouter", "pull-feed")

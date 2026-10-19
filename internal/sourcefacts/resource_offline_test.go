@@ -12,7 +12,7 @@ import (
 func TestSyntheticResourceAuthorizationSeparatesInternalAndUR(t *testing.T) {
 	now := time.Now().UTC()
 	a := OfflineAuthorization{SchemaVersion: ResourceOfflineAuthorizationVersion, AuthorizationID: "resource-test", Environment: "test", TargetRef: "target", MachineIDSHA256: Hash([]byte("machine")), ProductVersion: "dev", ProductCommit: "local", SourceSchemaSHA256: ResourceSchemaSHA256(), SourceSystemID: "11111111-1111-4111-8111-111111111111", SourceInstance: "reporter", OrgID: "1", ProjectID: "2", Profile: ResourceOfflineProfile, NotBefore: now.Add(-time.Minute).Format(TimeFormat), ExpiresAt: now.Add(time.Hour).Format(TimeFormat), BundlePath: "/synthetic/bundle.json", BundleSHA256: Hash([]byte("bundle")), BundleID: "bundle", OperationID: "operation", MaxRecords: 50, PayloadCaptureMode: "metadata_only", TargetDatabaseSchema: "37", TargetDatabaseName: "xi_synthetic", TargetDatabaseOID: "123", TargetDatabaseSystemID: "987654321", TargetSourceSystemID: "22222222-2222-4222-8222-222222222222", TargetSourceInstance: "target", TargetOrgID: "3", TargetProjectID: "4"}
-	for _, schema := range append([]string{"37", "38", "39", "40", "41", "42", "43", "44"}, buildinfo.DatabaseSchemaMax) {
+	for _, schema := range append([]string{"37", "38", "39", "40", "41", "42", "43", "44", "45"}, buildinfo.DatabaseSchemaMax) {
 		v := a
 		v.TargetDatabaseSchema = schema
 		if err := v.Validate(now); err != nil {
@@ -33,7 +33,7 @@ func TestSyntheticResourceAuthorizationSeparatesInternalAndUR(t *testing.T) {
 		"OID-missing":       func(x *OfflineAuthorization) { x.TargetDatabaseOID = "" },
 		"target-wildcard":   func(x *OfflineAuthorization) { x.TargetSourceInstance = "*" },
 		"schema36":          func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "36" },
-		"future-schema46":   func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "46" },
+		"future-schema47":   func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "47" },
 		"expired":           func(x *OfflineAuthorization) { x.ExpiresAt = now.Format(TimeFormat) },
 		"too-long":          func(x *OfflineAuthorization) { x.ExpiresAt = now.Add(3 * time.Hour).Format(TimeFormat) },
 		"schema-hash":       func(x *OfflineAuthorization) { x.SourceSchemaSHA256 = Hash([]byte("other")) },
@@ -69,7 +69,7 @@ func TestSyntheticResourceAuthorizationSeparatesInternalAndUR(t *testing.T) {
 func TestActionAuthorizationIsDistinctAndTestOnly(t *testing.T) {
 	now := time.Now().UTC()
 	a := OfflineAuthorization{SchemaVersion: ResourceOfflineAuthorizationVersion, AuthorizationID: "action-test", Environment: "test", TargetRef: "target", MachineIDSHA256: Hash([]byte("machine")), ProductVersion: "dev", ProductCommit: "local", SourceSchemaSHA256: ActionSchemaSHA256(), SourceSystemID: "11111111-1111-4111-8111-111111111111", SourceInstance: "openclaw-test", OrgID: "1", ProjectID: "2", Profile: ActionOfflineProfile, NotBefore: now.Add(-time.Minute).Format(TimeFormat), ExpiresAt: now.Add(time.Hour).Format(TimeFormat), BundlePath: "/action/bundle.json", BundleSHA256: Hash([]byte("bundle")), BundleID: "bundle", OperationID: "operation", MaxRecords: 5, PayloadCaptureMode: "metadata_only", TargetDatabaseSchema: "40", TargetDatabaseName: "xi_action", TargetDatabaseOID: "123", TargetDatabaseSystemID: "987654321", TargetSourceSystemID: "22222222-2222-4222-8222-222222222222", TargetSourceInstance: "ur-test", TargetOrgID: "3", TargetProjectID: "4"}
-	for _, schema := range append([]string{"40", "41", "42", "43", "44"}, buildinfo.DatabaseSchemaMax) {
+	for _, schema := range append([]string{"40", "41", "42", "43", "44", "45"}, buildinfo.DatabaseSchemaMax) {
 		a.TargetDatabaseSchema = schema
 		if err := a.Validate(now); err != nil {
 			t.Fatalf("supported action schema %s: %v", schema, err)
@@ -78,7 +78,7 @@ func TestActionAuthorizationIsDistinctAndTestOnly(t *testing.T) {
 	for _, mutate := range []func(*OfflineAuthorization){
 		func(x *OfflineAuthorization) { x.Profile = ResourceOfflineProfile },
 		func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "39" },
-		func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "46" },
+		func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "47" },
 		func(x *OfflineAuthorization) { x.Environment = "integration" },
 		func(x *OfflineAuthorization) { x.SourceSchemaSHA256 = ResourceSchemaSHA256() },
 	} {

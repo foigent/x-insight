@@ -92,6 +92,8 @@ func run(ctx context.Context, args []string, stdout io.Writer) error {
 		return err
 	}
 	switch args[0] {
+	case "connector-sync":
+		return runConnectorSync(ctx, engine, args[1:], stdout)
 	case "workbench-access":
 		return runWorkbenchAccess(ctx, engine, args[1:], stdout, os.Geteuid() == 0)
 	case "source-facts":
@@ -498,6 +500,7 @@ func serveConnectorController(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	syncWake := make(chan struct{}, 1)
 	var managedAvailable bool
 	if err = database.QueryRowContext(ctx, `SELECT to_regclass('public.connector_receiver_adoptions') IS NOT NULL`).Scan(&managedAvailable); err != nil {
 		return err
@@ -505,7 +508,12 @@ func serveConnectorController(ctx context.Context) error {
 	var composed connectoractivation.Reconciler = reconciler
 	var managed *connectoractivation.ManagedReconciler
 	if managedAvailable {
-		managed = &connectoractivation.ManagedReconciler{Store: store, Host: engine, Legacy: reconciler, Now: time.Now, Random: rand.Reader}
+		managed = &connectoractivation.ManagedReconciler{SyncWake: func() {
+			select {
+			case syncWake <- struct{}{}:
+			default:
+			}
+		}, Store: store, Host: engine, Legacy: reconciler, Now: time.Now, Random: rand.Reader}
 		composed = managed
 	}
 	controller, err := connectoractivation.NewController(composed)
@@ -535,7 +543,7 @@ func serveConnectorController(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	policyManager := reviewpolicycontrol.Manager{Store: owner, EnsureCustody: engine.EnsureReviewBodyLoaded, URStore: owner, URClient: urPolicyClient, URIdentity: urIdentity, URClientFactory: managedPolicyReloadFactory(engine, urPolicyClient, urIdentity)}
+	policyManager := reviewpolicycontrol.Manager{Store: owner, EnsureCustody: engine.EnsureReviewBodyLoaded, AuthorizeControlActor: func(actor string) error { return engine.AuthorizeSetupActor(actor, true) }, URStore: owner, URClient: urPolicyClient, URIdentity: urIdentity, URClientFactory: managedPolicyReloadFactory(engine, urPolicyClient, urIdentity)}
 	server, err := connectoractivation.NewUnixServer(store, controller, managedUID, managedGID, policyManager)
 	if err != nil {
 		return err
@@ -571,6 +579,32 @@ func serveConnectorController(ctx context.Context) error {
 			return err
 		})
 	}
+
+	if err = server.SetSyncController(&connectoractivation.SyncManager{Store: store, Host: engine, Wake: func() {
+		select {
+		case syncWake <- struct{}{}:
+		default:
+		}
+	}}); err != nil {
+		return err
+	}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-syncWake:
+				step, cancel := context.WithTimeout(ctx, 60*time.Second)
+				for _, f := range maintenance {
+					if step.Err() != nil {
+						break
+					}
+					_ = f(step)
+				}
+				cancel()
+			}
+		}
+	}()
 	return serveControllerWithReviewBodyExpiry(ctx, server.Serve, expirer, time.Minute, time.Now,
 		func(err error) { fmt.Fprintf(os.Stderr, "xinsightctl: controller maintenance pending: %v\n", err) }, maintenance...)
 }

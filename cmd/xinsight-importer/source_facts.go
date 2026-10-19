@@ -131,7 +131,7 @@ func runManagedSourceFacts(args []string, continuous bool) error {
 			if err != nil {
 				return err
 			}
-			reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: p.Endpoint, ServiceKey: key, TLSRootCAs: roots, AllowPrivateTunnelHTTP: p.AllowPrivateTunnelHTTP, RequestTimeout: 5 * time.Second})
+			reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true, Endpoint: p.Endpoint, ServiceKey: key, TLSRootCAs: roots, AllowPrivateTunnelHTTP: p.AllowPrivateTunnelHTTP, RequestTimeout: 5 * time.Second})
 			if err != nil {
 				return err
 			}
@@ -165,7 +165,7 @@ func runManagedSourceFacts(args []string, continuous bool) error {
 			if err != nil {
 				return err
 			}
-			reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: p.Endpoint, ServiceKey: key, TLSRootCAs: roots, AllowPrivateTunnelHTTP: p.AllowPrivateTunnelHTTP, RequestTimeout: 5 * time.Second})
+			reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true, Endpoint: p.Endpoint, ServiceKey: key, TLSRootCAs: roots, AllowPrivateTunnelHTTP: p.AllowPrivateTunnelHTTP, RequestTimeout: 5 * time.Second})
 			if err != nil {
 				return err
 			}
@@ -203,7 +203,7 @@ func runManagedSourceFacts(args []string, continuous bool) error {
 			if err != nil {
 				return err
 			}
-			reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: p.Endpoint, ServiceKey: key, TLSRootCAs: roots, AllowPrivateTunnelHTTP: p.AllowPrivateTunnelHTTP, RequestTimeout: 5 * time.Second})
+			reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true, Endpoint: p.Endpoint, ServiceKey: key, TLSRootCAs: roots, AllowPrivateTunnelHTTP: p.AllowPrivateTunnelHTTP, RequestTimeout: 5 * time.Second})
 			if err != nil {
 				return err
 			}

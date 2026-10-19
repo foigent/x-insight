@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/foigent/x-insight/internal/config"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 	"io"
 	"os"
@@ -116,118 +117,120 @@ func (e *Engine) PublishManagedProjects(ctx context.Context, changes map[string]
 		return nil
 	}
 	return e.withOperationLock(func() error {
-		if err := e.ensureNoOutstandingOperation(); err != nil {
-			return err
-		}
-		dir := sourcefacts.ManagedPartitionsDirectory(e.Paths.SourceFactsConfig)
-		if err := e.validateReferenceParent(filepath.Join(dir, "probe")); err != nil {
-			return err
-		}
-		for name, cfg := range changes {
-			if !sourcefacts.ValidManagedPartitionName(name) || cfg.Validate() != nil {
-				return sourcefacts.ErrInvalid
+		return connectorsync.LocalCommit(ctx, func() error {
+			if err := e.ensureNoOutstandingOperation(); err != nil {
+				return err
 			}
-			for _, path := range cfg.CredentialFiles() {
-				if _, err := sourcefacts.ManagedCredentialName(path); err != nil {
-					return err
+			dir := sourcefacts.ManagedPartitionsDirectory(e.Paths.SourceFactsConfig)
+			if err := e.validateReferenceParent(filepath.Join(dir, "probe")); err != nil {
+				return err
+			}
+			for name, cfg := range changes {
+				if !sourcefacts.ValidManagedPartitionName(name) || cfg.Validate() != nil {
+					return sourcefacts.ErrInvalid
 				}
-				if err := e.validateRootReference(path, 0600); err != nil {
-					return err
+				for _, path := range cfg.CredentialFiles() {
+					if _, err := sourcefacts.ManagedCredentialName(path); err != nil {
+						return err
+					}
+					if err := e.validateRootReference(path, 0600); err != nil {
+						return err
+					}
+					if _, err := config.LoadSourceFactsServiceKey(path); err != nil {
+						return err
+					}
 				}
-				if _, err := config.LoadSourceFactsServiceKey(path); err != nil {
-					return err
-				}
 			}
-		}
-		if err := ensureDirectory(dir, 0755); err != nil {
-			return err
-		}
-		for name, cfg := range changes {
-			raw, err := json.Marshal(cfg)
-			if err != nil {
+			if err := ensureDirectory(dir, 0755); err != nil {
 				return err
 			}
-			path := filepath.Join(dir, name)
-			if prior, err := os.ReadFile(path); err == nil && string(prior) == string(raw) {
-				continue
-			} else if err != nil && !os.IsNotExist(err) {
-				return err
-			}
-			if err = e.publishReference(path, raw, 0644); err != nil {
-				return err
-			}
-		}
-		partitions, err := e.loadManagedProjectPartitions()
-		if err != nil {
-			return err
-		}
-		body := "[Service]\n"
-		machine, origin, machineEnabled, err := e.ReadURMachineConfig()
-		if err != nil {
-			return err
-		}
-		if machineEnabled {
-			prefix, err := machineEgressPrefix(origin)
-			if err != nil {
-				return err
-			}
-			// The source consumer needs the same accepted UR destination as
-			// the controller. Preserve administrator-owned original rules;
-			// add only this exact host to the managed consumer drop-in.
-			body += "IPAddressAllow=" + prefix + "\n"
-		}
-		if machine.CAFile != "" {
-			body += "LoadCredential=source-managed-ca.pem:" + machine.CAFile + "\nEnvironment=XINSIGHT_SOURCE_MANAGED_CA_FILE=/run/credentials/xinsight-source-facts.service/source-managed-ca.pem\n"
-		}
-		seen := map[string]string{}
-		for _, cfg := range partitions {
-			for _, path := range cfg.CredentialFiles() {
-				name, err := sourcefacts.ManagedCredentialName(path)
+			for name, cfg := range changes {
+				raw, err := json.Marshal(cfg)
 				if err != nil {
 					return err
 				}
-				if old, ok := seen[name]; ok {
-					if old != path {
-						return sourcefacts.ErrConflict
-					}
+				path := filepath.Join(dir, name)
+				if prior, err := os.ReadFile(path); err == nil && string(prior) == string(raw) {
 					continue
+				} else if err != nil && !os.IsNotExist(err) {
+					return err
 				}
-				seen[name] = path
-				body += "LoadCredential=" + name + ":" + path + "\n"
+				if err = e.publishReference(path, raw, 0644); err != nil {
+					return err
+				}
 			}
-		}
-		dropin := filepath.Join(e.Paths.SourceFactsServiceUnit+".d", "21-managed-source-credentials.conf")
-		if prior, err := os.ReadFile(dropin); err == nil && string(prior) == body {
-			if err := e.validateRootReference(dropin, 0644); err != nil {
+			partitions, err := e.loadManagedProjectPartitions()
+			if err != nil {
 				return err
 			}
-		} else {
-			if err != nil && !os.IsNotExist(err) {
+			body := "[Service]\n"
+			machine, origin, machineEnabled, err := e.ReadURMachineConfig()
+			if err != nil {
 				return err
 			}
-			if err = e.publishReference(dropin, []byte(body), 0644); err != nil {
+			if machineEnabled {
+				prefix, err := machineEgressPrefix(origin)
+				if err != nil {
+					return err
+				}
+				// The source consumer needs the same accepted UR destination as
+				// the controller. Preserve administrator-owned original rules;
+				// add only this exact host to the managed consumer drop-in.
+				body += "IPAddressAllow=" + prefix + "\n"
+			}
+			if machine.CAFile != "" {
+				body += "LoadCredential=source-managed-ca.pem:" + machine.CAFile + "\nEnvironment=XINSIGHT_SOURCE_MANAGED_CA_FILE=/run/credentials/xinsight-source-facts.service/source-managed-ca.pem\n"
+			}
+			seen := map[string]string{}
+			for _, cfg := range partitions {
+				for _, path := range cfg.CredentialFiles() {
+					name, err := sourcefacts.ManagedCredentialName(path)
+					if err != nil {
+						return err
+					}
+					if old, ok := seen[name]; ok {
+						if old != path {
+							return sourcefacts.ErrConflict
+						}
+						continue
+					}
+					seen[name] = path
+					body += "LoadCredential=" + name + ":" + path + "\n"
+				}
+			}
+			dropin := filepath.Join(e.Paths.SourceFactsServiceUnit+".d", "21-managed-source-credentials.conf")
+			if prior, err := os.ReadFile(dropin); err == nil && string(prior) == body {
+				if err := e.validateRootReference(dropin, 0644); err != nil {
+					return err
+				}
+			} else {
+				if err != nil && !os.IsNotExist(err) {
+					return err
+				}
+				if err = e.publishReference(dropin, []byte(body), 0644); err != nil {
+					return err
+				}
+			}
+			// A nonempty pass is pending DB authority until actual refresh succeeds.
+			// Equal files may be recovery from a failed reload/restart; refresh them.
+			if err = runSystemctl(ctx, e.Runner, "daemon-reload"); err != nil {
 				return err
 			}
-		}
-		// A nonempty pass is pending DB authority until actual refresh succeeds.
-		// Equal files may be recovery from a failed reload/restart; refresh them.
-		if err = runSystemctl(ctx, e.Runner, "daemon-reload"); err != nil {
-			return err
-		}
-		if err = runSystemctl(ctx, e.Runner, "enable", sourceFactsWorkerUnit); err != nil {
-			return err
-		}
-		if err = runSystemctl(ctx, e.Runner, "restart", sourceFactsWorkerUnit); err != nil {
-			return err
-		}
-		state, err := e.inspectManagedWorkerState(ctx, sourceFactsWorkerUnit, e.Paths.SourceFactsServiceUnit, "source facts worker")
-		if err != nil {
-			return err
-		}
-		if !state.present || !state.active || !state.enabled {
-			return fmt.Errorf("managed source worker refresh is not active and enabled")
-		}
-		return nil
+			if err = runSystemctl(ctx, e.Runner, "enable", sourceFactsWorkerUnit); err != nil {
+				return err
+			}
+			if err = runSystemctl(ctx, e.Runner, "restart", sourceFactsWorkerUnit); err != nil {
+				return err
+			}
+			state, err := e.inspectManagedWorkerState(ctx, sourceFactsWorkerUnit, e.Paths.SourceFactsServiceUnit, "source facts worker")
+			if err != nil {
+				return err
+			}
+			if !state.present || !state.active || !state.enabled {
+				return fmt.Errorf("managed source worker refresh is not active and enabled")
+			}
+			return nil
+		})
 	})
 }
 

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"time"
 
 	"github.com/foigent/x-insight/internal/sourcefacts"
@@ -43,6 +44,9 @@ func (s *SourceFactsStore) currentRuntimeTransaction(ctx context.Context, expect
 		return nil, err
 	}
 	fail := func(err error) (*sql.Tx, error) { tx.Rollback(); return nil, err }
+	if err = connectorsync.Fence(ctx, tx); err != nil {
+		return fail(err)
+	}
 	if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "source-facts:"+expected.SourceSystemID); err != nil {
 		return fail(err)
 	}
@@ -78,6 +82,9 @@ func (s *SourceFactsStore) CommitCurrentRuntimePage(ctx context.Context, expecte
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	if cursor.Revision == 0 {
 		_, err = tx.ExecContext(ctx, `INSERT INTO source_runtime_snapshots(stream_id,revision,generation,page_ordinal,last_attempt_at) VALUES($1::uuid,1,1,1,$2)`, expected.ID, now.UTC())
 		if err != nil {
@@ -121,6 +128,9 @@ func (s *SourceFactsStore) RecordCurrentRuntimeFailure(ctx context.Context, expe
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	attention := sourcefacts.NeedsAttention(code) && code != "cursor_expired" && code != "cursor_or_epoch_conflict"
 	if cursor.Revision == 0 {
 		_, err = tx.ExecContext(ctx, `INSERT INTO source_runtime_snapshots(stream_id,revision,generation,page_ordinal,last_error,last_attempt_at,requires_attention) VALUES($1::uuid,1,2,1,$2,$3,$4)`, expected.ID, code, now.UTC(), attention)

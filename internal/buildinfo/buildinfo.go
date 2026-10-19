@@ -17,8 +17,8 @@ var (
 const (
 	ProductName         = "x-insight"
 	ConfigSchemaVersion = "xinsight.config.v1"
-	DatabaseSchemaMin   = "45"
-	DatabaseSchemaMax   = "45"
+	DatabaseSchemaMin   = "46"
+	DatabaseSchemaMax   = "46"
 	PostgresMajorMin    = "16"
 	PostgresMajorMax    = "16"
 	APIVersion          = "xinsight.investigation.v1"

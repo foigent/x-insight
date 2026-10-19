@@ -168,7 +168,7 @@ def check(source: str) -> None:
             'prepare-ci-fpv17-predecessor.sh' in fpv17 and
             "p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh'" in fpv17,
             'FPV17 lane must install its independently rebuilt CI-only predecessor')
-    prestate = step(fresh, 'Qualify FPV17 to FPV19 installed upgrade and source continuation')
+    prestate = step(fresh, 'Qualify FPV17 to FPV20 installed upgrade and source continuation')
     require("if: matrix.lifecycle == 'fpv17_upgrade'" in prestate and
             'XINSIGHT_CI_UPGRADE_PRESTATE: "1"' in prestate and
             'qualify-ubuntu22-installed-joint.sh' in prestate,
@@ -180,9 +180,9 @@ def check(source: str) -> None:
     upload = step(fresh, 'Upload explicitly non-publishable fresh-install evidence')
     require('if: always()' in upload and 'xinsight-installed-joint-qualification/stage-receipts.json' in upload,
             'failed installed lifecycle loses safe stage receipts')
-    require('xinsight-fpv17-to-fpv19-qualification/qualification-failure.json' in upload,
+    require('xinsight-fpv17-to-fpv20-qualification/qualification-failure.json' in upload,
             'FPV17 upgrade failure loses fixed stage and exit code')
-    require('xinsight-fpv17-to-fpv19-qualification/qualification-result.json' in upload,
+    require('xinsight-fpv17-to-fpv20-qualification/qualification-result.json' in upload,
             'FPV17 same-schema qualification receipt is not uploaded')
     for unsafe in ('xinsight-fpv15-joint-private', '*.log', 'nginx-error.log', 'joint-private.log'):
         require(unsafe not in upload, 'private fixture output must not become artifact: ' + unsafe)
@@ -1002,7 +1002,7 @@ def check_fpv17_upgrade_lane() -> None:
     joint = (root / 'scripts/qualify-ubuntu22-installed-joint.sh').read_text()
     driver = (root / 'scripts/ci-fpv15-installed-joint/main.go').read_text()
     for required in ('164582cab0e7f169c265c2494d04920c61af833d',
-                     "('0.2.0-dev.fpv17','45')", "('0.2.0-dev.fpv19','45')", 'xinsight.ci-fpv17-predecessor.v1',
+                     "('0.2.0-dev.fpv17','45')", "('0.2.0-dev.fpv20','46')", 'xinsight.ci-fpv17-predecessor.v1',
                      'ci-trust', 'old_source'):
         require(required in predecessor, 'FPV17 CI-only predecessor binding missing: ' + required)
     for required in ('upgrade --check --artifact', 'upgrade --artifact',

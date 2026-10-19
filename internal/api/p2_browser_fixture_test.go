@@ -424,5 +424,12 @@ func p2BrowserPolicyManager(t *testing.T, owner *db.SourceFactsStore, admin *sql
 		t.Fatal(err)
 	}
 	manager.URClient, manager.URStore, manager.URIdentity = client, owner, identity
+	seedBrowserAutomaticSync(t, admin, input.InstallationID, input.SourceInstance, input.OrgID, input.ProjectID, "")
+	manager.AuthorizeControlActor = func(subject string) error {
+		if subject != "xs_1111111111111111" {
+			return urmachine.ErrUnauthorized
+		}
+		return nil
+	}
 	return manager
 }

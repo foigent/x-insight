@@ -3,6 +3,7 @@ package sourcefacts
 import (
 	"context"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"reflect"
 	"strconv"
 	"time"
@@ -101,7 +102,7 @@ func MatchContentPage(c ContentCollection, p ContentManifestPage) error {
 	}
 	return nil
 }
-func (c ContentConsumer) PullOnce(ctx context.Context) (bool, error) {
+func (c ContentConsumer) PullOnce(ctx context.Context) (more bool, resultErr error) {
 	if c.Store == nil || c.Reader == nil || !ValidContentCollection(c.Expected) {
 		return false, ErrInvalid
 	}
@@ -112,6 +113,11 @@ func (c ContentConsumer) PullOnce(ctx context.Context) (bool, error) {
 	if !SameContentCollection(live, c.Expected) {
 		return false, ErrScopeChanged
 	}
+	ctx, finish, gateErr := beginSync(ctx, c.Store, live.SourceInstance, live.OrgID, live.ProjectID, "content:"+live.ID)
+	if gateErr != nil {
+		return false, gateErr
+	}
+	defer func() { finish(resultErr) }()
 	if live.Status != "active" || live.RequiresAttention {
 		return false, ErrUnavailable
 	}
@@ -120,6 +126,9 @@ func (c ContentConsumer) PullOnce(ctx context.Context) (bool, error) {
 		now = c.Now
 	}
 	fail := func(cause error) (bool, error) {
+		if connectorsync.IsControlStop(cause) {
+			return false, cause
+		}
 		if ctx.Err() != nil {
 			return false, ctx.Err()
 		}
@@ -167,6 +176,7 @@ func (c ContentConsumer) PullOnce(ctx context.Context) (bool, error) {
 			return false, err
 		}
 	}
+	connectorsync.Progress(ctx, page.HasMore, len(page.Items))
 	return page.HasMore, nil
 }
 func ContentFailure(err error) string {

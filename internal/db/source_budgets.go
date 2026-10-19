@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"math/big"
 	"slices"
 	"time"
@@ -53,6 +54,9 @@ func (s *SourceFactsStore) RegisterBudgetCollection(ctx context.Context, r sourc
 		return r, err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return r, syncErr
+	}
 	if err = requireSourceAdministrator(ctx, tx); err != nil {
 		return r, err
 	}
@@ -95,6 +99,9 @@ func (s *SourceFactsStore) controlBudgetCollection(ctx context.Context, id, stat
 		return zero, err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return zero, syncErr
+	}
 	if err = requireSourceAdministrator(ctx, tx); err != nil {
 		return zero, err
 	}
@@ -191,6 +198,9 @@ func (s *SourceFactsStore) CommitBudgetCatalog(ctx context.Context, expected sou
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	if err = commitBudgetCatalogTx(ctx, tx, expected, raw, now); err != nil {
 		return err
 	}
@@ -294,6 +304,9 @@ func (s *SourceFactsStore) CommitBudgetReading(ctx context.Context, expected sou
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.CommitFence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	if err = commitBudgetReadingTx(ctx, tx, expected, raw, now); err != nil {
 		return err
 	}
@@ -382,6 +395,9 @@ func (s *SourceFactsStore) RecordBudgetFailure(ctx context.Context, expected sou
 		return err
 	}
 	defer tx.Rollback()
+	if syncErr := connectorsync.Fence(ctx, tx); syncErr != nil {
+		return syncErr
+	}
 	live, err := lockBudgetCollection(ctx, tx, expected)
 	if err != nil {
 		return err

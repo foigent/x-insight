@@ -4,17 +4,17 @@
     {
       "path": "index.html",
       "size_bytes": 909,
-      "sha256": "sha256:67278696fb285e3fd26ca364f9b711e1ff8408d8dba9009d99c84f0323cb49a5"
+      "sha256": "sha256:e84783b5240f5cdaca5b630201a9c9ef95e79f4b7736e4420f0b3650ce0790cb"
+    },
+    {
+      "path": "assets/index-BEku9qx6.js",
+      "size_bytes": 1005652,
+      "sha256": "sha256:19846133e4d92fee37854907fbfb52e7b026e8fef018ed3e3d879a2a3097e4cb"
     },
     {
       "path": "assets/index-BJjhUR22.css",
       "size_bytes": 161655,
       "sha256": "sha256:5188c1a816efbc6b1a05b12fc9670aeae0db8dbcebebee3c8f8856335cea389f"
-    },
-    {
-      "path": "assets/index-BYSO-SCp.js",
-      "size_bytes": 997123,
-      "sha256": "sha256:87c2c34ddd2b1f60b9bc01083480c8888ba66c89a69e6fda45321d32c098c148"
     }
   ]
 }

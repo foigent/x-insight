@@ -30,8 +30,8 @@ var resourceDatabaseName = regexp.MustCompile(`^[a-z][a-z0-9_]{0,62}$`)
 var resourceReference = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`)
 
 func (a OfflineAuthorization) validateResource(now time.Time) error {
-	synthetic := a.Profile == ResourceOfflineProfile && a.SourceSchemaSHA256 == ResourceSchemaSHA256() && (a.TargetDatabaseSchema == "37" || a.TargetDatabaseSchema == "38" || a.TargetDatabaseSchema == "39" || a.TargetDatabaseSchema == "40" || a.TargetDatabaseSchema == "41" || a.TargetDatabaseSchema == "42" || a.TargetDatabaseSchema == "43" || a.TargetDatabaseSchema == "44" || a.TargetDatabaseSchema == "45")
-	action := a.Profile == ActionOfflineProfile && a.SourceSchemaSHA256 == ActionSchemaSHA256() && (a.TargetDatabaseSchema == "40" || a.TargetDatabaseSchema == "41" || a.TargetDatabaseSchema == "42" || a.TargetDatabaseSchema == "43" || a.TargetDatabaseSchema == "44" || a.TargetDatabaseSchema == "45") && (a.Environment == "test" || a.Environment == "development")
+	synthetic := a.Profile == ResourceOfflineProfile && a.SourceSchemaSHA256 == ResourceSchemaSHA256() && (a.TargetDatabaseSchema == "37" || a.TargetDatabaseSchema == "38" || a.TargetDatabaseSchema == "39" || a.TargetDatabaseSchema == "40" || a.TargetDatabaseSchema == "41" || a.TargetDatabaseSchema == "42" || a.TargetDatabaseSchema == "43" || a.TargetDatabaseSchema == "44" || a.TargetDatabaseSchema == "45" || a.TargetDatabaseSchema == "46")
+	action := a.Profile == ActionOfflineProfile && a.SourceSchemaSHA256 == ActionSchemaSHA256() && (a.TargetDatabaseSchema == "40" || a.TargetDatabaseSchema == "41" || a.TargetDatabaseSchema == "42" || a.TargetDatabaseSchema == "43" || a.TargetDatabaseSchema == "44" || a.TargetDatabaseSchema == "45" || a.TargetDatabaseSchema == "46") && (a.Environment == "test" || a.Environment == "development")
 	if (!synthetic && !action) ||
 		!resourceDatabaseName.MatchString(a.TargetDatabaseName) || !Positive(a.TargetDatabaseOID) || !Positive(a.TargetDatabaseSystemID) ||
 		a.ProtocolVersion != "" || a.ProtocolCommit != "" || a.ProtocolReleaseDigest != "" ||

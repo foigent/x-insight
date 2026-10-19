@@ -2361,3 +2361,16 @@ export const connectorSetupAPI={
  status(id:string,signal?:AbortSignal){return requestJSON<SetupStatus>(`/api/v1/connector-setups/${encodeURIComponent(id)}`,signal)},
  recover(id:string,requestID:string,csrfToken:string){return requestAccessJSON<{schema_version:"xinsight.connector-control-recovery.v1";installation_id:string;recovery_id:string;expires_at:string;recover_url:string}>(`/api/v1/connector-setups/${encodeURIComponent(id)}/credential-recovery`,{method:"POST",body:{request_id:requestID},csrfToken})}
 };
+
+export interface ConnectorSyncStatus {
+ installation_id:string;auto_sync:boolean;cadence_seconds:number|null;revision:number;last_request_id:string;
+ effective:string;peer:string;last_checked_at:string|null;last_data_at:string|null;last_error:string;
+ required_workers:string[];workers:{worker:string;revision:number;busy:boolean;last_error:string}[];
+ run?:{request_id:string;state:string;pages:number;attempts:number;items:number;deadline:string;results:Record<string,string>};
+}
+type SyncMutation={expected_revision:number;request_id:string;auto_sync:boolean;cadence_seconds:number};
+export const connectorSyncAPI={
+ status(id:string,signal?:AbortSignal){return requestJSON<ConnectorSyncStatus>(`/api/v1/connector-control/installations/${encodeURIComponent(id)}/sync`,signal)},
+ set(id:string,body:SyncMutation,csrfToken:string){return requestAccessJSON<ConnectorSyncStatus>(`/api/v1/connector-control/installations/${encodeURIComponent(id)}/sync`,{method:"PUT",body,csrfToken})},
+ once(id:string,body:SyncMutation,csrfToken:string){return requestAccessJSON<ConnectorSyncStatus>(`/api/v1/connector-control/installations/${encodeURIComponent(id)}/sync-once`,{method:"POST",body,csrfToken})},
+};

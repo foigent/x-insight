@@ -168,7 +168,7 @@ func validateSchemaContractGenerationPrivileges(
 	if err := querier.QueryRowContext(ctx, cleanBaselineFunctionPrivilegeQuery).Scan(&unexpected, &managed); err != nil {
 		return fmt.Errorf("schema contract function privileges cannot be inspected")
 	}
-	if unexpected != 0 || managed > 6 {
+	if unexpected != 0 || managed > 12 {
 		return fmt.Errorf("schema contract generation requires converged function privileges")
 	}
 	return nil

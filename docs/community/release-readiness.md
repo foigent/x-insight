@@ -1,6 +1,6 @@
 # Release readiness
 
-The source candidate is `0.2.0-dev.fpv19` with database schema 45. This page states acceptance boundaries; it is not a release announcement or a signed deployment receipt.
+The source candidate is `0.2.0-dev.fpv20` with database schema 46. This page states acceptance boundaries; it is not a release announcement or a signed deployment receipt.
 
 The [Foigent](https://github.com/foigent) product path leads through each repository's README, supported startup/installation guide, connection instructions, and contribution/security entry. The [UniRouter pairing record](getting-started.md#connect-unirouter-and-verify-the-pair) names the exact locally tested revisions, unchanged CI pins, comparison with the observed public UniRouter source, and the still-missing complete same-execution reproduction. UniRouter's source or installer preparation does not establish X-Insight's signing or joint installed acceptance. X-Insight's canonical source was independently reviewed and first published at [`b7ecfc24b2b2fbe7f2401a86a0b793b47ed7ca15`](https://github.com/foigent/x-insight/commit/b7ecfc24b2b2fbe7f2401a86a0b793b47ed7ca15).
 

@@ -908,7 +908,7 @@ jobs:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
         run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" "${{ matrix.lifecycle }}"
 
-      - name: Qualify FPV17 to FPV19 installed upgrade and source continuation
+      - name: Qualify FPV17 to FPV20 installed upgrade and source continuation
         if: matrix.lifecycle == 'fpv17_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
@@ -947,8 +947,8 @@ jobs:
             ${{ runner.temp }}/xinsight-installed-joint-qualification/fixture-result.json
             ${{ runner.temp }}/xinsight-installed-joint-qualification/access-validation.json
             ${{ runner.temp }}/xinsight-installed-joint-qualification/nginx-body-ingress.json
-            ${{ runner.temp }}/xinsight-fpv17-to-fpv19-qualification/qualification-result.json
-            ${{ runner.temp }}/xinsight-fpv17-to-fpv19-qualification/qualification-failure.json
+            ${{ runner.temp }}/xinsight-fpv17-to-fpv20-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-fpv17-to-fpv20-qualification/qualification-failure.json
             release/ci-non-publishable.txt
           if-no-files-found: error
 

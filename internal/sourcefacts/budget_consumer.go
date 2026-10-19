@@ -3,6 +3,7 @@ package sourcefacts
 import (
 	"context"
 	"errors"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"math/big"
 	"regexp"
 	"slices"
@@ -123,6 +124,11 @@ func (c BudgetConsumer) PullOnce(ctx context.Context) (more bool, err error) {
 	if !SameBudgetCollection(s, c.Expected) {
 		return false, ErrScopeChanged
 	}
+	ctx, finish, gateErr := beginSync(ctx, c.Store, s.SourceInstance, s.OrgID, s.ProjectID, "budget:"+s.ID)
+	if gateErr != nil {
+		return false, gateErr
+	}
+	defer func() { finish(err) }()
 	if s.Status != "active" || s.RequiresAttention {
 		return false, ErrUnavailable
 	}
@@ -131,6 +137,9 @@ func (c BudgetConsumer) PullOnce(ctx context.Context) (more bool, err error) {
 		now = c.Now
 	}
 	fail := func(code string, cause error) (bool, error) {
+		if connectorsync.IsControlStop(cause) {
+			return false, cause
+		}
 		if err := c.Store.RecordBudgetFailure(ctx, s, code, now()); err != nil {
 			return false, err
 		}
@@ -166,7 +175,9 @@ func (c BudgetConsumer) PullOnce(ctx context.Context) (more bool, err error) {
 			}
 			return false, err
 		}
-		return len(catalog.Entries) > 0 || catalog.HasMore, nil
+		more = len(catalog.Entries) > 0 || catalog.HasMore
+		connectorsync.Progress(ctx, more, len(catalog.Entries))
+		return more, nil
 	}
 	catalog, err := DecodeBudgetCatalog(s.CatalogRaw)
 	if err != nil || s.EntryIndex < 0 || s.EntryIndex >= len(catalog.Entries) {
@@ -198,7 +209,9 @@ func (c BudgetConsumer) PullOnce(ctx context.Context) (more bool, err error) {
 		}
 		return false, err
 	}
-	return Text(r.Body(BudgetAlertProfile), "next_cursor") != "" || s.EntryIndex+1 < len(catalog.Entries) || catalog.HasMore, nil
+	more = Text(r.Body(BudgetAlertProfile), "next_cursor") != "" || s.EntryIndex+1 < len(catalog.Entries) || catalog.HasMore
+	connectorsync.Progress(ctx, more, 1)
+	return more, nil
 }
 
 func budgetRevisionAfter(a, b string) bool {

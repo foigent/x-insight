@@ -47,7 +47,7 @@ func TestObservationOfflineFiveProfilesAndLegacyIdentity(t *testing.T) {
 			grant.SourceSchemaSHA256 = Hash(observationSchemaBytes)
 			grant.SourceInstance, grant.OrgID, grant.ProjectID, grant.Profile = d.SourceInstance, d.OrgID, d.ProjectID, d.Profile
 			grant.BundleSHA256 = Hash(raw)
-			for _, schema := range append([]string{"35", "36", "37", "38", "39", "40", "41", "42", "43", "44"}, buildinfo.DatabaseSchemaMax) {
+			for _, schema := range append([]string{"35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"}, buildinfo.DatabaseSchemaMax) {
 				v := grant
 				v.TargetDatabaseSchema = schema
 				if err := v.Validate(time.Now()); err != nil {
@@ -73,7 +73,7 @@ func TestObservationOfflineFiveProfilesAndLegacyIdentity(t *testing.T) {
 				"wrong-target-schema":   func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "32" },
 				"prior-B-target-schema": func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "33" },
 				"pre-resource-schema":   func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "34" },
-				"future-target-schema":  func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "46" },
+				"future-target-schema":  func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "47" },
 				"missing-target-schema": func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "" },
 				"other-project":         func(v *OfflineAuthorization) { v.ProjectID = "999" },
 				"other-instance":        func(v *OfflineAuthorization) { v.SourceInstance = "other-instance" },

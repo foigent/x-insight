@@ -9,6 +9,8 @@ if (contract.openapi !== "3.1.0") {
 }
 
 const expectedPaths = [
+ "/api/v1/connector-control/installations/{installation_id}/sync",
+ "/api/v1/connector-control/installations/{installation_id}/sync-once",
   "/api/v1/investigation/queue",
   "/api/v1/investigation/queue-filters",
   "/api/v1/investigation/queue-filters/{filter_id}",
@@ -118,6 +120,7 @@ for (const path of expectedPaths) {
 }
 
 for (const schemaName of [
+ "ConnectorSyncStatus","ConnectorSyncSlot","ConnectorSyncRun","ConnectorSyncMutation",
   "InvestigationQueueFilters", "InvestigationQueueItem", "InvestigationQueueStatistics", "InvestigationQueuePage", "InvestigationQueueFilterCommand", "InvestigationQueueFilter", "InvestigationQueueFilterList",
   "FindingResponsibility",
   "FindingResponsibilityCommand",

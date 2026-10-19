@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"io"
 	"net/http"
 	"os"
@@ -378,6 +379,9 @@ func boundedGETResponse(
 ) ([]byte, int, string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
 	if err != nil {
+		return nil, 0, "", err
+	}
+	if err := connectorsync.BeforeHTTP(ctx, false); err != nil {
 		return nil, 0, "", err
 	}
 	response, err := client.Do(request)

@@ -123,7 +123,7 @@ func workbenchGrantSchemaSupported(schema string, content bool) bool {
 	switch schema {
 	case "000036_add_source_budgets", "000037_add_synthetic_resource_authorization", "000038_add_case_resource_links":
 		return !content
-	case "000039_add_content_readings", "000040_add_resource_action_profile", "000041_add_work_events", "000042_add_review_body_custody", "000043_add_work_event_install_invites", "000044_add_managed_connector_adoption", "000045_add_connector_credential_lifecycle":
+	case "000039_add_content_readings", "000040_add_resource_action_profile", "000041_add_work_events", "000042_add_review_body_custody", "000043_add_work_event_install_invites", "000044_add_managed_connector_adoption", "000045_add_connector_credential_lifecycle", "000046_add_connector_sync_control":
 		return true
 	default:
 		return false

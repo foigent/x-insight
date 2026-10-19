@@ -36,6 +36,7 @@ type sourceFixture struct {
 	pages                          map[string]sourcefacts.Page
 	generation, status, credential string
 	httpStatus                     int
+	httpCalls                      int
 	streams                        map[string]string
 	documents                      map[string]sourcefacts.Document
 	i01                            []byte
@@ -78,6 +79,7 @@ func newSourceFixture(t *testing.T) *sourceFixture {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
+		f.httpCalls++
 		if r.Header.Get("Authorization") != "Bearer "+f.credential {
 			w.WriteHeader(401)
 			return
@@ -111,11 +113,12 @@ func newSourceFixture(t *testing.T) *sourceFixture {
 		json.NewEncoder(w).Encode(p)
 	}))
 	t.Cleanup(server.Close)
-	reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{Endpoint: server.URL + "/api/v1/integrations/xinsight/source-facts", ServiceKey: f.credential, AllowPrivateTunnelHTTP: true})
+	reader, err := pullfeed.NewHTTPSource(pullfeed.HTTPSourceConfig{SyncRequired: true, Endpoint: server.URL + "/api/v1/integrations/xinsight/source-facts", ServiceKey: f.credential, AllowPrivateTunnelHTTP: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	f.consumer = sourcefacts.Consumer{Store: f.consumerStore, Reader: reader}
+	f.bindSyncScope("ur-demo-01", "17", "101")
 	for _, p := range []string{sourcefacts.ContextProfile, sourcefacts.IdentityProfile, sourcefacts.CostProfile} {
 		id := testUUID(t)
 		f.streams[p] = id
@@ -695,4 +698,25 @@ func loadSourceFixtureDocuments(t *testing.T, f *sourceFixture) {
 			f.documents[p] = d
 		}
 	}
+}
+
+// These older consumer fixtures explicitly exercise automatic collection with
+// a verified synthetic connection; production no longer accepts unbound live I/O.
+func (f *sourceFixture) bindSyncScope(source, org, project string) {
+	f.t.Helper()
+	var bound bool
+	if e := f.admin.QueryRowContext(f.ctx, `SELECT EXISTS(SELECT 1 FROM public.xinsight_sync_scope($1,$2,$3,false))`, source, org, project).Scan(&bound); e != nil {
+		f.t.Fatal(e)
+	}
+	if bound {
+		return
+	}
+	suffix := strings.ReplaceAll(testUUID(f.t), "-", "")[:22]
+	id := "xci_" + suffix
+	identity := "xsi_" + suffix
+	f.exec(`INSERT INTO service_identities(id,display_name,status,permissions,created_by_subject,created_at,updated_at)VALUES($1,'synthetic sync fixture','active',ARRAY['connector.control.poll','connector.control.ack'],'system',clock_timestamp(),clock_timestamp())`, identity)
+	f.exec(`INSERT INTO connector_installations(id,deployment_id,connector_type,requested_event_scope,final_event_scope,project_id,source_instance,source_instance_sha256,control_service_identity_id,installation_acknowledgement_sha256,status,desired_state,observed_state,created_at,updated_at)VALUES($1,'xid_0000000000000000000000','unirouter',ARRAY['model.request.completed'],ARRAY['model.request.completed'],$2,$3,'sha256:'||repeat('a',64),$4,'sha256:'||repeat('b',64),'connected','active','connected',clock_timestamp(),clock_timestamp())`, id, project, source, identity)
+	f.exec(`INSERT INTO connector_installation_source_bindings(installation_id,source_binding_sha256)VALUES($1,'sha256:'||repeat('c',64))`, id)
+	f.exec(`INSERT INTO connector_source_enrollments(installation_id,enrollment_id,source_instance,org_id,project_id,revision,status,updated_at)VALUES($1,'xise_1',$2,$3,$4,'1','active',clock_timestamp())`, id, source, org, project)
+	f.exec(`UPDATE connector_sync_controls SET auto_sync=true WHERE installation_id=$1`, id)
 }

@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CANDIDATE_ARTIFACT="$1"
 CANDIDATE_PAYLOAD="$2"
 CTL="$CANDIDATE_PAYLOAD/bin/xinsightctl"
-QUAL="${RUNNER_TEMP:?}/xinsight-fpv17-to-fpv19-qualification"
+QUAL="${RUNNER_TEMP:?}/xinsight-fpv17-to-fpv20-qualification"
 test ! -e "$QUAL"
 mkdir -m 0700 "$QUAL"
 umask 077
@@ -26,7 +26,7 @@ qualification_exit() {
 import json, pathlib, sys
 path, stage, code = pathlib.Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
 assert stage in {'preflight','check_snapshot','check','upgrade','verify'} and 0 < code < 256
-path.write_text(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv19-upgrade-failure.v1',
+path.write_text(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade-failure.v1',
                             'stage':stage,'exit_code':code},sort_keys=True)+'\n')
 PY
   fi
@@ -75,8 +75,8 @@ before,after,check=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:
 assert before==after, 'upgrade --check changed installed state, database, key, grants, config or process'
 assert check['operation']=='upgrade' and check['supported'] and check['mutating'] is False
 assert check['current']['product_version']=='0.2.0-dev.fpv17'
-assert check['target']['product_version']=='0.2.0-dev.fpv19'
-assert check['current']['database_schema']==check['target']['database_schema']=='45'
+assert check['target']['product_version']=='0.2.0-dev.fpv20'
+assert check['current']['database_schema']=='45' and check['target']['database_schema']=='46'
 assert any(c['name']=='control_credential_lifecycle' and c['status']=='pass' for c in check['checks'])
 PY
 sudo systemctl start "${units[@]}"
@@ -103,8 +103,8 @@ old=before['status']['install_state']['current']; new=after['status']['install_s
 assert receipt['kind']=='upgrade' and receipt['status']=='completed'
 assert receipt['before']['commit']==old['commit'] and receipt['after']['commit']==check['target']['commit']
 assert after['status']['managed'] and after['status'].get('active_journal') is None
-assert new['product_version']=='0.2.0-dev.fpv19' and new['commit']==check['target']['commit']
-assert new['database_schema']==after['status']['install_state']['database_schema_current']=='45'
+assert new['product_version']=='0.2.0-dev.fpv20' and new['commit']==check['target']['commit']
+assert new['database_schema']==after['status']['install_state']['database_schema_current']=='46'
 assert after['status']['install_state']['previous']['commit']==old['commit']
 assert after['release']==new['release_dir']!=before['release']
 assert after['server_invocation']!=before['server_invocation']
@@ -140,10 +140,10 @@ if old_feed!=new_feed:
     assert len(after['immutable_rows']['workbench_economic_facts'])>len(before['immutable_rows']['workbench_economic_facts'])
 assert after['files']==before['files'], 'original review-body key or host config changed'
 assert any(c['name']=='representative_read' and c['status']=='pass' for c in receipt['checks'])
-print(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv19-upgrade.v1',
+print(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade.v1',
                   'classification':'ci_synthetic_not_target','state':'passed',
-                  'predecessor':'0.2.0-dev.fpv17','target':'0.2.0-dev.fpv19',
-                  'database_schema':'45','check_no_side_effects':True,
+                  'predecessor':'0.2.0-dev.fpv17','target':'0.2.0-dev.fpv20',
+                  'database_schema':'46','check_no_side_effects':True,
                   'history_cursors_ciphertext_grants_preserved':True,
                   'review_body_key_preserved':True,'new_server_invocation_verified':True,
                   'active_workers_restored_by_upgrade':True,

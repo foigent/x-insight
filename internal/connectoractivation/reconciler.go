@@ -11,6 +11,7 @@ import (
 	"github.com/foigent/x-insight/internal/adapters/unirouter"
 	"github.com/foigent/x-insight/internal/checkpointepoch"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 )
 
 var sha256Pattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
@@ -69,7 +70,19 @@ func (reconciler *ProductReconciler) Inspect(
 	ctx context.Context,
 	installationID string,
 	wakeOperationID string,
-) (Outcome, error) {
+) (out Outcome, resultErr error) {
+	if initial, ok := reconciler.store.(interface {
+		BeginInitialConnectorSync(context.Context, string, string) error
+	}); ok && wakeOperationID != "" {
+		if e := initial.BeginInitialConnectorSync(ctx, installationID, wakeOperationID); e != nil {
+			return Outcome{}, e
+		}
+	}
+	ctx, finish, gateErr := connectorsync.Work(ctx, reconciler.store, installationID, "activation")
+	if gateErr != nil {
+		return Outcome{}, gateErr
+	}
+	defer func() { connectorsync.Progress(ctx, out.State != StateReady, 0); finish(resultErr) }()
 	boundary, err := reconciler.loadBoundary(ctx, installationID, wakeOperationID)
 	if err != nil {
 		return Outcome{}, fmt.Errorf("inspect original activation boundary: %w", err)

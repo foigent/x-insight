@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/reviewpolicycontrol"
 	"github.com/foigent/x-insight/internal/workinstallcontrol"
 )
@@ -38,6 +39,7 @@ type UnixServer struct {
 	workInstallManager   *workinstallcontrol.Manager
 	managedACK           connectorcontrol.ManagedAcknowledger
 	setupController      connectorcontrol.SetupController
+	syncController       connectorsync.Controller
 	credentialController connectorcontrol.CredentialController
 	socketPath           string
 	timeout              time.Duration
@@ -202,6 +204,24 @@ func (server *UnixServer) dispatch(ctx context.Context, payload []byte) (any, er
 		return nil, connectorcontrol.ErrInvalid
 	}
 	switch envelope.SchemaVersion {
+	case connectorsync.LocalSchema:
+		var request connectorsync.Request
+		if server.syncController == nil || strictControllerDecode(payload, &request) != nil || !request.Valid() {
+			return nil, connectorcontrol.ErrInvalid
+		}
+		response, err := server.syncController.ExecuteSync(ctx, request)
+		if err != nil {
+			response = connectorsync.Response{SchemaVersion: connectorsync.LocalSchema, Error: "unavailable"}
+			switch {
+			case errors.Is(err, connectorsync.ErrConflict):
+				response.Error = "conflict"
+			case errors.Is(err, connectorcontrol.ErrSetupUnauthorized):
+				response.Error = "unauthorized"
+			case errors.Is(err, connectorsync.ErrInvalid):
+				response.Error = "invalid"
+			}
+		}
+		return response, nil
 	case connectorcontrol.LocalCredentialRequestSchema:
 		var request connectorcontrol.CredentialLocalRequest
 		if server.credentialController == nil || strictControllerDecode(payload, &request) != nil || !request.Valid() {

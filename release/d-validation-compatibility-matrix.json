@@ -1,9 +1,9 @@
 {
   "schema_version": "xinsight.compatibility-matrix.v1",
-  "product_version": "0.2.0-dev.fpv19",
-  "manual_version": "0.2.0-dev.fpv19/manual-r1",
+  "product_version": "0.2.0-dev.fpv20",
+  "manual_version": "0.2.0-dev.fpv20/manual-r1",
   "release_channel": "release_candidate",
-  "database_schema": "45",
+  "database_schema": "46",
   "config_schema": "xinsight.config.v1",
   "api_versions": [
     "xinsight.investigation.v1",
@@ -20,8 +20,8 @@
   ],
   "schema_contract": {
     "schema_version": "xinsight.schema-contract.v2",
-    "semantic_sha256": "sha256:7a2b3f79f55fe8863629220c4608e2bd3dea58f984a2a8597e91dd8c29373e53",
-    "migration_set_sha256": "sha256:1ab9bfd77ef97e93e7a06e97e57c4e378d4d5957bbc632593541f4e421967ea5"
+    "semantic_sha256": "sha256:eaa41bd99d5db2cbc7ea86f1f63343302bb75f3bf420bc31feaee48874855a9f",
+    "migration_set_sha256": "sha256:5ab4e79041f9af002945658c90f30a58073cc28aff0a2a87cf68464e0e25eb4c"
   },
   "supported_upgrade_from_versions": [
     "0.2.0-dev.b2",
@@ -39,7 +39,8 @@
     "0.2.0-dev.fpv15",
     "0.2.0-dev.fpv16",
     "0.2.0-dev.fpv17",
-    "0.2.0-dev.fpv18"
+    "0.2.0-dev.fpv18",
+    "0.2.0-dev.fpv19"
   ],
   "supported_legacy_sources": [],
   "supported_host": {
@@ -59,7 +60,7 @@
     "first_tool": "xinsight-release",
     "scope": "Retained isolated-validation fields do not establish formal release authority; formal distribution uses the owner-attested public authority and pinned public trust record."
   },
-  "field_qualification": "FPV19/schema45 is the English-default bilingual open-source preparation candidate. FPV17 and FPV18 evidence remains bound to its original commit, artifact and environment. Current signed Linux installation, upgrade, real-source integration and Target qualification require their own evidence; local tests are not substitutes.",
+  "field_qualification": "FPV20/schema46 adds local outbound communication controls. Local, CI, signed artifact, upgrade and Target evidence remain distinct. FPV19 and all earlier artifacts and evidence retain their original identities.",
   "qualification_environments": {
     "previously_documented_isolated_profile": {
       "os": "Ubuntu 24.04 isolated XI validation guest",

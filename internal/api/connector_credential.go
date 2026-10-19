@@ -18,6 +18,10 @@ func credentialRecoverPublicPath(path string) bool {
 }
 
 func (s *Server) handleConnectorCredentialOrSetup(w http.ResponseWriter, r *http.Request) {
+	if strings.HasSuffix(r.URL.Path, "/sync") || strings.HasSuffix(r.URL.Path, "/sync-once") {
+		s.handleConnectorSync(w, r)
+		return
+	}
 	if strings.Contains(r.URL.Path, "/credentials/") {
 		s.handleConnectorCredential(w, r)
 		return

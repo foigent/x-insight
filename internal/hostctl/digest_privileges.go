@@ -17,6 +17,10 @@ var workspaceConnectorFunctions = []string{
 	"public.xinsight_initialize_connector_control_credential(text,text)",
 }
 
+// These three read-only ownership projections are callable only by the
+// workspace/importer runtime, without grant option. They disclose no credentials.
+var syncProjectionFunctions = []string{"public.xinsight_sync_scope(text,text,text,boolean)", "public.xinsight_sync_units(text)", "public.xinsight_sync_receiver(text)"}
+
 // Check the extension-owned implementation before granting execution, not just
 // a function with a matching SQL signature. These are the installed PG16
 // pgcrypto digest properties; no user-authored wrapper is accepted.
@@ -108,10 +112,11 @@ SELECT has_function_privilege('xinsight_reader', $1, 'EXECUTE'),
             COALESCE(p.oid=to_regprocedure($2),false) OR COALESCE(p.oid=to_regprocedure($3),false)
             OR EXISTS (SELECT 1 FROM unnest($4::text[]) AS allowed(signature)
               WHERE p.oid=to_regprocedure(allowed.signature))))
+          OR (r.rolname IN ('xinsight_workspace','xinsight_importer') AND EXISTS(SELECT 1 FROM unnest($5::text[]) AS sync(signature) WHERE p.oid=to_regprocedure(sync.signature)))
           OR (r.rolname='xinsight_importer' AND COALESCE(p.oid=to_regprocedure('public.synthetic_resource_cluster_id()'),false))))
     OR EXISTS (SELECT 1 FROM usable r
       WHERE has_function_privilege(r.oid,p.oid,'EXECUTE WITH GRANT OPTION'))
-  ))`, connectorDigestFunction, connectorInvitationRedemptionFunction, managedWorkInstallIdentityFunction, workspaceConnectorFunctions).Scan(&readerExecute, &forbidden)
+  ))`, connectorDigestFunction, connectorInvitationRedemptionFunction, managedWorkInstallIdentityFunction, workspaceConnectorFunctions, syncProjectionFunctions).Scan(&readerExecute, &forbidden)
 	if err != nil || forbidden != 0 || (requireReader && !readerExecute) {
 		return errors.New("database connector digest privilege boundary is invalid")
 	}

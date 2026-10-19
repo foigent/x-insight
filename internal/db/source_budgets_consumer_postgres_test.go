@@ -17,9 +17,19 @@ func TestBudgetConsumerHTTPRecoveryAndAuthorizedSubsetChange(t *testing.T) {
 	f := newSourceFixture(t)
 	all := []string{sourcefacts.BudgetDefinitionProfile, sourcefacts.BudgetSummaryProfile, sourcefacts.BudgetAlertProfile}
 	partial := []string{sourcefacts.BudgetSummaryProfile, sourcefacts.BudgetAlertProfile}
-	full := budgetFixtureReading(t, 701, all, nil)
+	canonicalSource := func(m map[string]any) {
+		m["source_instance"] = "budget-consumer-fixture"
+		for _, item := range m["documents"].([]any) {
+			item.(map[string]any)["document"].(map[string]any)["source_instance"] = "budget-consumer-fixture"
+		}
+	}
+	full := budgetFixtureReading(t, 701, all, canonicalSource)
 	revised := func(id int, profiles []string, generation string) []byte {
-		return budgetFixtureReading(t, id, profiles, func(m map[string]any) { m["access_generation"] = generation; m["catalog_revision"] = generation })
+		return budgetFixtureReading(t, id, profiles, func(m map[string]any) {
+			canonicalSource(m)
+			m["access_generation"] = generation
+			m["catalog_revision"] = generation
+		})
 	}
 	partialRaw := revised(702, partial, "2")
 	missing := revised(703, []string{sourcefacts.BudgetSummaryProfile}, "2")
@@ -91,6 +101,7 @@ func TestBudgetConsumerHTTPRecoveryAndAuthorizedSubsetChange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	f.bindSyncScope(collection.SourceInstance, collection.OrgID, collection.ProjectID)
 	worker := sourcefacts.BudgetConsumer{Store: f.consumerStore, Reader: reader, Expected: collection}
 	if _, err = worker.PullOnce(f.ctx); err == nil || calls.Load() != 0 {
 		t.Fatal("paused collection contacted source")

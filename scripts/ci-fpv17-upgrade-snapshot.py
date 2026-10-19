@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Private, read-only snapshot for the disposable FPV17->FPV19 host lane."""
+"""Private, read-only snapshot for the disposable FPV17->FPV20 host lane."""
 
 import hashlib
 import json

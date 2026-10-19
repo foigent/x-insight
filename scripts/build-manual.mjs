@@ -15,7 +15,10 @@ const budget = profile === "development-d";
 async function buildManual(language) {
 const english = language === "en-US";
 const outputDir = resolve(root, `internal/webui/manual/${language}`);
-const chapters = budget ? [[english ? "docs/manual/en-US/index.md" : "docs/manual/zh-CN/current.md", "current-manual"]] : legacy ? [
+const chapters = budget ? [
+  [english ? "docs/manual/en-US/index.md" : "docs/manual/zh-CN/current.md", "current-manual"],
+  [english ? "docs/manual/en-US/connection-sync.md" : "docs/manual/zh-CN/connection-sync.md", "connection-sync"],
+] : legacy ? [
   ["docs/manual/zh-CN/index.md", "manual-start"],
   ["docs/manual/zh-CN/00-version-and-support-boundary.md", "version-boundary"],
   ["docs/manual/zh-CN/01-product-overview-and-terms.md", "overview-terms"],

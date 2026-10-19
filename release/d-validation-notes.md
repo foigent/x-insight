@@ -1,3 +1,11 @@
+# FPV20 / schema46 candidate
+
+`0.2.0-dev.fpv20`, schema46, manual `0.2.0-dev.fpv20/manual-r1` adds per-connection Auto sync, persisted cadence and bounded Sync once. New connections default to manual. Migration preserves existing Auto behavior and configured intervals; switching a test connection off is an explicit targeted action. Closing the switch fences subsequent requests and transactional commits while retention/expiry continues. An already admitted request may still be draining; unknown worker state is shown without claiming quiet. Each explicit run stops at its observable boundaries or 60 seconds / 32 data-control pages / 64 application HTTP attempts. Empty categories do not keep polling.
+
+Each product controls its own outbound requests and retains a local UI/CLI restoration path. XI cannot assert that UR polling has stopped. Expired source cursors preserve gaps and require the existing recovery decision. This source change needs new build, schema and signature bindings; frozen FPV19 candidates and signing inputs are not relabeled or reused as FPV20. No FPV20 CI, signed artifact, installation or Target qualification is asserted here.
+
+## Historical FPV19 / schema45
+
 # FPV19: English-default bilingual open-source preparation
 
 The current candidate is `0.2.0-dev.fpv19`, schema45, manual `0.2.0-dev.fpv19/manual-r1`. It adds English and Simplified Chinese UI/manuals, Apache-2.0 and redistributed license texts, public contribution guidance, and public dependency checkout paths for CI. Locale changes preserve current reading references, form drafts, source text, currency/precision, timestamps, and authorization. There is no database migration or paid feature split.

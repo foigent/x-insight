@@ -6,15 +6,15 @@ X-Insight (XI) can be used independently for supported imports, reported work ac
 
 ## Version and support
 
-Product `0.2.0-dev.fpv19`; manual `0.2.0-dev.fpv19/manual-r1`.
+Product `0.2.0-dev.fpv20`; manual `0.2.0-dev.fpv20/manual-r1`.
 
 | Item | Current contract |
 | --- | --- |
-| Database schema | 45 |
+| Database schema | 46 |
 | Database | Dedicated PostgreSQL 16, loopback only |
 | Application | Linux amd64; systemd for managed installations |
 | Installer runtime host prerequisite | Ubuntu 22.04 or 24.04 amd64 with systemd; exact artifact/topology qualification is separate |
-| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV19 Target acceptance |
+| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV20 Target acceptance |
 | Pending native-host artifact qualification | Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container; fresh-install evidence pending |
 | Configuration | `xinsight.config.v1` |
 | APIs | `xinsight.investigation.v1`, `xinsight.access.v1` |
@@ -22,9 +22,9 @@ Product `0.2.0-dev.fpv19`; manual `0.2.0-dev.fpv19/manual-r1`.
 
 This is a development candidate, not a public stable release or a production acceptance claim. The repository also retains an Ubuntu 22.04 CI installation lane and a frozen rc.13 profile. Their results and artifacts are distinct. Use the exact profile, signed artifact, trust authority, and host qualification for the intended installation; do not apply historical instructions to another profile.
 
-Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Exact FPV19 artifact qualification on Ubuntu 22.04 with container PostgreSQL is pending; preinstalled OS dependencies and completed evidence must be recorded separately.
+Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Exact FPV20 artifact qualification on Ubuntu 22.04 with container PostgreSQL is pending; preinstalled OS dependencies and completed evidence must be recorded separately.
 
-The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema45 does not authorize application rollback to an older binary.
+The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema46 adds connection synchronization controls; an older schema45 binary is not a rollback target.
 
 ## Build and try locally
 

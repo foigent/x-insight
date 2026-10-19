@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"io"
 	"net/http"
 	"net/url"
@@ -83,6 +84,12 @@ func (c *Client) request(ctx context.Context, method, path string, body []byte, 
 	req.Header.Set("Cache-Control", "no-store")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if err := connectorsync.BeforeHTTP(ctx, false); err != nil {
+		return nil, 0, err
+	}
+	if err := connectorsync.Page(ctx); err != nil {
+		return nil, 0, err
 	}
 	response, err := c.http.Do(req)
 	if err != nil {

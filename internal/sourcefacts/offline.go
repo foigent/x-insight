@@ -75,7 +75,7 @@ func (a OfflineAuthorization) Validate(now time.Time) error {
 	}
 	formatValid := a.SchemaVersion == OfflineAuthorizationVersion && a.TargetDatabaseSchema == "" && ValidProfile(a.Profile) && a.SourceSchemaSHA256 == Hash(schemaBytes)
 	if a.SchemaVersion == ObservationOfflineAuthorizationVersion {
-		formatValid = (a.TargetDatabaseSchema == ObservationOfflineDatabaseSchema || a.TargetDatabaseSchema == "35" || a.TargetDatabaseSchema == "36" || a.TargetDatabaseSchema == "37" || a.TargetDatabaseSchema == "38" || a.TargetDatabaseSchema == "39" || a.TargetDatabaseSchema == "40" || a.TargetDatabaseSchema == "41" || a.TargetDatabaseSchema == "42" || a.TargetDatabaseSchema == "43" || a.TargetDatabaseSchema == "44") && ValidObservationProfile(a.Profile) && a.SourceSchemaSHA256 == Hash(observationSchemaBytes)
+		formatValid = (a.TargetDatabaseSchema == ObservationOfflineDatabaseSchema || a.TargetDatabaseSchema == "35" || a.TargetDatabaseSchema == "36" || a.TargetDatabaseSchema == "37" || a.TargetDatabaseSchema == "38" || a.TargetDatabaseSchema == "39" || a.TargetDatabaseSchema == "40" || a.TargetDatabaseSchema == "41" || a.TargetDatabaseSchema == "42" || a.TargetDatabaseSchema == "43" || a.TargetDatabaseSchema == "44" || a.TargetDatabaseSchema == "45") && ValidObservationProfile(a.Profile) && a.SourceSchemaSHA256 == Hash(observationSchemaBytes)
 	}
 	if !formatValid || !namePattern.MatchString(a.AuthorizationID) || !namePattern.MatchString(a.TargetRef) ||
 		(a.Environment != "development" && a.Environment != "test" && a.Environment != "integration") ||

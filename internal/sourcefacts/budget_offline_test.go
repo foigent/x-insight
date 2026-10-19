@@ -25,7 +25,7 @@ func budgetOfflineFixture(t *testing.T) (BudgetOfflineAuthorization, []byte, tim
 }
 func TestBudgetOfflineExactBindingAndCompleteness(t *testing.T) {
 	a, raw, now := budgetOfflineFixture(t)
-	for _, schema := range append([]string{"36", "37", "38", "39", "40", "41", "42", "43", "44"}, buildinfo.DatabaseSchemaMax) {
+	for _, schema := range append([]string{"36", "37", "38", "39", "40", "41", "42", "43", "44", "45"}, buildinfo.DatabaseSchemaMax) {
 		v := a
 		v.TargetDatabaseSchema = schema
 		if _, err := ParseBudgetOfflineAuthorization(budgetRaw(t, v), now); err != nil {
@@ -38,7 +38,7 @@ func TestBudgetOfflineExactBindingAndCompleteness(t *testing.T) {
 	if _, err := ParseBudgetOfflineAuthorization(budgetRaw(t, a), now); err != nil {
 		t.Fatal(err)
 	}
-	for _, mutate := range []func(*BudgetOfflineAuthorization){func(x *BudgetOfflineAuthorization) { x.BundleSHA256 = Hash([]byte("other")) }, func(x *BudgetOfflineAuthorization) { x.SourceCommit = strings.Repeat("b", 40) }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "35" }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "46" }, func(x *BudgetOfflineAuthorization) { x.Environment = "production" }, func(x *BudgetOfflineAuthorization) { x.Profiles = []string{BudgetSummaryProfile} }, func(x *BudgetOfflineAuthorization) { x.ExpiresAt = now.Add(-time.Second).Format(TimeFormat) }} {
+	for _, mutate := range []func(*BudgetOfflineAuthorization){func(x *BudgetOfflineAuthorization) { x.BundleSHA256 = Hash([]byte("other")) }, func(x *BudgetOfflineAuthorization) { x.SourceCommit = strings.Repeat("b", 40) }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "35" }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "47" }, func(x *BudgetOfflineAuthorization) { x.Environment = "production" }, func(x *BudgetOfflineAuthorization) { x.Profiles = []string{BudgetSummaryProfile} }, func(x *BudgetOfflineAuthorization) { x.ExpiresAt = now.Add(-time.Second).Format(TimeFormat) }} {
 		x := a
 		mutate(&x)
 		if _, err := ValidateBudgetOfflineBundle(raw, x, now); err == nil {

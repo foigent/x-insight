@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"time"
 )
 
@@ -51,6 +52,8 @@ func (f LiveWorkerLogFunc) Log(event string, fields map[string]any) {
 }
 
 type LiveWorkerConfig struct {
+	BeginSync        func(context.Context, PostgresWorkerState) (context.Context, func(error), error)
+	BeginActivation  func(context.Context) (context.Context, func(error), error)
 	PollInterval     time.Duration
 	AuthorizationRef string
 	RetryBase        time.Duration
@@ -176,6 +179,12 @@ func (w *LiveWorker) Run(ctx context.Context) error {
 			return nil
 		}
 		if _, err := w.ensureActivation(ctx); err != nil {
+			if connectorsync.IsControlStop(err) {
+				if w.config.Sleep(ctx, time.Second) != nil {
+					return nil
+				}
+				continue
+			}
 			workerErr := classifyLiveWorkerError(err, "activation_failed")
 			w.logFailure("activation_failed", workerErr)
 			if !workerErr.Retryable {
@@ -194,6 +203,12 @@ func (w *LiveWorker) Run(ctx context.Context) error {
 
 		report, err := w.PollOnce(ctx)
 		if err != nil {
+			if connectorsync.IsControlStop(err) {
+				if w.config.Sleep(ctx, time.Second) != nil {
+					return nil
+				}
+				continue
+			}
 			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) && ctx.Err() != nil {
 				w.stop()
 				return nil
@@ -236,10 +251,18 @@ func (w *LiveWorker) Run(ctx context.Context) error {
 	}
 }
 
-func (w *LiveWorker) PollOnce(ctx context.Context) (LivePollReport, error) {
+func (w *LiveWorker) PollOnce(ctx context.Context) (out LivePollReport, resultErr error) {
 	state, err := w.state.Load(ctx)
 	if err != nil {
 		return LivePollReport{}, NewLiveWorkerError("state_load_failed", true, 0, err)
+	}
+	if w.config.BeginSync != nil {
+		var finish func(error)
+		ctx, finish, err = w.config.BeginSync(ctx, state)
+		if err != nil {
+			return LivePollReport{}, err
+		}
+		defer func() { finish(resultErr) }()
 	}
 	startedAt := w.config.Now().UTC()
 	if err := w.state.MarkPollStarted(ctx, state.Cursor, startedAt); err != nil {
@@ -247,7 +270,7 @@ func (w *LiveWorker) PollOnce(ctx context.Context) (LivePollReport, error) {
 	}
 
 	fail := func(workerErr *LiveWorkerError) (LivePollReport, error) {
-		if ctx.Err() == nil {
+		if ctx.Err() == nil && !connectorsync.IsControlStop(workerErr) {
 			if markErr := w.state.MarkFailure(ctx, state.Cursor, WorkerFailure{
 				OccurredAt: w.config.Now().UTC(),
 				Code:       workerErr.Code,
@@ -323,10 +346,11 @@ func (w *LiveWorker) PollOnce(ctx context.Context) (LivePollReport, error) {
 	}); err != nil {
 		return LivePollReport{}, NewLiveWorkerError("state_page_commit_failed", true, 0, err)
 	}
+	connectorsync.Progress(ctx, report.HasMore, report.ItemsReceived)
 	return report, nil
 }
 
-func (w *LiveWorker) ensureActivation(ctx context.Context) (PostgresWorkerState, error) {
+func (w *LiveWorker) ensureActivation(ctx context.Context) (out PostgresWorkerState, resultErr error) {
 	state, err := w.state.Load(ctx)
 	if err == nil {
 		return state, nil
@@ -335,6 +359,14 @@ func (w *LiveWorker) ensureActivation(ctx context.Context) (PostgresWorkerState,
 		return PostgresWorkerState{}, NewLiveWorkerError("state_load_failed", true, 0, err)
 	}
 
+	if w.config.BeginActivation != nil {
+		var finish func(error)
+		ctx, finish, err = w.config.BeginActivation(ctx)
+		if err != nil {
+			return PostgresWorkerState{}, err
+		}
+		defer func() { finish(resultErr) }()
+	}
 	payload, err := w.source.Fetch(ctx, "", MaxPageItems)
 	if err != nil {
 		return PostgresWorkerState{}, classifyLiveWorkerError(err, "activation_source_fetch_failed")

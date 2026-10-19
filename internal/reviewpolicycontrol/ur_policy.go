@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"strconv"
 	"time"
 
@@ -132,7 +133,7 @@ type scopedPut struct {
 	Desired           json.RawMessage `json:"desired"`
 }
 
-func (m Manager) executeUR(ctx context.Context, request Request) (Response, error) {
+func (m Manager) executeUR(ctx context.Context, request Request) (out Response, resultErr error) {
 	if m.URClientFactory != nil {
 		var err error
 		m.URClient, m.URIdentity, err = m.URClientFactory(ctx)
@@ -153,6 +154,71 @@ func (m Manager) executeUR(ctx context.Context, request Request) (Response, erro
 	if u.OrgID != "" && u.OrgID != m.URIdentity.OrgID {
 		return Response{}, urmachine.ErrConflict
 	}
+	// A terminal operation is already local evidence; reading it must not need
+	// Auto, open a new network budget or reissue the original write.
+	if request.Action == ActionURReadOperation {
+		op, err := m.URStore.ReadReviewCaptureUROperation(ctx, m.URIdentity.InstallationID, u.OperationRef)
+		if err != nil {
+			return Response{}, err
+		}
+		if op.State == "effective" || op.State == "failed" || op.State == "drift" {
+			response.State, response.UR.Operation = op.State, &op
+			return response, nil
+		}
+	}
+	var finish func(error)
+	var gateErr error
+	if provider, ok := m.Store.(connectorsync.Provider); ok && (request.Action == ActionURApplyEnterprise || request.Action == ActionURApplyProject || request.Action == ActionURApplyUser || request.Action == ActionURReadOperation) {
+		if m.AuthorizeControlActor == nil || m.AuthorizeControlActor(request.ActorSubject) != nil {
+			return Response{}, urmachine.ErrUnauthorized
+		}
+		var digest string
+		create := false
+		previous, readErr := m.URStore.ReadReviewCaptureUROperation(ctx, m.URIdentity.InstallationID, u.OperationRef)
+		if request.Action == ActionURReadOperation {
+			if readErr != nil || previous.OperatorSubject != request.ActorSubject {
+				return Response{}, urmachine.ErrUnauthorized
+			}
+			digest = previous.RequestSHA256
+		} else {
+			kind := map[string]string{ActionURApplyEnterprise: "enterprise", ActionURApplyProject: "project", ActionURApplyUser: "user"}[request.Action]
+			var err error
+			digest, err = m.urRequestHash(request, kind)
+			if err != nil {
+				return Response{}, err
+			}
+			if readErr == nil {
+				if previous.RequestSHA256 != digest || previous.OperatorSubject != request.ActorSubject {
+					return Response{}, urmachine.ErrConflict
+				}
+				if previous.State == "effective" || previous.State == "failed" || previous.State == "drift" {
+					return m.applyURScope(ctx, request, response, kind)
+				}
+			} else if !errors.Is(readErr, sql.ErrNoRows) {
+				return Response{}, readErr
+			} else {
+				create = true
+			}
+		}
+		ctx, finish, gateErr = provider.SyncStore().BeginControl(ctx, m.URIdentity.InstallationID, u.OperationRef, request.ActorSubject, digest, create)
+		// Historical/pruned/expired control receipts never renew. An explicit
+		// existing Sync once (or Auto) can still authorize their original native
+		// recovery flow, with its own current counters and operation idempotency.
+		if errors.Is(gateErr, sql.ErrNoRows) || errors.Is(gateErr, connectorsync.ErrPaused) {
+			ctx, finish, gateErr = connectorsync.Work(ctx, m.Store, m.URIdentity.InstallationID, "credentials")
+		}
+	} else {
+		ctx, finish, gateErr = connectorsync.Work(ctx, m.Store, m.URIdentity.InstallationID, "credentials")
+	}
+	if gateErr != nil {
+		return Response{}, gateErr
+	}
+	defer func() {
+		if out.UR != nil && out.UR.Operation != nil && (out.UR.Operation.State == "requested" || out.UR.Operation.State == "unconfirmed") {
+			connectorsync.Progress(ctx, true, 0)
+		}
+		finish(resultErr)
+	}()
 	switch request.Action {
 	case ActionURScopes:
 		scopes, err := m.URClient.PolicyScopes(ctx, u.Cursor)
@@ -233,12 +299,8 @@ func (m Manager) executeUR(ctx context.Context, request Request) (Response, erro
 	return Response{}, fmt.Errorf("invalid UniRouter policy action")
 }
 
-func (m Manager) applyURScope(ctx context.Context, request Request, response Response, scopeKind string) (Response, error) {
+func (m Manager) urRequestHash(request Request, scopeKind string) (string, error) {
 	u := request.UR
-	if u.OrgID != "" && u.OrgID != m.URIdentity.OrgID {
-		return Response{}, urmachine.ErrConflict
-	}
-	scopeID := urScopeID(scopeKind, m.URIdentity, u)
 	hashScopeKind := ""
 	if scopeKind != "project" {
 		hashScopeKind = scopeKind
@@ -260,10 +322,22 @@ func (m Manager) applyURScope(ctx context.Context, request Request, response Res
 		u.ProjectID, u.UserID, hashScopeKind, u.XISettings, u.XIExpectedRevision,
 		u.DelegationID, u.DelegationRevision, u.Policy})
 	if err != nil {
-		return Response{}, err
+		return "", err
 	}
 	digest := sha256.Sum256(identityBytes)
-	requestHash := "sha256:" + hex.EncodeToString(digest[:])
+	return "sha256:" + hex.EncodeToString(digest[:]), nil
+}
+
+func (m Manager) applyURScope(ctx context.Context, request Request, response Response, scopeKind string) (Response, error) {
+	u := request.UR
+	if u.OrgID != "" && u.OrgID != m.URIdentity.OrgID {
+		return Response{}, urmachine.ErrConflict
+	}
+	scopeID := urScopeID(scopeKind, m.URIdentity, u)
+	requestHash, err := m.urRequestHash(request, scopeKind)
+	if err != nil {
+		return Response{}, err
+	}
 	if previous, readErr := m.URStore.ReadReviewCaptureUROperation(ctx, m.URIdentity.InstallationID, u.OperationRef); readErr == nil {
 		if previous.RequestSHA256 != requestHash || previous.OperatorSubject != request.ActorSubject ||
 			previous.ScopeKind != scopeKind || previous.ScopeID != scopeID || previous.SourceInstance != m.URIdentity.SourceInstance ||

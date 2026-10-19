@@ -20,6 +20,7 @@ import {
 } from "./api";
 import { EmptyState, ErrorState, LoadingBlock } from "./Feedback";
 import { formatCanonicalTime, formatDateTime, shortRef } from "./format";
+import { ConnectorSyncPanel } from "./ConnectorSyncPanel";
 import { FindingLifecycle } from "./FindingLifecycle";
 import { newFindingReferences, ReviewStart } from "./ReviewStart";
 
@@ -590,6 +591,7 @@ export function ConnectorsPage({ session, navigate }: PageProps) {
               <div><span className={`trust-state trust-${installation.status === "abnormal" ? "degraded" : "inactive"}`}>{{pending:t("m1599"),connected:t("m1600"),paused:t("m1601"),disconnected:t("m1602"),abnormal:t("m0282")}[installation.status]}</span><h2>{tx("m1603")}</h2></div>
               <a href={`/connectors/unirouter/setup?installation=${encodeURIComponent(installation.installation_id)}`}>{tx("m1604")}</a>
             </header>
+            <ConnectorSyncPanel installationID={installation.installation_id} csrfToken={session.csrf_token} canManage={canManage} />
             <p>{tx("m1606", { value0: installation.last_agent_seen_at ? formatDateTime(installation.last_agent_seen_at) : t("m1605") })}</p>
             <details><summary>{tx("m0339")}</summary><p>{tx("m0340", { value0: shortRef(installation.installation_id) })}</p><div className="connector-columns">
               <section className="connector-column">
