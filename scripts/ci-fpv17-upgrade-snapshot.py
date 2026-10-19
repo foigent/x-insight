@@ -73,6 +73,42 @@ for table in ("source_fact_documents", "source_content_manifests", "source_conte
     immutable_rows[table] = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
                                                "-v", "ON_ERROR_STOP=1", "-c", sql, env=pg_env))
 
+# The schema46 upgrade adds one reviewed ledger row and three tables. Retain
+# the original rows too, so additions cannot mask edits to predecessor history
+# or privileges behind a changed whole-database digest.
+migration_rows = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
+    "-v", "ON_ERROR_STOP=1", "-c",
+    "SELECT COALESCE(jsonb_agg(to_jsonb(m) ORDER BY version)::text,'[]') FROM schema_migrations m", env=pg_env))
+table_acl_rows = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
+    "-v", "ON_ERROR_STOP=1", "-c",
+    "SELECT COALESCE(jsonb_object_agg(c.relname,c.relacl::text ORDER BY c.relname)::text,'{}') "
+    "FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+    "WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','S')", env=pg_env))
+sync_privileges = {}
+sync_tables = "'connector_sync_controls','connector_sync_slots','connector_sync_runs'"
+for label, sql in {
+    "owners": "SELECT COALESCE(jsonb_object_agg(c.relname,pg_get_userbyid(c.relowner))::text,'{}') "
+        "FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "WHERE n.nspname='public' AND c.relname IN ("+sync_tables+")",
+    "tables": "SELECT COALESCE(jsonb_agg(jsonb_build_array(c.relname,CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,x.privilege_type,x.is_grantable) "
+        "ORDER BY c.relname,x.grantee,x.privilege_type)::text,'[]') "
+        "FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl,acldefault('r',c.relowner))) x "
+        "WHERE n.nspname='public' AND c.relname IN ("+sync_tables+") AND x.grantee<>c.relowner",
+    "columns": "SELECT COALESCE(jsonb_agg(jsonb_build_array(c.relname,a.attname,CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,x.privilege_type,x.is_grantable) "
+        "ORDER BY c.relname,a.attname,x.grantee,x.privilege_type)::text,'[]') "
+        "FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "CROSS JOIN LATERAL aclexplode(a.attacl) x "
+        "WHERE n.nspname='public' AND c.relname IN ("+sync_tables+") AND a.attnum>0 AND NOT a.attisdropped AND x.grantee<>c.relowner",
+    "functions": "SELECT COALESCE(jsonb_agg(jsonb_build_array(p.proname,CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,x.privilege_type,x.is_grantable) "
+        "ORDER BY p.proname,x.grantee,x.privilege_type)::text,'[]') "
+        "FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace "
+        "CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) x "
+        "WHERE n.nspname='public' AND p.proname IN ('xinsight_sync_scope','xinsight_sync_receiver','xinsight_sync_units','xinsight_init_connector_sync') AND x.grantee<>p.proowner",
+}.items():
+    sync_privileges[label] = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
+        "-v", "ON_ERROR_STOP=1", "-c", sql, env=pg_env))
+
 progress = {}
 for label, sql in {
     "source_fact": "SELECT COALESCE(jsonb_agg(jsonb_build_array(id,cursor_value,high_watermark) ORDER BY id)::text,'[]') FROM source_fact_streams",
@@ -108,5 +144,7 @@ print(json.dumps({"schema_version": "xinsight.ci-fpv17-upgrade-snapshot.v1",
                   "classification": "ci_private_synthetic_not_target", "status": status,
                   "release": release, "server_invocation": invocation, "server_exe": server_exe,
                   "database": database, "immutable_rows": immutable_rows,
+                  "migration_rows": migration_rows, "table_acl_rows": table_acl_rows,
+                  "sync_privileges": sync_privileges,
                   "progress": progress, "worker_exes": worker_exes,
                   "files": files}, sort_keys=True))

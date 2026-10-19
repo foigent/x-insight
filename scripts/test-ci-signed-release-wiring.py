@@ -8,6 +8,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml"
@@ -960,7 +961,7 @@ def check_installed_result_contract() -> None:
     evaluate = namespace['installed_joint_passed']
     require('if not installed_joint_passed(result.returncode, mode, receipts):' in contents,
             'qualification must use the tested completion evaluator')
-    stages = ('service_restart', 'credential_lifecycle_baseline', 'credential_continuous_rotation',
+    stages = ('collection_intent', 'service_restart', 'credential_lifecycle_baseline', 'credential_continuous_rotation',
               'credential_lost_prepare', 'credential_lost_confirm', 'credential_offline_expiry',
               'credential_expired_prepared', 'credential_revocation_boundary')
     def row(stage, kind='stage', state='passed', category=''):
@@ -984,12 +985,13 @@ def check_installed_result_contract() -> None:
                     'missing required lifecycle phase accepted: ' + missing)
         require(not evaluate(1, mode, complete), 'failed child process accepted')
         require(not evaluate(0, 'unknown', complete), 'unknown installation mode accepted')
-    prestate_receipts = [row('future_project'), row('service_restart'), row('upgrade_authority'), row('formal_upgrade'),
+    prestate_receipts = [row('collection_intent'), row('future_project'), row('service_restart'), row('upgrade_authority'), row('formal_upgrade'),
                          row('upgrade_continuity'), row('upgrade_completed')]
     prestate_complete = prestate_receipts + [row('upgrade_completed', 'result', category='none')]
     require(evaluate(0, 'fpv17_upgrade_prestate', prestate_complete), 'healthy FPV17 prestate rejected')
     for bad in (prestate_receipts, prestate_complete[:-2] + prestate_complete[-1:],
-                prestate_complete + [prestate_complete[-1]]):
+                prestate_complete + [prestate_complete[-1]],
+                [r for r in prestate_complete if '/collection_intent/' not in r]):
         require(not evaluate(0, 'fpv17_upgrade_prestate', bad), 'partial FPV17 prestate accepted')
     require(not evaluate(1, 'fpv17_upgrade_prestate', prestate_complete), 'failed FPV17 child accepted')
 
@@ -1010,8 +1012,9 @@ def check_fpv17_upgrade_lane() -> None:
                      'active_workers_restored_by_upgrade',
                      'before-upgrade-invocation', 'qualification-failure.json',
                      "after['server_invocation']!=before['server_invocation']"):
-        require(required in qualifier, 'same-schema installed upgrade proof missing: ' + required)
-    for required in ('review-body.key', 'schema_migrations', 'source_fact_streams',
+        require(required in qualifier, 'schema45-to46 installed upgrade proof missing: ' + required)
+    for required in ('review-body.key', 'schema_migrations', 'migration_rows', 'table_acl_rows',
+                     'sync_privileges', 'source_fact_streams',
                      'source_content_collections', 'review_body_operations',
                      'workbench_access_grants', 'server_exe', 'worker_exes'):
         require(required in snapshot, 'FPV17 snapshot omits a required boundary: ' + required)
@@ -1025,6 +1028,122 @@ def check_fpv17_upgrade_lane() -> None:
             'upgrade must retain live UR source through new content and feed read')
     require('e118b5754ee396b21be32db4b47f90d8252cd585ee6e673ca2e91f395ed098ee' not in predecessor,
             'CI-only predecessor must not impersonate Target r2 bytes')
+    require('PRESTATE_COMMIT=2c05fcb38330337b362f36bee7348e2916abf700' in joint and
+            'a59f36f034ca8ab7424baaf421246a16788f8ebc' in joint and
+            'git archive "$PRESTATE_COMMIT"' in joint and
+            '(cd "$PRESTATE_SOURCE"; go test -tags=integration -c' in joint,
+            'old installed prestate must use its pinned pre-sync fixture implementation')
+
+
+def check_fpv17_upgrade_delta(database_samples=None) -> dict:
+    """Run the actual shell validator; optional Local samples contain real PG rows.
+
+    Host process/file inputs remain synthetic here. This does not execute or
+    qualify a Linux installation.
+    """
+    root = WORKFLOW.parents[2]
+    qualifier = root / 'scripts/qualify-ubuntu22-fpv17-upgrade.sh'
+    blocks = re.findall(r"<<'PY'\n(.*?)\nPY", qualifier.read_text(), re.S)
+    validators = [code for code in blocks if 'migration46_exact_append_verified' in code]
+    require(len(validators) == 1, 'exact upgrade delta validator missing or duplicated')
+    code = validators[0]
+    import hashlib
+    checksum = 'sha256:' + hashlib.sha256((root / 'migrations/000046_add_connector_sync_control.up.sql').read_bytes()).hexdigest()
+    migrations = [{'version': f'{i:06d}_fixture', 'checksum_sha256': 'sha256:'+'a'*64,
+                   'dirty': False, 'applied_at': '2026-01-01T00:00:00Z'} for i in range(1, 46)]
+    tables = ('connector_sync_controls', 'connector_sync_slots', 'connector_sync_runs')
+    columns = {'connector_sync_controls': ('last_checked_at', 'last_data_at', 'last_error'),
+               'connector_sync_slots': ('owner', 'token', 'revision', 'busy', 'started_at', 'ended_at', 'last_error'),
+               'connector_sync_runs': ('pages', 'attempts', 'state', 'results', 'observed_items')}
+    privileges = {
+        'owners': {t: 'xinsight_admin' for t in tables},
+        'tables': [[t, r, 'SELECT', False] for t in tables for r in ('xinsight_reader', 'xinsight_workspace', 'xinsight_importer')]
+                  + [['connector_sync_slots', 'xinsight_importer', 'INSERT', False]],
+        'columns': [[t, c, 'xinsight_importer', 'UPDATE', False] for t, names in columns.items() for c in names],
+        'functions': [[n, r, 'EXECUTE', False] for n in ('xinsight_sync_scope', 'xinsight_sync_receiver', 'xinsight_sync_units')
+                      for r in ('xinsight_workspace', 'xinsight_importer')],
+    }
+    old = {'product_version': '0.2.0-dev.fpv17', 'database_schema': '45',
+           'commit': '164582cab0e7f169c265c2494d04920c61af833d', 'release_dir': '/synthetic/fpv17'}
+    new = {'product_version': '0.2.0-dev.fpv20', 'database_schema': '46',
+           'commit': 'b'*40, 'release_dir': '/synthetic/fpv20'}
+    stable = ('workbench_access_grants', 'work_event_collections', 'work_event_documents',
+              'connector_installation_source_bindings', 'installation_identity', 'role_boundary',
+              'source_fact_streams', 'source_content_collections', 'adapter_import_states')
+    before = {
+        'status': {'managed': True, 'install_state': {'current': old, 'database_schema_current': '45'}},
+        'release': old['release_dir'], 'server_invocation': 'a'*32,
+        'database': {k: '1:'+'a'*32 for k in stable},
+        'migration_rows': migrations, 'table_acl_rows': {'schema_migrations': 'original-acl'},
+        'immutable_rows': {'source_fact_documents': ['original-row']},
+        'progress': {'source_fact': [['facts', 'cursor', '10']],
+                     'source_content': [['body', 'cursor', '2', '2', 'hwm']],
+                     'economic_feed': [['feed', 'cursor', 'hwm']]},
+        'files': {'review-body.key': [384, 0, 0, 'a'*64]},
+    }
+    before['database']['schema_migrations'] = '45:'+'a'*32
+    before['database']['table_acl'] = 'a'*32
+    after = copy.deepcopy(before)
+    after.update(status={'managed': True, 'active_journal': None,
+                         'install_state': {'current': new, 'previous': old, 'database_schema_current': '46'}},
+                 release=new['release_dir'], server_invocation='b'*32,
+                 server_exe=new['release_dir']+'/bin/xinsight-server',
+                 worker_exes={u: new['release_dir']+'/bin/xinsight-importer'
+                              for u in ('xinsight-feed.service', 'xinsight-source-facts.service')},
+                 sync_privileges=privileges)
+    after['database']['schema_migrations'] = '46:'+'b'*32
+    after['database']['table_acl'] = 'b'*32
+    after['migration_rows'].append({'version': '000046_add_connector_sync_control',
+        'checksum_sha256': checksum, 'dirty': False, 'applied_at': '2026-01-02T00:00:00Z'})
+    after['table_acl_rows'].update({t: 'reviewed-new-acl' for t in tables})
+    if database_samples is not None:
+        for target, sample in zip((before, after), database_samples):
+            target['migration_rows'] = sample['migration_rows']
+            target['table_acl_rows'] = sample['table_acl_rows']
+            target['database']['schema_migrations'] = sample['ledger_summary']
+        after['sync_privileges'] = {k: database_samples[1]['sync_'+k] for k in privileges}
+    check = {'target': {'commit': new['commit']}}
+    receipt = {'kind': 'upgrade', 'status': 'completed', 'before': {'commit': old['commit']},
+               'after': {'commit': new['commit']}, 'checks': [{'name': 'representative_read', 'status': 'pass'}]}
+    old_table = next(iter(before['table_acl_rows']))
+    def changed_acl(s): s['table_acl_rows'][old_table] = 'unauthorized-change'
+    def missing_acl(s): s['table_acl_rows'].pop(old_table)
+    cases = [
+        ('changed prior ledger row', lambda s: s['migration_rows'][0].update(applied_at='changed')),
+        ('missing migration46', lambda s: s['migration_rows'].pop()),
+        ('extra migration', lambda s: s['migration_rows'].append(copy.deepcopy(s['migration_rows'][-1]))),
+        ('wrong migration id', lambda s: s['migration_rows'][-1].update(version='000047_unreviewed')),
+        ('dirty migration46', lambda s: s['migration_rows'][-1].update(dirty=True)),
+        ('wrong migration checksum', lambda s: s['migration_rows'][-1].update(checksum_sha256='sha256:'+'0'*64)),
+        ('wrong schema count', lambda s: s['database'].update(schema_migrations='45:'+'a'*32)),
+        ('changed predecessor ACL', changed_acl), ('missing predecessor ACL', missing_acl),
+        ('unreviewed table', lambda s: s['table_acl_rows'].update(unreviewed_table='acl')),
+        ('wrong table owner', lambda s: s['sync_privileges']['owners'].update(connector_sync_runs='other_owner')),
+        ('PUBLIC table read', lambda s: s['sync_privileges']['tables'].append(['connector_sync_runs', 'PUBLIC', 'SELECT', False])),
+        ('importer preference write', lambda s: s['sync_privileges']['columns'].append(['connector_sync_controls', 'auto_sync', 'xinsight_importer', 'UPDATE', False])),
+        ('missing required column grant', lambda s: s['sync_privileges']['columns'].pop()),
+        ('PUBLIC trigger execute', lambda s: s['sync_privileges']['functions'].append(['xinsight_init_connector_sync', 'PUBLIC', 'EXECUTE', False])),
+        ('delegable function', lambda s: s['sync_privileges']['functions'][0].__setitem__(3, True)),
+        ('lost original history', lambda s: s['immutable_rows']['source_fact_documents'].clear()),
+        ('changed key', lambda s: s['files']['review-body.key'].__setitem__(3, 'b'*64)),
+        ('rewound content cursor', lambda s: s['progress']['source_content'][0].__setitem__(2, '1')),
+    ]
+    with tempfile.TemporaryDirectory(prefix='xi-upgrade-delta-') as directory:
+        paths = [Path(directory)/name for name in ('before.json', 'after.json', 'check.json', 'receipt.json')]
+        def evaluate(value):
+            for path, data in zip(paths, (before, value, check, receipt)):
+                path.write_text(json.dumps(data))
+            return subprocess.run([sys.executable, '-c', code, *map(str, paths), str(root)],
+                                  capture_output=True, text=True)
+        result = evaluate(after)
+        require(result.returncode == 0, 'valid exact schema45-to46 delta rejected: '+result.stderr)
+        for name, mutate in cases:
+            candidate = copy.deepcopy(after)
+            mutate(candidate)
+            require(evaluate(candidate).returncode != 0, 'unsafe upgrade delta accepted: '+name)
+    result = {'positive': 1, 'negative': len(cases), 'real_pg_rows': database_samples is not None}
+    print('fpv17 upgrade exact delta:', json.dumps(result, sort_keys=True))
+    return result
 
 
 if __name__ == "__main__":
@@ -1037,6 +1156,7 @@ if __name__ == "__main__":
     check_installed_failure_diagnostic()
     check_installed_result_contract()
     check_fpv17_upgrade_lane()
+    check_fpv17_upgrade_delta()
     check_capless_root_references(source)
     for required in ('--bounding-set=-all', 'XINSIGHT_CAPLESS_REFERENCE_TEST=1', '-test.count=1'):
         try:

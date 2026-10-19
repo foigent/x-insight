@@ -283,6 +283,12 @@ func run() (string, time.Duration, error) {
 			return d.fail("predecessor_upgrade_failed", err)
 		}
 	}
+	if upgradeRequest == nil {
+		d.advance("collection_intent")
+		if err := d.collectionIntent(ctx, input.ManagedMode == "adopt_existing"); err != nil {
+			return d.fail(err.Error())
+		}
+	}
 	// For adoption, exclude successful polls by the frozen predecessor: this
 	// timestamp is taken only after the candidate upgrade has returned.
 	feedReadAfter := time.Now().UTC()
@@ -402,6 +408,16 @@ func run() (string, time.Duration, error) {
 		}
 		if err := d.openInstalledDatabase(ctx, false); err != nil {
 			return d.fail("upgrade_database_unavailable")
+		}
+		// The upgraded server has a fresh session service. Reauthenticate the
+		// owner before checking migrated intent, as the adoption lane does.
+		d.adminCookie, d.adminCSRF, err = d.login(ctx, d.input.Installed.XIAdminUsername, d.input.Installed.XIAdminPasswordFile)
+		if err != nil {
+			return d.fail("upgrade_owner_login_failed")
+		}
+		d.advance("collection_intent")
+		if err := d.collectionIntent(ctx, true); err != nil {
+			return d.fail(err.Error())
 		}
 		d.advance("upgrade_continuity")
 		feedSince := time.Now().UTC()

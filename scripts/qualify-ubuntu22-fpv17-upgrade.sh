@@ -96,9 +96,9 @@ for unit in "${units[@]}"; do
   test "$(systemctl is-active "$unit")" = active
   test "$(systemctl show "$unit" --property=InvocationID --value)" != "$(cat "$QUAL/$unit.before-upgrade-invocation")"
 done
-python3 - "$QUAL/before-private.json" "$QUAL/after-upgrade-private.json" "$QUAL/upgrade-check-private.json" "$QUAL/upgrade-receipt-private.json" > "$QUAL/qualification-result.json" <<'PY'
-import collections, json, pathlib, sys
-before,after,check,receipt=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:]]
+python3 - "$QUAL/before-private.json" "$QUAL/after-upgrade-private.json" "$QUAL/upgrade-check-private.json" "$QUAL/upgrade-receipt-private.json" "$CANDIDATE_PAYLOAD" > "$QUAL/qualification-result.json" <<'PY'
+import collections, hashlib, json, pathlib, sys
+before,after,check,receipt=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:5]]
 old=before['status']['install_state']['current']; new=after['status']['install_state']['current']
 assert receipt['kind']=='upgrade' and receipt['status']=='completed'
 assert receipt['before']['commit']==old['commit'] and receipt['after']['commit']==check['target']['commit']
@@ -113,11 +113,40 @@ assert after['worker_exes']=={unit:after['release']+'/bin/xinsight-importer'
                               for unit in ('xinsight-feed.service','xinsight-source-facts.service')}
 # Poll metadata may advance while the workers are active. Compare immutable
 # rows exactly and active cursor counts without demanding timestamp equality.
-stable=('schema_migrations','workbench_access_grants',
+stable=('workbench_access_grants',
         'work_event_collections','work_event_documents',
         'connector_installation_source_bindings','installation_identity',
-        'table_acl','role_boundary')
+        'role_boundary')
 assert all(after['database'][table]==before['database'][table] for table in stable)
+old_migrations,new_migrations=before['migration_rows'],after['migration_rows']
+assert len(old_migrations)==45 and len(new_migrations)==46
+assert new_migrations[:45]==old_migrations, 'prior ledger rows changed'
+added=new_migrations[45]
+assert added['version']=='000046_add_connector_sync_control' and added['dirty'] is False
+expected='sha256:'+hashlib.sha256((pathlib.Path(sys.argv[5])/'migrations/000046_add_connector_sync_control.up.sql').read_bytes()).hexdigest()
+assert added['checksum_sha256']==expected
+assert before['database']['schema_migrations'].split(':',1)[0]=='45'
+assert after['database']['schema_migrations'].split(':',1)[0]=='46'
+old_acl,new_acl=before['table_acl_rows'],after['table_acl_rows']
+assert all(name in new_acl and new_acl[name]==acl for name,acl in old_acl.items()), 'prior table ACL changed'
+assert set(new_acl)-set(old_acl)=={'connector_sync_controls','connector_sync_slots','connector_sync_runs'}
+privileges=after['sync_privileges']
+tables=('connector_sync_controls','connector_sync_slots','connector_sync_runs')
+assert privileges['owners']=={name:'xinsight_admin' for name in tables}
+expected_tables=[[table,role,'SELECT',False] for table in tables
+                 for role in ('xinsight_reader','xinsight_workspace','xinsight_importer')]
+expected_tables.append(['connector_sync_slots','xinsight_importer','INSERT',False])
+assert sorted(privileges['tables'])==sorted(expected_tables)
+columns={'connector_sync_controls':('last_checked_at','last_data_at','last_error'),
+         'connector_sync_slots':('owner','token','revision','busy','started_at','ended_at','last_error'),
+         'connector_sync_runs':('pages','attempts','state','results','observed_items')}
+expected_columns=[[table,column,'xinsight_importer','UPDATE',False]
+                  for table,names in columns.items() for column in names]
+assert sorted(privileges['columns'])==sorted(expected_columns)
+expected_functions=[[name,role,'EXECUTE',False]
+                    for name in ('xinsight_sync_scope','xinsight_sync_receiver','xinsight_sync_units')
+                    for role in ('xinsight_workspace','xinsight_importer')]
+assert sorted(privileges['functions'])==sorted(expected_functions)
 for table, rows in before['immutable_rows'].items():
     assert not (collections.Counter(rows)-collections.Counter(after['immutable_rows'][table])), table
 for table in ('source_fact_streams','source_content_collections','adapter_import_states'):
@@ -144,6 +173,7 @@ print(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade.v1',
                   'classification':'ci_synthetic_not_target','state':'passed',
                   'predecessor':'0.2.0-dev.fpv17','target':'0.2.0-dev.fpv20',
                   'database_schema':'46','check_no_side_effects':True,
+                  'migration46_exact_append_verified':True,'prior_table_acls_preserved':True,
                   'history_cursors_ciphertext_grants_preserved':True,
                   'review_body_key_preserved':True,'new_server_invocation_verified':True,
                   'active_workers_restored_by_upgrade':True,
