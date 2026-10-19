@@ -135,6 +135,8 @@ tree_contains() {
 # the protected tree. Checkpoint controls change only through the reviewed Feed
 # commit fence. Shared protocol pins, neutral mapping and M0 identity are kept.
 # The prior schema45 baseline remains in Git history (2c05fcb and b942691).
+# The body-copy correction adds only workspace last_data_at column authority
+# for the same transaction fence; sync preferences remain owner-controlled.
 # Runtime verification stays read-only; stale-baseline rejection is mandatory.
 protocol_workflow=".github/workflows/foigent-protocol-conformance.yml"
 expected_protocol_action='        uses: foigent/event-connector-spec/actions/source-neutral-v2@ad8fe7a38c9d7335657630baa8670dd07556b98c'
@@ -196,7 +198,7 @@ be634cdc1b59cca9a5d11f2726da88bd9a27e6d6f0b8a8768dee33fb02aa2e60 internal/db/tra
 98a3c2e2aed842f872feb5987a28627bab40e8eb191e80dd3409eca56b88d2c9 internal/db/session_store.go
 09472adadf129404b511276fc4be281db48ea46e4248fe0cbb1265352e5259b7 internal/db/workspace_store.go
 a961198cf1d13c2d940520bbfdf657c6629a8ad88561141e25c75b473ab807e8 internal/discovery/engine.go
-453f7b44c6164877073d5727085e75c337470c5511b7f2e452ed41f31a6c87d5 internal/hostctl/database.go
+8f76bb2ce97327d599662394879a135dd4b536ab9e23e3ac4352ddf76622b5a2 internal/hostctl/database.go
 fccad7130b2a155ff170accd20b16835fa9f820c9a1c0a36cbe5f3615491bb8c internal/hostctl/checkpoint_epoch.go
 f84f1e42a6afbb9afdda7690dffda7f7a3f06abd4bf3cd76efecca832499292d internal/investigation/compare.go
 6fc8ae27ad843f6baff188ff5fe62a2bd8f4fe6517ce667d56b3a41ef151b41d internal/investigation/model.go
@@ -229,7 +231,7 @@ migration_digest="$(
     sha256sum |
     awk '{print $1}'
 )"
-if [[ "${migration_digest}" != "b18e060bcba8793d22593d51073361cdabd9df95d81ab6c3b4310d9767b41b98" ]]; then
+if [[ "${migration_digest}" != "7402ad30ea4b24669835fe8b768e41b95472518d84459390a8bfdbbcb6a34ca7" ]]; then
   echo "Phase 2C runtime gate: migration tree changed (${migration_digest})" >&2
   exit 1
 fi

@@ -16,6 +16,7 @@ import (
 
 	"github.com/foigent/x-insight/internal/checkpointepoch"
 	"github.com/foigent/x-insight/internal/db"
+	"github.com/foigent/x-insight/internal/testpostgres"
 )
 
 func TestPostgreSQL16AdminCredentialRotationQualification(t *testing.T) {
@@ -219,6 +220,14 @@ func TestPostgreSQL16RoleBackupAndIsolatedRestoreQualification(t *testing.T) {
 	workspaceDSN := os.Getenv("XINSIGHT_HOSTCTL_WORKSPACE_DSN")
 	importerDSN := os.Getenv("XINSIGHT_HOSTCTL_IMPORTER_DSN")
 	adminDSN := os.Getenv("XINSIGHT_HOSTCTL_ADMIN_DSN")
+	if os.Getenv(testpostgres.ScopeEnv) != "" {
+		// TestMain has already verified the recorded cluster/database scope.
+		// Derive all roles in a fresh fixture; never inherit host role DSNs or
+		// weaken the native credential/backup/restore qualification below.
+		_, scoped := connectorDigestDatabase(t)
+		readerDSN, workspaceDSN = scoped.ReaderDSN, scoped.WorkspaceDSN
+		importerDSN, adminDSN = scoped.ImporterDSN, scoped.AdminDSN
+	}
 	if readerDSN == "" || workspaceDSN == "" || importerDSN == "" || adminDSN == "" {
 		t.Fatal("all four XINSIGHT_HOSTCTL_*_DSN values are required")
 	}

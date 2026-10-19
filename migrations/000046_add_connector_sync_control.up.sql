@@ -100,6 +100,11 @@ DO $$ DECLARE r text; BEGIN
  EXECUTE format('GRANT EXECUTE ON FUNCTION public.xinsight_sync_units(text) TO %I',r);
  EXECUTE format('GRANT EXECUTE ON FUNCTION public.xinsight_sync_receiver(text) TO %I',r);
  END IF; END LOOP;
+ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='xinsight_workspace') THEN
+ -- The custody role locks the same live permit and records successful data
+ -- time; it cannot change Auto, cadence, revision, slots or run admission.
+ GRANT UPDATE(last_data_at) ON connector_sync_controls TO xinsight_workspace;
+ END IF;
  IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='xinsight_importer') THEN
  GRANT UPDATE(last_checked_at,last_data_at,last_error) ON connector_sync_controls TO xinsight_importer;
  GRANT INSERT ON connector_sync_slots TO xinsight_importer;

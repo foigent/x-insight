@@ -100,13 +100,13 @@ func TestSourceFactsStateRecoveryAndCurrentScope(t *testing.T) {
 }
 
 type sourceFailureInterleave struct {
-	sourcefacts.Store
+	*db.SourceFactsStore
 	before func()
 }
 
 func (s sourceFailureInterleave) RecordSourceFactsFailure(ctx context.Context, expected sourcefacts.Stream, code string, now time.Time) error {
 	s.before()
-	return s.Store.RecordSourceFactsFailure(ctx, expected, code, now)
+	return s.SourceFactsStore.RecordSourceFactsFailure(ctx, expected, code, now)
 }
 
 func TestSourceFactsStaleRequestsDoNotBecomeSourceFailures(t *testing.T) {
@@ -151,7 +151,7 @@ func TestSourceFactsStaleRequestsDoNotBecomeSourceFailures(t *testing.T) {
 	changed.Identity["owner_user_id"] = "8902"
 	f.setPage(p, "bad-page", changed)
 	c := f.consumer
-	c.Store = sourceFailureInterleave{Store: f.consumerStore, before: func() {
+	c.Store = sourceFailureInterleave{SourceFactsStore: f.consumerStore, before: func() {
 		if err := f.consumerStore.CommitSourceFactsPage(f.ctx, expected, good, time.Now()); err != nil {
 			t.Fatal(err)
 		}

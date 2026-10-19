@@ -709,21 +709,5 @@ func (f *sourceFixture) bindSyncScope(source, org, project string) {
 
 func (f *sourceFixture) bindSyncScopeWithAuto(source, org, project string, automatic bool) {
 	f.t.Helper()
-	var bound bool
-	if e := f.admin.QueryRowContext(f.ctx, `SELECT EXISTS(SELECT 1 FROM public.xinsight_sync_scope($1,$2,$3,false))`, source, org, project).Scan(&bound); e != nil {
-		f.t.Fatal(e)
-	}
-	if bound {
-		return
-	}
-	suffix := strings.ReplaceAll(testUUID(f.t), "-", "")[:22]
-	id := "xci_" + suffix
-	identity := "xsi_" + suffix
-	f.exec(`INSERT INTO service_identities(id,display_name,status,permissions,created_by_subject,created_at,updated_at)VALUES($1,'synthetic sync fixture','active',ARRAY['connector.control.poll','connector.control.ack'],'system',clock_timestamp(),clock_timestamp())`, identity)
-	f.exec(`INSERT INTO connector_installations(id,deployment_id,connector_type,requested_event_scope,final_event_scope,project_id,source_instance,source_instance_sha256,control_service_identity_id,installation_acknowledgement_sha256,status,desired_state,observed_state,created_at,updated_at)VALUES($1,'xid_0000000000000000000000','unirouter',ARRAY['model.request.completed'],ARRAY['model.request.completed'],$2,$3,'sha256:'||repeat('a',64),$4,'sha256:'||repeat('b',64),'connected','active','connected',clock_timestamp(),clock_timestamp())`, id, project, source, identity)
-	f.exec(`INSERT INTO connector_installation_source_bindings(installation_id,source_binding_sha256)VALUES($1,'sha256:'||repeat('c',64))`, id)
-	f.exec(`INSERT INTO connector_source_enrollments(installation_id,enrollment_id,source_instance,org_id,project_id,revision,status,updated_at)VALUES($1,'xise_1',$2,$3,$4,'1','active',clock_timestamp())`, id, source, org, project)
-	if automatic {
-		f.exec(`UPDATE connector_sync_controls SET auto_sync=true WHERE installation_id=$1`, id)
-	}
+	testsourcefacts.BindSyncScope(f.t, f.admin, source, org, project, automatic)
 }

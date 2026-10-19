@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 )
 
@@ -124,6 +125,14 @@ func (s *HTTPSource) FetchContentFile(ctx context.Context, ref sourcefacts.Froze
 		if err = check(ctx); err != nil {
 			return nil, err
 		}
+	}
+	// The managed body read shares the manifest poll's live permit. Count and
+	// recheck it after custody checks, immediately before any source I/O.
+	if err = connectorsync.BeforeHTTP(ctx, s.syncRequired); err != nil {
+		return nil, err
+	}
+	if err = connectorsync.Page(ctx); err != nil {
+		return nil, err
 	}
 	response, err := s.client.Do(r)
 	if err != nil {

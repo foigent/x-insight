@@ -49,7 +49,7 @@ func TestSyncFirstFeedActivationAndRestartUseRequiredPermit(t *testing.T) {
 	}
 	// Synthetic accepted receiver-phase records exercise the real, restricted
 	// resolver. Full redemption/ACK authentication has its existing separate tests.
-	credential := "sync-fixture-service-key"
+	credential := "sync-fixture-service-key-" + id
 	hash := sha256.New()
 	hash.Write([]byte("unirouter.xinsight.feed-credential.v1"))
 	hash.Write([]byte{0})
@@ -127,7 +127,8 @@ func TestSyncFirstFeedActivationAndRestartUseRequiredPermit(t *testing.T) {
 		t.Fatal("manual installed checkpoint without permission", e)
 	}
 
-	if _, e = database.ExecContext(ctx, `INSERT INTO connector_installation_invitations(id,installation_id,nonce_digest,token_prefix,audience,xinsight_origin,unirouter_install_origin,requested_event_scope,status,created_by_subject,created_at,expires_at,consumed_at,acknowledgement_sha256)VALUES($1,$2,'sha256:'||repeat('d',64),'xiiv1_AAAAAA','unirouter','https://xi.example','https://ur.example',ARRAY['model.request.completed'],'consumed','xs_4646464646464646',statement_timestamp(),statement_timestamp()+interval '1 hour',statement_timestamp(),'sha256:'||repeat('e',64))`, "xii_"+strings.TrimPrefix(id, "xci_"), id); e != nil {
+	nonceDigest := sha256.Sum256([]byte("sync-fixture-invitation:" + id))
+	if _, e = database.ExecContext(ctx, `INSERT INTO connector_installation_invitations(id,installation_id,nonce_digest,token_prefix,audience,xinsight_origin,unirouter_install_origin,requested_event_scope,status,created_by_subject,created_at,expires_at,consumed_at,acknowledgement_sha256)VALUES($1,$2,$3,'xiiv1_AAAAAA','unirouter','https://xi.example','https://ur.example',ARRAY['model.request.completed'],'consumed','xs_4646464646464646',statement_timestamp(),statement_timestamp()+interval '1 hour',statement_timestamp(),'sha256:'||repeat('e',64))`, "xii_"+strings.TrimPrefix(id, "xci_"), id, "sha256:"+hex.EncodeToString(nonceDigest[:])); e != nil {
 		t.Fatal(e)
 	}
 	owner, e := db.OpenWorkspaceStore(ctx, dsn)

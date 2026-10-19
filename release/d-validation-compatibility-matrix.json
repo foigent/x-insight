@@ -21,7 +21,7 @@
   "schema_contract": {
     "schema_version": "xinsight.schema-contract.v2",
     "semantic_sha256": "sha256:eaa41bd99d5db2cbc7ea86f1f63343302bb75f3bf420bc31feaee48874855a9f",
-    "migration_set_sha256": "sha256:5ab4e79041f9af002945658c90f30a58073cc28aff0a2a87cf68464e0e25eb4c"
+    "migration_set_sha256": "sha256:ab50cb3463ecbf97aabea2822b71d3168dc823891628b5411ab33197d4844c06"
   },
   "supported_upgrade_from_versions": [
     "0.2.0-dev.b2",

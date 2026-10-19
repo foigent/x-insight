@@ -142,6 +142,7 @@ columns={'connector_sync_controls':('last_checked_at','last_data_at','last_error
          'connector_sync_runs':('pages','attempts','state','results','observed_items')}
 expected_columns=[[table,column,'xinsight_importer','UPDATE',False]
                   for table,names in columns.items() for column in names]
+expected_columns.append(['connector_sync_controls','last_data_at','xinsight_workspace','UPDATE',False])
 assert sorted(privileges['columns'])==sorted(expected_columns)
 expected_functions=[[name,role,'EXECUTE',False]
                     for name in ('xinsight_sync_scope','xinsight_sync_receiver','xinsight_sync_units')

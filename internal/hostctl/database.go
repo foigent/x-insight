@@ -112,6 +112,9 @@ var importerUpdateColumnGrants = []tableColumnGrant{
 }
 
 var workspaceUpdateColumnGrants = []tableColumnGrant{
+	// Live custody commits share the importer permit and must lock its control
+	// row and record data time. This grants no sync preference or run authority.
+	{table: "connector_sync_controls", columns: []string{"last_data_at"}},
 	// Row locks for authenticated ingestion require PostgreSQL UPDATE privilege;
 	// ALWAYS triggers deny any workspace-role mutation of authority rows.
 	{table: "work_event_collections", columns: []string{"revision"}},

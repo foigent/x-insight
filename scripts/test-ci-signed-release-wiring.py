@@ -1059,7 +1059,8 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
         'owners': {t: 'xinsight_admin' for t in tables},
         'tables': [[t, r, 'SELECT', False] for t in tables for r in ('xinsight_reader', 'xinsight_workspace', 'xinsight_importer')]
                   + [['connector_sync_slots', 'xinsight_importer', 'INSERT', False]],
-        'columns': [[t, c, 'xinsight_importer', 'UPDATE', False] for t, names in columns.items() for c in names],
+        'columns': [[t, c, 'xinsight_importer', 'UPDATE', False] for t, names in columns.items() for c in names]
+                   + [['connector_sync_controls', 'last_data_at', 'xinsight_workspace', 'UPDATE', False]],
         'functions': [[n, r, 'EXECUTE', False] for n in ('xinsight_sync_scope', 'xinsight_sync_receiver', 'xinsight_sync_units')
                       for r in ('xinsight_workspace', 'xinsight_importer')],
     }
@@ -1121,6 +1122,7 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
         ('wrong table owner', lambda s: s['sync_privileges']['owners'].update(connector_sync_runs='other_owner')),
         ('PUBLIC table read', lambda s: s['sync_privileges']['tables'].append(['connector_sync_runs', 'PUBLIC', 'SELECT', False])),
         ('importer preference write', lambda s: s['sync_privileges']['columns'].append(['connector_sync_controls', 'auto_sync', 'xinsight_importer', 'UPDATE', False])),
+        ('workspace preference write', lambda s: s['sync_privileges']['columns'].append(['connector_sync_controls', 'auto_sync', 'xinsight_workspace', 'UPDATE', False])),
         ('missing required column grant', lambda s: s['sync_privileges']['columns'].pop()),
         ('PUBLIC trigger execute', lambda s: s['sync_privileges']['functions'].append(['xinsight_init_connector_sync', 'PUBLIC', 'EXECUTE', False])),
         ('delegable function', lambda s: s['sync_privileges']['functions'][0].__setitem__(3, True)),

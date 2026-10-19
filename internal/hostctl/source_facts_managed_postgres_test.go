@@ -526,6 +526,7 @@ func TestManagedPauseOrdersInFlightCommit(t *testing.T) {
 	wire, _ := json.Marshal(page)
 	cap, _ := json.Marshal(sourcefacts.Capabilities{SchemaVersion: "unirouter.source-capabilities.v1", SourceInstance: a.SourceInstance, Profiles: []string{a.Profile}, ProfileVersion: "1.0.0", Status: "active", CredentialStatus: "feed_active", ScopeGeneration: "1", RetentionSeconds: 604800, Bootstrap: "forward_only", FieldAuthorization: "fixed_profiles"})
 	r := &managedBlockingReader{cap: cap, page: wire, started: make(chan struct{}), release: make(chan struct{})}
+	testsourcefacts.BindSyncScope(t, admin, a.SourceInstance, a.OrgID, a.ProjectID, true)
 	done := make(chan error, 1)
 	go func() {
 		_, e := (sourcefacts.Consumer{Store: importer, Reader: r, ExpectedStream: &s}).PullOnce(ctx, id)
