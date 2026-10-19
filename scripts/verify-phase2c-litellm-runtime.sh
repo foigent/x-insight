@@ -20,9 +20,10 @@ migration_digest="$(
     sha256sum |
     awk '{print $1}'
 )"
-# Same reviewed FPV16/schema45 migration tree as the Reference runtime gate;
-# released migrations 1-44 and LiteLLM protocol bindings remain unchanged.
-if [[ "${migration_digest}" != "d233dc7e847ce6992179830c444716e4af9f4e19e2af9823f8f663f4b027bee9" ]]; then
+# Previous FPV16/schema45 baseline is preserved in Git history.
+# FPV20 uses the same explicitly reviewed additive46 tree as Reference;
+# released migrations1-45 and all LiteLLM protocol bindings stay unchanged.
+if [[ "${migration_digest}" != "b18e060bcba8793d22593d51073361cdabd9df95d81ab6c3b4310d9767b41b98" ]]; then
   fail "migration tree changed (${migration_digest})"
 fi
 

@@ -128,6 +128,14 @@ tree_contains() {
 # language parameter, its authenticated handler, and the localized HTML template.
 # Sealed JSON bytes/digests, authorization and all source identities are unchanged.
 # The API/render regressions verify English, Chinese, fallback and denied access.
+# FPV20/schema46 advances only the explicitly reviewed per-connection sync
+# surfaces: human OpenAPI/CLI, exact receiver-bound importer, request admission,
+# same-transaction evidence/Feed commit fences, and importer grant convergence.
+# Migrations 1-45 retain their original bytes; only additive migration46 joins
+# the protected tree. Checkpoint controls change only through the reviewed Feed
+# commit fence. Shared protocol pins, neutral mapping and M0 identity are kept.
+# The prior schema45 baseline remains in Git history (2c05fcb and b942691).
+# Runtime verification stays read-only; stale-baseline rejection is mandatory.
 protocol_workflow=".github/workflows/foigent-protocol-conformance.yml"
 expected_protocol_action='        uses: foigent/event-connector-spec/actions/source-neutral-v2@ad8fe7a38c9d7335657630baa8670dd07556b98c'
 if [[ "$(grep -F -x -c -- "${expected_protocol_action}" "${protocol_workflow}" || true)" -ne 1 ]]; then
@@ -151,11 +159,11 @@ while read -r expected path; do
     exit 1
   fi
 done <<'BASELINE'
-5ded68ef163872d94db83349a5c818ee4e93cee3e9715478f4d038022b421f47 api/openapi/prd2-v1.yaml
+08be48559d5bb205bb46a5907c5daca97dd8149721b6382f12b57892a831a3ef api/openapi/prd2-v1.yaml
 7147f90de8c5686f5575ee8ed313ed1425c7051b59143240d35a006421adb58d cmd/xinsight-launcher/main.go
 130e8a83c06513a40f3e2d256e9dd0b41aa504281861025d433489f9e85ac456 cmd/xinsight-server/main.go
-88bf7f65a159e173089364436f70d06fa022ec700913e57629719c65cfd8f019 cmd/xinsightctl/main.go
-7a7cc7e621bc3e24f104624038010475eb498226b32455fb27fceb641d77d661 cmd/xinsight-importer/main.go
+c2116471a9b9390b8812c913b88983c97427d6bf21f3c94c7c4549921b5f871f cmd/xinsightctl/main.go
+305afa264c01c6413889c5d78d519586057be42a08e3e50fdcddaf002c0338ee cmd/xinsight-importer/main.go
 192ae40d401262e625db1769d9d22d365f53a3a5255ab72d127b8f0ffc484173 deploy/xinsight.service
 7924a8b75f4f49a995227d51bfdee60b83bac43c64715e33165bb48f2492090e contracts/foigent/event-connector-protocol.pin.json
 c3f99a441beb813cf2c3f25091cc61309d095993bc347ccc5f9a921f47ed14a4 contracts/openinference/shared-protocol-compatibility.v1.json
@@ -180,7 +188,7 @@ b685f2a729b48cd29b77a5b0d7b006485377025cffa901116e7c7ce23efb48ff internal/db/age
 b232e80cbe68667b7ce18a2667b54654c320f88d71656018b49c31524b634f75 internal/db/analysis_extension_store.go
 79153b36b059fc4461a842f9d028c27f5bbc7fc3e359da4a7d5dc7eb20463110 internal/db/connector_trust_store.go
 34961627ef923eea45c57ce4832150cce7897e06dc5cd24b08ecf8d1e67dbd26 internal/db/discovery_store.go
-d9844cd9656a0236ef9343a35314627e3cfe2456a8a8a65a964ef92ece0a149c internal/db/evidence_store.go
+68213665ad1798bcb86b30305b41e2e7f6192b458cc84ecc970dba5b211bd162 internal/db/evidence_store.go
 d11dc416deb387a21491ea9dd86bbdeab739cfac739c3ae04a3d50575d314b68 internal/db/investigation_store.go
 c1050e58f6a5c90194769972777b05dcaa91f1b25509e514356193cdef13f94a internal/db/posture_store.go
 be634cdc1b59cca9a5d11f2726da88bd9a27e6d6f0b8a8768dee33fb02aa2e60 internal/db/trace_journey_store.go
@@ -188,7 +196,7 @@ be634cdc1b59cca9a5d11f2726da88bd9a27e6d6f0b8a8768dee33fb02aa2e60 internal/db/tra
 98a3c2e2aed842f872feb5987a28627bab40e8eb191e80dd3409eca56b88d2c9 internal/db/session_store.go
 09472adadf129404b511276fc4be281db48ea46e4248fe0cbb1265352e5259b7 internal/db/workspace_store.go
 a961198cf1d13c2d940520bbfdf657c6629a8ad88561141e25c75b473ab807e8 internal/discovery/engine.go
-16ed9fe9902e2bcade35bf476f0c6cd7698941495a5164a6a2c0319877b11955 internal/hostctl/database.go
+453f7b44c6164877073d5727085e75c337470c5511b7f2e452ed41f31a6c87d5 internal/hostctl/database.go
 fccad7130b2a155ff170accd20b16835fa9f820c9a1c0a36cbe5f3615491bb8c internal/hostctl/checkpoint_epoch.go
 f84f1e42a6afbb9afdda7690dffda7f7a3f06abd4bf3cd76efecca832499292d internal/investigation/compare.go
 6fc8ae27ad843f6baff188ff5fe62a2bd8f4fe6517ce667d56b3a41ef151b41d internal/investigation/model.go
@@ -200,8 +208,8 @@ f84f1e42a6afbb9afdda7690dffda7f7a3f06abd4bf3cd76efecca832499292d internal/invest
 f5fabc7a48add889e749e56678de9b8b636755596f9995ffa3a79f56c7f951a2 internal/integration/openinferenceoffline/operation_binding.go
 255da6e035e6788f821a572efc97861ab3d55a097d746da42e008e7508ebf216 internal/integration/openinferenceoffline/postgres_store.go
 2c419155ff946abbda336f00d2532b07c7f53f0451f5a9c2f310f8adf3841780 internal/integration/pullfeed/feed.go
-5c3df1c5b8fb156760d714c1e71860ae79417bfcc20d9d6ec63679ef226b08a4 internal/integration/pullfeed/http_source.go
-77e2e4ceb4194237ef5c4f8e39e356ee4ce9f778997ff6235f58fdeba74c8985 internal/integration/pullfeed/postgres_state.go
+cbb748e6ed06d00b0124f338f43d4469a89224da474119b7953b29c471a87311 internal/integration/pullfeed/http_source.go
+87c1d03458d54180f70f33e08b490978fbcef75e3ba6b0f8041473525c4ff8bf internal/integration/pullfeed/postgres_state.go
 3d4987c86c07b3820f6fb1018605ab5aec7c9517f143b507f9a36b537f8eaa8c internal/workspace/model.go
 d6b94fd94e744a3732f759f00e7c9fa7ac46d173ac71f11f59244945ce3028a8 internal/workspace/pack.go
 ea4443e9f641b94d9bb61dafb99766d47a8c72aef964071012bd89898ca2bae0 internal/workspace/service_identity.go
@@ -221,7 +229,7 @@ migration_digest="$(
     sha256sum |
     awk '{print $1}'
 )"
-if [[ "${migration_digest}" != "d233dc7e847ce6992179830c444716e4af9f4e19e2af9823f8f663f4b027bee9" ]]; then
+if [[ "${migration_digest}" != "b18e060bcba8793d22593d51073361cdabd9df95d81ab6c3b4310d9767b41b98" ]]; then
   echo "Phase 2C runtime gate: migration tree changed (${migration_digest})" >&2
   exit 1
 fi
@@ -251,7 +259,7 @@ epoch_control_digest="$(
     sha256sum |
     awk '{print $1}'
 )"
-if [[ "${epoch_control_digest}" != "684d597cf4e8ada5a1176fa325071b99e95a0e47bf0811cd18b55b144026c6ea" ]]; then
+if [[ "${epoch_control_digest}" != "e29f4803d43f2cd51e8827052f9473d05c4e579f4c1052d5890753a40028eea2" ]]; then
   echo "Phase 2C runtime gate: checkpoint epoch control tree changed (${epoch_control_digest})" >&2
   exit 1
 fi
