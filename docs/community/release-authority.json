@@ -1,9 +1,10 @@
 {
   "record_kind": "Foigent X-Insight release public-key authority",
-  "state": "owner-approved preparation; formal artifact not yet produced or published",
+  "state": "Owner-signed FPV20 candidate produced and locally verified; public distribution and native-host qualification require their actual accepted records",
   "product": "x-insight",
   "release_version_scope": [
-    "0.2.0-dev.fpv19"
+    "0.2.0-dev.fpv19",
+    "0.2.0-dev.fpv20"
   ],
   "release_channel": "release_candidate",
   "algorithm": "ed25519",
@@ -15,7 +16,7 @@
   "not_before": "2026-10-18T10:42:42.832Z",
   "not_after": "2026-11-17T10:42:42.832Z",
   "time_policy": "The unchanged verifier compares the signed manifest.created_at (real source commit timestamp), not current wall-clock expiry. No original UR key birthday, activation date or lifetime is asserted.",
-  "new_XI_private_representation": "A future owner-only XI JSON representation records its actual creation time; this is not a backfilled original-material creation date. No private material is published.",
+  "new_XI_private_representation": "The owner-only FPV20 representation was created during the actual 2026-10-21 offline ceremony. No private material is published and no original-material birthday is asserted.",
   "authority_channel": {
     "repository": "https://github.com/foigent/x-insight",
     "record_path": "docs/community/release-authority.json",
@@ -24,12 +25,25 @@
     "administrative_boundary": "Authority source and Release may share the same owner GitHub account. This model trusts that canonical owner identity; it does not assert an independent administrative domain or resistance to full owner-account compromise."
   },
   "public_trust_store": "docs/community/trusted-release-keys.json",
-  "public_trust_store_sha256": "sha256:4dfc8c7ac756119f8f1c18d20a100a079b1dd0e600a92476e2821c76e7c86444",
+  "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
   "formal_release": {
-    "source_commit": null,
-    "bundle_sha256": null,
-    "bootstrap_sha256": null,
-    "qualification_status": "not produced or qualified; exact hashes follow real production and independent review"
+    "product_version": "0.2.0-dev.fpv20",
+    "release_channel": "release_candidate",
+    "source_commit": "08435e0949dfae0ae65497d2e12ca356f6d820f0",
+    "source_tree": "bd463c9100cf5d6915c7bcbaf4d03e0e499de5c3",
+    "canonical_release_tag": "v0.2.0-dev.fpv20",
+    "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20",
+    "bundle_name": "xinsight-v0.2.0-dev.fpv20-linux-amd64-08435e0949dfae0ae65497d2e12ca356f6d820f0.tar.gz",
+    "bundle_bytes": 38360416,
+    "bundle_sha256": "sha256:8bef119b796dac52eadc267717e3ec20ee112c0cf9a33dfd9f05b2129580685f",
+    "manifest_sha256": "sha256:566ad0de1dc116380373f0ef1f611fd474d5ab14bbc0ee2b1ebf410aad0d6277",
+    "payload_sha256": "sha256:1be5566c015284f39a33fa794debb48d2048a785965155bcff0242a856b589bb",
+    "bootstrap_name": "xinsight-release-linux-amd64-08435e0949dfae0ae65497d2e12ca356f6d820f0",
+    "bootstrap_bytes": 11195447,
+    "bootstrap_sha256": "sha256:e928b71ad83c5c83f2d83c37cbe7def1273197d0858ec874102e941ccc9bb5cb",
+    "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
+    "qualification_status": "Owner-signed candidate passed local native macOS verification. Public candidate download may precede Linux qualification; Linux artifact and ordinary installation acceptance are still pending. Do not install before exact Linux qualification and independent acceptance.",
+    "installation_erratum": "docs/community/releases/v0.2.0-dev.fpv20.md"
   },
   "revocation": "Owner-authenticated status changes are recorded here and in the public trust store. No revocation is asserted in this preparation."
 }

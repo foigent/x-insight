@@ -3,9 +3,11 @@
 The current source candidate is `0.2.0-dev.fpv20`, schema 46, manual
 `0.2.0-dev.fpv20/manual-r1`, with release channel `release_candidate`.
 This page describes the existing supported path for an approved distribution.
-No formal public artifact, signing authority or download location has been
-established for this candidate. Publishing a candidate would retain this
-version and channel; it would not make it a stable or Production release.
+The owner-signed FPV20 candidate has been produced and locally verified.
+Its exact public assets and installation erratum are recorded in
+[the FPV20 candidate record](releases/v0.2.0-dev.fpv20.md). Public availability and
+native-host qualification are separate accepted steps; this record does not
+claim a stable or Production release.
 
 ## Release operator: select authority and qualify the exact source
 
@@ -14,7 +16,7 @@ Use the general [builder](../../scripts/build-signed-release.sh) with
 and [compatibility matrix](../../release/d-validation-compatibility-matrix.json).
 Keep the exact clean release commit and successful applicable CI/native
 acceptance records. Source preparation alone does not qualify an installer.
-The configured 16 upgrade sources are declarations; record actual accepted
+The configured 17 upgrade sources are declarations; record actual accepted
 predecessor scenarios separately. The rc13 profile retains its historical contract.
 
 Before signing, the release owner must select the approved signing authority,
@@ -154,7 +156,7 @@ dedicated loopback PostgreSQL 16 database. The distributed Compose profile uses
 a pinned PostgreSQL container; it does not replace native systemd application
 installation. The matrix separates runtime prerequisites from the previously
 documented Ubuntu 24.04/native-PG validation environment. Code acceptance is
-not a passing artifact or Target result; exact FPV19 qualification on Ubuntu
+not a passing artifact or Target result; exact FPV20 qualification on Ubuntu
 22.04/container PostgreSQL remains pending.
 
 Use an empty database and unused XI application paths/unit names for a fresh
@@ -206,4 +208,12 @@ a formal UR/XI release pair or a substitute for this consumer walkthrough.
 
 ## FPV20 preparation boundary
 
-FPV20 changes source and schema identity. The retained public owner authority record and FPV19 signing inputs remain bound to their approved scope. A new FPV20 signing/qualification record must be reviewed before producing a formal signed artifact; the local communication-control change is not such a record. See the connection synchronization manual for manual defaults and independent local restore controls.
+FPV20 changes source and schema identity. The historical FPV19 preparation and signing inputs keep their original scope. The actual owner-signed FPV20 main084 candidate has since been produced and locally verified; its exact public identity is recorded below. This does not itself authorize public publication or establish native-host qualification. See the connection synchronization manual for manual defaults and independent local restore controls.
+
+## Exact FPV20 candidate and installation erratum
+
+The FPV20 owner-signed identity and corrected verification/extraction examples
+are in [the FPV20 candidate record](releases/v0.2.0-dev.fpv20.md). The historical
+FPV19 preparation scope remains historical; its approval is not rewritten as a
+new FPV20 publication decision. Pin the real later authority-record commit
+separately from the immutable source08435e09 candidate.
