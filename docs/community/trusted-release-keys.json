@@ -8,7 +8,7 @@
       "status": "active",
       "not_before": "2026-10-18T10:42:42.832Z",
       "not_after": "2026-11-17T10:42:42.832Z",
-      "description": "Foigent X-Insight 0.2.0-dev.fpv19 release verification using the owner-approved existing UR Ed25519 material; validity compares the signed source timestamp."
+      "description": "Foigent X-Insight 0.2.0-dev.fpv20 main 08435e0949dfae0ae65497d2e12ca356f6d820f0; reuse owner-approved existing UR Ed25519 public trust and unchanged validity window."
     }
   ]
 }
