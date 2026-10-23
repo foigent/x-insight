@@ -6,7 +6,7 @@ Start with a concrete problem, a reproducible example, or a proposed user outcom
 
 ## Working on a change
 
-1. Read the [getting-started guide](docs/community/getting-started.md) and relevant paths in the [contribution map](docs/community/contribution-map.md).
+1. Read the [development and qualification guide](docs/community/development.md) and relevant paths in the [contribution map](docs/community/contribution-map.md). Package users should start with the separate [installation walkthrough](docs/community/getting-started.md).
 2. Work on a focused branch. Preserve unrelated changes and use synthetic, minimized fixtures. Never include tokens, account exports, raw customer content, private target addresses, or local operations records.
 3. Run checks appropriate to the affected paths. Backend, schema, authorization, and installer changes require real database or installed-host evidence where applicable; a skipped test is not a pass. Frontend changes require type checking, coverage, a build, and the relevant browser scenarios.
 4. Describe the problem, resulting behavior, validation, compatibility impact, and remaining limits. Do not present local validation as CI, Target, external integration, or production acceptance.
