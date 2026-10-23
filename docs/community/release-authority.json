@@ -1,6 +1,6 @@
 {
   "record_kind": "Foigent X-Insight release public-key authority",
-  "state": "Owner-signed FPV20 candidate produced and locally verified; public distribution and native-host qualification require their actual accepted records",
+  "state": "As of 2026-10-23: source is public and the exact owner-signed FPV20 preview is published; Linux qualification, one existing-host empty-database installation and normal owner HTTPS access are accepted. Ordinary installed UR-to-XI first-fact acceptance remains pending. This status update does not alter the release key, signed package or original authority commit.",
   "product": "x-insight",
   "release_version_scope": [
     "0.2.0-dev.fpv19",
@@ -42,7 +42,7 @@
     "bootstrap_bytes": 11195447,
     "bootstrap_sha256": "sha256:e928b71ad83c5c83f2d83c37cbe7def1273197d0858ec874102e941ccc9bb5cb",
     "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
-    "qualification_status": "Owner-signed candidate passed local native macOS verification. Public candidate download may precede Linux qualification; Linux artifact and ordinary installation acceptance are still pending. Do not install before exact Linux qualification and independent acceptance.",
+    "qualification_status": "As of 2026-10-23, exact source 08435e0949dfae0ae65497d2e12ca356f6d820f0 passed Linux artifact qualification and one ordinary empty-database install on an existing Ubuntu 22.04 amd64 host with pinned container PostgreSQL 16, followed by normal owner HTTPS access. Other topologies, the ordinary installed UR-to-XI pair, stable release and Production acceptance are not established by this result. See docs/community/release-readiness.md.",
     "installation_erratum": "docs/community/releases/v0.2.0-dev.fpv20.md"
   },
   "revocation": "Owner-authenticated status changes are recorded here and in the public trust store. No revocation is asserted in this preparation."

@@ -10,9 +10,9 @@ Use X-Insight independently for supported imports, reported work activity, inves
 
 ## Status and support
 
-The current source candidate is **0.2.0-dev.fpv19, schema 45**. The complete product source is offered under Apache-2.0, including access control, investigation, workbench, connectors, and managed installation code. There is no separate paid feature tree. Authentication, source/project grants, trusted release verification, and tenant boundaries remain enforced.
+The source is public under **Apache-2.0**. The published preview is **0.2.0-dev.fpv20, schema 46**: [download the seven release attachments](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20) and follow the [installation guide](docs/community/getting-started.md). The complete product source includes access control, investigation, workbench, connectors, and managed installation code. There is no separate paid feature tree. Authentication, source/project grants, trusted release verification, and tenant boundaries remain enforced.
 
-This is a development candidate for a **single deployment tenant**. The current managed validation profile specifies an isolated Ubuntu 24.04 amd64 host with systemd and a dedicated native PostgreSQL 16 database. The repository also retains historical Ubuntu 22.04 qualification lanes and the frozen rc13 release profile; those are not interchangeable deployment promises. There is no public stable download or unattended community installer to claim here. Local checks, CI, signed artifacts, installed-host qualification, external integration, and production acceptance are separate evidence levels. See [release readiness](docs/community/release-readiness.md).
+This is a development preview for a **single deployment tenant**, not a stable or Production release. As of 2026-10-23, the exact signed FPV20 package has passed Linux qualification, an empty-database installation on one existing Ubuntu 22.04 amd64 host with pinned container PostgreSQL 16, and normal owner HTTPS access. The ordinary installed UR→XI connection and first-fact acceptance remain pending. The CLI accepts Ubuntu 22.04/24.04 amd64; one accepted host does not qualify every topology. See the [status matrix](docs/community/release-readiness.md) for the separate source, artifact, host, and integration results.
 
 The UI defaults to English, with a persistent Simplified Chinese selector. The same-version offline manual is embedded at `/manual/en-US/` and `/manual/zh-CN/`. API codes, source identities, raw evidence, currency, and saved reading scope do not change with the UI language.
 
@@ -28,18 +28,19 @@ The UI defaults to English, with a persistent Simplified Chinese selector. The s
 
 ## Start here
 
-1. [Build, test, and open a local workspace](docs/community/getting-started.md). Start with synthetic fixtures; no paid model account is required for offline checks.
-2. [Read the current product manual](docs/manual/en-US/index.md) for sign-in, first source connection, reading, content, review, installation, and recovery.
-3. [Understand data handling](docs/community/data-handling.md) before connecting real sources or enabling content capture.
-4. [Connect UniRouter and check the tested pairing](docs/community/getting-started.md#connect-unirouter-and-verify-the-pair). Follow UniRouter's [source and installation entry](https://github.com/foigent/unirouter/blob/main/docs/community/getting-started.md) and each product's actual release status; two independent test passes are not a joint acceptance result.
+**Install → choose your own password → sign in → connect UniRouter → confirm access and the first fact.**
 
-Pinned build tools: **Go 1.25.12, Node.js 22.23.1, npm 10.9.8**, Python 3, and PostgreSQL 16 for database tests. Browser tests use the Playwright version pinned in the frontend lockfile. Do not substitute a floating toolchain for a release build.
+1. Use the [packaged-preview walkthrough](docs/community/getting-started.md). It explains the verified download, host preparation, and hidden password entry required before installation can complete. A package user does not need Go, Node.js, or a source build.
+2. Follow [normal UniRouter connection and first-fact checks](docs/community/getting-started.md#connect-unirouter-and-verify-the-pair). Each administrator confirms their own installation and grants; connection management does not grant every reader access.
+3. Keep the [release-matched manual](docs/manual/en-US/index.md), [FPV20 installation erratum](docs/community/releases/v0.2.0-dev.fpv20.md#fpv20-installation-erratum--fpv20-安装勘误), and [data-handling boundaries](docs/community/data-handling.md) alongside that walkthrough.
+
+For source builds, synthetic fixtures, database/browser tests, and historical pairing recipes, use the separate [development guide](docs/community/development.md). Its pinned build tools and qualification fixtures are contributor prerequisites, not extra customer installation steps.
 
 ## How it fits together
 
 UniRouter is responsible for execution, admission, routing, and economic facts. X-Insight is an asynchronous evidence and workspace consumer. A gateway call does not synchronously depend on an XI screen or human assessment.
 
-The Go service embeds the React UI and offline manual. Importers and source workers validate and persist source facts; the read service uses constrained database roles. Workspace writes and administrator operations have separate privileges. See the [architecture map](docs/community/architecture.md) and [source contracts](contracts/).
+The Go service embeds the React UI and offline manual. Importers and source workers validate and persist source facts; the read service uses constrained database roles. Workspace writes and administrator operations have separate privileges. See the [architecture map](docs/community/architecture.md) and [source contracts](contracts/). Shared protocol contracts and retained compatibility sources support the actual adapters, release checks, upgrade tests, and license provenance; they are not additional products to install. Historical design and validation records remain secondary references.
 
 ## Contribute
 

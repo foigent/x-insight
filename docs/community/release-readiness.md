@@ -1,8 +1,34 @@
-# Release readiness
+# Public release and acceptance status
 
-The source candidate is `0.2.0-dev.fpv20` with database schema 46. This page states acceptance boundaries; it is not a release announcement or a signed deployment receipt.
+As of **2026-10-23**, X-Insight source is public under Apache-2.0 and the **0.2.0-dev.fpv20 / schema 46** preview is published. This is a development release candidate, not stable or Production acceptance.
 
-The [Foigent](https://github.com/foigent) product path leads through each repository's README, supported startup/installation guide, connection instructions, and contribution/security entry. The [UniRouter pairing record](getting-started.md#connect-unirouter-and-verify-the-pair) names the exact locally tested revisions, unchanged CI pins, comparison with the observed public UniRouter source, and the still-missing complete same-execution reproduction. UniRouter's source or installer preparation does not establish X-Insight's signing or joint installed acceptance. X-Insight's canonical source was independently reviewed and first published at [`b7ecfc24b2b2fbe7f2401a86a0b793b47ed7ca15`](https://github.com/foigent/x-insight/commit/b7ecfc24b2b2fbe7f2401a86a0b793b47ed7ca15).
+Start with [install → choose your password → sign in → connect UR → confirm access and the first fact](getting-started.md). Source-building and historical qualification recipes are a separate [contributor entry](development.md).
+
+| Surface | Verified state | Boundary |
+| --- | --- | --- |
+| Public source | Canonical `foigent/x-insight` is public; Apache-2.0 covers project-owned product source | Dependency licenses, authentication, grants and tenant boundaries still apply |
+| Published preview | [FPV20 release](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20), seven public attachments, source `08435e0949dfae0ae65497d2e12ca356f6d820f0` | Prerelease; no stable or unattended-install claim |
+| Exact artifact | Owner signature and Linux artifact qualification accepted | Temporary CI signatures are separate; the published signed bytes remain unchanged |
+| Specific existing host | Ordinary empty-database FPV20 install on Ubuntu 22.04 amd64 with pinned container PG16; HTTPS, owner current session and protected integration reads accepted | One selected host/topology, not every supported host or Production; private host receipts are retained separately |
+| Ordinary installed UR→XI | Still pending: current source/project/model setup, administrator consent, connection, matching first fact and ordinary-user scope checks | Two installations, administrator login, an empty list or a component fixture do not complete this row |
+| Stable / Production | Not claimed | Requires separate release and operational acceptance |
+
+The exact package, bootstrap, public trust, hashes and installation correction are in the [FPV20 record](releases/v0.2.0-dev.fpv20.md). The original publication pin is [authority commit `aacc40ef50ffa60f31ea924b17c257526f316ddd`](https://github.com/foigent/x-insight/blob/aacc40ef50ffa60f31ea924b17c257526f316ddd/docs/community/release-authority.json). Later documentation status corrections do not replace that pin or re-sign the package. The original release attachments record the publication-day qualification boundary; use this dated status for the later accepted host result.
+
+## What is required for the remaining connection
+
+Use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair). Prepare current sessions and UR's customer/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field grants, then verify one matching completed request in XI through an ordinary authorized user. Keep missing facts and denied scopes explicit. Current protocol pins and historical P3 results remain qualification evidence, not a substitute for this ordinary installed pair.
+
+## Why the repository retains technical material
+
+- Product source, migrations, deployment templates, access controls and same-version manuals implement the runnable product.
+- Shared contracts and pinned public dependencies support the actual adapters and CI compatibility checks. Users do not install Integration Control or protocol repositories as additional products.
+- [Compatibility sources](../../compatibility/README.md), manifests, license texts and notices are needed for predecessor/recovery reproduction and attribution. They are not first-install prerequisites.
+- Historical planning, reviews and qualification records explain earlier decisions and exact results. Their dated pending statements are historical; this page gives the current delivery status.
+
+No evidence, compatibility input or required public dependency is removed by this entry-point correction.
+
+## Retained publication and build evidence
 
 The public candidate excludes 25 raw advisor/reference files whose originals and digests are retained privately. Historical synthesis and reference indexes identify that limitation instead of linking to unavailable source copies. The separately retained original history remains private. The initial canonical refs and retained GitHub surfaces were reviewed for publication, and three identified old mixed binary artifacts were removed remotely with complete private originals preserved. Those publication/disposition actions are complete; future source or retained-surface changes still need their applicable review.
 
@@ -17,23 +43,12 @@ and build checks (579 unit tests), and the four-project synthetic browser suite
 bytes and all source/lock files remained unchanged. The source archive has no
 Git history, the command binaries are not formal release packages, and this
 local result does not replace hosted fork-event, PostgreSQL, ordinary installed
-Linux or installed UR/XI evidence. See the [cold-build scope](getting-started.md).
+Linux or installed UR/XI evidence. See the [cold-build scope](development.md).
 
-| Surface | Required evidence before claiming completion |
-| --- | --- |
-| Source and licenses | Complete product source, authoritative LICENSE, actual redistributed dependency notices, provenance clearance for retained references |
-| Local | Pinned type/unit/coverage/build checks, relevant PostgreSQL and ordinary-user browser paths, unchanged negative authorization behavior |
-| CI | A successful exact-commit run, including required current-release lanes for release-relevant PRs; fork behavior must be observed on GitHub |
-| Artifact | Exact clean commit, version/schema/manual agreement, complete notices, verified payload and signature under an approved authority |
-| Installed host | Supported OS/topology, first install and accepted predecessor checks, non-mutating preflight, journal recovery and ordinary read chain |
-| External integration | Exact source revision, authorized synthetic rejection/retry/cost path, matching request identity and source evidence read by an ordinary XI user |
-| Public visibility | Review all reachable heads/tags, retained logs/artifacts and collaboration surfaces; resolve disclosure and rights findings before changing visibility |
-| Production | Separately approved operational and security acceptance; none of the rows above alone establishes it |
+## Maintainer boundaries
 
-Public dependency access uses exact pinned public repositories with read-only job credentials; ordinary PR validation must not require a maintainer GitHub App secret. A release-relevant fork PR must run the same current signed-artifact and fresh-install gates. Documentation-only changes keep the existing narrow route. Negative tests reject missing, skipped, canceled, and failed required lanes. `Backend Tests` remains the protected aggregate check; hosted protection settings are not changed by source files.
+Public dependency access uses exact pinned public repositories with read-only job credentials. Release-relevant PRs retain current signed-artifact/fresh-install gates and negative authorization checks. Documentation routing is determined by the existing CI classifier; this document does not change it. `Backend Tests` remains the protected aggregate check.
 
-The [signed-distribution guide](signed-distribution.md) reuses the general current-profile builder, independent bootstrap/trust and existing verify/extract/install commands. Its authority, official assets/channel, installed UR pair and acceptance remain pending; the current `release_candidate` channel and version stay unchanged.
+The [signed-distribution guide](signed-distribution.md) separates consumption of the existing preview from preparation of a future release. The current public authority, assets and the accepted specific-host result are no longer pending choices. Future signing, publication, visibility, settings, credential or artifact-disposition changes still require their applicable authorization. The frozen rc13 and historical release identities keep their original scope.
 
-The manual workflow for an owner-supervised delivery has a separate authorization and trust boundary. CI ephemeral signatures do not authorize public distribution or customer self-upgrade. The historical rc13 profile and prior immutable release identities remain historical; use `--profile=development-d` for this candidate.
-
-Public visibility, publishing releases, deleting artifacts, rewriting history, credential rotation, and changes to repository settings require their own approval. Finding a disclosure issue does not authorize deleting its evidence. Private audit details should stay outside the public repository.
+Private build paths, credentials, raw customer content and internal operations evidence do not belong in the public repository.
