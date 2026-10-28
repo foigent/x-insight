@@ -12,7 +12,7 @@ X-Insight 可独立用于受支持的数据导入、工作活动报告、调查�
 
 源码已按 **Apache-2.0 公开**。已发布预览版为 **0.2.0-dev.fpv20，schema 46**：[七份发布附件](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20)与[安装入口](docs/community/getting-started.md)。完整产品源码包括访问控制、调查、工作台、连接器与受管安装代码，没有另一个付费功能树。认证、来源/项目授权、发布信任与租户边界继续强制执行。
 
-当前为**单部署租户**的开发预览版，不是稳定版或 Production 发布。截至 2026-10-23，精确 FPV20 签名包已通过 Linux 制品资格、在一台既有 Ubuntu 22.04 amd64／固定容器 PostgreSQL 16 主机上的空库普通首装，以及 owner 正常 HTTPS 访问。普通已安装 UR→XI 配对和首条事实验收仍待完成。CLI 接受 Ubuntu 22.04／24.04 amd64，但一台主机通过不代表所有拓扑都已验收。源码、制品、主机和集成分别记录在[状态矩阵](docs/community/release-readiness.md)。
+当前为**单部署租户**的开发预览版，不是稳定版或 Production 发布。截至 2026-10-23，精确 FPV20 签名包已通过 Linux 制品资格、在一台既有 Ubuntu 22.04 amd64／固定容器 PostgreSQL 16 主机上的空库普通首装，以及 owner 正常 HTTPS 访问。2026-10-27 已验收既有安装的 UR→XI 连接、来源登记及八类流的空页同步；首条真实事实与普通用户权限范围验收仍待完成。CLI 接受 Ubuntu 22.04／24.04 amd64，但一台主机通过不代表所有拓扑都已验收。源码、制品、主机和集成分别记录在[状态矩阵](docs/community/release-readiness.md)。
 
 UI 默认英文，可以切换并保存简体中文偏好。同版离线手册位于 `/manual/en-US/` 与 `/manual/zh-CN/`。切换语言不改变 API 代码、来源身份、原始证据、币种或已保存阅读范围。
 
