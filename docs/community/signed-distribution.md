@@ -1,6 +1,6 @@
 # Signed preview: verify and install
 
-The [FPV20 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20) is published with seven attachments: version `0.2.0-dev.fpv20`, schema 46, manual `0.2.0-dev.fpv20/manual-r1`, channel `release_candidate`. Linux qualification, one existing-host empty-database installation and normal owner HTTPS access have been accepted. The ordinary installed UR→XI pair remains pending; stable and Production acceptance are not claimed.
+The [FPV20 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20) is published with seven attachments: version `0.2.0-dev.fpv20`, schema 46, manual `0.2.0-dev.fpv20/manual-r1`, channel `release_candidate`. Linux qualification, one existing-host empty-database installation and normal owner HTTPS access have been accepted. As of 2026-10-27, the installed UR→XI connection, scoped source registration and eight-profile empty synchronization are accepted. First-real-fact and ordinary-reader scope acceptance remain pending; stable and Production acceptance are not claimed.
 
 Package users start with the [five-step installation route](getting-started.md) and [exact FPV20 record/erratum](releases/v0.2.0-dev.fpv20.md). They do not build the source, select a new signing authority, create a release key or run historical qualification fixtures. This page keeps the existing low-level commands and separate maintainer procedure.
 
@@ -69,7 +69,7 @@ Use UniRouter's own [installation entry](https://github.com/foigent/unirouter/bl
 
 Follow the [normal administrator and first-fact route](getting-started.md#connect-unirouter-and-verify-the-pair), [first-source manual](../manual/en-US/index.md#connect-the-first-source) and [ordinary-reader grants](../manual/en-US/index.md#grant-ordinary-users-the-right-scope). Prepare current administrator sessions and UR source/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field scope; keep Auto off for the initial explicit bounded synchronization.
 
-For one authorized completed request, retain matching source/request identity and the applicable usage/currency/cost basis. Have an ordinary authorized XI user find those exact facts; check foreign-scope denial and revocation within the acceptance scope. Configuration or an empty list does not satisfy this result. The current ordinary installed pair remains pending, independently of hosted component qualification.
+For one authorized completed request, retain matching source/request identity and the applicable usage/currency/cost basis. Have an ordinary authorized XI user find those exact facts; check foreign-scope denial and revocation within the acceptance scope. Configuration or an empty list does not satisfy this result. Connection/runtime/enrollment and eight-profile empty synchronization were accepted on 2026-10-27. The first-real-fact and ordinary-reader results above remain pending, independently of hosted component qualification.
 
 ## Maintainers: preparing a future release
 

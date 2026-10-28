@@ -1,6 +1,6 @@
 # Public release and acceptance status
 
-As of **2026-10-23**, X-Insight source is public under Apache-2.0 and the **0.2.0-dev.fpv20 / schema 46** preview is published. This is a development release candidate, not stable or Production acceptance.
+As of **2026-10-28**, X-Insight source is public under Apache-2.0 and the **0.2.0-dev.fpv20 / schema 46** preview is published. This is a development release candidate, not stable or Production acceptance.
 
 Start with [install → choose your password → sign in → connect UR → confirm access and the first fact](getting-started.md). Source-building and historical qualification recipes are a separate [contributor entry](development.md).
 
@@ -10,14 +10,15 @@ Start with [install → choose your password → sign in → connect UR → conf
 | Published preview | [FPV20 release](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20), seven public attachments, source `08435e0949dfae0ae65497d2e12ca356f6d820f0` | Prerelease; no stable or unattended-install claim |
 | Exact artifact | Owner signature and Linux artifact qualification accepted | Temporary CI signatures are separate; the published signed bytes remain unchanged |
 | Specific existing host | Ordinary empty-database FPV20 install on Ubuntu 22.04 amd64 with pinned container PG16; HTTPS, owner current session and protected integration reads accepted | One selected host/topology, not every supported host or Production; private host receipts are retained separately |
-| Ordinary installed UR→XI | Still pending: current source/project/model setup, administrator consent, connection, matching first fact and ordinary-user scope checks | Two installations, administrator login, an empty list or a component fixture do not complete this row |
+| Ordinary installed UR→XI connection | Accepted on 2026-10-27: connection, scoped source registration and eight active source-fact profiles; bounded empty sync completed with all units done | Empty synchronization imported no facts; connection acceptance does not establish first-fact or ordinary-reader acceptance |
+| First real fact and ordinary-reader access | Pending: a matching real completed source request and its authorized XI reading, including the applicable scope checks | Empty pages, checkpoint commits and an active connection do not complete this row |
 | Stable / Production | Not claimed | Requires separate release and operational acceptance |
 
 The exact package, bootstrap, public trust, hashes and installation correction are in the [FPV20 record](releases/v0.2.0-dev.fpv20.md). The original publication pin is [authority commit `aacc40ef50ffa60f31ea924b17c257526f316ddd`](https://github.com/foigent/x-insight/blob/aacc40ef50ffa60f31ea924b17c257526f316ddd/docs/community/release-authority.json). Later documentation status corrections do not replace that pin or re-sign the package. The original release attachments record the publication-day qualification boundary; use this dated status for the later accepted host result.
 
-## What is required for the remaining connection
+## What remains after connection acceptance
 
-Use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair). Prepare current sessions and UR's customer/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field grants, then verify one matching completed request in XI through an ordinary authorized user. Keep missing facts and denied scopes explicit. Current protocol pins and historical P3 results remain qualification evidence, not a substitute for this ordinary installed pair.
+For a new connection, use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair) with current sessions and the intended source/project configuration. Preserve an existing accepted connection rather than creating another invitation to obtain data. The remaining acceptance requires one authorized real completed source request, matching facts in XI, and an ordinary user with the exact reading scope. Keep missing facts and denied scopes explicit. Current protocol pins and historical P3 results remain qualification evidence, not a substitute for these remaining installed-pair checks.
 
 ## Why the repository retains technical material
 

@@ -8,7 +8,7 @@ Use the published package for this route. A package user does not need Go, Node.
 
 ## Available preview
 
-The source is public under Apache-2.0. [FPV20 has seven public release attachments](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20). The exact source `08435e09` package has passed Linux qualification, an empty-database install on one existing Ubuntu 22.04 amd64 host with pinned container PostgreSQL 16, and normal owner HTTPS access. It is a development preview. The ordinary installed UR→XI connection and first-fact acceptance remain pending; separate installations do not establish that pair.
+The source is public under Apache-2.0. [FPV20 has seven public release attachments](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20). The exact source `08435e09` package has passed Linux qualification, an empty-database install on one existing Ubuntu 22.04 amd64 host with pinned container PostgreSQL 16, and normal owner HTTPS access. It is a development preview. The installed UR→XI connection, source registration and eight-profile empty synchronization were accepted on 2026-10-27. First-real-fact and ordinary-reader scope acceptance remain pending. An empty sync does not establish first-fact acceptance.
 
 ## 1. Prepare the packaged installation
 
@@ -46,7 +46,7 @@ Keep Auto off for the initial explicit, bounded Connect/Sync once. Configuration
 
 Use one authorized, non-sensitive completed UR request. An ordinary XI user with the exact source/project grants must find the same source/request identity and supported outcome, usage and cost evidence. Missing facts remain unknown; an empty list is not successful first-fact acceptance. Verify foreign-scope denial and revocation where the acceptance scope requires them. Connection administration does not grant every reader access; capture permission does not authorize body reading.
 
-The current installed pair has not completed these checks. See [current status](release-readiness.md), [first-source setup](../manual/en-US/index.md#connect-the-first-source), [ordinary-user grants](../manual/en-US/index.md#grant-ordinary-users-the-right-scope), and [data handling](data-handling.md). Historical component/CI fixtures are separate evidence.
+The existing installed connection passed connection, source-registration and eight-profile empty-sync checks on 2026-10-27. Its first-real-fact and ordinary-reader checks above remain pending; do not create another invitation merely because the empty sync imported no items. See [current status](release-readiness.md), [first-source setup](../manual/en-US/index.md#connect-the-first-source), [ordinary-user grants](../manual/en-US/index.md#grant-ordinary-users-the-right-scope), and [data handling](data-handling.md). Historical component/CI fixtures are separate evidence.
 
 ## Developer and historical references
 
