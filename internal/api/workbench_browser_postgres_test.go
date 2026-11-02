@@ -2757,10 +2757,25 @@ func (f *p3BrowserFixture) setupFormalAccounts(t *testing.T, admin, importer, wo
 	}
 	p3Check(t, json.Unmarshal(f.formalCLI(t, "access", "validate", "--file", accountPath), &validation) == nil && validation.Schema == access.AccountConfigSchemaV3 && validation.Count == 2 && validation.Reviewer == 1 && validation.Reader == 1 && validation.Disabled == 0, "formal CLI role counts")
 	p3Check(t, before == p3FormalFiles(t, a.root), "access validate has no filesystem writes")
-	t.Setenv("CREDENTIALS_DIRECTORY", filepath.Dir(accountPath))
-	provider, err := access.LoadLocalProvider(access.DiscardAuditor{})
-	p3Check(t, err == nil, "production account file loader")
-	p3JSON(t, filepath.Join(f.output, "formal-accounts.json"), map[string]any{"run": filepath.Base(f.runDir), "ctl_sha256": os.Getenv("P3_XI_CTL_SHA256"), "account_count": 2, "reviewer_count": 1, "reader_count": 1, "validated_without_writes": true, "prepared_by_owner": true, "boundary": "CLI and production loader/handler; not installed service restart"})
+	provider := prepareFormalAccountAuthority(t, admin, workspace, a.config)
+	p3JSON(t, filepath.Join(f.output, "formal-accounts.json"), map[string]any{"run": filepath.Base(f.runDir), "ctl_sha256": os.Getenv("P3_XI_CTL_SHA256"), "account_count": 2, "reviewer_count": 1, "reader_count": 1, "validated_without_writes": true, "prepared_by_owner": true, "native_durable_account_import": true, "boundary": "CLI validation, native DB account initialization and production durable provider/handler; not installed service restart"})
+	return provider
+}
+
+// The fixture uses the same native one-time import as install/upgrade before
+// issuing any grant. Its running provider reads only the workspace DB authority.
+func prepareFormalAccountAuthority(t *testing.T, admin, workspace string, config access.AccountConfig) *access.DurableProvider {
+	t.Helper()
+	raw, err := json.Marshal(config)
+	p3Check(t, err == nil, "native durable account input")
+	digest := sha256.Sum256(raw)
+	err = (hostctl.PostgresManager{}).InitializeAccountAuthority(t.Context(), hostctl.DatabaseCredentials{AdminDSN: admin}, config, hex.EncodeToString(digest[:]))
+	p3Check(t, err == nil, "native durable account import")
+	store, err := db.OpenLocalAccountStore(t.Context(), workspace)
+	p3Check(t, err == nil, "native durable account workspace store")
+	t.Cleanup(func() { store.Close() })
+	provider, err := access.NewDurableProvider(store)
+	p3Check(t, err == nil, "native durable account provider")
 	return provider
 }
 

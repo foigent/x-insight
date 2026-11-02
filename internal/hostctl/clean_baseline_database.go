@@ -867,7 +867,9 @@ WITH objects AS (
   -- The managed connector and work-install EXECUTE grants are enforced by
   -- the role boundary verifier and omitted here. The synthetic resource identity
   -- importer grant remains contract-visible, so generation must follow
-  -- ApplyGrants. Every other non-owner ACL entry, including PUBLIC or
+  -- ApplyGrants. Order ACL identities by stable role names, never cluster-local
+  -- OIDs: equivalent role creation orders must produce identical semantics.
+  -- Every other non-owner ACL entry, including PUBLIC or
   -- grant-option access, remains contract-visible.
   SELECT 'F', p.pronamespace::regnamespace::text, pg_get_userbyid(p.proowner),
          p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
@@ -893,7 +895,9 @@ WITH objects AS (
                  'grantee', CASE WHEN privilege.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(privilege.grantee) END,
                  'privilege', privilege.privilege_type,
                  'grantable', privilege.is_grantable
-               ) ORDER BY privilege.grantor, privilege.grantee, privilege.privilege_type, privilege.is_grantable
+               ) ORDER BY pg_get_userbyid(privilege.grantor) COLLATE "C",
+                          (CASE WHEN privilege.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(privilege.grantee) END) COLLATE "C",
+                          privilege.privilege_type COLLATE "C", privilege.is_grantable
              )
              FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) AS privilege
              WHERE privilege.grantee <> p.proowner
