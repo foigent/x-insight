@@ -30,6 +30,7 @@ import (
 
 	"github.com/foigent/x-insight/internal/adapters/unirouter"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/connectorsync"
 	"github.com/foigent/x-insight/internal/integration/urmachine"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -79,6 +80,7 @@ type installedInput struct {
 
 type fpv17UpgradeRequest struct {
 	SchemaVersion     string `json:"schema_version"`
+	PredecessorSchema string `json:"predecessor_schema"`
 	Script            string `json:"script"`
 	CandidateArtifact string `json:"candidate_artifact"`
 	CandidatePayload  string `json:"candidate_payload"`
@@ -90,6 +92,7 @@ type driver struct {
 	adminCookie             *http.Cookie
 	readerCookie            *http.Cookie
 	adminCSRF               string
+	collectionChoice        *connectorsync.Status
 	db                      *sql.DB
 	start                   time.Time
 	stage                   string
@@ -283,7 +286,7 @@ func run() (string, time.Duration, error) {
 			return d.fail("predecessor_upgrade_failed", err)
 		}
 	}
-	if upgradeRequest == nil {
+	if upgradeRequest == nil || upgradeRequest.PredecessorSchema == "46" {
 		d.advance("collection_intent")
 		if err := d.collectionIntent(ctx, input.ManagedMode == "adopt_existing"); err != nil {
 			return d.fail(err.Error())
@@ -416,7 +419,7 @@ func run() (string, time.Duration, error) {
 			return d.fail("upgrade_owner_login_failed")
 		}
 		d.advance("collection_intent")
-		if err := d.collectionIntent(ctx, true); err != nil {
+		if err := d.upgradedCollectionIntent(ctx, upgradeRequest.PredecessorSchema); err != nil {
 			return d.fail(err.Error())
 		}
 		d.advance("upgrade_continuity")
@@ -917,6 +920,7 @@ func readFPV17UpgradeRequest(adminDSNFile string) (*fpv17UpgradeRequest, error) 
 	var extra any
 	if decoder.Decode(&request) != nil || decoder.Decode(&extra) != io.EOF ||
 		request.SchemaVersion != "xinsight.ci-fpv17-installed-upgrade-request.v1" ||
+		(request.PredecessorSchema != "45" && request.PredecessorSchema != "46") ||
 		request.CandidateArtifact != "/opt/xinsight-ci-artifacts/candidate.tar.gz" ||
 		request.CandidatePayload != filepath.Join(filepath.Dir(filepath.Dir(adminDSNFile)), "fresh-install-payload") ||
 		!filepath.IsAbs(request.Script) || filepath.Clean(request.Script) != request.Script ||

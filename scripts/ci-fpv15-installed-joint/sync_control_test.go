@@ -89,3 +89,61 @@ func TestInstalledCollectionIntentIsAnExplicitBoundedOwnerChoice(t *testing.T) {
 		})
 	}
 }
+
+func TestInstalledUpgradePreservesExactPredecessorCollectionIntent(t *testing.T) {
+	const id = "xci_4646464646464646464646"
+	const request = "46464646-4646-4646-8646-000000000001"
+	for _, name := range []string{"schema45 migration", "schema45 manual rejected", "schema46 choice", "changed installation", "changed Auto", "changed revision", "changed request", "changed cadence", "missing cadence", "missing prestate", "unknown schema", "owner denied"} {
+		t.Run(name, func(t *testing.T) {
+			cadence := 5
+			want := connectorsync.Status{InstallationID: id, Auto: true, Cadence: &cadence, Revision: 2, RequestID: request}
+			d := &driver{installationID: id, adminCookie: &http.Cookie{Name: "__Host-xinsight_session", Value: "synthetic-owner"}, adminCSRF: "synthetic-csrf", collectionChoice: &want}
+			d.input.XIControlOrigin = "https://xi.synthetic.invalid:9443"
+			schema, after, code, wantCalls := "46", want, 200, 1
+			wantError := "collection_sync_migration_changed_intent"
+			switch name {
+			case "schema45 migration", "schema45 manual rejected":
+				schema, after.Revision, after.Cadence, after.RequestID = "45", 1, nil, ""
+				after.Auto = name == "schema45 migration"
+			case "changed installation":
+				after.InstallationID = "xci_0000000000000000000000"
+			case "changed Auto":
+				after.Auto = false
+			case "changed revision":
+				after.Revision++
+			case "changed request":
+				after.RequestID = "46464646-4646-4646-8646-000000000002"
+			case "changed cadence":
+				other := 60
+				after.Cadence = &other
+			case "missing cadence":
+				after.Cadence = nil
+			case "missing prestate":
+				d.collectionChoice, wantCalls, wantError = nil, 0, "collection_sync_prestate_invalid"
+			case "unknown schema":
+				schema, wantCalls, wantError = "47", 0, "collection_sync_prestate_invalid"
+			case "owner denied":
+				code, wantError = 403, "collection_sync_status_failed"
+			}
+			if name == "schema45 migration" || name == "schema46 choice" {
+				wantError = ""
+			}
+			calls := 0
+			d.client = &http.Client{Transport: diagnosticTransport(func(r *http.Request) (*http.Response, error) {
+				calls++
+				if r.Method != http.MethodGet || r.URL.String() != d.input.XIControlOrigin+"/api/v1/connector-control/installations/"+id+"/sync" {
+					t.Fatal("upgrade check mutated preference or contacted another target")
+				}
+				if cookie, err := r.Cookie(d.adminCookie.Name); err != nil || cookie.Value != d.adminCookie.Value {
+					t.Fatal("owner session missing")
+				}
+				body, _ := json.Marshal(after)
+				return &http.Response{StatusCode: code, Body: io.NopCloser(strings.NewReader(string(body))), Header: make(http.Header)}, nil
+			})}
+			err := d.upgradedCollectionIntent(context.Background(), schema)
+			if wantError == "" && err != nil || wantError != "" && (err == nil || err.Error() != wantError) || calls != wantCalls {
+				t.Fatalf("result=%v calls=%d; want=%s calls=%d", err, calls, wantError, wantCalls)
+			}
+		})
+	}
+}

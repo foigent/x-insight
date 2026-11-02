@@ -48,5 +48,28 @@ func (d *driver) collectionIntent(ctx context.Context, preserved bool) error {
 	if after.InstallationID != d.installationID || !after.Auto || after.Cadence == nil || *after.Cadence != 5 || after.Revision != before.Revision+1 || after.RequestID != requestID {
 		return errors.New("collection_sync_choice_not_retained")
 	}
+	d.collectionChoice = &after
+	return nil
+}
+
+// Schema45 has no sync preference API. Schema46 already has the owner's exact
+// choice, which the native upgrade must preserve without another mutation.
+func (d *driver) upgradedCollectionIntent(ctx context.Context, predecessorSchema string) error {
+	if predecessorSchema == "45" {
+		return d.collectionIntent(ctx, true)
+	}
+	if predecessorSchema != "46" || d.collectionChoice == nil {
+		return errors.New("collection_sync_prestate_invalid")
+	}
+	want := d.collectionChoice
+	var after connectorsync.Status
+	target := d.input.XIControlOrigin + "/api/v1/connector-control/installations/" + d.installationID + "/sync"
+	if err := d.call(ctx, http.MethodGet, target, nil, d.adminCookie, "", &after); err != nil {
+		return errors.New("collection_sync_status_failed")
+	}
+	if after.InstallationID != want.InstallationID || after.Auto != want.Auto || after.Revision != want.Revision || after.RequestID != want.RequestID ||
+		after.Cadence == nil || want.Cadence == nil || *after.Cadence != *want.Cadence {
+		return errors.New("collection_sync_migration_changed_intent")
+	}
 	return nil
 }

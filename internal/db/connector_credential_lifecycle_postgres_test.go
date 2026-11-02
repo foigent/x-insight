@@ -738,10 +738,11 @@ WHERE c.id=$1`, id, installed.Operation.OperationID).Scan(&original)
 	if err = adminDB.QueryRowContext(ctx, `SELECT jsonb_agg(to_jsonb(m) ORDER BY version)::text FROM schema_migrations m`).Scan(&schema45Ledger); err != nil {
 		t.Fatal("schema45 ledger", err)
 	}
-	if applied, e := db.RunMigrations(ctx, dsn, migrations); e != nil || applied != 1 {
+	schema46Migrations := connectorMigrationPrefixDir(t, migrations, "000046")
+	if applied, e := db.RunMigrations(ctx, dsn, schema46Migrations); e != nil || applied != 1 {
 		t.Fatalf("schema45 to46 applied=%d err=%v", applied, e)
 	}
-	if applied, e := db.RunMigrations(ctx, dsn, migrations); e != nil || applied != 0 {
+	if applied, e := db.RunMigrations(ctx, dsn, schema46Migrations); e != nil || applied != 0 {
 		t.Fatalf("schema46 no-op applied=%d err=%v", applied, e)
 	}
 	var retainedLedger string
