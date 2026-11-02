@@ -1136,6 +1136,7 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
             target['table_acl_rows'] = sample['table_acl_rows']
             target['database']['schema_migrations'] = sample['ledger_summary']
         after['sync_privileges'] = {k: database_samples[1]['sync_'+k] for k in privileges}
+        after['account_boundary'] = database_samples[1].get('account_boundary', after['account_boundary'])
     check = {'target': {'commit': new['commit']}}
     receipt = {'kind': 'upgrade', 'status': 'completed', 'before': {'commit': old['commit']},
                'after': {'commit': new['commit']}, 'checks': [{'name': 'representative_read', 'status': 'pass'}]}
