@@ -113,6 +113,12 @@ sudo install -d -m 0755 /etc/x-insight /var/lib/x-insight /data/x-insight
 sudo install -d -m 0700 /etc/x-insight/database/sets/initial /data/x-insight/postgres
 sudo install -m 0644 "$TARGET_PAYLOAD/deploy/postgres.compose.yml" /etc/x-insight/postgres.compose.yml
 sudo install -m 0644 "$TRUST_STORE" /etc/x-insight/trusted-release-keys.json
+PREPARED_ACCOUNTS="$RUNNER_TEMP/xinsight-fpv15-joint-private/access-accounts.json"
+if [ -f "$PREPARED_ACCOUNTS" ]; then
+  test ! -L "$PREPARED_ACCOUNTS"
+  test "$(stat -c '%a %u %h' "$PREPARED_ACCOUNTS")" = "600 $(id -u) 1"
+  sudo install -o root -g root -m 0600 "$PREPARED_ACCOUNTS" /etc/x-insight/access-accounts.json
+else
 sudo tee /etc/x-insight/access-accounts.json >/dev/null <<'JSON'
 {
   "schema_version": "xinsight.local-accounts.v1",
@@ -127,6 +133,7 @@ sudo tee /etc/x-insight/access-accounts.json >/dev/null <<'JSON'
   ]
 }
 JSON
+fi
 sudo chown root:root /etc/x-insight/access-accounts.json
 sudo chmod 0600 /etc/x-insight/access-accounts.json
 sudo env PATH="$CTL_PATH" "$TARGET_CTL" access validate \
@@ -192,6 +199,17 @@ sudo env PATH="$CTL_PATH" "$TARGET_CTL" install --check \
 QUAL_STAGE=install
 sudo env PATH="$CTL_PATH" "$TARGET_CTL" install \
   --artifact "$TARGET_ARTIFACT" > "$QUALIFICATION_ROOT/install-receipt.json"
+
+# The installed native directory must contain the identities imported by the
+# installer, before any joint fixture can log in or replace a legacy file.
+sudo /opt/x-insight/current/bin/xinsightctl access directory > "$QUALIFICATION_ROOT/installed-account-directory-private.json"
+sudo python3 - /etc/x-insight/access-accounts.json "$QUALIFICATION_ROOT/installed-account-directory-private.json" <<'PY_ACCOUNTS'
+import json,pathlib,sys
+expected=json.loads(pathlib.Path(sys.argv[1]).read_text())['accounts']
+actual=json.loads(pathlib.Path(sys.argv[2]).read_text())
+keys=('subject_id','username','role','disabled')
+assert sorted([[a[k] for k in keys] for a in expected])==sorted([[a[k] for k in keys] for a in actual])
+PY_ACCOUNTS
 
 wait_ready() {
   for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
@@ -445,6 +463,7 @@ grep -F '127.0.0.1:8080' "$QUALIFICATION_ROOT/listeners.txt" >/dev/null
 python3 - "$QUALIFICATION_ROOT" "$TARGET_ARTIFACT" "$TARGET_PRODUCT_VERSION" "$TARGET_MANUAL_VERSION" <<'PY' > "$QUALIFICATION_ROOT/qualification-result.json"
 import hashlib
 import json
+import os
 import pathlib
 import sys
 
@@ -511,12 +530,14 @@ import_receipt = json.loads((root / "import-receipt.json").read_text(encoding="u
 if import_receipt["result"]["status"] != "persisted" or import_receipt["result"]["readback_events"] != 2:
     raise SystemExit(f"fresh-install import receipt is incomplete: {import_receipt}")
 access_validation = json.loads((root / "access-account-validation.json").read_text(encoding="utf-8"))
-if (
-    access_validation.get("schema_version") != "xinsight.local-accounts.v1"
-    or access_validation.get("account_count") != 1
-    or access_validation.get("disabled_count") != 1
-):
-    raise SystemExit(f"disabled CI account credential is invalid: {access_validation}")
+prepared = pathlib.Path(os.environ["RUNNER_TEMP"]) / "prepared-joint-fixture-result.json"
+if prepared.exists():
+    assert json.loads(prepared.read_text())["state"] == "prepared"
+    expected_accounts = ("xinsight.local-accounts.v3", 2, 0)
+else:
+    expected_accounts = ("xinsight.local-accounts.v1", 1, 1)
+if tuple(access_validation.get(k) for k in ("schema_version", "account_count", "disabled_count")) != expected_accounts:
+    raise SystemExit("synthetic CI account credential differs from its exact prepared fixture")
 manual = (root / "manual.html").read_text(encoding="utf-8")
 if (
     f'name="xinsight-product-version" content="{expected_product_version}"' not in manual
@@ -549,7 +570,7 @@ result = {
     "anonymous_ui_status": int(anonymous_ui_status),
     "anonymous_api_status": int(anonymous_api_status),
     "authenticated_https_target": "pending",
-    "access_account_credential": "all_disabled_ci_synthetic_no_login",
+    "access_account_credential": "prepared_ci_synthetic_no_login" if prepared.exists() else "all_disabled_ci_synthetic_no_login",
     "manual_version": expected_manual_version,
     "managed_launcher_dropin": True,
     "controller_original_mount_reproduced": True,

@@ -9,6 +9,9 @@ if (contract.openapi !== "3.1.0") {
 }
 
 const expectedPaths = [
+ "/api/v1/access/accounts",
+ "/api/v1/access/account-password",
+ "/api/v1/access/project-read-grants",
  "/api/v1/connector-control/installations/{installation_id}/sync",
  "/api/v1/connector-control/installations/{installation_id}/sync-once",
   "/api/v1/investigation/queue",

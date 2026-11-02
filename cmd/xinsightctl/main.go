@@ -53,6 +53,20 @@ func run(ctx context.Context, args []string, stdout io.Writer) error {
 	if len(args) == 0 {
 		return usage()
 	}
+	if args[0] == "access" && managedAccessCommand(args[1:]) {
+		if os.Geteuid() != 0 {
+			return fmt.Errorf("xinsightctl access commands require root")
+		}
+		paths, e := hostctl.PathsFromEnvironment()
+		if e != nil {
+			return e
+		}
+		engine, e := hostctl.NewEngine(paths)
+		if e != nil {
+			return e
+		}
+		return runManagedAccess(ctx, engine, args[1:], stdout, true)
+	}
 	if args[0] == "access" {
 		return runAccess(args[1:], os.Stdin, stdout, os.Stderr, os.Geteuid() == 0, false)
 	}

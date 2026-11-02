@@ -1,3 +1,4 @@
+import {AccountsPage,AccountPasswordPage} from "./AccountPages";
 import { LanguageSelector, getLocale, t, tx, useLocale, useMessageState } from "./i18n";
 import {ConnectorSetupPage} from "./ConnectorSetupPage";
 import { readWorkbenchNavigation, readRuntimeNavigation, navigationOwner, type RuntimeNavigation, type WorkbenchNavigation } from "./workbenchNavigation";
@@ -40,6 +41,7 @@ type Route =
   | { kind: "connectors" }
  | {kind:"connector-setup"}
   | { kind: "discovery" }
+  | { kind: "accounts" }
   | { kind: "access-sessions" }
   | { kind: "service-identities" }
   | { kind: "workbench" }
@@ -48,7 +50,7 @@ type Route =
   | { kind: "review-policy" };
 
 export function App() {
-  return <><div className="app-language"><LanguageSelector /></div><AppContent /></>;
+  return <><div className="app-language"><LanguageSelector /></div>{window.location.pathname.replace(/\/+$/, "") === "/access/activate" ? <AccountPasswordPage/> : <AppContent />}</>;
 }
 
 function AppContent() {
@@ -141,7 +143,7 @@ function AppContent() {
   }, [unauthenticate]);
 
   useEffect(()=>{
-    if(!scopedRead)return;
+    if(!scopedRead&&!session?.session.permissions.includes("accounts.manage"))return;
     let alive=true;let revisionRequest=0;const controller=new AbortController();
     const refresh=(event?:Event)=>{
       const invalidated=event?.type==="xinsight:scope-changed";
@@ -155,7 +157,7 @@ function AppContent() {
         if(scopeSessionKey(current)!==scopeKey){workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;}
         const unchangedDenial=deniedScope.current===scopeSessionKey(current);
         if(!unchangedDenial)deniedScope.current=null;
-        acceptScopeSession(current);setSession(current);setAccessState(unchangedDenial?"scope-denied":"authenticated");
+        acceptScopeSession(current);setSession(current);setAccessState(scopedRead&&unchangedDenial?"scope-denied":"authenticated");
         if(!routeAllowed(readRoute(),current)){window.history.replaceState(null,"",homePath(current));setRoute(readRoute());}
       }).catch(error=>{if(!alive||request!==revisionRequest||isAbortError(error))return;workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;if(error instanceof ApiRequestError&&error.status===401)unauthenticate();else setAccessState("error");});
     };
@@ -274,7 +276,7 @@ function AppContent() {
     return <LoginPage onAuthenticated={authenticated} />;
   }
 
-  if (session.scope_revision === "no_authorized_scope") {
+  if (scopedRead && session.scope_revision === "no_authorized_scope") {
     return (
       <main className="login-shell" id="main-content" tabIndex={-1}>
         <section className="login-card" aria-labelledby="access-scope-title">
@@ -346,7 +348,8 @@ function AppContent() {
           {canReadWorkbench ? <NavLink active={inWorkbench&&!usageTopic} href="/workbench/cost" icon="workbench" label={t("m0117")} detail={t("m0135")} onClick={navigateFromLink} /> : null}
           {canReadEvidence ? <NavLink active={route.kind==="connectors"||sourcesOrigin} href="/connectors" icon="connectors" label={t("m0120")} detail={t("m0136")} onClick={navigateFromLink} /> : null}
           {session.session.permissions.some(permission => ["access.sessions.read", "service_identities.read", "review.policy.manage"].includes(permission)) ? <span className="nav-section-label">{tx("m0137")}</span> : null}
-          {session.session.permissions.includes("review.policy.manage") ? <NavLink active={route.kind === "review-policy"} href="/access/review-policy" icon="access" label={t("m0138")} detail={t("m0139")} onClick={navigateFromLink} /> : null}
+          {session.session.permissions.includes("accounts.manage") ? <NavLink active={route.kind === "accounts"} href="/access/accounts" icon="access" label={t("accounts.title")} detail={t("accounts.management")} onClick={navigateFromLink}/> : null}
+ {session.session.permissions.includes("review.policy.manage") ? <NavLink active={route.kind === "review-policy"} href="/access/review-policy" icon="access" label={t("m0138")} detail={t("m0139")} onClick={navigateFromLink} /> : null}
           {session.session.permissions.includes("access.sessions.read") ? (
             <a
               className={`nav-item${route.kind === "access-sessions" ? " nav-item-active" : ""}`}
@@ -441,7 +444,7 @@ function AppContent() {
           <ServiceIdentitiesPage session={session} navigate={navigate} />
         ) : route.kind === "review-policy" && session.session.permissions.includes("review.policy.manage") ? (
           <ReviewPolicyPage session={session} />
-        ) : route.kind === "access-sessions" && session.session.permissions.includes("access.sessions.read") ? (
+        ) : route.kind === "accounts" && session.session.permissions.includes("accounts.manage") ? (<AccountsPage session={session}/>) : route.kind === "access-sessions" && session.session.permissions.includes("access.sessions.read") ? (
           <AccessSessionsPage current={session} onUnauthenticated={unauthenticate} />
         ) : (
           <section className="access-session-panel">
@@ -468,7 +471,8 @@ function readRoute(location: Pick<Location,"pathname" | "search"> = window.locat
   if (path === "/login") {
     return { kind: "login" };
   }
-  if (path === "/access/sessions") {
+  if(path === "/access/accounts")return {kind:"accounts"};
+ if (path === "/access/sessions") {
     return { kind: "access-sessions" };
   }
   if (path === "/access/service-identities") {
@@ -520,6 +524,7 @@ function readRoute(location: Pick<Location,"pathname" | "search"> = window.locat
 }
 
 function homePath(session: AccessSessionResponse): string {
+ if(session.session.permissions.includes("accounts.manage") && session.scope_revision==="no_authorized_scope")return "/access/accounts";
   return session.session.permissions.some(permission => ["evidence.read", "workbench.summary.read"].includes(permission)) ? "/inbox" : "/workbench/cost";
 }
 
@@ -537,7 +542,8 @@ function routeAllowed(route: Route, session: AccessSessionResponse): boolean {
   if (route.kind === "workbench") {
     return session.session.permissions.includes("workbench.summary.read");
   }
-  if (route.kind === "access-sessions") {
+  if(route.kind === "accounts")return session.session.permissions.includes("accounts.manage");
+ if (route.kind === "access-sessions") {
     return session.session.permissions.includes("access.sessions.read");
   }
   if (route.kind === "service-identities") {

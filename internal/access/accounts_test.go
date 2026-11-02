@@ -92,7 +92,7 @@ func TestAccountConfigRejectsUnknownDuplicateAndNonCanonicalFields(t *testing.T)
 	}
 }
 
-func TestWorkbenchReaderRequiresV2AndDoesNotChangeExistingRolePermissions(t *testing.T) {
+func TestWorkbenchReaderRequiresV2AndOwnerEligibilityRemainsSeparateFromGrant(t *testing.T) {
 	config := validAccountConfig(t)
 	config.Accounts[0].Role = RoleWorkbenchReader
 	contents, err := json.Marshal(config)
@@ -118,11 +118,11 @@ func TestWorkbenchReaderRequiresV2AndDoesNotChangeExistingRolePermissions(t *tes
 	}) {
 		t.Fatalf("workbench permissions=%v", got)
 	}
-	if HasPermission(RoleInvestigator, PermissionWorkbenchSummary) ||
-		HasPermission(RolePlatformAdmin, PermissionWorkbenchSummary) {
-		t.Fatal("existing roles silently gained workbench authority")
+	if HasPermission(RoleInvestigator, PermissionWorkbenchSummary) || !HasPermission(RolePlatformAdmin, PermissionAccountsManage) || !HasPermission(RolePlatformAdmin, PermissionWorkbenchSummary) {
+		t.Fatal("owner management/reading eligibility or investigator boundary mismatch")
 	}
 	if got := Permissions(RolePlatformAdmin); !equalPermissions(got, []Permission{
+		PermissionAccountsManage, PermissionWorkbenchSummary, PermissionWorkbenchDetails, PermissionWorkbenchCoverage, PermissionWorkbenchPreferences,
 		PermissionEvidenceRead,
 		PermissionInvestigationPreferences,
 		PermissionEvidenceCite,

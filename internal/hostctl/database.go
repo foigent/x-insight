@@ -198,24 +198,26 @@ type DatabaseCredentials struct {
 }
 
 type DatabaseFacts struct {
-	PostgresMajor        int                  `json:"postgres_major"`
-	SystemIdentifier     string               `json:"system_identifier,omitempty"`
-	DatabaseName         string               `json:"database_name"`
-	DatabaseSizeBytes    int64                `json:"database_size_bytes"`
-	PublicTableCount     int                  `json:"public_table_count"`
-	MigrationLedger      []db.MigrationRecord `json:"migration_ledger"`
-	ReaderRoleExists     bool                 `json:"reader_role_exists"`
-	WorkspaceRoleExists  bool                 `json:"workspace_role_exists"`
-	ImporterRoleExists   bool                 `json:"importer_role_exists"`
-	AdminRoleIsSuperuser bool                 `json:"admin_role_is_superuser"`
+	LocalAccounts        *db.LocalAccountInventory `json:"local_accounts,omitempty"`
+	PostgresMajor        int                       `json:"postgres_major"`
+	SystemIdentifier     string                    `json:"system_identifier,omitempty"`
+	DatabaseName         string                    `json:"database_name"`
+	DatabaseSizeBytes    int64                     `json:"database_size_bytes"`
+	PublicTableCount     int                       `json:"public_table_count"`
+	MigrationLedger      []db.MigrationRecord      `json:"migration_ledger"`
+	ReaderRoleExists     bool                      `json:"reader_role_exists"`
+	WorkspaceRoleExists  bool                      `json:"workspace_role_exists"`
+	ImporterRoleExists   bool                      `json:"importer_role_exists"`
+	AdminRoleIsSuperuser bool                      `json:"admin_role_is_superuser"`
 }
 
 type BackupResult struct {
-	Path           string `json:"path"`
-	SHA256         string `json:"sha256"`
-	SizeBytes      int64  `json:"size_bytes"`
-	PGDumpMajor    int    `json:"pg_dump_major"`
-	PGRestoreMajor int    `json:"pg_restore_major"`
+	LocalAccounts  *db.LocalAccountInventory `json:"local_accounts,omitempty"`
+	Path           string                    `json:"path"`
+	SHA256         string                    `json:"sha256"`
+	SizeBytes      int64                     `json:"size_bytes"`
+	PGDumpMajor    int                       `json:"pg_dump_major"`
+	PGRestoreMajor int                       `json:"pg_restore_major"`
 }
 
 type EvidenceFingerprint struct {
@@ -577,6 +579,17 @@ SELECT current_setting('server_version_num')::integer,
 		return DatabaseFacts{}, errors.New("database migration ledger inspection failed")
 	}
 	facts.MigrationLedger = ledger
+	var accountsPresent bool
+	if err := database.QueryRowContext(ctx, `SELECT to_regclass('xinsight_accounts.authority') IS NOT NULL`).Scan(&accountsPresent); err != nil {
+		return DatabaseFacts{}, errors.New("account authority inspection failed")
+	}
+	if accountsPresent {
+		inventory, err := db.NewLocalAccountStore(database).Inventory(ctx)
+		if err != nil {
+			return DatabaseFacts{}, errors.New("account inventory inspection failed")
+		}
+		facts.LocalAccounts = &inventory
+	}
 	return facts, nil
 }
 
@@ -783,6 +796,9 @@ to_regclass('public.work_event_install_invitations') IS NOT NULL`, managedWorkIn
 			return errors.New("database least-privilege grants failed")
 		}
 	}
+	if err := applyAccountPrivileges(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -898,6 +914,9 @@ func allowedColumnValuesSQL(grants []tableColumnGrant) string {
 
 func (manager PostgresManager) VerifyRoleBoundaries(ctx context.Context, credentials DatabaseCredentials) error {
 	if err := manager.verifyRoleBoundaries(ctx, credentials, workspaceUpdateTablesArraySQL, false); err != nil {
+		return err
+	}
+	if err := verifyAccountPrivileges(ctx, credentials); err != nil {
 		return err
 	}
 	return verifyConnectorDigestPrivileges(ctx, credentials, true)
@@ -1090,6 +1109,10 @@ func (manager PostgresManager) Backup(ctx context.Context, credentials DatabaseC
 	if err := ensureDirectory(filepath.Dir(path), 0o700); err != nil {
 		return BackupResult{}, err
 	}
+	accountBefore, err := manager.AccountInventory(ctx, credentials)
+	if err != nil {
+		return BackupResult{}, err
+	}
 	pgDumpVersion, err := manager.Runner.Run(ctx, Command{Name: "pg_dump", Args: []string{"--version"}})
 	if err != nil {
 		return BackupResult{}, err
@@ -1116,6 +1139,14 @@ func (manager PostgresManager) Backup(ctx context.Context, credentials DatabaseC
 	if err != nil {
 		return BackupResult{}, err
 	}
+	accountAfter, err := manager.AccountInventory(ctx, credentials)
+	if err != nil {
+		return BackupResult{}, err
+	}
+	if (accountBefore == nil) != (accountAfter == nil) || (accountBefore != nil && *accountBefore != *accountAfter) {
+		return BackupResult{}, fmt.Errorf("account authority changed during backup; preserve rejected candidate")
+	}
+	verified.LocalAccounts = accountBefore
 	verified.PGDumpMajor = pgDumpMajor
 	return verified, nil
 }

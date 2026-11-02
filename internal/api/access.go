@@ -103,7 +103,7 @@ func (s *Server) handleAccessSession(w http.ResponseWriter, r *http.Request) {
 	}
 	revision := ""
 	if productaccess.IsScopedRole(authentication.Session.Role) ||
-		(authentication.Session.Role == productaccess.RoleWorkbenchReader && s.scopedStore != nil) {
+		(productaccess.HasPermission(authentication.Session.Role, productaccess.PermissionWorkbenchSummary) && s.scopedStore != nil) {
 		if s.scopedStore == nil {
 			writeProblem(w, http.StatusServiceUnavailable, "scoped_workchain_unavailable", "Scoped workchain is unavailable", false)
 			return
@@ -245,6 +245,10 @@ func (s *Server) withAccessEnforcement(next http.Handler) http.Handler {
 			return
 		}
 		authentication, err := s.access.Authenticate(token)
+		if errors.Is(err, productaccess.ErrAccountUnavailable) {
+			writeProblem(w, http.StatusServiceUnavailable, "access_unavailable", "Access service is unavailable", true)
+			return
+		}
 		if err != nil {
 			s.denyUnauthenticated(w, r)
 			return
@@ -257,8 +261,10 @@ func (s *Server) withAccessEnforcement(next http.Handler) http.Handler {
 			writeProblem(w, http.StatusForbidden, "permission_denied", "Permission is denied", false)
 			return
 		}
-		if productaccess.IsScopedRole(authentication.Session.Role) || strings.HasPrefix(r.URL.Path, "/api/v1/runtime/") || strings.HasPrefix(r.URL.Path, "/api/v1/work-activity") || budgetPath ||
-			(authentication.Session.Role == productaccess.RoleWorkbenchReader && s.scopedStore != nil && strings.HasPrefix(r.URL.Path, "/api/v1/workbench/")) {
+		_, managed := s.access.ManagedAccounts()
+		ownerData := managed && authentication.Session.Role == productaccess.RolePlatformAdmin && strings.HasPrefix(r.URL.Path, "/api/") && !managedOwnerAdministrationPath(r.URL.Path)
+		if ownerData || productaccess.IsScopedRole(authentication.Session.Role) || strings.HasPrefix(r.URL.Path, "/api/v1/runtime/") || strings.HasPrefix(r.URL.Path, "/api/v1/work-activity") || budgetPath ||
+			(productaccess.HasPermission(authentication.Session.Role, productaccess.PermissionWorkbenchSummary) && s.scopedStore != nil && strings.HasPrefix(r.URL.Path, "/api/v1/workbench/")) {
 			ctx := context.WithValue(r.Context(), accessContextKey{}, authentication)
 			s.handleScopedWorkchain(w, r.WithContext(ctx), authentication, next)
 			return
@@ -444,7 +450,7 @@ func isPublicAccessPath(target *url.URL) bool {
 	if requestPath == "/healthz" ||
 		requestPath == "/readyz" ||
 		requestPath == "/login" ||
-		requestPath == "/login/" ||
+		requestPath == "/login/" || requestPath == "/access/activate" || requestPath == "/api/v1/access/account-password" ||
 		requestPath == "/api/v1/access/login" ||
 		requestPath == "/api/v1/access/providers" {
 		return true
@@ -574,4 +580,16 @@ func clearBytes(value []byte) {
 	for index := range value {
 		value[index] = 0
 	}
+}
+
+// Preserve explicit product administration while every managed-owner data route
+// passes the same closed scoped-read router as an ordinary reader. A new API
+// route is not implicitly an administrator data bypass.
+func managedOwnerAdministrationPath(path string) bool {
+	for _, prefix := range []string{"/api/v1/access/", "/api/v1/connector-control/", "/api/v1/connector-setups/", "/api/v1/review-capture/", "/api/v1/work-event-install/", "/api/v1/service-identities/"} {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return path == "/api/v1/connectors" || path == "/api/v1/connectors/invitations" || path == "/api/v1/connector-setups" || path == "/api/v1/service-identities" || path == "/api/v1/work-event-ingest/config"
 }

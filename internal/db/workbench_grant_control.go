@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/foigent/x-insight/internal/access"
 	"github.com/foigent/x-insight/internal/workspace"
 )
 
@@ -123,7 +124,7 @@ func workbenchGrantSchemaSupported(schema string, content bool) bool {
 	switch schema {
 	case "000036_add_source_budgets", "000037_add_synthetic_resource_authorization", "000038_add_case_resource_links":
 		return !content
-	case "000039_add_content_readings", "000040_add_resource_action_profile", "000041_add_work_events", "000042_add_review_body_custody", "000043_add_work_event_install_invites", "000044_add_managed_connector_adoption", "000045_add_connector_credential_lifecycle", "000046_add_connector_sync_control":
+	case "000039_add_content_readings", "000040_add_resource_action_profile", "000041_add_work_events", "000042_add_review_body_custody", "000043_add_work_event_install_invites", "000044_add_managed_connector_adoption", "000045_add_connector_credential_lifecycle", "000046_add_connector_sync_control", "000047_add_local_account_lifecycle":
 		return true
 	default:
 		return false
@@ -134,6 +135,17 @@ func workbenchGrantSchemaSupported(schema string, content bool) bool {
 // table. The existing table -> advisory lock order also fences in-flight
 // scoped reads and review commits. No new ACL, schema or lock is introduced.
 func (s *SourceFactsStore) ChangeWorkbenchGrant(ctx context.Context, r WorkbenchGrantChange, check bool) (WorkbenchGrantResult, error) {
+	return s.changeWorkbenchGrant(ctx, r, check, false)
+}
+
+// Current native account authority is checked inside the SAME grant transaction,
+// after the grant-domain lock and before a write. No outer account lock may be
+// held while waiting for scoped readers. Revocation still permits retired people.
+func (s *SourceFactsStore) ChangeManagedWorkbenchGrant(ctx context.Context, r WorkbenchGrantChange, check bool) (WorkbenchGrantResult, error) {
+	return s.changeWorkbenchGrant(ctx, r, check, true)
+}
+
+func (s *SourceFactsStore) changeWorkbenchGrant(ctx context.Context, r WorkbenchGrantChange, check, managed bool) (WorkbenchGrantResult, error) {
 	var result WorkbenchGrantResult
 	if err := r.Validate(); err != nil {
 		return result, err
@@ -149,10 +161,10 @@ func (s *SourceFactsStore) ChangeWorkbenchGrant(ctx context.Context, r Workbench
 		return result, err
 	}
 	if !workbenchGrantSchemaSupported(schema, false) || dirty {
-		return result, fmt.Errorf("workbench grant control requires clean schema36 through schema45")
+		return result, fmt.Errorf("workbench grant control requires clean schema36 through schema47")
 	}
 	if r.SchemaVersion == "xinsight.workbench-grant-change.v2" && !workbenchGrantSchemaSupported(schema, true) {
-		return result, fmt.Errorf("content grant command v2 requires clean schema39 through schema45")
+		return result, fmt.Errorf("content grant command v2 requires clean schema39 through schema47")
 	}
 	mode, lock := "ROW EXCLUSIVE", "pg_advisory_xact_lock"
 	if check {
@@ -163,6 +175,21 @@ func (s *SourceFactsStore) ChangeWorkbenchGrant(ctx context.Context, r Workbench
 	}
 	if _, err = tx.ExecContext(ctx, "SELECT "+lock+"($1)", WorkchainGrantLock); err != nil {
 		return result, err
+	}
+	if managed {
+		if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock_shared($1)`, AccountAuthorityLock); err != nil {
+			return result, err
+		}
+		var initialized bool
+		if err = tx.QueryRowContext(ctx, `SELECT initialized FROM xinsight_accounts.authority WHERE singleton`).Scan(&initialized); err != nil || !initialized {
+			return result, ErrAccountAuthorityUninitialized
+		}
+		if r.Action != "revoke" {
+			account, e := scanManaged(tx.QueryRowContext(ctx, `SELECT `+accountColumns+` FROM xinsight_accounts.accounts WHERE subject_id=$1`, r.Subject))
+			if e != nil || account.Disabled || !access.HasPermission(account.Role, access.PermissionWorkbenchSummary) {
+				return result, access.ErrForbidden
+			}
+		}
 	}
 	var before []byte
 	var revision int64

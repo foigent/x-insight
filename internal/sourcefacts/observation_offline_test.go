@@ -73,7 +73,7 @@ func TestObservationOfflineFiveProfilesAndLegacyIdentity(t *testing.T) {
 				"wrong-target-schema":   func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "32" },
 				"prior-B-target-schema": func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "33" },
 				"pre-resource-schema":   func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "34" },
-				"future-target-schema":  func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "47" },
+				"future-target-schema":  func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "48" },
 				"missing-target-schema": func(v *OfflineAuthorization) { v.TargetDatabaseSchema = "" },
 				"other-project":         func(v *OfflineAuthorization) { v.ProjectID = "999" },
 				"other-instance":        func(v *OfflineAuthorization) { v.SourceInstance = "other-instance" },

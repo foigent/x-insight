@@ -21,9 +21,9 @@ migration_digest="$(
     awk '{print $1}'
 )"
 # Previous FPV16/schema45 baseline is preserved in Git history.
-# FPV20 uses the same explicitly reviewed additive46 tree as Reference;
-# released migrations1-45 and all LiteLLM protocol bindings stay unchanged.
-if [[ "${migration_digest}" != "7402ad30ea4b24669835fe8b768e41b95472518d84459390a8bfdbbcb6a34ca7" ]]; then
+# FPV21 adds reviewed migration47 for local accounts; Reference shares this tree;
+# released migrations1-46 and all LiteLLM protocol bindings stay unchanged.
+if [[ "${migration_digest}" != "3c0b68b15bb2695f6592a45c886dfb20539de205c497e3d8edb5e3bc4bea1024" ]]; then
   fail "migration tree changed (${migration_digest})"
 fi
 

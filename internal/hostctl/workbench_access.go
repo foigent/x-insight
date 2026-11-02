@@ -88,26 +88,6 @@ func (e *Engine) ManageWorkbenchGrant(ctx context.Context, path string, check bo
 		return result, err
 	}
 	run := func() error {
-		// Revocation remains available after an account was removed or disabled.
-		if r.Action != "revoke" {
-			config, err := access.ReadAndValidateAccountFile(e.Paths.AccessAccountsFile)
-			if err != nil {
-				return err
-			}
-			found := false
-			for _, a := range config.Accounts {
-				if a.SubjectID == r.Subject && !a.Disabled {
-					for _, p := range access.Permissions(a.Role) {
-						if p == access.PermissionWorkbenchSummary {
-							found = true
-						}
-					}
-				}
-			}
-			if !found {
-				return fmt.Errorf("subject is not an enabled configured workbench account")
-			}
-		}
 		credentials, err := LoadDatabaseCredentials(e.Paths)
 		if err != nil {
 			return err
@@ -117,9 +97,39 @@ func (e *Engine) ManageWorkbenchGrant(ctx context.Context, path string, check bo
 			return err
 		}
 		defer store.Close()
-		result, err = store.ChangeWorkbenchGrant(ctx, r, check)
-		return err
+		apply := func() error { var err error; result, err = store.ChangeWorkbenchGrant(ctx, r, check); return err }
+		if manager, ok := e.Database.(accountAuthorityDatabase); ok {
+			present, initialized, err := manager.AccountAuthorityState(ctx, credentials)
+			if err != nil {
+				return err
+			}
+			if present {
+				if !initialized {
+					return fmt.Errorf("durable account authority is not initialized")
+				}
+				result, err = store.ChangeManagedWorkbenchGrant(ctx, r, check)
+				return err
+			}
+		}
+		// Retained signed predecessors still use their original file authority.
+		if r.Action != "revoke" {
+			config, err := access.ReadAndValidateAccountFile(e.Paths.AccessAccountsFile)
+			if err != nil {
+				return err
+			}
+			found := false
+			for _, a := range config.Accounts {
+				if a.SubjectID == r.Subject && !a.Disabled && access.HasPermission(a.Role, access.PermissionWorkbenchSummary) {
+					found = true
+				}
+			}
+			if !found {
+				return fmt.Errorf("subject is not an enabled configured workbench account")
+			}
+		}
+		return apply()
 	}
+
 	if check {
 		err = run()
 		return result, err

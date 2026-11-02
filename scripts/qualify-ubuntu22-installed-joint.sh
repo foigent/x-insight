@@ -19,7 +19,13 @@ test -x /opt/x-insight/current/bin/xinsightctl
 test -f "${RUNNER_TEMP:?}/xinsight-fresh-install-qualification/qualification-result.json"
 PRIVATE="$RUNNER_TEMP/xinsight-fpv15-joint-private"
 EVIDENCE="$RUNNER_TEMP/xinsight-installed-joint-qualification"
-test ! -e "$PRIVATE" && test ! -e "$EVIDENCE"
+test ! -e "$EVIDENCE"
+if [ "$MODE" = new_install ]; then
+  test -f "$RUNNER_TEMP/prepared-joint-fixture-result.json"
+  test -d "$PRIVATE" && test ! -L "$PRIVATE"
+else
+  test ! -e "$PRIVATE"
+fi
 mkdir -m 0700 "$EVIDENCE"
 STAGE=build
 qualification_exit() {
@@ -228,7 +234,12 @@ STAGE=fixture
 # A benchmark-only local address is outside the controller's original allow
 # list. This forces the product to publish and actually load its exact /32.
 sudo ip address add 198.18.0.2/32 dev lo
-printf '{"ur_receiver_ip":"198.18.0.2"}\n' | "$EVIDENCE/fixture" > "$EVIDENCE/fixture-result.json"
+if [ "$MODE" = new_install ]; then
+  # The supported installer already imported these exact identities once.
+  cp "$RUNNER_TEMP/prepared-joint-fixture-result.json" "$EVIDENCE/fixture-result.json"
+else
+  printf '{"ur_receiver_ip":"198.18.0.2"}\n' | "$EVIDENCE/fixture" > "$EVIDENCE/fixture-result.json"
+fi
 sudo install -m 0600 "$PRIVATE/access-accounts.json" /etc/x-insight/access-accounts.json
 sudo /opt/x-insight/current/bin/xinsightctl access validate --file /etc/x-insight/access-accounts.json > "$EVIDENCE/access-validation.json"
 sudo install -m 0644 "$PRIVATE/ur-receiver-ca.pem" /usr/local/share/ca-certificates/xinsight-ci-ur.crt

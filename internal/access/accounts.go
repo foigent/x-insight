@@ -95,8 +95,9 @@ type accountConfigEntryWire struct {
 }
 
 type Principal struct {
-	SubjectID string
-	Role      Role
+	AuthRevision int64
+	SubjectID    string
+	Role         Role
 }
 
 type credentialAccount struct {
@@ -280,6 +281,7 @@ func Permissions(role Role) []Permission {
 		}
 	case RolePlatformAdmin:
 		return []Permission{
+			PermissionAccountsManage, PermissionWorkbenchSummary, PermissionWorkbenchDetails, PermissionWorkbenchCoverage, PermissionWorkbenchPreferences,
 			PermissionEvidenceRead,
 			PermissionInvestigationPreferences,
 			PermissionEvidenceCite,

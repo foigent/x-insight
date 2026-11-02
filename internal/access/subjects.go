@@ -26,6 +26,12 @@ func (provider *LocalProvider) LocalSubjects() []LocalSubject {
 // The service exposes only the already-loaded provider snapshot. It does not
 // reload credentials or invent a directory for another identity provider.
 func (service *Service) LocalSubjects() ([]LocalSubject, bool) {
+	if provider, ok := service.provider.(interface {
+		Subjects() ([]LocalSubject, error)
+	}); ok {
+		items, e := provider.Subjects()
+		return items, e == nil
+	}
 	provider, ok := service.provider.(*LocalProvider)
 	if !ok {
 		return nil, false
@@ -38,6 +44,10 @@ func (service *Service) LocalSubjects() ([]LocalSubject, bool) {
 }
 
 func (service *Service) LocalSubjectCanReview(subject string) bool {
+	if provider, ok := service.provider.(*DurableProvider); ok {
+		p, e := provider.CurrentPrincipal(subject)
+		return e == nil && (HasPermission(p.Role, PermissionInvestigationWrite) || p.Role == RoleScopedReviewer)
+	}
 	provider, ok := service.provider.(*LocalProvider)
 	if !ok {
 		return false
@@ -51,6 +61,10 @@ func (service *Service) LocalSubjectCanReview(subject string) bool {
 }
 
 func (service *Service) LocalSubjectHasGlobalReview(subject string) bool {
+	if provider, ok := service.provider.(*DurableProvider); ok {
+		p, e := provider.CurrentPrincipal(subject)
+		return e == nil && (HasPermission(p.Role, PermissionEvidenceRead) && HasPermission(p.Role, PermissionInvestigationWrite))
+	}
 	provider, ok := service.provider.(*LocalProvider)
 	if !ok {
 		return false

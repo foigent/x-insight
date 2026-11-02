@@ -85,6 +85,86 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '503':
           $ref: '#/components/responses/Unavailable'
+  /api/v1/access/accounts:
+    get:
+      tags: [Access]
+      operationId: listManagedAccounts
+      summary: Current owner lists non-secret local accounts
+      x-permission: accounts.manage
+      responses:
+        '200': {description: Non-secret directory; no-store, content: {application/json: {schema: {type: object, required: [items], properties: {items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/ManagedAccount'}}}}}}}
+        '401': {$ref: '#/components/responses/AuthenticationRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+    post:
+      tags: [Access]
+      operationId: changeManagedAccount
+      summary: Invite, recover, disable or enable one ordinary account
+      description: Current owner password and exact target revision required. No owner disable/demotion/recovery on this page. Same-origin HTTPS, bounded JSON and atomic audit.
+      x-permission: accounts.manage
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ManagedAccountChange'}}}}
+      responses:
+        '200': {description: Audited target change; fragment-only15-minute activation_link returned only for invite/recover; no-store, content: {application/json: {schema: {type: object, required: [account, expires_at], properties: {account: {$ref: '#/components/schemas/ManagedAccount'}, expires_at: {type: [string, 'null'], format: date-time}, activation_link: {type: string, description: Single-use secret; never log or persist}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/AuthenticationRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {description: Account revision changed}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/access/account-password:
+    post:
+      security: []
+      tags: [Access]
+      operationId: completeManagedAccountPassword
+      summary: Holder consumes one activation/recovery link and selects their own password
+      description: Same-origin HTTPS JSON only; no automatic login. Global/per-ticket limiter and bounded password hashing; tokens/passwords never logged or returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, password, confirmation]
+              properties:
+                token: {type: string, pattern: '^xi-ac1_[A-Za-z0-9_-]{43}$', writeOnly: true}
+                password: {type: string, minLength: 12, maxLength: 1024, writeOnly: true}
+                confirmation: {type: string, minLength: 12, maxLength: 1024, writeOnly: true}
+      responses:
+        '200': {description: Password set; explicit normal sign-in required; no-store, content: {application/json: {schema: {type: object, required: [username, status], properties: {username: {type: string}, status: {const: password_set_sign_in_required}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {description: Account state changed}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/access/project-read-grants:
+    get:
+      tags: [Access]
+      operationId: getProjectReadGrantOptions
+      summary: Current owner lists registered sources/projects and existing grant metadata
+      x-permission: accounts.manage
+      responses:
+        '200': {description: Non-secret options; no automatic selection or grant copying, content: {application/json: {schema: {type: object, required: [sources, projects, grants], properties: {sources: {type: array, items: {type: object, required: [id, name], properties: {id: {type: string, format: uuid}, name: {type: string}}}}, projects: {type: array, items: {type: object, required: [source_system_id, source_project_ref], properties: {source_system_id: {type: string, format: uuid}, source_project_ref: {type: string}}}}, grants: {type: array, items: {type: object, description: Grant metadata only}}}}}}}
+        '401': {$ref: '#/components/responses/AuthenticationRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+    post:
+      tags: [Access]
+      operationId: previewOrApplyProjectReadGrant
+      summary: Preview or confirm an exact project-metadata grant
+      description: Preview is read-only; apply reauthenticates owner. No wildcard, body, purpose, resource or budget grants. Advanced grants cannot be overwritten. Existing grants still form a union.
+      x-permission: accounts.manage
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProjectReadGrantChange'}}}}
+      responses:
+        '200': {description: Read-only preview or audited change; no-store, content: {application/json: {schema: {type: object, required: [check_only, changed], properties: {check_only: {type: boolean}, changed: {type: boolean}, before: {type: [object, 'null']}, after: {type: object}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/AuthenticationRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {description: Grant revision or scope changed}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
   /api/v1/access/session:
     get:
       tags: [Access]
@@ -4400,6 +4480,7 @@ components:
         - investigation.scoped.write
         - workbench.purpose.review
         - investigation.preferences.write
+        - accounts.manage
         - access.sessions.read
         - access.sessions.revoke
         - service_identities.read
@@ -4433,7 +4514,7 @@ components:
         permissions:
           type: array
           minItems: 1
-          maxItems: 8
+          maxItems: 64
           uniqueItems: true
           items:
             $ref: '#/components/schemas/AccessPermission'
@@ -4441,6 +4522,42 @@ components:
         last_seen_at: {type: string, format: date-time}
         idle_expires_at: {type: string, format: date-time}
         absolute_expires_at: {type: string, format: date-time}
+    ManagedAccount:
+      type: object
+      additionalProperties: false
+      required: [subject_id, username, role, disabled, needs_activation, revision]
+      properties:
+        subject_id: {type: string, pattern: '^xs_[a-z0-9]{16,64}$'}
+        username: {type: string, pattern: '^[a-z0-9][a-z0-9._-]{2,63}$'}
+        role: {$ref: '#/components/schemas/AccessRole'}
+        disabled: {type: boolean}
+        needs_activation: {type: boolean}
+        revision: {type: integer, minimum: 1}
+    ManagedAccountChange:
+      type: object
+      additionalProperties: false
+      required: [action, subject_id, expected_revision, password]
+      properties:
+        action: {type: string, enum: [invite, recover, disable, enable]}
+        subject_id: {type: string, description: Empty for invite; exact stable subject otherwise}
+        expected_revision: {type: integer, minimum: 0}
+        username: {type: string, pattern: '^[a-z0-9][a-z0-9._-]{2,63}$', description: Invite only}
+        role: {type: string, enum: [workbench_investigation_reader, workbench_investigation_reviewer], description: Invite only}
+        password: {type: string, maxLength: 1024, writeOnly: true}
+    ProjectReadGrantChange:
+      type: object
+      additionalProperties: false
+      required: [grant_id, subject_id, source_system_id, source_project_ref, expected_revision, capabilities, check_only, revoke]
+      properties:
+        grant_id: {type: string, format: uuid}
+        subject_id: {type: string, pattern: '^xs_[a-z0-9]{16,64}$'}
+        source_system_id: {type: string, format: uuid}
+        source_project_ref: {type: string, minLength: 1, maxLength: 128, description: Exact registered project; wildcard rejected}
+        expected_revision: {type: integer, minimum: 0}
+        capabilities: {type: array, minItems: 2, maxItems: 11, uniqueItems: true, description: details and coverage mandatory, items: {type: string, enum: [summary, details, coverage, source_context, source_identity, source_cost, source_runtime, source_attempt, source_capability, source_policy, source_destination]}}
+        check_only: {type: boolean}
+        revoke: {type: boolean}
+        password: {type: string, maxLength: 1024, writeOnly: true, description: Required for apply}
     SessionResponse:
       type: object
       additionalProperties: false

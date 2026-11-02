@@ -21,6 +21,7 @@ import (
 )
 
 const privateBackupSchema = "xinsight.private-database-backup.v1"
+const privateAccountBackupSchema = "xinsight.private-database-backup.v2"
 const privateBackupMaxBytes = maxBackupBytes + (2 << 20)
 
 type BackupCustody struct {
@@ -178,7 +179,10 @@ func (e *Engine) inspectPrivateBackup(ctx context.Context, path, expected string
 		return nil, fmt.Errorf("private backup hash mismatch")
 	}
 	m := b.Manifest
-	if !seen["manifest.json"] || !seen["database.dump"] || m.SchemaVersion != privateBackupSchema || !privateBackupOperationPattern.MatchString(m.OperationID) || m.Dump.SHA256 != dumpSHA || m.Dump.SizeBytes != dumpBytes || m.Dump.PGDumpMajor != 16 || m.Dump.PGRestoreMajor != 16 || !sha256ReferencePattern.MatchString(m.Fingerprint.SHA256) || m.Fingerprint.EventCount < 0 || m.Fingerprint.SampleCount < 0 || len(m.Migrations) == 0 {
+	if (m.SchemaVersion == privateAccountBackupSchema && m.Dump.LocalAccounts == nil) || (m.SchemaVersion == privateBackupSchema && m.Dump.LocalAccounts != nil) {
+		return nil, fmt.Errorf("private backup account inventory/version mismatch")
+	}
+	if !seen["manifest.json"] || !seen["database.dump"] || (m.SchemaVersion != privateBackupSchema && m.SchemaVersion != privateAccountBackupSchema) || !privateBackupOperationPattern.MatchString(m.OperationID) || m.Dump.SHA256 != dumpSHA || m.Dump.SizeBytes != dumpBytes || m.Dump.PGDumpMajor != 16 || m.Dump.PGRestoreMajor != 16 || !sha256ReferencePattern.MatchString(m.Fingerprint.SHA256) || m.Fingerprint.EventCount < 0 || m.Fingerprint.SampleCount < 0 || len(m.Migrations) == 0 {
 		return nil, fmt.Errorf("private backup binding invalid")
 	}
 	if (m.Custody != nil) != seen["review-body.key"] || m.Custody != nil && (!custodyKeyIDPattern.MatchString(m.Custody.KeyID) || len(b.Key) != 32) {
@@ -286,7 +290,11 @@ func (e *Engine) writePrivateBackup(ctx context.Context, path string, j *Journal
 	if err != nil {
 		return BackupResult{}, err
 	}
-	m := PrivateBackupManifest{SchemaVersion: privateBackupSchema, OperationID: j.OperationID, DeploymentID: deployment, Release: current.Identity, Migrations: current.Bundle.Manifest.MigrationChecksums, Dump: dump, Fingerprint: fingerprint}
+	schema := privateBackupSchema
+	if dump.LocalAccounts != nil {
+		schema = privateAccountBackupSchema
+	}
+	m := PrivateBackupManifest{SchemaVersion: schema, OperationID: j.OperationID, DeploymentID: deployment, Release: current.Identity, Migrations: current.Bundle.Manifest.MigrationChecksums, Dump: dump, Fingerprint: fingerprint}
 	m.Dump.Path = "database.dump"
 	if present {
 		m.Custody = &BackupCustody{KeyID: c.KeyID, Enabled: active}
@@ -368,7 +376,9 @@ func (e *Engine) extractPrivateDump(ctx context.Context, b *PrivateBackup, j *Jo
 	if exists, err := fileExists(path); err != nil {
 		return BackupResult{}, err
 	} else if exists {
-		return e.Database.VerifyBackup(ctx, path, b.Manifest.Dump.SHA256)
+		result, err := e.Database.VerifyBackup(ctx, path, b.Manifest.Dump.SHA256)
+		result.LocalAccounts = b.Manifest.Dump.LocalAccounts
+		return result, err
 	}
 	f, err := openPrivateBackup(b.Path)
 	if err != nil {
@@ -412,7 +422,9 @@ func (e *Engine) extractPrivateDump(ctx context.Context, b *PrivateBackup, j *Jo
 		if err = syncDirectory(filepath.Dir(path)); err != nil {
 			return BackupResult{}, err
 		}
-		return e.Database.VerifyBackup(ctx, path, b.Manifest.Dump.SHA256)
+		result, err := e.Database.VerifyBackup(ctx, path, b.Manifest.Dump.SHA256)
+		result.LocalAccounts = b.Manifest.Dump.LocalAccounts
+		return result, err
 	}
 }
 
@@ -448,6 +460,7 @@ func (e *Engine) preparePrivateDump(ctx context.Context, j *Journal, creds Datab
 		}
 		result, err := e.Database.VerifyBackup(ctx, path, j.PrivateDumpSHA256)
 		result.PGDumpMajor = 16
+		result.LocalAccounts = j.PrivateDumpAccounts
 		return result, err
 	}
 	if j.PrivateDumpTempPath == "" {
@@ -492,6 +505,7 @@ func (e *Engine) preparePrivateDump(ctx context.Context, j *Journal, creds Datab
 		result, err = e.Database.Backup(ctx, creds, stage)
 		if err == nil {
 			j.PrivateDumpSHA256 = result.SHA256
+			j.PrivateDumpAccounts = result.LocalAccounts
 			err = e.updateJournal(j)
 		}
 	}
@@ -505,6 +519,7 @@ func (e *Engine) preparePrivateDump(ctx context.Context, j *Journal, creds Datab
 		return BackupResult{}, err
 	}
 	result.Path = path
+	result.LocalAccounts = j.PrivateDumpAccounts
 	result.PGDumpMajor = 16
 	return result, nil
 }

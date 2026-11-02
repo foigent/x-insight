@@ -1,13 +1,14 @@
 {
   "api_versions": [
     "xinsight.investigation.v1",
-    "xinsight.access.v1"
+    "xinsight.access.v1",
+    "xinsight.accounts.v1"
   ],
   "application_compatibility": {
     "config_schema_max": "xinsight.config.v1",
     "config_schema_min": "xinsight.config.v1",
-    "database_schema_max": "46",
-    "database_schema_min": "46"
+    "database_schema_max": "47",
+    "database_schema_min": "47"
   },
   "config_schema": {
     "current": "xinsight.config.v1",
@@ -15,19 +16,19 @@
     "min": "xinsight.config.v1"
   },
   "database_schema": {
-    "current": "46",
-    "min": "46",
-    "max": "46"
+    "current": "47",
+    "min": "47",
+    "max": "47"
   },
   "evidence_schema_versions": [
     "m0.1"
   ],
   "manual": {
     "language": "en-US",
-    "version": "0.2.0-dev.fpv20/manual-r1"
+    "version": "0.2.0-dev.fpv21/manual-r1"
   },
   "product_name": "x-insight",
-  "product_version": "0.2.0-dev.fpv20",
+  "product_version": "0.2.0-dev.fpv21",
   "receipt_schema_versions": [
     "xinsight.import-receipt.v1",
     "foigent.operational-receipt.v2",
@@ -37,8 +38,8 @@
   "release_channel": "release_candidate",
   "schema_contract": {
     "schema_version": "xinsight.schema-contract.v2",
-    "semantic_sha256": "sha256:eaa41bd99d5db2cbc7ea86f1f63343302bb75f3bf420bc31feaee48874855a9f",
-    "migration_set_sha256": "sha256:ab50cb3463ecbf97aabea2822b71d3168dc823891628b5411ab33197d4844c06"
+    "semantic_sha256": "sha256:681166c06869e196dcabe7e2b60a31782b3a398b55878619f705d6dc60836d23",
+    "migration_set_sha256": "sha256:46d0c887c324b7bd1c5fc8cd0b6bc39bd8ac5d73a53dab8b936c714cca78e696"
   },
   "rollback": {
     "application_rollback_compatible": false,
@@ -66,7 +67,8 @@
     "0.2.0-dev.fpv16",
     "0.2.0-dev.fpv17",
     "0.2.0-dev.fpv18",
-    "0.2.0-dev.fpv19"
+    "0.2.0-dev.fpv19",
+    "0.2.0-dev.fpv20"
   ],
   "trust_reference": "/etc/x-insight/trusted-release-keys.json"
 }

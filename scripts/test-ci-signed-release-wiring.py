@@ -157,7 +157,7 @@ def check(source: str) -> None:
             'installed UR fixture checkout lacks exact commit readback')
     require('qualify-ubuntu22-installed-joint.sh' in step(fresh, 'Qualify installed controller and consumer lifecycle'),
             'fresh install does not run the installed business lifecycle')
-    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade]' in fresh and 'fail-fast: false' in fresh,
+    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade]' in fresh and 'fail-fast: false' in fresh,
             'new installation, restored predecessor and FPV17 upgrade need independent VMs')
     predecessor = step(fresh, 'Reproduce and install exact FPV14 predecessor on clean VM')
     require("if: matrix.lifecycle == 'adopt_existing'" in predecessor and
@@ -169,21 +169,34 @@ def check(source: str) -> None:
             'prepare-ci-fpv17-predecessor.sh' in fpv17 and
             "p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh'" in fpv17,
             'FPV17 lane must install its independently rebuilt CI-only predecessor')
-    prestate = step(fresh, 'Qualify FPV17 to FPV20 installed upgrade and source continuation')
+    prestate = step(fresh, 'Qualify exact predecessor to FPV21 installed upgrade and source continuation')
     require("if: matrix.lifecycle == 'fpv17_upgrade'" in prestate and
             'XINSIGHT_CI_UPGRADE_PRESTATE: "1"' in prestate and
             'qualify-ubuntu22-installed-joint.sh' in prestate,
             'FPV17 lane must seed real installed history and body without revocation')
     require('qualify-ubuntu22-fpv17-upgrade.sh' not in prestate,
             'upgrade must execute inside the live UR fixture, not after it exits')
-    require("matrix.lifecycle != 'fpv17_upgrade'" in step(fresh, 'Qualify installed controller and consumer lifecycle'),
+    require("matrix.lifecycle == 'new_install' || matrix.lifecycle == 'adopt_existing'" in step(fresh, 'Qualify installed controller and consumer lifecycle'),
             'existing FPV14 failure/recovery lane must remain distinct')
+    fpv20 = step(fresh, 'Reproduce and install exact public FPV20 predecessor on clean VM')
+    require("if: matrix.lifecycle == 'fpv20_upgrade'" in fpv20 and
+            'XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv20' in fpv20 and
+            'GH_TOKEN: ${{ github.token }}' in fpv20,
+            'FPV20 must reuse the exact published predecessor in its own VM')
+    prepared = step(fresh, 'Prepare synthetic accounts before native durable initialization')
+    require("if: matrix.lifecycle == 'new_install'" in prepared and
+            fresh.index('Prepare synthetic accounts before native durable initialization') < fresh.index('Qualify fresh install on a second clean Ubuntu VM'),
+            'new-install accounts must be prepared before the native one-time import')
+    smoke = step(backend, 'Run readiness and anonymous access-boundary smoke')
+    require('XINSIGHT_CI_ACCOUNT_INITIALIZE=1 go run ./scripts/ci-account-initialize' in smoke and
+            smoke.index('ci-account-initialize') < smoke.index('go run ./cmd/xinsight-server serve'),
+            'backend smoke must initialize the durable authority before serve')
     upload = step(fresh, 'Upload explicitly non-publishable fresh-install evidence')
     require('if: always()' in upload and 'xinsight-installed-joint-qualification/stage-receipts.json' in upload,
             'failed installed lifecycle loses safe stage receipts')
-    require('xinsight-fpv17-to-fpv20-qualification/qualification-failure.json' in upload,
+    require('xinsight-account-upgrade-qualification/qualification-failure.json' in upload,
             'FPV17 upgrade failure loses fixed stage and exit code')
-    require('xinsight-fpv17-to-fpv20-qualification/qualification-result.json' in upload,
+    require('xinsight-account-upgrade-qualification/qualification-result.json' in upload,
             'FPV17 same-schema qualification receipt is not uploaded')
     for unsafe in ('xinsight-fpv15-joint-private', '*.log', 'nginx-error.log', 'joint-private.log'):
         require(unsafe not in upload, 'private fixture output must not become artifact: ' + unsafe)
@@ -1004,9 +1017,17 @@ def check_fpv17_upgrade_lane() -> None:
     joint = (root / 'scripts/qualify-ubuntu22-installed-joint.sh').read_text()
     driver = (root / 'scripts/ci-fpv15-installed-joint/main.go').read_text()
     for required in ('164582cab0e7f169c265c2494d04920c61af833d',
-                     "('0.2.0-dev.fpv17','45')", "('0.2.0-dev.fpv20','46')", 'xinsight.ci-fpv17-predecessor.v1',
+                     "('0.2.0-dev.fpv17','45')", "('0.2.0-dev.fpv20','46')", "('0.2.0-dev.fpv21','47')", 'xinsight.ci-account-upgrade-predecessor.v1',
                      'ci-trust', 'old_source'):
         require(required in predecessor, 'FPV17 CI-only predecessor binding missing: ' + required)
+    for fixed in ('08435e0949dfae0ae65497d2e12ca356f6d820f0',
+                  '8bef119b796dac52eadc267717e3ec20ee112c0cf9a33dfd9f05b2129580685f',
+                  'e928b71ad83c5c83f2d83c37cbe7def1273197d0858ec874102e941ccc9bb5cb',
+                  'be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd'):
+        require(fixed in predecessor, 'formal FPV20 predecessor pin missing: '+fixed)
+    require('gh release download v0.2.0-dev.fpv20' in predecessor and
+            'git clone' not in predecessor and 'build-signed-release.sh' not in predecessor,
+            'FPV20 qualification must reuse its original published artifact')
     for required in ('upgrade --check --artifact', 'upgrade --artifact',
                      "before==after", "after['files']==before['files']",
                      'active_workers_restored_by_upgrade',
@@ -1035,7 +1056,7 @@ def check_fpv17_upgrade_lane() -> None:
             'old installed prestate must use its pinned pre-sync fixture implementation')
 
 
-def check_fpv17_upgrade_delta(database_samples=None) -> dict:
+def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     """Run the actual shell validator; optional Local samples contain real PG rows.
 
     Host process/file inputs remain synthetic here. This does not execute or
@@ -1044,13 +1065,16 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
     root = WORKFLOW.parents[2]
     qualifier = root / 'scripts/qualify-ubuntu22-fpv17-upgrade.sh'
     blocks = re.findall(r"<<'PY'\n(.*?)\nPY", qualifier.read_text(), re.S)
-    validators = [code for code in blocks if 'migration46_exact_append_verified' in code]
+    validators = [code for code in blocks if 'migration47_exact_append_verified' in code]
     require(len(validators) == 1, 'exact upgrade delta validator missing or duplicated')
     code = validators[0]
     import hashlib
     checksum = 'sha256:' + hashlib.sha256((root / 'migrations/000046_add_connector_sync_control.up.sql').read_bytes()).hexdigest()
     migrations = [{'version': f'{i:06d}_fixture', 'checksum_sha256': 'sha256:'+'a'*64,
                    'dirty': False, 'applied_at': '2026-01-01T00:00:00Z'} for i in range(1, 46)]
+    if old_schema == 46:
+        migrations.append({'version':'000046_add_connector_sync_control','checksum_sha256':checksum,
+                           'dirty':False,'applied_at':'2026-01-01T00:00:00Z'})
     tables = ('connector_sync_controls', 'connector_sync_slots', 'connector_sync_runs')
     columns = {'connector_sync_controls': ('last_checked_at', 'last_data_at', 'last_error'),
                'connector_sync_slots': ('owner', 'token', 'revision', 'busy', 'started_at', 'ended_at', 'last_error'),
@@ -1064,15 +1088,15 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
         'functions': [[n, r, 'EXECUTE', False] for n in ('xinsight_sync_scope', 'xinsight_sync_receiver', 'xinsight_sync_units')
                       for r in ('xinsight_workspace', 'xinsight_importer')],
     }
-    old = {'product_version': '0.2.0-dev.fpv17', 'database_schema': '45',
+    old = {'product_version': '0.2.0-dev.fpv17' if old_schema==45 else '0.2.0-dev.fpv20', 'database_schema': str(old_schema),
            'commit': '164582cab0e7f169c265c2494d04920c61af833d', 'release_dir': '/synthetic/fpv17'}
-    new = {'product_version': '0.2.0-dev.fpv20', 'database_schema': '46',
-           'commit': 'b'*40, 'release_dir': '/synthetic/fpv20'}
+    new = {'product_version': '0.2.0-dev.fpv21', 'database_schema': '47',
+           'commit': 'b'*40, 'release_dir': '/synthetic/fpv21'}
     stable = ('workbench_access_grants', 'work_event_collections', 'work_event_documents',
               'connector_installation_source_bindings', 'installation_identity', 'role_boundary',
               'source_fact_streams', 'source_content_collections', 'adapter_import_states')
     before = {
-        'status': {'managed': True, 'install_state': {'current': old, 'database_schema_current': '45'}},
+        'status': {'managed': True, 'install_state': {'current': old, 'database_schema_current': str(old_schema)}},
         'release': old['release_dir'], 'server_invocation': 'a'*32,
         'database': {k: '1:'+'a'*32 for k in stable},
         'migration_rows': migrations, 'table_acl_rows': {'schema_migrations': 'original-acl'},
@@ -1082,20 +1106,29 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
                      'economic_feed': [['feed', 'cursor', 'hwm']]},
         'files': {'review-body.key': [384, 0, 0, 'a'*64]},
     }
-    before['database']['schema_migrations'] = '45:'+'a'*32
+    before['database']['schema_migrations'] = str(old_schema)+':'+'a'*32
+    before['legacy_account_inventory']={'count':2,'sha256':'c'*64}
+    if old_schema==46:
+        before['table_acl_rows'].update({t:'reviewed-new-acl' for t in tables})
     before['database']['table_acl'] = 'a'*32
     after = copy.deepcopy(before)
     after.update(status={'managed': True, 'active_journal': None,
-                         'install_state': {'current': new, 'previous': old, 'database_schema_current': '46'}},
+                         'install_state': {'current': new, 'previous': old, 'database_schema_current': '47'}},
                  release=new['release_dir'], server_invocation='b'*32,
                  server_exe=new['release_dir']+'/bin/xinsight-server',
                  worker_exes={u: new['release_dir']+'/bin/xinsight-importer'
                               for u in ('xinsight-feed.service', 'xinsight-source-facts.service')},
                  sync_privileges=privileges)
-    after['database']['schema_migrations'] = '46:'+'b'*32
+    after['database']['schema_migrations'] = '47:'+'b'*32
+    after['account_inventory']=copy.deepcopy(before['legacy_account_inventory'])
+    after['account_boundary']={'initialized':True,'roles_separated':True,'function_owner':'xinsight_admin'}
     after['database']['table_acl'] = 'b'*32
-    after['migration_rows'].append({'version': '000046_add_connector_sync_control',
-        'checksum_sha256': checksum, 'dirty': False, 'applied_at': '2026-01-02T00:00:00Z'})
+    if old_schema==45:
+        after['migration_rows'].append({'version': '000046_add_connector_sync_control',
+            'checksum_sha256': checksum, 'dirty': False, 'applied_at': '2026-01-02T00:00:00Z'})
+    after['migration_rows'].append({'version':'000047_add_local_account_lifecycle',
+        'checksum_sha256':'sha256:'+hashlib.sha256((root/'migrations/000047_add_local_account_lifecycle.up.sql').read_bytes()).hexdigest(),
+        'dirty':False,'applied_at':'2026-01-02T00:00:00Z'})
     after['table_acl_rows'].update({t: 'reviewed-new-acl' for t in tables})
     if database_samples is not None:
         for target, sample in zip((before, after), database_samples):
@@ -1111,10 +1144,10 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
     def missing_acl(s): s['table_acl_rows'].pop(old_table)
     cases = [
         ('changed prior ledger row', lambda s: s['migration_rows'][0].update(applied_at='changed')),
-        ('missing migration46', lambda s: s['migration_rows'].pop()),
+        ('missing final migration', lambda s: s['migration_rows'].pop()),
         ('extra migration', lambda s: s['migration_rows'].append(copy.deepcopy(s['migration_rows'][-1]))),
-        ('wrong migration id', lambda s: s['migration_rows'][-1].update(version='000047_unreviewed')),
-        ('dirty migration46', lambda s: s['migration_rows'][-1].update(dirty=True)),
+        ('wrong migration id', lambda s: s['migration_rows'][-1].update(version='000048_unreviewed')),
+        ('dirty final migration', lambda s: s['migration_rows'][-1].update(dirty=True)),
         ('wrong migration checksum', lambda s: s['migration_rows'][-1].update(checksum_sha256='sha256:'+'0'*64)),
         ('wrong schema count', lambda s: s['database'].update(schema_migrations='45:'+'a'*32)),
         ('changed predecessor ACL', changed_acl), ('missing predecessor ACL', missing_acl),
@@ -1127,6 +1160,11 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
         ('PUBLIC trigger execute', lambda s: s['sync_privileges']['functions'].append(['xinsight_init_connector_sync', 'PUBLIC', 'EXECUTE', False])),
         ('delegable function', lambda s: s['sync_privileges']['functions'][0].__setitem__(3, True)),
         ('lost original history', lambda s: s['immutable_rows']['source_fact_documents'].clear()),
+        ('changed imported password or identity', lambda s: s['account_inventory'].update(sha256='d'*64)),
+        ('missing imported account', lambda s: s['account_inventory'].update(count=1)),
+        ('private schema exposed', lambda s: s['account_boundary'].update(roles_separated=False)),
+        ('authority not initialized', lambda s: s['account_boundary'].update(initialized=False)),
+        ('wrong account function owner', lambda s: s['account_boundary'].update(function_owner='xinsight_workspace')),
         ('changed key', lambda s: s['files']['review-body.key'].__setitem__(3, 'b'*64)),
         ('rewound content cursor', lambda s: s['progress']['source_content'][0].__setitem__(2, '1')),
     ]
@@ -1138,12 +1176,12 @@ def check_fpv17_upgrade_delta(database_samples=None) -> dict:
             return subprocess.run([sys.executable, '-c', code, *map(str, paths), str(root)],
                                   capture_output=True, text=True)
         result = evaluate(after)
-        require(result.returncode == 0, 'valid exact schema45-to46 delta rejected: '+result.stderr)
+        require(result.returncode == 0, 'valid exact predecessor-to47 delta rejected: '+result.stderr)
         for name, mutate in cases:
             candidate = copy.deepcopy(after)
             mutate(candidate)
             require(evaluate(candidate).returncode != 0, 'unsafe upgrade delta accepted: '+name)
-    result = {'positive': 1, 'negative': len(cases), 'real_pg_rows': database_samples is not None}
+    result = {'positive': 1, 'negative': len(cases), 'real_pg_rows': database_samples is not None,'old_schema':old_schema}
     print('fpv17 upgrade exact delta:', json.dumps(result, sort_keys=True))
     return result
 
@@ -1159,6 +1197,7 @@ if __name__ == "__main__":
     check_installed_result_contract()
     check_fpv17_upgrade_lane()
     check_fpv17_upgrade_delta()
+    check_fpv17_upgrade_delta(old_schema=46)
     check_capless_root_references(source)
     for required in ('--bounding-set=-all', 'XINSIGHT_CAPLESS_REFERENCE_TEST=1', '-test.count=1'):
         try:
@@ -1217,7 +1256,7 @@ if __name__ == "__main__":
     expect_rejected(source, 'npm install --global "$(node -p "require(\'./package.json\').packageManager")"', 'npm --version')
     expect_rejected(source, 'bash scripts/verify-protected-runtime.sh', 'true')
     expect_rejected(source, "XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'", "XINSIGHT_REQUIRE_POSTGRES_TESTS: '0'")
-    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade]', 'lifecycle: [new_install, adopt_existing]')
+    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade]', 'lifecycle: [new_install, adopt_existing]')
     expect_rejected(source, "permissions:\n  contents: read", "permissions:\n  contents: write")
     expect_rejected(source, "GH_TOKEN: ${{ github.token }}", "GH_TOKEN: ${{ secrets.MAINTAINER_TOKEN }}")
     expect_rejected(source, "ref: db10730d64a9302887ad59c53921e98c757927e7", "ref: main")

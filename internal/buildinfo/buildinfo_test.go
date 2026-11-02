@@ -16,7 +16,7 @@ func TestVersionOutputContainsCompatibilityIdentity(t *testing.T) {
 	}
 	for _, expected := range []string{
 		"x-insight 0.2.0-dev",
-		"db_schema=46..46",
+		"db_schema=47..47",
 		"postgres=16..16",
 		"config=xinsight.config.v1",
 		"api=xinsight.investigation.v1",
@@ -37,7 +37,7 @@ func TestVersionOutputContainsCompatibilityIdentity(t *testing.T) {
 		t.Fatalf("decode JSON: %v", err)
 	}
 	if info.ProductName != "x-insight" ||
-		info.DatabaseSchemaMin != "46" || info.DatabaseSchemaMax != "46" ||
+		info.DatabaseSchemaMin != "47" || info.DatabaseSchemaMax != "47" ||
 		info.AccessAPIVersion != "xinsight.access.v1" ||
 		info.ManualVersion == "" {
 		t.Fatalf("info=%+v", info)

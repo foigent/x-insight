@@ -17,12 +17,13 @@ var (
 const (
 	ProductName         = "x-insight"
 	ConfigSchemaVersion = "xinsight.config.v1"
-	DatabaseSchemaMin   = "46"
-	DatabaseSchemaMax   = "46"
+	DatabaseSchemaMin   = "47"
+	DatabaseSchemaMax   = "47"
 	PostgresMajorMin    = "16"
 	PostgresMajorMax    = "16"
 	APIVersion          = "xinsight.investigation.v1"
 	AccessAPIVersion    = "xinsight.access.v1"
+	AccountsAPIVersion  = "xinsight.accounts.v1"
 	EvidenceVersion     = "m0.1"
 	ReceiptVersion      = "xinsight.import-receipt.v1"
 )
@@ -40,6 +41,7 @@ type Info struct {
 	ConfigSchemaVersion string `json:"config_schema_version"`
 	APIVersion          string `json:"api_version"`
 	AccessAPIVersion    string `json:"access_api_version"`
+	AccountsAPIVersion  string `json:"accounts_api_version"`
 	EvidenceSchema      string `json:"evidence_schema_version"`
 	ReceiptSchema       string `json:"receipt_schema_version"`
 	ManualVersion       string `json:"manual_version"`
@@ -59,6 +61,7 @@ func Current() Info {
 		ConfigSchemaVersion: ConfigSchemaVersion,
 		APIVersion:          APIVersion,
 		AccessAPIVersion:    AccessAPIVersion,
+		AccountsAPIVersion:  AccountsAPIVersion,
 		EvidenceSchema:      EvidenceVersion,
 		ReceiptSchema:       ReceiptVersion,
 		ManualVersion:       ManualVersion,
@@ -69,7 +72,7 @@ func WriteText(writer io.Writer) error {
 	info := Current()
 	_, err := fmt.Fprintf(
 		writer,
-		"%s %s commit=%s build_time=%s go=%s db_schema=%s..%s postgres=%s..%s config=%s api=%s access_api=%s evidence=%s receipt=%s manual=%s\n",
+		"%s %s commit=%s build_time=%s go=%s db_schema=%s..%s postgres=%s..%s config=%s api=%s access_api=%s accounts_api=%s evidence=%s receipt=%s manual=%s\n",
 		info.ProductName,
 		info.ProductVersion,
 		info.Commit,
@@ -82,6 +85,7 @@ func WriteText(writer io.Writer) error {
 		info.ConfigSchemaVersion,
 		info.APIVersion,
 		info.AccessAPIVersion,
+		info.AccountsAPIVersion,
 		info.EvidenceSchema,
 		info.ReceiptSchema,
 		info.ManualVersion,
