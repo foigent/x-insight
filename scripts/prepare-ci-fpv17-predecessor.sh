@@ -31,9 +31,11 @@ if [ "$PREDECESSOR" = fpv17 ]; then
 else
   # Reuse the exact already-published, owner-signed FPV20 release installed on
   # the original host. Download only its three fixed public inputs; no rebuild.
-  mkdir -m 0700 "$OLD_SOURCE" "$OLD_SIGNED"
+  mkdir -m 0700 "$OLD_SIGNED"
   test "$(git -C "$ROOT" rev-parse "$OLD_COMMIT^{tree}")" = bd463c9100cf5d6915c7bcbaf4d03e0e499de5c3
-  git -C "$ROOT" archive "$OLD_COMMIT" | tar -x -C "$OLD_SOURCE"
+  git -C "$ROOT" worktree add --detach "$OLD_SOURCE" "$OLD_COMMIT"
+  test "$(git -C "$OLD_SOURCE" rev-parse HEAD)" = "$OLD_COMMIT"
+  test "$(git -C "$OLD_SOURCE" rev-parse 'HEAD^{tree}')" = bd463c9100cf5d6915c7bcbaf4d03e0e499de5c3
   gh release download v0.2.0-dev.fpv20 --repo foigent/x-insight --dir "$OLD_SIGNED" \
     --pattern "xinsight-v0.2.0-dev.fpv20-linux-amd64-$OLD_COMMIT.tar.gz" \
     --pattern "xinsight-release-linux-amd64-$OLD_COMMIT" --pattern trusted-release-keys.json

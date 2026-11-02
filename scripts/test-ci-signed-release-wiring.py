@@ -1026,7 +1026,10 @@ def check_fpv17_upgrade_lane() -> None:
                   'be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd'):
         require(fixed in predecessor, 'formal FPV20 predecessor pin missing: '+fixed)
     require('gh release download v0.2.0-dev.fpv20' in predecessor and
-            'git clone' not in predecessor and 'build-signed-release.sh' not in predecessor,
+            'git clone' not in predecessor and 'build-signed-release.sh' not in predecessor and
+            'worktree add --detach' in predecessor and
+            'git -C "$OLD_SOURCE" rev-parse HEAD' in predecessor and
+            'git -C "$OLD_SOURCE" rev-parse \'HEAD^{tree}\'' in predecessor,
             'FPV20 qualification must reuse its original published artifact')
     for required in ('upgrade --check --artifact', 'upgrade --artifact',
                      "before==after", "after['files']==before['files']",
