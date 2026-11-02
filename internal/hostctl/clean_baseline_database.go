@@ -246,7 +246,7 @@ func (manager PostgresManager) PreviewCleanBaseline(
 	if err := schemaContractDriftError(contract); err != nil {
 		return CleanBaselineDatabasePreview{}, err
 	}
-	if contract.Objects.Tables != len(cleanBaselineTables) {
+	if contract.Objects.Tables != len(cleanBaselineTables)+3 {
 		return CleanBaselineDatabasePreview{}, fmt.Errorf("release schema table classification drift")
 	}
 	sourceRows, sourceDigest, adapterRows, adapterDigest, runtimeCatalogRows, err := inspectReleaseCatalog(ctx, database)
@@ -647,7 +647,7 @@ func (manager PostgresManager) VerifyCleanBaselineDatabase(
 	if err != nil {
 		return CleanBaselineDatabaseProof{}, err
 	}
-	if err := schemaContractDriftError(contract); err != nil || contract.Objects.Tables != len(cleanBaselineTables) {
+	if err := schemaContractDriftError(contract); err != nil || contract.Objects.Tables != len(cleanBaselineTables)+3 {
 		if err != nil {
 			return CleanBaselineDatabaseProof{}, err
 		}
@@ -809,7 +809,7 @@ WITH objects AS (
          jsonb_build_object('persistence', class.relpersistence, 'kind', class.relkind)::text, ''
   FROM pg_class AS class
   JOIN pg_namespace AS n ON n.oid = class.relnamespace
-  WHERE n.nspname = 'public' AND class.relkind IN ('r', 'p')
+  WHERE n.nspname IN ('public','xinsight_accounts') AND class.relkind IN ('r', 'p')
   UNION ALL
   SELECT 'C', n.nspname, class.relname, attribute.attname,
          jsonb_build_object(
@@ -844,7 +844,7 @@ WITH objects AS (
   LEFT JOIN pg_namespace AS collation_namespace ON collation_namespace.oid = column_collation.collnamespace
   LEFT JOIN information_schema.columns AS info
     ON info.table_schema = n.nspname AND info.table_name = class.relname AND info.column_name = attribute.attname
-  WHERE n.nspname = 'public' AND class.relkind IN ('r', 'p')
+  WHERE n.nspname IN ('public','xinsight_accounts') AND class.relkind IN ('r', 'p')
     AND attribute.attnum > 0 AND NOT attribute.attisdropped
   UNION ALL
   SELECT 'K', namespace.nspname, relation.relname, con.conname,
@@ -852,24 +852,26 @@ WITH objects AS (
   FROM pg_constraint con
   JOIN pg_namespace AS namespace ON namespace.oid = con.connamespace
   JOIN pg_class AS relation ON relation.oid = con.conrelid
-  WHERE namespace.nspname = 'public' AND con.contype IN ('p','u','f','c','x')
+  WHERE namespace.nspname IN ('public','xinsight_accounts') AND con.contype IN ('p','u','f','c','x')
   UNION ALL
   SELECT 'I', idx.schemaname, idx.tablename, idx.indexname, idx.indexdef, ''
-  FROM pg_indexes idx WHERE idx.schemaname = 'public'
+  FROM pg_indexes idx WHERE idx.schemaname IN ('public','xinsight_accounts')
   UNION ALL
   SELECT 'G', namespace.nspname, relation.relname, trg.tgname, pg_get_triggerdef(trg.oid, true), ''
   FROM pg_trigger trg
   JOIN pg_class AS relation ON relation.oid = trg.tgrelid
   JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
-  WHERE NOT trg.tgisinternal AND namespace.nspname = 'public'
+  WHERE NOT trg.tgisinternal AND namespace.nspname IN ('public','xinsight_accounts')
   UNION ALL
   -- Function semantics include every execution-affecting pg_proc property.
   -- The managed connector and work-install EXECUTE grants are enforced by
   -- the role boundary verifier and omitted here. The synthetic resource identity
   -- importer grant remains contract-visible, so generation must follow
-  -- ApplyGrants. Every other non-owner ACL entry, including PUBLIC or
+  -- ApplyGrants. Order ACL identities by stable role names, never cluster-local
+  -- OIDs: equivalent role creation orders must produce identical semantics.
+  -- Every other non-owner ACL entry, including PUBLIC or
   -- grant-option access, remains contract-visible.
-  SELECT 'F', 'public', pg_get_userbyid(p.proowner),
+  SELECT 'F', p.pronamespace::regnamespace::text, pg_get_userbyid(p.proowner),
          p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
          jsonb_build_object(
            'kind', p.prokind,
@@ -893,7 +895,9 @@ WITH objects AS (
                  'grantee', CASE WHEN privilege.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(privilege.grantee) END,
                  'privilege', privilege.privilege_type,
                  'grantable', privilege.is_grantable
-               ) ORDER BY privilege.grantor, privilege.grantee, privilege.privilege_type, privilege.is_grantable
+               ) ORDER BY pg_get_userbyid(privilege.grantor) COLLATE "C",
+                          (CASE WHEN privilege.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(privilege.grantee) END) COLLATE "C",
+                          privilege.privilege_type COLLATE "C", privilege.is_grantable
              )
              FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) AS privilege
              WHERE privilege.grantee <> p.proowner
@@ -918,7 +922,7 @@ WITH objects AS (
          )::text, ''
   FROM pg_proc AS p
   JOIN pg_language AS language ON language.oid = p.prolang
-  WHERE p.pronamespace = 'public'::regnamespace
+  WHERE p.pronamespace = ANY(ARRAY['public'::regnamespace::oid,to_regnamespace('xinsight_accounts')::oid])
     AND NOT EXISTS (
       SELECT 1 FROM pg_depend AS dependency
       WHERE dependency.classid = 'pg_proc'::regclass
@@ -930,11 +934,11 @@ WITH objects AS (
   FROM pg_extension AS extension
   JOIN pg_namespace AS extension_namespace ON extension_namespace.oid = extension.extnamespace
   UNION ALL
-  SELECT 'Y', 'public', '', type.typname,
+  SELECT 'Y', type.typnamespace::regnamespace::text, '', type.typname,
          concat_ws('|', type.typtype::text, type.typcategory::text,
                    type.typnotnull::text, type.typbasetype::regtype::text), ''
   FROM pg_type AS type
-  WHERE type.typnamespace = 'public'::regnamespace
+  WHERE type.typnamespace = ANY(ARRAY['public'::regnamespace::oid,to_regnamespace('xinsight_accounts')::oid])
     AND type.typrelid = 0
     AND type.typelem = 0
     AND NOT EXISTS (
@@ -944,9 +948,9 @@ WITH objects AS (
         AND dependency.deptype = 'e'
     )
   UNION ALL
-  SELECT 'R', 'public', '', class.relname, class.relkind::text, ''
+  SELECT 'R', class.relnamespace::regnamespace::text, '', class.relname, class.relkind::text, ''
   FROM pg_class AS class
-  WHERE class.relnamespace = 'public'::regnamespace
+  WHERE class.relnamespace = ANY(ARRAY['public'::regnamespace::oid,to_regnamespace('xinsight_accounts')::oid])
     AND class.relkind NOT IN ('r', 'i')
 )
 SELECT kind, namespace, owner, name, definition, layout

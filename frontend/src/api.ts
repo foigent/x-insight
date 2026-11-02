@@ -82,6 +82,7 @@ export type AccessRole =
  | "workbench_investigation_reviewer"
  | "workbench_purpose_reviewer";
 export type AccessPermission =
+ | "accounts.manage"
  | "workbench.purpose.review"
  | "investigation.scoped.read"
  | "investigation.scoped.cite"
@@ -1453,6 +1454,7 @@ export interface WorkbenchSavedFilter {
 export interface WorkbenchSavedFilterList { items: WorkbenchSavedFilter[] }
 
 let scopedRevision: string | undefined;
+let managedOwner=false;
 let scopeIdentity = "";
 let scopeGeneration=0;
 // Activity timestamps and CSRF refreshes do not change the authorization identity.
@@ -1464,6 +1466,7 @@ export function acceptScopeSession(current: AccessSessionResponse | null){
  const next=scopeSessionKey(current);
  if(scopeIdentity!==next){scopeGeneration++;scopeIdentity=next;}
  scopedRevision=current?.scope_revision;
+ managedOwner=current?.session.permissions.includes("accounts.manage") ?? false;
 }
 export function currentScopeSessionKey(){return scopeIdentity;}
 function invalidateScope(){scopeGeneration++;window.dispatchEvent(new Event("xinsight:scope-changed"));}
@@ -1493,7 +1496,7 @@ async function requestAccessJSON<T>(
   if (options.csrfToken) {
     headers["X-CSRF-Token"] = options.csrfToken;
   }
-  const scopedRequest=scopedRevision!==undefined&&!path.startsWith("/api/v1/access/");
+  const scopedRequest=scopedRevision!==undefined&&!path.startsWith("/api/v1/access/")&&(!managedOwner||path.startsWith("/api/v1/runtime/")||path.startsWith("/api/v1/workbench/")||path.startsWith("/api/v1/work-activity"));
   const generation=scopeGeneration;
   if(scopedRequest)headers["X-XInsight-Scope-Revision"]=scopedRevision!;
   const response = await fetch(path, {
@@ -2373,4 +2376,16 @@ export const connectorSyncAPI={
  status(id:string,signal?:AbortSignal){return requestJSON<ConnectorSyncStatus>(`/api/v1/connector-control/installations/${encodeURIComponent(id)}/sync`,signal)},
  set(id:string,body:SyncMutation,csrfToken:string){return requestAccessJSON<ConnectorSyncStatus>(`/api/v1/connector-control/installations/${encodeURIComponent(id)}/sync`,{method:"PUT",body,csrfToken})},
  once(id:string,body:SyncMutation,csrfToken:string){return requestAccessJSON<ConnectorSyncStatus>(`/api/v1/connector-control/installations/${encodeURIComponent(id)}/sync-once`,{method:"POST",body,csrfToken})},
+};
+
+export interface ManagedAccount {subject_id:string;username:string;role:string;disabled:boolean;needs_activation:boolean;revision:number}
+export interface ProjectReadCommand {grant_id:string;subject_id:string;source_system_id:string;source_project_ref:string;expected_revision:number;capabilities:string[];revoke:boolean;check_only:boolean}
+export interface ProjectReadGrant {id:string;subject_id:string;source_system_id:string;source_project_ref:string|null;cost_project_ref:string|null;revision:number;active:boolean;[key:string]:unknown}
+export interface ProjectReadOptions {sources:Array<{id:string;name:string}>;projects:Array<{source_system_id:string;source_project_ref:string}>;grants:ProjectReadGrant[]}
+export const managedAccountsAPI={
+ list:(signal?:AbortSignal)=>requestAccessJSON<{items:ManagedAccount[]}>("/api/v1/access/accounts",{signal}),
+ change:(command:Record<string,unknown>,csrfToken:string)=>requestAccessJSON<{account:ManagedAccount;activation_link?:string;expires_at?:string}>("/api/v1/access/accounts",{method:"POST",body:command,csrfToken,notifyUnauthorized:false}),
+ setPassword:(token:string,password:string,confirmation:string)=>requestAccessJSON<{username:string;status:string}>("/api/v1/access/account-password",{method:"POST",body:{token,password,confirmation},notifyUnauthorized:false}),
+ grantOptions:(signal?:AbortSignal)=>requestAccessJSON<ProjectReadOptions>("/api/v1/access/project-read-grants",{signal}),
+ grant:(command:ProjectReadCommand,password:string,csrfToken:string)=>requestAccessJSON<unknown>("/api/v1/access/project-read-grants",{method:"POST",body:{...command,password},csrfToken,notifyUnauthorized:false})
 };

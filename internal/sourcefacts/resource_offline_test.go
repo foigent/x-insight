@@ -33,7 +33,7 @@ func TestSyntheticResourceAuthorizationSeparatesInternalAndUR(t *testing.T) {
 		"OID-missing":       func(x *OfflineAuthorization) { x.TargetDatabaseOID = "" },
 		"target-wildcard":   func(x *OfflineAuthorization) { x.TargetSourceInstance = "*" },
 		"schema36":          func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "36" },
-		"future-schema47":   func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "47" },
+		"future-schema48":   func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "48" },
 		"expired":           func(x *OfflineAuthorization) { x.ExpiresAt = now.Format(TimeFormat) },
 		"too-long":          func(x *OfflineAuthorization) { x.ExpiresAt = now.Add(3 * time.Hour).Format(TimeFormat) },
 		"schema-hash":       func(x *OfflineAuthorization) { x.SourceSchemaSHA256 = Hash([]byte("other")) },
@@ -78,7 +78,7 @@ func TestActionAuthorizationIsDistinctAndTestOnly(t *testing.T) {
 	for _, mutate := range []func(*OfflineAuthorization){
 		func(x *OfflineAuthorization) { x.Profile = ResourceOfflineProfile },
 		func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "39" },
-		func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "47" },
+		func(x *OfflineAuthorization) { x.TargetDatabaseSchema = "48" },
 		func(x *OfflineAuthorization) { x.Environment = "integration" },
 		func(x *OfflineAuthorization) { x.SourceSchemaSHA256 = ResourceSchemaSHA256() },
 	} {

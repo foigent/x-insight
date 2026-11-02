@@ -151,6 +151,11 @@ func (engine *Engine) executeCleanBaseline(
 		return CleanBaselineReceipt{}, err
 	}
 
+	if err := engine.prepareAccountAuthority(ctx, journal, targetCredentials, plan.Current.Identity); err != nil {
+		failureCode = "clean_account_authority_initialization_failed"
+		return CleanBaselineReceipt{}, err
+	}
+
 	if err := engine.runPhase(journal, "switch_clean_database", func() error {
 		return atomicSymlink(targetCredentials.SetRef, engine.Paths.DatabaseCurrentLink)
 	}); err != nil {

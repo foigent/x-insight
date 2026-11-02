@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/foigent/x-insight/internal/access"
 	"github.com/foigent/x-insight/internal/db"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 )
@@ -125,6 +126,14 @@ func TestManagedSourceAndGrantCommandsUseScopedAdminState(t *testing.T) {
 	writeHostFile(t, createPath, []byte(create), 0o600)
 	if _, err := engine.ManageWorkbenchGrant(ctx, createPath, true); err == nil {
 		t.Fatal("grant creation accepted without a configured account")
+	}
+	// Current schema requires native authority initialization even when the
+	// remaining operation only revokes a historical grant for an absent account.
+	if err := manager.InitializeAccountAuthority(ctx, credentials, access.AccountConfig{SchemaVersion: access.AccountConfigSchemaV3}, "bootstrap_required"); err != nil {
+		t.Fatal("native empty account authority", err)
+	}
+	if _, err := engine.ManageWorkbenchGrant(ctx, createPath, true); err == nil {
+		t.Fatal("initialized empty authority accepted grant creation without an account")
 	}
 	if err := os.Chmod(createPath, 0o644); err != nil {
 		t.Fatal(err)

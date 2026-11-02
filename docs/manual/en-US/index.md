@@ -6,25 +6,25 @@ X-Insight (XI) can be used independently for supported imports, reported work ac
 
 ## Version and support
 
-Product `0.2.0-dev.fpv20`; manual `0.2.0-dev.fpv20/manual-r1`.
+Product `0.2.0-dev.fpv21`; manual `0.2.0-dev.fpv21/manual-r1`.
 
 | Item | Current contract |
 | --- | --- |
-| Database schema | 46 |
+| Database schema | 47 |
 | Database | Dedicated PostgreSQL 16, loopback only |
 | Application | Linux amd64; systemd for managed installations |
 | Installer runtime host prerequisite | Ubuntu 22.04 or 24.04 amd64 with systemd; exact artifact/topology qualification is separate |
-| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV20 Target acceptance |
+| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV21 Target acceptance |
 | Pending native-host artifact qualification | Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container; fresh-install evidence pending |
 | Configuration | `xinsight.config.v1` |
-| APIs | `xinsight.investigation.v1`, `xinsight.access.v1` |
+| APIs | `xinsight.investigation.v1`, `xinsight.access.v1`, `xinsight.accounts.v1` |
 | Default language | English; Simplified Chinese is available in the language control |
 
 This is a development candidate, not a public stable release or a production acceptance claim. The repository also retains an Ubuntu 22.04 CI installation lane and a frozen rc.13 profile. Their results and artifacts are distinct. Use the exact profile, signed artifact, trust authority, and host qualification for the intended installation; do not apply historical instructions to another profile.
 
-Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Exact FPV20 artifact qualification on Ubuntu 22.04 with container PostgreSQL is pending; preinstalled OS dependencies and completed evidence must be recorded separately.
+Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Exact FPV21 artifact qualification on Ubuntu 22.04 with container PostgreSQL is pending; preinstalled OS dependencies and completed evidence must be recorded separately.
 
-The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema46 adds connection synchronization controls; an older schema45 binary is not a rollback target.
+The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.
 
 ## Build and try locally
 
@@ -58,22 +58,14 @@ Managed installation needs an explicitly selected, qualified host, a dedicated e
 After independently checking the bootstrap verifier and trust authority, verify and extract into a new directory:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv19
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv19
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv21
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv21
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
 Use the verified payload's deploy templates. Preserve the four independent protected DSN files under `/etc/x-insight/database/current/`: `postgres-admin.dsn`, `postgres-reader.dsn`, `postgres-workspace.dsn`, and `postgres-importer.dsn`. They refer to one dedicated loopback database and distinct roles; do not pass their secrets as arguments or service environment values. Host tools, file ownership, database identity, listener scope, and profile must pass the controller's checks.
 
-Create a stable local subject and password hash with the verified controller. Password hashing requires an interactive TTY and two hidden entries; do not pipe a password or use an environment variable.
-
-```text
-sudo /approved/staging/candidate/bin/xinsightctl access generate-subject
-sudo /approved/staging/candidate/bin/xinsightctl access hash-password
-sudo /approved/staging/candidate/bin/xinsightctl access validate --file /etc/x-insight/access-accounts.json
-```
-
-The protected account file has `schema_version:"xinsight.local-accounts.v3"` and an `accounts` array. Each entry has explicit `subject_id`, normalized `username`, `role`, `disabled`, and `password_hash` fields. Use the generated subject and hash, not sample credentials. Preserve existing accounts. The file must be root-owned, regular, single-link, non-symlink, with mode0400 or0600. Validation prints counts, not account secrets. For ordinary investigation, use `workbench_investigation_reader`; saving reviews requires `workbench_investigation_reviewer`. An older `investigator` role does not automatically grant workbench access. Source/project grants are separately required.
+A fresh install needs no account file or default password. After installation, use the private first-owner activation handoff described in [Accounts and project reading](#accounts). An upgrade imports the validated existing v1/v2/v3 account file exactly once; after that the database is authoritative. Daily invitations, recovery and disable/enable are completed on the Accounts page.
 
 ```text
 sudo /approved/staging/candidate/bin/xinsightctl install --check --artifact /approved/candidate.tar.gz
@@ -94,6 +86,8 @@ With no existing XI retention policy, setup proposes full body,90days,5GiB per p
 For interrupted setup, return to the same request and inspect its current state before retrying. The UI keeps non-secret request references for the current subject. An expired invitation needs a new review and consent. Do not create a replacement source to hide a failed original connection. Active control credentials renew on the original installation; recovery after expiry requires administrators on both sides and the original retained source secret. Revoked access or scope drift is not silently restored.
 
 ## Grant ordinary users the right scope
+
+Owner project-metadata access is also explicit. Use Accounts to preview and confirm the exact account, source, project and fields. Management does not imply data or body access; see [Accounts and project reading](#accounts).
 
 Role capabilities and active grants both apply. Grants form a union; a narrow grant cannot restrict another broad one. UniRouter projects use `project-<project_id>`, not a bare number. The following is a shape example, not an instruction to grant every project. Replace every identity and scope with an approved, registered value:
 

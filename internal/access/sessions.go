@@ -46,6 +46,7 @@ type ServiceOptions struct {
 }
 
 type SessionView struct {
+	AuthRevision      int64        `json:"-"`
 	SessionRef        string       `json:"session_ref"`
 	SubjectID         string       `json:"subject_id"`
 	Role              Role         `json:"role"`
@@ -144,7 +145,21 @@ func (service *Service) Login(username string, password []byte, priorToken strin
 		audit(service.auditor, now, "access.login_rate_limit", nil, "", "rejected")
 		return "", Authentication{}, ErrRateLimited
 	}
-	principal, accepted := service.provider.Authenticate(username, password)
+	var principal Principal
+	var accepted bool
+	if provider, ok := service.provider.(interface {
+		AuthenticateCurrent(string, []byte) (Principal, error)
+	}); ok {
+		var err error
+		principal, err = provider.AuthenticateCurrent(username, password)
+		accepted = err == nil
+		if errors.Is(err, ErrAccountUnavailable) {
+			service.failures.cancel(key)
+			return "", Authentication{}, err
+		}
+	} else {
+		principal, accepted = service.provider.Authenticate(username, password)
+	}
 	if !accepted {
 		service.failures.finish(key, true)
 		audit(service.auditor, now, "access.login_failure", nil, "", "rejected")
@@ -163,7 +178,7 @@ func (service *Service) Login(username string, password []byte, priorToken strin
 	return token, authentication, nil
 }
 
-func (service *Service) Authenticate(token string) (Authentication, error) {
+func (service *Service) authenticateMemory(token string) (Authentication, error) {
 	if token == "" {
 		return Authentication{}, ErrUnauthenticated
 	}
@@ -379,6 +394,7 @@ func (service *Service) authentication(digest [32]byte, current *session) Authen
 
 func (service *Service) view(_ [32]byte, current *session) SessionView {
 	return SessionView{
+		AuthRevision:      current.principal.AuthRevision,
 		SessionRef:        current.reference,
 		SubjectID:         current.principal.SubjectID,
 		Role:              current.principal.Role,
@@ -408,6 +424,11 @@ func (service *Service) WithCurrentAuthentication(auth Authentication, commit fu
 	current, ok := service.sessions[auth.digest]
 	if !ok || current.reference != auth.Session.SessionRef || current.principal.SubjectID != auth.Session.SubjectID || current.principal.Role != auth.Session.Role || expirationResult(current, service.now().UTC()) != "" {
 		return ErrUnauthenticated
+	}
+	if provider, ok := service.provider.(interface {
+		WithPrincipal(Principal, func() error) error
+	}); ok {
+		return provider.WithPrincipal(current.principal, commit)
 	}
 	return commit()
 }

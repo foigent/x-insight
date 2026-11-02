@@ -262,6 +262,9 @@ matrix = json.loads(committed_matrix)
 if matrix["product_version"] != expected_version or matrix["manual_version"] != expected_manual:
     raise SystemExit("compatibility matrix version mismatch")
 expected_api_versions = ["xinsight.investigation.v1", "xinsight.access.v1"]
+durable_accounts = str(schema_contract["database_schema"]) == "47"
+if durable_accounts:
+    expected_api_versions.append("xinsight.accounts.v1")
 if matrix.get("api_versions") != expected_api_versions:
     raise SystemExit("compatibility matrix API version mismatch")
 if matrix.get("schema_contract") != {
@@ -277,8 +280,9 @@ server_unit = (root / "deploy/xinsight.service").read_text(encoding="utf-8")
 expected_server_credentials = {
     "LoadCredential=postgres-reader.dsn:/etc/x-insight/database/current/postgres-reader.dsn",
     "LoadCredential=postgres-workspace.dsn:/etc/x-insight/database/current/postgres-workspace.dsn",
-    "LoadCredential=access-accounts.json:/etc/x-insight/access-accounts.json",
 }
+if not durable_accounts:
+    expected_server_credentials.add("LoadCredential=access-accounts.json:/etc/x-insight/access-accounts.json")
 actual_server_credentials = {
     line.strip()
     for line in server_unit.splitlines()
@@ -545,6 +549,8 @@ for command in ("xinsight-server", "xinsight-importer", "xinsightctl", "xinsight
         "access_api_version": expected_api_versions[1],
         "manual_version": expected_manual,
     }
+    if durable_accounts:
+        expected["accounts_api_version"] = expected_api_versions[2]
     for field, value in expected.items():
         if identity.get(field) != value:
             raise SystemExit(f"{command} {field}={identity.get(field)!r}, expected {value!r}")

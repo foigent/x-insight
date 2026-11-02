@@ -82,6 +82,21 @@ func digestSyntheticArtifact(t *testing.T, f installFixture, version string, sch
 		config.Rollback.ApplicationRollbackCompatible = false
 	}
 	contractPath := "clean_baseline_schema_contract.json"
+	if schema >= 44 {
+		unit, e := os.ReadFile("../../deploy/xinsight.service")
+		if e != nil {
+			t.Fatal(e)
+		}
+		writeHostFile(t, filepath.Join(payload, "deploy/xinsight.service"), unit, 0644)
+	}
+	if schema == 46 {
+		contractPath = "schema46_contract.json"
+		config.APIVersions = append(config.APIVersions, "xinsight.access.v1")
+	}
+	if schema >= 47 {
+		contractPath = "development_schema_contract.json"
+		config.APIVersions = append(config.APIVersions, "xinsight.accounts.v1")
+	}
 	if schema == 29 {
 		contractPath = "schema29_contract.json"
 	}

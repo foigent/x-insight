@@ -7,7 +7,14 @@ import (
 	"github.com/foigent/x-insight/internal/buildinfo"
 )
 
+func targetRequiresAccessProtection(target verifiedTarget) bool {
+	return targetUsesDurableAccounts(target) || containsString(target.Bundle.Manifest.APIVersions, buildinfo.AccessAPIVersion)
+}
+
 func targetRequiresAccessAccountCredential(target verifiedTarget) bool {
+	if targetUsesDurableAccounts(target) {
+		return false
+	}
 	return containsString(
 		target.Bundle.Manifest.APIVersions,
 		buildinfo.AccessAPIVersion,
@@ -17,6 +24,9 @@ func targetRequiresAccessAccountCredential(target verifiedTarget) bool {
 func (engine *Engine) validateAccessAccountCredential(
 	target verifiedTarget,
 ) (bool, error) {
+	if durable, err := engine.validateDurableAccountPreflight(target); durable {
+		return false, err
+	}
 	if !targetRequiresAccessAccountCredential(target) {
 		return false, nil
 	}

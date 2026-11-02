@@ -81,7 +81,7 @@ func isProductRoute(cleanPath string) bool {
 	switch cleanPath {
 	case "/", "/login", "/inbox", "/investigation/queue", "/workbench/cost", "/workbench/runtime", "/executions", "/cases", "/sessions",
 		"/compare", "/connectors", "/connectors/unirouter/setup", "/discovery", "/access/sessions", "/access/review-policy", "/work/activity",
-		"/access/service-identities":
+		"/access/service-identities", "/access/accounts", "/access/activate":
 		return true
 	}
 	return strings.HasPrefix(cleanPath, "/executions/") ||

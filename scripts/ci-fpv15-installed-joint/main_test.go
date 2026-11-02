@@ -67,6 +67,7 @@ func TestFPV17UpgradeRequestSurvivesURSanitizedChildEnvironment(t *testing.T) {
 	adminDSN := filepath.Join(private, "xi-admin.dsn")
 	request := fpv17UpgradeRequest{
 		SchemaVersion:     "xinsight.ci-fpv17-installed-upgrade-request.v1",
+		PredecessorSchema: "45",
 		Script:            filepath.Join(private, "qualify-ubuntu22-fpv17-upgrade.sh"),
 		CandidateArtifact: "/opt/xinsight-ci-artifacts/candidate.tar.gz",
 		CandidatePayload:  filepath.Join(filepath.Dir(private), "fresh-install-payload"),
@@ -87,6 +88,24 @@ func TestFPV17UpgradeRequestSurvivesURSanitizedChildEnvironment(t *testing.T) {
 	child.Stdin = strings.NewReader(strings.Replace(producerInput, "/private/admin.dsn", adminDSN, 1))
 	if output, err := child.CombinedOutput(); err != nil {
 		t.Fatalf("sanitized UR child lost upgrade request: %v: %s", err, output)
+	}
+	for _, schema := range []string{"46", "", "44", "47"} {
+		request.PredecessorSchema = schema
+		raw, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(requestPath, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+		got, err := readFPV17UpgradeRequest(adminDSN)
+		if schema == "46" {
+			if err != nil || got == nil || got.PredecessorSchema != "46" {
+				t.Fatal("schema46 predecessor lost", err)
+			}
+		} else if err == nil {
+			t.Fatal("unknown or missing predecessor schema accepted", schema)
+		}
 	}
 	if err := os.Chmod(requestPath, 0644); err != nil {
 		t.Fatal(err)

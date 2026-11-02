@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/foigent/x-insight/internal/access"
 	"io"
 	"net"
 	"net/http"
@@ -1542,6 +1543,7 @@ func runnerServiceLauncher() string {
 }
 
 type fakeDatabase struct {
+	accountsInitialized      bool
 	custodyInventoryErr      error
 	facts                    DatabaseFacts
 	importerLogin            bool
@@ -1808,4 +1810,16 @@ func (database *fakeDatabase) SuspendForeignRestoredAuthority(context.Context, D
 
 func (database *fakeDatabase) ImporterRoleLogin(context.Context, DatabaseCredentials) (bool, error) {
 	return database.importerLogin, nil
+}
+
+func (d *fakeDatabase) AccountAuthorityState(context.Context, DatabaseCredentials) (bool, bool, error) {
+	return true, d.accountsInitialized, nil
+}
+func (d *fakeDatabase) InitializeAccountAuthority(_ context.Context, _ DatabaseCredentials, _ access.AccountConfig, _ string) error {
+	d.accountsInitialized = true
+	return nil
+}
+
+func (d *fakeDatabase) RetireRestoredAccountLinks(context.Context, DatabaseCredentials, string) error {
+	return nil
 }

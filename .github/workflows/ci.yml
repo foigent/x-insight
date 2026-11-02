@@ -417,6 +417,7 @@ jobs:
               json.dump(payload, output, separators=(",", ":"))
               output.write("\n")
           PY
+          XINSIGHT_CI_ACCOUNT_INITIALIZE=1 go run ./scripts/ci-account-initialize "$credential_dir/access-accounts.json"
           CREDENTIALS_DIRECTORY="$credential_dir" \
             go run ./cmd/xinsight-server serve 127.0.0.1:18080 \
             > /tmp/xinsight-server.log 2>&1 &
@@ -772,7 +773,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lifecycle: [new_install, adopt_existing, fpv17_upgrade]
+        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade]
     needs: [changes, signed_release]
     if: needs.changes.outputs.safe_docs_only != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && needs.changes.outputs.current_release_required == 'true'))
 
@@ -862,6 +863,13 @@ jobs:
           sudo install -o root -g root -m 0444 "$artifact" /opt/xinsight-ci-artifacts/candidate.tar.gz
           test "$(sha256sum "$artifact" | cut -d ' ' -f1)" = "$(sha256sum /opt/xinsight-ci-artifacts/candidate.tar.gz | cut -d ' ' -f1)"
 
+      - name: Prepare synthetic accounts before native durable initialization
+        if: matrix.lifecycle == 'new_install'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+        run: |
+          printf '{"ur_receiver_ip":"198.18.0.2"}\n' | go run ./scripts/ci-fpv15-joint-fixture > "${RUNNER_TEMP}/prepared-joint-fixture-result.json"
+
       - name: Qualify fresh install on a second clean Ubuntu VM
         if: matrix.lifecycle == 'new_install'
         env:
@@ -898,18 +906,34 @@ jobs:
           bash scripts/prepare-ci-fpv17-predecessor.sh /opt/xinsight-ci-artifacts/candidate.tar.gz "${RUNNER_TEMP}/fresh-install-payload" "$trust"
           python3 - <<'PY'
           import json,os,pathlib,subprocess
-          p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'fpv17-ci-predecessor.json').read_text())
+          p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'account-upgrade-ci-predecessor.json').read_text())
           subprocess.run([p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh',p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
           PY
 
+      - name: Reproduce and install exact public FPV20 predecessor on clean VM
+        if: matrix.lifecycle == 'fpv20_upgrade'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+          XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv20
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          download_root="${RUNNER_TEMP}/signed-release-artifact"
+          trust="${download_root}/_temp/ci-trusted-release-keys.json"
+          bash scripts/prepare-ci-fpv17-predecessor.sh /opt/xinsight-ci-artifacts/candidate.tar.gz "${RUNNER_TEMP}/fresh-install-payload" "$trust"
+          python3 - <<'PY_FPV20'
+          import json,os,pathlib,subprocess
+          p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'account-upgrade-ci-predecessor.json').read_text())
+          subprocess.run([p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh',p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
+          PY_FPV20
+
       - name: Qualify installed controller and consumer lifecycle
-        if: matrix.lifecycle != 'fpv17_upgrade'
+        if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'adopt_existing'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
         run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" "${{ matrix.lifecycle }}"
 
-      - name: Qualify FPV17 to FPV20 installed upgrade and source continuation
-        if: matrix.lifecycle == 'fpv17_upgrade'
+      - name: Qualify exact predecessor to FPV21 installed upgrade and source continuation
+        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
           XINSIGHT_CI_UPGRADE_PRESTATE: "1"
@@ -947,8 +971,8 @@ jobs:
             ${{ runner.temp }}/xinsight-installed-joint-qualification/fixture-result.json
             ${{ runner.temp }}/xinsight-installed-joint-qualification/access-validation.json
             ${{ runner.temp }}/xinsight-installed-joint-qualification/nginx-body-ingress.json
-            ${{ runner.temp }}/xinsight-fpv17-to-fpv20-qualification/qualification-result.json
-            ${{ runner.temp }}/xinsight-fpv17-to-fpv20-qualification/qualification-failure.json
+            ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-failure.json
             release/ci-non-publishable.txt
           if-no-files-found: error
 

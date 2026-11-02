@@ -1,3 +1,11 @@
+# FPV21 candidate: accounts and explicit project reading
+
+Schema47 adds durable local accounts, single-use holder activation/recovery, targeted session invalidation, and an owner metadata-grant editor. Owner management and explicitly granted reading compose; content remains separately authorized. Native private backup v2 binds account state, and Restore/Resume retires old activation links before service activation. Earlier release artifacts and acceptance records retain their original identities.
+
+This source candidate needs its own CI, signed artifact, supported-host and Target qualification. Local tests do not constitute deployment or ordinary-user acceptance.
+
+## Historical release notes retained below
+
 # FPV20 / schema46 candidate
 
 `0.2.0-dev.fpv20`, schema46, manual `0.2.0-dev.fpv20/manual-r1` adds per-connection Auto sync, persisted cadence and bounded Sync once. New connections default to manual. Migration preserves existing Auto behavior and configured intervals; switching a test connection off is an explicit targeted action. Closing the switch fences subsequent requests and transactional commits while retention/expiry continues. An already admitted request may still be draining; unknown worker state is shown without claiming quiet. Each explicit run stops at its observable boundaries or 60 seconds / 32 data-control pages / 64 application HTTP attempts. Empty categories do not keep polling.

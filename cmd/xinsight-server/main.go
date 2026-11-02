@@ -92,14 +92,6 @@ func serve(addr string) error {
 		return err
 	}
 	auditor := access.NewWriterAuditor(os.Stdout)
-	provider, err := access.LoadLocalProvider(auditor)
-	if err != nil {
-		return err
-	}
-	accessService, err := access.NewService(provider, auditor, access.ServiceOptions{})
-	if err != nil {
-		return err
-	}
 	dsn, err := config.LoadReaderPostgresDSN()
 	if err != nil {
 		return err
@@ -120,6 +112,19 @@ func serve(addr string) error {
 		return err
 	}
 	defer workspaceStore.Close()
+	accountStore := workspaceStore.LocalAccounts()
+	initialized, err := accountStore.Initialized(context.Background())
+	if err != nil || !initialized {
+		return fmt.Errorf("durable account authority is unavailable; complete native initialization")
+	}
+	provider, err := access.NewDurableProvider(accountStore)
+	if err != nil {
+		return err
+	}
+	accessService, err := access.NewService(provider, auditor, access.ServiceOptions{})
+	if err != nil {
+		return err
+	}
 	migrationsDir := os.Getenv("XINSIGHT_MIGRATIONS_DIR")
 	if migrationsDir == "" {
 		migrationsDir = "migrations"

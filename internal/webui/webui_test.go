@@ -24,7 +24,7 @@ func TestProductRoutesServeEmbeddedEnglishShell(t *testing.T) {
 		"/cases", "/cases/xic_0123456789abcdefghijkl", "/sessions",
 		"/sessions/session-1", "/compare", "/connectors", "/connectors/unirouter/setup",
 		"/connectors/unirouter/setup?installation=xci_AAAAAAAAAAAAAAAAAAAAAA", "/discovery",
-		"/access/sessions", "/access/review-policy", "/work/activity", "/access/service-identities",
+		"/access/accounts", "/access/activate", "/access/sessions", "/access/review-policy", "/work/activity", "/access/service-identities",
 	} {
 		t.Run(route, func(t *testing.T) {
 			response := httptest.NewRecorder()
@@ -90,7 +90,7 @@ func TestWorkbenchDocumentRoutes(t *testing.T) {
 }
 
 func TestHandlerNeverTurnsAPIOrUnknownRoutesIntoSPA(t *testing.T) {
-	for _, route := range []string{"/api/v1/executions", "/api/v1/workbench/cost", "/healthz", "/unknown", "/workbench", "/workbench/unknown", "/workbench/cost/unknown", "/connectors/unirouter", "/connectors/unirouter/setup/unknown", "/connectors/unknown", "/access/review-policy/unknown", "/work/activity/unknown"} {
+	for _, route := range []string{"/api/v1/executions", "/api/v1/workbench/cost", "/healthz", "/unknown", "/workbench", "/workbench/unknown", "/workbench/cost/unknown", "/connectors/unirouter", "/connectors/unirouter/setup/unknown", "/connectors/unknown", "/access/accounts/unknown", "/access/activate/unknown", "/access/review-policy/unknown", "/work/activity/unknown"} {
 		response := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, route, nil)
 		webui.Handler().ServeHTTP(response, request)

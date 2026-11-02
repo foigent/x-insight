@@ -38,7 +38,7 @@ func TestBudgetOfflineExactBindingAndCompleteness(t *testing.T) {
 	if _, err := ParseBudgetOfflineAuthorization(budgetRaw(t, a), now); err != nil {
 		t.Fatal(err)
 	}
-	for _, mutate := range []func(*BudgetOfflineAuthorization){func(x *BudgetOfflineAuthorization) { x.BundleSHA256 = Hash([]byte("other")) }, func(x *BudgetOfflineAuthorization) { x.SourceCommit = strings.Repeat("b", 40) }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "35" }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "47" }, func(x *BudgetOfflineAuthorization) { x.Environment = "production" }, func(x *BudgetOfflineAuthorization) { x.Profiles = []string{BudgetSummaryProfile} }, func(x *BudgetOfflineAuthorization) { x.ExpiresAt = now.Add(-time.Second).Format(TimeFormat) }} {
+	for _, mutate := range []func(*BudgetOfflineAuthorization){func(x *BudgetOfflineAuthorization) { x.BundleSHA256 = Hash([]byte("other")) }, func(x *BudgetOfflineAuthorization) { x.SourceCommit = strings.Repeat("b", 40) }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "35" }, func(x *BudgetOfflineAuthorization) { x.TargetDatabaseSchema = "48" }, func(x *BudgetOfflineAuthorization) { x.Environment = "production" }, func(x *BudgetOfflineAuthorization) { x.Profiles = []string{BudgetSummaryProfile} }, func(x *BudgetOfflineAuthorization) { x.ExpiresAt = now.Add(-time.Second).Format(TimeFormat) }} {
 		x := a
 		mutate(&x)
 		if _, err := ValidateBudgetOfflineBundle(raw, x, now); err == nil {

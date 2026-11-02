@@ -42,6 +42,9 @@ func custodySupported(identity ReleaseIdentity) bool {
 // This runs inside the existing install/upgrade maintenance lock and journal.
 // A candidate is journaled before any secret is created; resume never overwrites.
 func (e *Engine) prepareCustody(ctx context.Context, j *Journal, credentials DatabaseCredentials, identity ReleaseIdentity) error {
+	if err := e.prepareAccountAuthority(ctx, j, credentials, identity); err != nil {
+		return err
+	}
 	if !custodySupported(identity) {
 		return nil
 	}

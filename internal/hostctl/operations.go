@@ -286,7 +286,7 @@ func (engine *Engine) executeInstall(ctx context.Context, journal *Journal, plan
 		journal,
 		plan.Target.Identity,
 		plan.Target.Identity.DatabaseSchema,
-		targetRequiresAccessAccountCredential(plan.Target),
+		targetRequiresAccessProtection(plan.Target),
 	)
 	if err != nil {
 		return OperationReceipt{}, engine.operationFailed(journal, "activation_proof_failed", err)
@@ -541,7 +541,7 @@ func (engine *Engine) executeUpgrade(ctx context.Context, journal *Journal, plan
 		journal,
 		plan.Target.Identity,
 		plan.Target.Identity.DatabaseSchema,
-		targetRequiresAccessAccountCredential(plan.Target),
+		targetRequiresAccessProtection(plan.Target),
 	)
 	if err != nil {
 		return OperationReceipt{}, engine.operationFailed(journal, "activation_proof_failed", err)
@@ -781,7 +781,7 @@ func (engine *Engine) executeRollback(ctx context.Context, journal *Journal, pla
 			previous,
 			plan.State.DatabaseSchemaCurrent,
 			plan.PreviousV2 != nil &&
-				targetRequiresAccessAccountCredential(*plan.PreviousV2),
+				targetRequiresAccessProtection(*plan.PreviousV2),
 		)
 	} else {
 		proofChecks, err = engine.proveLegacyRollback(ctx, journal)
@@ -860,6 +860,9 @@ func (engine *Engine) executeRestore(ctx context.Context, journal *Journal, plan
 		return OperationReceipt{}, err
 	}
 	defer maintenance.Close()
+	if err := engine.recordRestoreAccountSource(ctx, journal, plan.Credentials); err != nil {
+		return OperationReceipt{}, engine.operationFailed(journal, "original_target_account_authority_changed", err)
+	}
 	beforeFingerprint, err := engine.Database.EvidenceFingerprint(ctx, plan.Credentials)
 	if err != nil {
 		return OperationReceipt{}, engine.operationFailed(journal, "evidence_fingerprint_failed", err)
@@ -947,6 +950,9 @@ func (engine *Engine) executeRestore(ctx context.Context, journal *Journal, plan
 		}
 	}
 
+	if err := engine.prepareRestoredAccounts(ctx, journal, plan, restoredCredentials, backupForRestore); err != nil {
+		return OperationReceipt{}, engine.operationFailed(journal, "restored_account_authority_validation_failed", err)
+	}
 	if err := engine.runPhase(journal, "switch_database_credentials", func() error {
 		return atomicSymlink(restoredCredentials.SetRef, engine.Paths.DatabaseCurrentLink)
 	}); err != nil {
@@ -972,7 +978,7 @@ func (engine *Engine) executeRestore(ctx context.Context, journal *Journal, plan
 		journal,
 		plan.State.Current,
 		plan.State.DatabaseSchemaCurrent,
-		targetRequiresAccessAccountCredential(plan.Current),
+		targetRequiresAccessProtection(plan.Current),
 	)
 	if err != nil {
 		_ = runSystemctl(context.Background(), engine.Runner, "stop", "xinsight.service")

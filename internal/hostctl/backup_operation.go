@@ -157,7 +157,7 @@ func (e *Engine) executeBackup(ctx context.Context, j *Journal, current verified
 		return fail("backup_service_restore_failed", err)
 	}
 	if j.BackupServiceWasActive {
-		if _, err = e.proveActivatedRelease(ctx, j, current.Identity, current.Identity.DatabaseSchema, targetRequiresAccessAccountCredential(current)); err != nil {
+		if _, err = e.proveActivatedRelease(ctx, j, current.Identity, current.Identity.DatabaseSchema, targetRequiresAccessProtection(current)); err != nil {
 			return fail("backup_service_restore_proof_failed", err)
 		}
 	}

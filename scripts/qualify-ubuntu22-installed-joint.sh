@@ -19,7 +19,13 @@ test -x /opt/x-insight/current/bin/xinsightctl
 test -f "${RUNNER_TEMP:?}/xinsight-fresh-install-qualification/qualification-result.json"
 PRIVATE="$RUNNER_TEMP/xinsight-fpv15-joint-private"
 EVIDENCE="$RUNNER_TEMP/xinsight-installed-joint-qualification"
-test ! -e "$PRIVATE" && test ! -e "$EVIDENCE"
+test ! -e "$EVIDENCE"
+if [ "$MODE" = new_install ]; then
+  test -f "$RUNNER_TEMP/prepared-joint-fixture-result.json"
+  test -d "$PRIVATE" && test ! -L "$PRIVATE"
+else
+  test ! -e "$PRIVATE"
+fi
 mkdir -m 0700 "$EVIDENCE"
 STAGE=build
 qualification_exit() {
@@ -102,6 +108,7 @@ if code != 0:
     categories = {
         'controller_maintenance_pending': re.compile(r'xinsightctl: controller maintenance pending:'),
         'managed_installation_pending': re.compile(r'managed installation .*:', re.I),
+        'sync_manual_or_not_due': re.compile(r'connector sync is manual or not due'),
         'paused_feed_authentication_failed': re.compile(r'staged feed credential did not authenticate against the paused source'),
         'custody_release_invalid': re.compile(r'custody_load_release_invalid'),
         'custody_source_inactive': re.compile(r'custody_source_inactive|configured source worker must be active'),
@@ -228,7 +235,12 @@ STAGE=fixture
 # A benchmark-only local address is outside the controller's original allow
 # list. This forces the product to publish and actually load its exact /32.
 sudo ip address add 198.18.0.2/32 dev lo
-printf '{"ur_receiver_ip":"198.18.0.2"}\n' | "$EVIDENCE/fixture" > "$EVIDENCE/fixture-result.json"
+if [ "$MODE" = new_install ]; then
+  # The supported installer already imported these exact identities once.
+  cp "$RUNNER_TEMP/prepared-joint-fixture-result.json" "$EVIDENCE/fixture-result.json"
+else
+  printf '{"ur_receiver_ip":"198.18.0.2"}\n' | "$EVIDENCE/fixture" > "$EVIDENCE/fixture-result.json"
+fi
 sudo install -m 0600 "$PRIVATE/access-accounts.json" /etc/x-insight/access-accounts.json
 sudo /opt/x-insight/current/bin/xinsightctl access validate --file /etc/x-insight/access-accounts.json > "$EVIDENCE/access-validation.json"
 sudo install -m 0644 "$PRIVATE/ur-receiver-ca.pem" /usr/local/share/ca-certificates/xinsight-ci-ur.crt
@@ -387,7 +399,12 @@ env.update(GITHUB_ACTIONS='true',XINSIGHT_CI_EPHEMERAL_HOST='1',XINSIGHT_CI_INST
            REQUIRE_TEST_DATABASE='1',XI_JOINT_TEST_CHECKOUT=str(xi),
            TEST_DATABASE_URL=urlunsplit((u.scheme,u.netloc,'/uniroute_test',u.query,'')))
 if json.loads((root/'installed-input.json').read_text())['mode'] == 'new_install' and os.environ.get('XINSIGHT_CI_UPGRADE_PRESTATE') == '1':
+    predecessor=json.loads((root.parent/'account-upgrade-ci-predecessor.json').read_text())
+    assert (predecessor['old_commit'],predecessor['old_product'],predecessor['old_schema']) in {
+        ('164582cab0e7f169c265c2494d04920c61af833d','0.2.0-dev.fpv17','45'),
+        ('08435e0949dfae0ae65497d2e12ca356f6d820f0','0.2.0-dev.fpv20','46')}
     request={'schema_version':'xinsight.ci-fpv17-installed-upgrade-request.v1',
+             'predecessor_schema':predecessor['old_schema'],
              'script':str(xi/'scripts/qualify-ubuntu22-fpv17-upgrade.sh'),
              'candidate_artifact':'/opt/xinsight-ci-artifacts/candidate.tar.gz',
              'candidate_payload':str(pathlib.Path(os.environ['RUNNER_TEMP'])/'fresh-install-payload')}

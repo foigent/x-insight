@@ -143,6 +143,11 @@ class VerifyEntryTests(unittest.TestCase):
                     'database_schema_min': config['database_schema']['min'], 'database_schema_max': config['database_schema']['max'],
                     'config_schema_version': config['config_schema']['current'], 'api_version': config['api_versions'][0],
                     'access_api_version': config['api_versions'][1], 'manual_version': config['manual']['version'], 'go_version': 'go1.25.12'}
+        if 'xinsight.accounts.v1' in config['api_versions']:
+            identity['accounts_api_version'] = 'xinsight.accounts.v1'
+        # rc13 remains a frozen file-account profile; FPV21 uses its DB-only unit.
+        unit = SOURCE / ('deploy/xinsight.service' if d else 'compatibility/rc13-linux-amd64/source/deploy/xinsight.service')
+        shutil.copy2(unit, self.payload / 'deploy/xinsight.service')
         self.put(self.fixture / 'identity.json', identity)
         self.put(self.fixture / 'runtime-overrides.json', {})
         (self.payload / 'release').mkdir(exist_ok=True)
@@ -186,6 +191,29 @@ class VerifyEntryTests(unittest.TestCase):
             self.assertTrue(any(call[:len(prefix)] == prefix for call in calls), prefix)
         for name in ('xinsight-server', 'xinsight-importer', 'xinsightctl', 'xinsight-launcher'):
             self.assertIn([name, 'version', '--json'], calls)
+
+    def test_development_d_requires_accounts_api_on_runtime_binary(self):
+        self.put(self.fixture / 'runtime-overrides.json', {'xinsightctl': {'accounts_api_version': 'missing'}})
+        self.assert_rejected(self.run_entry('--profile=development-d'), 'accounts_api_version=')
+
+    def test_development_d_requires_accounts_api_field(self):
+        identity = json.loads((self.fixture / 'identity.json').read_text())
+        identity.pop('accounts_api_version')
+        self.put(self.fixture / 'identity.json', identity)
+        self.assert_rejected(self.run_entry('--profile=development-d'), 'accounts_api_version=')
+
+    def test_development_d_rejects_legacy_account_file_credential(self):
+        path = self.payload / 'deploy/xinsight.service'
+        path.write_text(path.read_text() + '\nLoadCredential=access-accounts.json:/etc/x-insight/access-accounts.json\n')
+        self.seal()
+        self.assert_rejected(self.run_entry('--profile=development-d'), 'managed server credential boundary mismatch')
+
+    def test_rc13_still_requires_legacy_account_file_credential(self):
+        self.configure('rc13')
+        path = self.payload / 'deploy/xinsight.service'
+        path.write_text(path.read_text().replace('LoadCredential=access-accounts.json:/etc/x-insight/access-accounts.json\n', ''))
+        self.seal()
+        self.assert_rejected(self.run_entry(), 'managed server credential boundary mismatch')
 
     def test_default_remains_rc13(self):
         self.configure('rc13')

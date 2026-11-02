@@ -128,6 +128,9 @@ tree_contains() {
 # language parameter, its authenticated handler, and the localized HTML template.
 # Sealed JSON bytes/digests, authorization and all source identities are unchanged.
 # The API/render regressions verify English, Chinese, fallback and denied access.
+# FPV21/schema47 adds durable account lifecycle and explicit owner scope;
+# only the reviewed files below and additive migration47 advance this baseline.
+# Earlier migrations1-46 and source protocol pins retain their bytes.
 # FPV20/schema46 advances only the explicitly reviewed per-connection sync
 # surfaces: human OpenAPI/CLI, exact receiver-bound importer, request admission,
 # same-transaction evidence/Feed commit fences, and importer grant convergence.
@@ -161,27 +164,27 @@ while read -r expected path; do
     exit 1
   fi
 done <<'BASELINE'
-08be48559d5bb205bb46a5907c5daca97dd8149721b6382f12b57892a831a3ef api/openapi/prd2-v1.yaml
+8f85154ec422a1f492a1413a2b8f7b044c46030f62e1a8d19c8191e4b88aad0a api/openapi/prd2-v1.yaml
 7147f90de8c5686f5575ee8ed313ed1425c7051b59143240d35a006421adb58d cmd/xinsight-launcher/main.go
-130e8a83c06513a40f3e2d256e9dd0b41aa504281861025d433489f9e85ac456 cmd/xinsight-server/main.go
-c2116471a9b9390b8812c913b88983c97427d6bf21f3c94c7c4549921b5f871f cmd/xinsightctl/main.go
+73a609ed59aa34093d4b611140bd468bef828b13f828d97c97e5b3a02e1ff69a cmd/xinsight-server/main.go
+fe6c8436a5b42800e31e7cd63dba1226cb2134c223998abfdb889da523493856 cmd/xinsightctl/main.go
 305afa264c01c6413889c5d78d519586057be42a08e3e50fdcddaf002c0338ee cmd/xinsight-importer/main.go
-192ae40d401262e625db1769d9d22d365f53a3a5255ab72d127b8f0ffc484173 deploy/xinsight.service
+f1db78469383ca80a990f2032b8f07a987ba92fa36777784a4beab918aaf5804 deploy/xinsight.service
 7924a8b75f4f49a995227d51bfdee60b83bac43c64715e33165bb48f2492090e contracts/foigent/event-connector-protocol.pin.json
 c3f99a441beb813cf2c3f25091cc61309d095993bc347ccc5f9a921f47ed14a4 contracts/openinference/shared-protocol-compatibility.v1.json
 4f1173d656e350b4bf88a86ef4ed0850e186eb2514efaacfe7aff0ed0982119c contracts/openinference/shared-protocol-compatibility.v2.json
 95bc661ff5fc407043823fe12e736d4ea993ae0e4be9d96218db8d68634804c0 contracts/openinference/trace-journey-study.v1.json
 edb9e69baac748bce103e7b16ee477eb8e1ffc6a40939c337903cb25861cd519 contracts/openinference/xinsight-projection-binding.v2.json
-3845ce975d7b0da8c8d294aa210c5ec6741ebcf1260bb5d4a635568077f3081e internal/access/accounts.go
+72485ed6ff3db475d45c5ea2c15803276e1fb351a8feb960f7d5257f7602a491 internal/access/accounts.go
 40d82164f5bd0ee85b11b26144f81fc44f5afedda6359b3b8e9fa68c7a1a8651 internal/access/oidc.go
 2735e9f736ecb3c59910e448721bdffa579cd9244b44461e173f8e040bd93980 internal/adapters/openinference/compatibility.go
 e1c167f8eb41ec136beaa31964817e4493dea7202c14f9edddf246bc586b0705 internal/adapters/unirouter/completed_execution.go
 811af109962686bb21ca12dd182e1e9adc3b9927bcc152359434a8d6a236250f internal/adapters/unirouter/execution_evidence_bundle.go
-a3187aa368b36610a1f19227351b38ad975152dea47510a4a7c67855e055ab2a internal/api/access.go
+067e6ca3c114d424a982565dcdf8c2796cd6cc98b10b3ab1e30369a9d68de6d9 internal/api/access.go
 a8b5f767701a52189b7980a1d7a711cef6d08eb926feb99a7aba579ffb6fe7fb internal/api/investigation.go
 b4190c2d059ec131bc45e81dcb6de50b361b1e2b49499ae1537e39259b5d2324 internal/api/problem.go
 d0c1b307bb4d9a4f7de169cf0916d0c325b0a4d4374a71ed7ce9fbaf0a0e7d69 internal/api/posture.go
-07aec78c2fadf1f4ee5220b992d52ad98e7f5d9be6910b3806897a6ac537f1a2 internal/api/server.go
+4e61a982c4d8ad6858662e6577704c9ba9009887b5a38916e0c6130652e5dcd0 internal/api/server.go
 3f963125a30bd43e55c8a6ec2d9d9ee7f2e07a9f7fbb4dd3abcc52e3ae8db8d0 internal/api/transport_security.go
 38bb2caa1d105f45ce268d8d2b724a691062e60e36411d2c3e889f29831e1e4b internal/api/workspace.go
 a8b77d02b1c5b287ee1aa404b14fdbbb7d1a6b85d94ba0488fb61c43d2e27048 internal/config/postgres.go
@@ -198,7 +201,7 @@ be634cdc1b59cca9a5d11f2726da88bd9a27e6d6f0b8a8768dee33fb02aa2e60 internal/db/tra
 98a3c2e2aed842f872feb5987a28627bab40e8eb191e80dd3409eca56b88d2c9 internal/db/session_store.go
 09472adadf129404b511276fc4be281db48ea46e4248fe0cbb1265352e5259b7 internal/db/workspace_store.go
 a961198cf1d13c2d940520bbfdf657c6629a8ad88561141e25c75b473ab807e8 internal/discovery/engine.go
-8f76bb2ce97327d599662394879a135dd4b536ab9e23e3ac4352ddf76622b5a2 internal/hostctl/database.go
+88faa4e287a2fb7d10c17a2626d592ad097ebaf4b9e648d33da3af61449d17ca internal/hostctl/database.go
 fccad7130b2a155ff170accd20b16835fa9f820c9a1c0a36cbe5f3615491bb8c internal/hostctl/checkpoint_epoch.go
 f84f1e42a6afbb9afdda7690dffda7f7a3f06abd4bf3cd76efecca832499292d internal/investigation/compare.go
 6fc8ae27ad843f6baff188ff5fe62a2bd8f4fe6517ce667d56b3a41ef151b41d internal/investigation/model.go
@@ -231,7 +234,7 @@ migration_digest="$(
     sha256sum |
     awk '{print $1}'
 )"
-if [[ "${migration_digest}" != "7402ad30ea4b24669835fe8b768e41b95472518d84459390a8bfdbbcb6a34ca7" ]]; then
+if [[ "${migration_digest}" != "3c0b68b15bb2695f6592a45c886dfb20539de205c497e3d8edb5e3bc4bea1024" ]]; then
   echo "Phase 2C runtime gate: migration tree changed (${migration_digest})" >&2
   exit 1
 fi

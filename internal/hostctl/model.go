@@ -1,6 +1,9 @@
 package hostctl
 
-import "time"
+import (
+	"github.com/foigent/x-insight/internal/db"
+	"time"
+)
 
 const (
 	InstallStateSchema = "xinsight.install-state.v1"
@@ -48,6 +51,9 @@ type InstallState struct {
 }
 
 type Journal struct {
+	BeforeLocalAccounts             *db.LocalAccountInventory        `json:"before_local_accounts,omitempty"`
+	RestoredLocalAccounts           *db.LocalAccountInventory        `json:"restored_local_accounts,omitempty"`
+	PrivateDumpAccounts             *db.LocalAccountInventory        `json:"private_dump_accounts,omitempty"`
 	BackupRuntimeStateCaptured      bool                             `json:"backup_runtime_state_captured,omitempty"`
 	BackupServiceWasActive          bool                             `json:"backup_service_was_active,omitempty"`
 	BackupControllerWasActive       bool                             `json:"backup_controller_was_active,omitempty"`

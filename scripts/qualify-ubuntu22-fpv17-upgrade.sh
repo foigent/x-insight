@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CANDIDATE_ARTIFACT="$1"
 CANDIDATE_PAYLOAD="$2"
 CTL="$CANDIDATE_PAYLOAD/bin/xinsightctl"
-QUAL="${RUNNER_TEMP:?}/xinsight-fpv17-to-fpv20-qualification"
+QUAL="${RUNNER_TEMP:?}/xinsight-account-upgrade-qualification"
 test ! -e "$QUAL"
 mkdir -m 0700 "$QUAL"
 umask 077
@@ -26,7 +26,7 @@ qualification_exit() {
 import json, pathlib, sys
 path, stage, code = pathlib.Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
 assert stage in {'preflight','check_snapshot','check','upgrade','verify'} and 0 < code < 256
-path.write_text(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade-failure.v1',
+path.write_text(json.dumps({'schema_version':'xinsight.ci-account-upgrade-failure.v1',
                             'stage':stage,'exit_code':code},sort_keys=True)+'\n')
 PY
   fi
@@ -34,7 +34,7 @@ PY
 }
 trap qualification_exit EXIT
 test -f "$CANDIDATE_ARTIFACT" && test -x "$CTL"
-test -f "$RUNNER_TEMP/fpv17-ci-predecessor.json"
+test -f "$RUNNER_TEMP/account-upgrade-ci-predecessor.json"
 CTL_PATH=/usr/lib/postgresql/16/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 units=(xinsight-feed.service xinsight-source-facts.service)
 for unit in "${units[@]}"; do
@@ -50,18 +50,18 @@ sudo systemctl stop "${units[@]}"
 RESTORE_WORKERS=1
 STAGE=check_snapshot
 snapshot "$QUAL/before-private.json"
-python3 - "$QUAL/before-private.json" "$RUNNER_TEMP/fpv17-ci-predecessor.json" <<'PY'
+python3 - "$QUAL/before-private.json" "$RUNNER_TEMP/account-upgrade-ci-predecessor.json" <<'PY'
 import json, pathlib, sys
 before=json.loads(pathlib.Path(sys.argv[1]).read_text())
 predecessor=json.loads(pathlib.Path(sys.argv[2]).read_text())
 current=before['status']['install_state']['current']
-assert predecessor['schema_version']=='xinsight.ci-fpv17-predecessor.v1'
+assert predecessor['schema_version']=='xinsight.ci-account-upgrade-predecessor.v1'
 assert before['status']['managed'] and before['status'].get('active_journal') is None
-assert current['product_version']=='0.2.0-dev.fpv17'
-assert current['commit']=='164582cab0e7f169c265c2494d04920c61af833d'
-assert current['database_schema']=='45' and before['status']['install_state']['database_schema_current']=='45'
+assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0')}
+assert (current['product_version'],current['database_schema'],current['commit']) == (predecessor['old_product'],predecessor['old_schema'],predecessor['old_commit'])
+assert before['status']['install_state']['database_schema_current']==current['database_schema']
 assert before['release']==current['release_dir']
-assert int(before['database']['schema_migrations'].split(':',1)[0])==45
+assert int(before['database']['schema_migrations'].split(':',1)[0])==int(current['database_schema'])
 for table in ('source_fact_documents','source_fact_streams','source_content_manifests',
               'review_body_operations','workbench_access_grants'):
     assert int(before['database'][table].split(':',1)[0])>0, table
@@ -74,9 +74,9 @@ import json, pathlib, sys
 before,after,check=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:]]
 assert before==after, 'upgrade --check changed installed state, database, key, grants, config or process'
 assert check['operation']=='upgrade' and check['supported'] and check['mutating'] is False
-assert check['current']['product_version']=='0.2.0-dev.fpv17'
-assert check['target']['product_version']=='0.2.0-dev.fpv20'
-assert check['current']['database_schema']=='45' and check['target']['database_schema']=='46'
+assert check['current']['product_version']==before['status']['install_state']['current']['product_version']
+assert check['target']['product_version']=='0.2.0-dev.fpv21'
+assert check['current']['database_schema']==before['status']['install_state']['current']['database_schema'] and check['target']['database_schema']=='47'
 assert any(c['name']=='control_credential_lifecycle' and c['status']=='pass' for c in check['checks'])
 PY
 sudo systemctl start "${units[@]}"
@@ -103,8 +103,8 @@ old=before['status']['install_state']['current']; new=after['status']['install_s
 assert receipt['kind']=='upgrade' and receipt['status']=='completed'
 assert receipt['before']['commit']==old['commit'] and receipt['after']['commit']==check['target']['commit']
 assert after['status']['managed'] and after['status'].get('active_journal') is None
-assert new['product_version']=='0.2.0-dev.fpv20' and new['commit']==check['target']['commit']
-assert new['database_schema']==after['status']['install_state']['database_schema_current']=='46'
+assert new['product_version']=='0.2.0-dev.fpv21' and new['commit']==check['target']['commit']
+assert new['database_schema']==after['status']['install_state']['database_schema_current']=='47'
 assert after['status']['install_state']['previous']['commit']==old['commit']
 assert after['release']==new['release_dir']!=before['release']
 assert after['server_invocation']!=before['server_invocation']
@@ -119,17 +119,21 @@ stable=('workbench_access_grants',
         'role_boundary')
 assert all(after['database'][table]==before['database'][table] for table in stable)
 old_migrations,new_migrations=before['migration_rows'],after['migration_rows']
-assert len(old_migrations)==45 and len(new_migrations)==46
-assert new_migrations[:45]==old_migrations, 'prior ledger rows changed'
-added=new_migrations[45]
-assert added['version']=='000046_add_connector_sync_control' and added['dirty'] is False
-expected='sha256:'+hashlib.sha256((pathlib.Path(sys.argv[5])/'migrations/000046_add_connector_sync_control.up.sql').read_bytes()).hexdigest()
-assert added['checksum_sha256']==expected
-assert before['database']['schema_migrations'].split(':',1)[0]=='45'
-assert after['database']['schema_migrations'].split(':',1)[0]=='46'
+old_count=int(old['database_schema'])
+assert old_count in (45,46) and len(old_migrations)==old_count and len(new_migrations)==47
+assert new_migrations[:old_count]==old_migrations, 'prior ledger rows changed'
+expected_names={46:'000046_add_connector_sync_control',47:'000047_add_local_account_lifecycle'}
+for version,added in enumerate(new_migrations[old_count:],old_count+1):
+    assert added['version']==expected_names[version] and added['dirty'] is False
+    expected='sha256:'+hashlib.sha256((pathlib.Path(sys.argv[5])/'migrations'/(expected_names[version]+'.up.sql')).read_bytes()).hexdigest()
+    assert added['checksum_sha256']==expected
+assert before['database']['schema_migrations'].split(':',1)[0]==str(old_count)
+assert after['database']['schema_migrations'].split(':',1)[0]=='47'
+assert after['account_inventory']==before['legacy_account_inventory'], 'native import changed account identities or password hashes'
+assert after['account_boundary']=={'initialized':True,'roles_separated':True,'function_owner':'xinsight_admin'}, 'private account authority ACL differs'
 old_acl,new_acl=before['table_acl_rows'],after['table_acl_rows']
 assert all(name in new_acl and new_acl[name]==acl for name,acl in old_acl.items()), 'prior table ACL changed'
-assert set(new_acl)-set(old_acl)=={'connector_sync_controls','connector_sync_slots','connector_sync_runs'}
+assert set(new_acl)-set(old_acl)==({'connector_sync_controls','connector_sync_slots','connector_sync_runs'} if old_count==45 else set())
 privileges=after['sync_privileges']
 tables=('connector_sync_controls','connector_sync_slots','connector_sync_runs')
 assert privileges['owners']=={name:'xinsight_admin' for name in tables}
@@ -170,11 +174,11 @@ if old_feed!=new_feed:
     assert len(after['immutable_rows']['workbench_economic_facts'])>len(before['immutable_rows']['workbench_economic_facts'])
 assert after['files']==before['files'], 'original review-body key or host config changed'
 assert any(c['name']=='representative_read' and c['status']=='pass' for c in receipt['checks'])
-print(json.dumps({'schema_version':'xinsight.ci-fpv17-to-fpv20-upgrade.v1',
+print(json.dumps({'schema_version':'xinsight.ci-account-upgrade.v1',
                   'classification':'ci_synthetic_not_target','state':'passed',
-                  'predecessor':'0.2.0-dev.fpv17','target':'0.2.0-dev.fpv20',
-                  'database_schema':'46','check_no_side_effects':True,
-                  'migration46_exact_append_verified':True,'prior_table_acls_preserved':True,
+                  'predecessor':old['product_version'],'target':'0.2.0-dev.fpv21',
+                  'database_schema':'47','check_no_side_effects':True,
+                  'migration47_exact_append_verified':True,'accounts_import_preserved':True,'private_account_acl_verified':True,'prior_table_acls_preserved':True,
                   'history_cursors_ciphertext_grants_preserved':True,
                   'review_body_key_preserved':True,'new_server_invocation_verified':True,
                   'active_workers_restored_by_upgrade':True,
