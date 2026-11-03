@@ -1,6 +1,6 @@
 # X-Insight
 
-[Foigent](https://github.com/foigent) · [UniRouter](https://github.com/foigent/unirouter) · [English（规范版本）](README.md) · 本译文对应 0.2.0-dev.fpv20。
+[Foigent](https://github.com/foigent) · [UniRouter](https://github.com/foigent/unirouter) · [English（规范版本）](README.md) · 本译文对应 0.2.0-dev.fpv21。
 
 X-Insight 是理解 AI 工作的证据工作台：网关观察到什么、哪些请求产生费用、Agent 报告做了什么，以及人在复核证据后作出了什么判断。
 
@@ -10,9 +10,9 @@ X-Insight 可独立用于受支持的数据导入、工作活动报告、调查�
 
 ## 状态与支持范围
 
-源码已按 **Apache-2.0 公开**。已发布预览版为 **0.2.0-dev.fpv20，schema 46**：[七份发布附件](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20)与[安装入口](docs/community/getting-started.md)。完整产品源码包括访问控制、调查、工作台、连接器与受管安装代码，没有另一个付费功能树。认证、来源/项目授权、发布信任与租户边界继续强制执行。
+源码已按 **Apache-2.0 公开**。已发布预览版为 **0.2.0-dev.fpv21，schema 47**：[七份发布附件](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv21)与[安装入口](docs/community/getting-started.md)。完整产品源码包括访问控制、调查、工作台、连接器与受管安装代码，没有另一个付费功能树。认证、来源/项目授权、发布信任与租户边界继续强制执行。
 
-当前为**单部署租户**的开发预览版，不是稳定版或 Production 发布。截至 2026-10-23，精确 FPV20 签名包已通过 Linux 制品资格、在一台既有 Ubuntu 22.04 amd64／固定容器 PostgreSQL 16 主机上的空库普通首装，以及 owner 正常 HTTPS 访问。2026-10-27 已验收既有安装的 UR→XI 连接、来源登记及八类流的空页同步；首条真实事实与普通用户权限范围验收仍待完成。CLI 接受 Ubuntu 22.04／24.04 amd64，但一台主机通过不代表所有拓扑都已验收。源码、制品、主机和集成分别记录在[状态矩阵](docs/community/release-readiness.md)。
+当前为**单部署租户**的开发预览版，不是稳定版或 Production 发布。截至 2026-11-04，精确 FPV21 owner 签名包已通过 Linux 制品资格、原机匿名下载及验证，以及保留数据的 FPV20→FPV21 升级，含私有备份与实际隔离恢复。该主机为 Ubuntu 22.04 amd64／固定容器 PostgreSQL 16。一条获授权真实 UR 完成请求的元数据已导入，获明确授权的 owner 与普通 reader 均可读取，未授权项目已拒绝。reader 原生恢复与正常登录已验证。整体用户验收仍未完成：总览页对部分合法权限拒绝处理不当，页面也未清楚显示当前账号；运行读取结果单独保留。本次有界同步仍保留控制步骤的部分失败，不宣称所有集成步骤通过。CLI 接受 Ubuntu 22.04／24.04 amd64，但一台主机通过不代表所有拓扑都已验收。源码、制品、主机和集成分别记录在[状态矩阵](docs/community/release-readiness.md)。
 
 UI 默认英文，可以切换并保存简体中文偏好。同版离线手册位于 `/manual/en-US/` 与 `/manual/zh-CN/`。切换语言不改变 API 代码、来源身份、原始证据、币种或已保存阅读范围。
 
@@ -30,9 +30,9 @@ UI 默认英文，可以切换并保存简体中文偏好。同版离线手册�
 
 **安装 → 自己设置密码 → 登录 → 连接 UR → 确认授权与首条事实。**
 
-1. 使用[签名预览包安装路线](docs/community/getting-started.md)：先核下载与主机条件，安装完成前由你通过隐藏输入设置自己的密码。使用已发布包不需要 Go、Node.js 或源码构建。
+1. 使用[签名预览包安装路线](docs/community/getting-started.md)：先核下载与主机条件，新安装完成后通过原生入口激活首个 owner，由账号持有人自行设置密码。使用已发布包不需要 Go、Node.js 或源码构建。
 2. 按[普通接入与首条事实检查](docs/community/getting-started.md#connect-unirouter-and-verify-the-pair)完成两端管理员各自的确认；连接管理权限不等于每个普通用户的数据权限。
-3. 同时保留[中文手册](docs/manual/zh-CN/current.md)、[FPV20 安装勘误](docs/community/releases/v0.2.0-dev.fpv20.md#fpv20-installation-erratum--fpv20-安装勘误)和[数据处理边界](docs/community/data-handling.md)。
+3. 同时保留[中文手册](docs/manual/zh-CN/current.md)、[FPV21 发布记录](docs/community/releases/v0.2.0-dev.fpv21.md)和[数据处理边界](docs/community/data-handling.md)。
 
 源码构建、合成夹具、数据库／浏览器检查及历史配对配方放在次级[开发指南](docs/community/development.md)。这些是贡献者验证入口，不是额外的客户安装步骤。
 
