@@ -1203,6 +1203,7 @@ test("English UI: manual follows the selected locale and is readable offline", a
   const offOrigin: string[] = [];
   page.on("request", request => { if (new URL(request.url()).origin !== e2eOrigin) offOrigin.push(request.url()); });
   await page.goto("/executions");
+  await expect(page.getByRole("link", { name: "X-Insight home", exact: true })).toBeVisible();
   const mobileMenu = page.getByRole("button", { name: "Menu", exact: true });
   if (await mobileMenu.isVisible()) await mobileMenu.click();
   await page.getByRole("link", { name: /Product manual/ }).click();
