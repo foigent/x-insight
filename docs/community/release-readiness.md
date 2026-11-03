@@ -1,24 +1,27 @@
 # Public release and acceptance status
 
-As of **2026-10-28**, X-Insight source is public under Apache-2.0 and the **0.2.0-dev.fpv20 / schema 46** preview is published. This is a development release candidate, not stable or Production acceptance.
+As of **2026-11-04**, X-Insight source is public under Apache-2.0 and the **0.2.0-dev.fpv21 / schema 47** preview is published. This is a development release candidate, not stable or Production acceptance.
 
 Start with [install → choose your password → sign in → connect UR → confirm access and the first fact](getting-started.md). Source-building and historical qualification recipes are a separate [contributor entry](development.md).
 
 | Surface | Verified state | Boundary |
 | --- | --- | --- |
 | Public source | Canonical `foigent/x-insight` is public; Apache-2.0 covers project-owned product source | Dependency licenses, authentication, grants and tenant boundaries still apply |
-| Published preview | [FPV20 release](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv20), seven public attachments, source `08435e0949dfae0ae65497d2e12ca356f6d820f0` | Prerelease; no stable or unattended-install claim |
-| Exact artifact | Owner signature and Linux artifact qualification accepted | Temporary CI signatures are separate; the published signed bytes remain unchanged |
-| Specific existing host | Ordinary empty-database FPV20 install on Ubuntu 22.04 amd64 with pinned container PG16; HTTPS, owner current session and protected integration reads accepted | One selected host/topology, not every supported host or Production; private host receipts are retained separately |
-| Ordinary installed UR→XI connection | Accepted on 2026-10-27: connection, scoped source registration and eight active source-fact profiles; bounded empty sync completed with all units done | Empty synchronization imported no facts; connection acceptance does not establish first-fact or ordinary-reader acceptance |
-| First real fact and ordinary-reader access | Pending: a matching real completed source request and its authorized XI reading, including the applicable scope checks | Empty pages, checkpoint commits and an active connection do not complete this row |
+| Published preview | [FPV21 release](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv21), seven public attachments, source `6463d980958fae86d975eecde239b9534ec831a5` | Prerelease; no stable or unattended-install claim |
+| Exact artifact | Actual owner signature, Linux artifact qualification, and original-host anonymous download/signature verification accepted | Temporary CI signatures are separate; the published signed bytes remain unchanged |
+| Specific existing host | Native preserving FPV20/schema46→FPV21/schema47 upgrade on Ubuntu 22.04 amd64 with pinned container PG16; private backup and actual isolated restore; four managed services ready | Original identities, accounts, passwords, facts, grants, cursors and trust retained. One selected host/topology, not every supported host or Production; private receipts stay separate |
+| Installed UR→XI connection | Connection, scoped source registration and eight-profile empty sync accepted on 2026-10-27; later bounded sync ingested metadata from one authorized real completed request | The later native run remained partial because of control-step failures. Metadata ingestion and checkpoints do not establish a fully successful control run or a separate feed acknowledgement |
+| Owner project reading | The matching real request's metadata was read through an explicit owner source/project grant; an ungranted project was denied | Management is not an automatic reading grant. Generic body-unavailable UI is not proof of a permission denial |
+| Ordinary-reader access | Native holder recovery and actual reader login verified; the exact real request was read in the granted project, and an ungranted project was denied | The reader result has its own identity and evidence. Overview behavior and account identification remain unaccepted |
+| Content boundary | Existing owner/reader grants do not allow body access. The reader content list returned 404; that frozen Runtime reading has no content authorization | This is not a 403 result. Byte-fetch denial against an actual captured body was not independently verified; the complete content-refusal acceptance remains open |
+| Known UI defects | The overview repeatedly rechecks the owner session after some legitimate 403s; an ordinary reader can instead reach a full-page denial. The account flow and current-account display are unclear | Runtime access does not establish overview or full ordinary-user acceptance; no corrective product release is claimed |
 | Stable / Production | Not claimed | Requires separate release and operational acceptance |
 
-The exact package, bootstrap, public trust, hashes and installation correction are in the [FPV20 record](releases/v0.2.0-dev.fpv20.md). The original publication pin is [authority commit `aacc40ef50ffa60f31ea924b17c257526f316ddd`](https://github.com/foigent/x-insight/blob/aacc40ef50ffa60f31ea924b17c257526f316ddd/docs/community/release-authority.json). Later documentation status corrections do not replace that pin or re-sign the package. The original release attachments record the publication-day qualification boundary; use this dated status for the later accepted host result.
+The exact FPV21 package, verifier, public trust and hashes are in the [FPV21 record](releases/v0.2.0-dev.fpv21.md). Pin [authority commit `e61a59fae14d1cfe323fa379329a80db25645de4`](https://github.com/foigent/x-insight/blob/e61a59fae14d1cfe323fa379329a80db25645de4/docs/community/release-authority.json); it is separate from the product source commit. Later status corrections do not replace that pin or re-sign the package. Release attachments retain their publication-day qualification boundary. The [FPV20 record and installation erratum](releases/v0.2.0-dev.fpv20.md) and its original authority remain historical evidence.
 
 ## What remains after connection acceptance
 
-For a new connection, use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair) with current sessions and the intended source/project configuration. Preserve an existing accepted connection rather than creating another invitation to obtain data. The remaining acceptance requires one authorized real completed source request, matching facts in XI, and an ordinary user with the exact reading scope. Keep missing facts and denied scopes explicit. Current protocol pins and historical P3 results remain qualification evidence, not a substitute for these remaining installed-pair checks.
+For a new connection, use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair) with current sessions and the intended source/project configuration. Preserve an existing accepted connection rather than creating another invitation to obtain data. The existing pair has matching completed-request metadata and an authorized owner reading. Native holder recovery, true reader login, exact project reading and foreign-project denial are now verified independently. Complete account-identification and legitimate-denial UI fixes and the remaining body-refusal boundary; keep the partial control-step result and unverified acknowledgement explicit. Current protocol pins and historical P3 results do not substitute for these installed-pair checks.
 
 ## Why the repository retains technical material
 
@@ -35,7 +38,7 @@ The public candidate excludes 25 raw advisor/reference files whose originals and
 
 Two historical provenance metadata files use explicitly labelled private-location placeholders while retaining their archive, member and schema hashes. The historical `scripts/xi-c-resource-guard.py` is retained privately and excluded from this candidate because it requires private A0 qualification state and manager allocation records. Historical notes that name it describe that private run, not a supported public command. Current product, build, CI and release guards remain in place; this exclusion does not change the private guard or authorize bypassing it.
 
-At that exact source on 2026-10-18, a complete anonymous archive matched all
+For the separately retained 2026-10-18 source qualification, a complete anonymous archive matched all
 4,375 file contents/Git modes and the accepted tree. A local M4 cold-cache run
 with Go 1.25.12, Node 22.23.1 and npm 10.9.8 passed the ordinary seven-command
 Linux cross-compile, unchanged notices/runtime guards, frontend type/coverage
