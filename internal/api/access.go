@@ -14,6 +14,7 @@ import (
 
 	productaccess "github.com/foigent/x-insight/internal/access"
 	"github.com/foigent/x-insight/internal/connectorcontrol"
+	"github.com/foigent/x-insight/internal/workbench"
 	"github.com/foigent/x-insight/internal/workspace"
 )
 
@@ -34,9 +35,10 @@ type loginRequest struct {
 }
 
 type sessionResponse struct {
-	ScopeRevision string                    `json:"scope_revision,omitempty"`
-	Session       productaccess.SessionView `json:"session"`
-	CSRFToken     string                    `json:"csrf_token"`
+	ReadingCapabilities *workbench.ReadingCapabilities `json:"reading_capabilities,omitempty"`
+	ScopeRevision       string                         `json:"scope_revision,omitempty"`
+	Session             productaccess.SessionView      `json:"session"`
+	CSRFToken           string                         `json:"csrf_token"`
 }
 
 type sessionListResponse struct {
@@ -102,6 +104,7 @@ func (s *Server) handleAccessSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	revision := ""
+	var capabilities *workbench.ReadingCapabilities
 	if productaccess.IsScopedRole(authentication.Session.Role) ||
 		(productaccess.HasPermission(authentication.Session.Role, productaccess.PermissionWorkbenchSummary) && s.scopedStore != nil) {
 		if s.scopedStore == nil {
@@ -109,7 +112,8 @@ func (s *Server) handleAccessSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var err error
-		revision, err = s.scopedStore.CurrentRevision(r.Context(), authentication.Session.SubjectID, authentication.Session.Role == productaccess.RoleScopedReviewer)
+		var available workbench.ReadingCapabilities
+		revision, available, err = s.scopedStore.CurrentAccess(r.Context(), authentication.Session.SubjectID, authentication.Session.Role == productaccess.RoleScopedReviewer)
 		if err != nil {
 			writeProblem(w, http.StatusServiceUnavailable, "scoped_workchain_unavailable", "Scoped workchain is unavailable", false)
 			return
@@ -119,9 +123,11 @@ func (s *Server) handleAccessSession(w http.ResponseWriter, r *http.Request) {
 		// review-body reads and mid-stream revocation checks.
 		if authentication.Session.Role == productaccess.RoleWorkbenchReader && revision == "no_authorized_scope" {
 			revision = ""
+		} else {
+			capabilities = &available
 		}
 	}
-	writeJSON(w, http.StatusOK, sessionResponse{ScopeRevision: revision,
+	writeJSON(w, http.StatusOK, sessionResponse{ScopeRevision: revision, ReadingCapabilities: capabilities,
 		Session:   authentication.Session,
 		CSRFToken: s.access.CSRFToken(authentication),
 	})

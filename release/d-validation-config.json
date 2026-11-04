@@ -25,10 +25,10 @@
   ],
   "manual": {
     "language": "en-US",
-    "version": "0.2.0-dev.fpv21/manual-r1"
+    "version": "0.2.0-dev.fpv22/manual-r1"
   },
   "product_name": "x-insight",
-  "product_version": "0.2.0-dev.fpv21",
+  "product_version": "0.2.0-dev.fpv22",
   "receipt_schema_versions": [
     "xinsight.import-receipt.v1",
     "foigent.operational-receipt.v2",
@@ -68,7 +68,8 @@
     "0.2.0-dev.fpv17",
     "0.2.0-dev.fpv18",
     "0.2.0-dev.fpv19",
-    "0.2.0-dev.fpv20"
+    "0.2.0-dev.fpv20",
+    "0.2.0-dev.fpv21"
   ],
   "trust_reference": "/etc/x-insight/trusted-release-keys.json"
 }

@@ -424,3 +424,99 @@ func TestOperationDiagnosticNeverExportsPrivateFields(t *testing.T) {
 		}
 	}
 }
+
+func TestInstalledDatabaseProfileAndRestoreBoundary(t *testing.T) {
+	for _, profile := range []string{"", "container", "native"} {
+		port := "5432"
+		if profile == "native" {
+			port = "54554"
+		}
+		for _, restored := range []bool{false, true} {
+			database := "xinsight"
+			if restored {
+				database = "xinsight_restore_profile_test"
+			}
+			raw := "postgres://xinsight_admin:isolated-unused@127.0.0.1:" + port + "/" + database + "?sslmode=disable"
+			if _, err := installedDatabaseURL(raw, restored, profile); err != nil {
+				t.Fatal("valid fixed profile rejected", profile, restored)
+			}
+			wrong := "54554"
+			if profile == "native" {
+				wrong = "5432"
+			}
+			for _, invalid := range []string{strings.Replace(raw, ":"+port+"/", ":"+wrong+"/", 1), strings.Replace(raw, ":"+port+"/", ":55555/", 1), strings.Replace(raw, "127.0.0.1", "0.0.0.0", 1), strings.Replace(raw, "xinsight_admin", "other_admin", 1), strings.Replace(raw, "/"+database, "/other_database", 1), strings.Replace(raw, ":isolated-unused", "", 1)} {
+				if _, err := installedDatabaseURL(invalid, restored, profile); err == nil {
+					t.Fatal("invalid fixed profile accepted", profile, restored)
+				}
+			}
+			if _, err := installedDatabaseURL(raw, restored, "unknown"); err == nil {
+				t.Fatal("unknown profile accepted")
+			}
+		}
+	}
+}
+
+func TestInstalledDatabaseProfileComesFromExistingProof(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "xinsight-fresh-install-qualification")
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	admin := filepath.Join(root, "xinsight-fpv15-joint-private", "xi-admin.dsn")
+	file := filepath.Join(dir, "postgres-profile-result.json")
+	completion := filepath.Join(dir, "qualification-result.json")
+	write := func(path string, proof map[string]any) {
+		t.Helper()
+		raw, _ := json.Marshal(proof)
+		if err := os.WriteFile(path, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := readInstalledDatabaseProfile(admin); err == nil {
+		t.Fatal("missing completion proof accepted")
+	}
+	container := map[string]any{"schema_version": "xinsight.ci-fresh-install-qualification.v1", "classification": "ci_clean_vm_not_target", "host": "ubuntu-22.04-amd64-systemd"}
+	// Frozen container predecessors need no new sidecar or environment field.
+	write(completion, container)
+	if got, err := readInstalledDatabaseProfile(admin); err != nil || got != "container" {
+		t.Fatal("legacy container completion rejected", err)
+	}
+	container["database_profile"] = "container"
+	write(completion, container)
+	if got, err := readInstalledDatabaseProfile(admin); err != nil || got != "container" {
+		t.Fatal("explicit container completion rejected", err)
+	}
+	completeNative := map[string]any{"schema_version": "xinsight.ci-fresh-install-qualification.v1", "classification": "ci_clean_vm_not_target", "host": "ubuntu-24.04-amd64-systemd", "database_profile": "native"}
+	write(completion, completeNative)
+	if _, err := readInstalledDatabaseProfile(admin); err == nil {
+		t.Fatal("native completion without topology proof accepted")
+	}
+	native := map[string]any{"schema_version": "xinsight.ci-postgres-profile.v1", "classification": "ci_clean_vm_not_target", "data_root": "/data/x-insight/postgres", "topology": "native_postgresql", "host": "ubuntu_24.04_linux_amd64", "native_process_verified": true, "major": 16, "port": "54554", "container_pgdata": nil, "listen_addresses": "127.0.0.1", "data_directory": "/data/x-insight/postgres", "public_tables": 0, "system_id": "123"}
+	write(file, native)
+	if got, err := readInstalledDatabaseProfile(admin); err != nil || got != "native" {
+		t.Fatal("valid native topology proof rejected", err)
+	}
+	for key, value := range map[string]any{"schema_version": "other", "classification": "target", "data_root": "/other", "topology": "container", "host": "ubuntu_22.04_linux_amd64", "native_process_verified": false, "major": 15, "port": "5432", "container_name": "xinsight-postgres", "listen_addresses": "*", "data_directory": "/other", "public_tables": 1, "system_id": ""} {
+		changed := map[string]any{}
+		for k, v := range native {
+			changed[k] = v
+		}
+		changed[key] = value
+		write(file, changed)
+		if _, err := readInstalledDatabaseProfile(admin); err == nil {
+			t.Fatal("invalid native proof accepted", key)
+		}
+	}
+	write(file, native)
+	for key, value := range map[string]any{"schema_version": "wrong", "classification": "target", "host": "ubuntu-22.04-amd64-systemd", "database_profile": "unknown"} {
+		changed := map[string]any{}
+		for k, v := range completeNative {
+			changed[k] = v
+		}
+		changed[key] = value
+		write(completion, changed)
+		if _, err := readInstalledDatabaseProfile(admin); err == nil {
+			t.Fatal("invalid completion accepted", key)
+		}
+	}
+}

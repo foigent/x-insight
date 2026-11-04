@@ -49,6 +49,7 @@ type SessionView struct {
 	AuthRevision      int64        `json:"-"`
 	SessionRef        string       `json:"session_ref"`
 	SubjectID         string       `json:"subject_id"`
+	Username          string       `json:"username,omitempty"`
 	Role              Role         `json:"role"`
 	Permissions       []Permission `json:"permissions"`
 	CreatedAt         time.Time    `json:"created_at"`
@@ -397,6 +398,7 @@ func (service *Service) view(_ [32]byte, current *session) SessionView {
 		AuthRevision:      current.principal.AuthRevision,
 		SessionRef:        current.reference,
 		SubjectID:         current.principal.SubjectID,
+		Username:          current.principal.Username,
 		Role:              current.principal.Role,
 		Permissions:       Permissions(current.principal.Role),
 		CreatedAt:         current.createdAt,

@@ -94,6 +94,7 @@ type driver struct {
 	adminCSRF               string
 	collectionChoice        *connectorsync.Status
 	db                      *sql.DB
+	databaseProfile         string
 	start                   time.Time
 	stage                   string
 	stageStart              time.Time
@@ -161,11 +162,15 @@ func run() (string, time.Duration, error) {
 	if err != nil {
 		return d.fail("database_unavailable")
 	}
-	dsn := strings.TrimSpace(string(dsnRaw))
-	if dsn == "" {
-		return d.fail("database_unavailable")
+	d.databaseProfile, err = readInstalledDatabaseProfile(input.Installed.XIAdminDSNFile)
+	if err != nil {
+		return d.fail("database_profile_unavailable")
 	}
-	d.db, err = sql.Open("pgx", dsn)
+	u, err := installedDatabaseURL(strings.TrimSpace(string(dsnRaw)), false, d.databaseProfile)
+	if err != nil {
+		return d.fail("database_identity")
+	}
+	d.db, err = sql.Open("pgx", u.String())
 	if err != nil {
 		return d.fail("database_unavailable")
 	}
@@ -400,7 +405,7 @@ func run() (string, time.Duration, error) {
 			return d.fail("upgrade_private_log_unavailable")
 		}
 		command := exec.CommandContext(ctx, "bash", script, artifact, payload)
-		command.Env = append(os.Environ(), "RUNNER_TEMP="+filepath.Dir(filepath.Dir(input.Installed.XIAdminDSNFile)))
+		command.Env = append(os.Environ(), "RUNNER_TEMP="+filepath.Dir(filepath.Dir(input.Installed.XIAdminDSNFile)), "XINSIGHT_CI_DATABASE_PROFILE="+d.databaseProfile)
 		command.Stdout, command.Stderr = log, log
 		err = command.Run()
 		if closeErr := log.Close(); closeErr != nil {
@@ -555,15 +560,90 @@ func safePreflightFailure(raw []byte) string {
 	return "private_command_failed"
 }
 
+// The frozen UR producer deliberately scrubs child environment variables.
+// Read the existing fresh-install topology proof instead of inferring a profile
+// from a port or changing the fixed UR fixture.
+func readInstalledDatabaseProfile(adminDSNFile string) (string, error) {
+	root := filepath.Join(filepath.Dir(filepath.Dir(adminDSNFile)), "xinsight-fresh-install-qualification")
+	// Every supported frozen predecessor already supplies this completion
+	// record. Missing profile is its original Ubuntu22/container contract.
+	completed, err := os.ReadFile(filepath.Join(root, "qualification-result.json"))
+	var installation struct {
+		Schema         string  `json:"schema_version"`
+		Classification string  `json:"classification"`
+		Host           string  `json:"host"`
+		Profile        *string `json:"database_profile"`
+	}
+	if err != nil || len(completed) > 128<<10 || json.Unmarshal(completed, &installation) != nil || installation.Schema != "xinsight.ci-fresh-install-qualification.v1" || installation.Classification != "ci_clean_vm_not_target" {
+		return "", errors.New("database_profile_unavailable")
+	}
+	if installation.Host == "ubuntu-22.04-amd64-systemd" && (installation.Profile == nil || *installation.Profile == "container") {
+		return "container", nil
+	}
+	if installation.Host != "ubuntu-24.04-amd64-systemd" || installation.Profile == nil || *installation.Profile != "native" {
+		return "", errors.New("database_profile_unavailable")
+	}
+	path := filepath.Join(root, "postgres-profile-result.json")
+	raw, err := os.ReadFile(path)
+	if err != nil || len(raw) > 16<<10 {
+		return "", errors.New("database_profile_unavailable")
+	}
+	var proof struct {
+		Schema          string `json:"schema_version"`
+		Classification  string `json:"classification"`
+		DataRoot        string `json:"data_root"`
+		ContainerName   string `json:"container_name"`
+		ContainerPGData string `json:"container_pgdata"`
+		Topology        string `json:"topology"`
+		Host            string `json:"host"`
+		NativeProcess   bool   `json:"native_process_verified"`
+		Major           int    `json:"major"`
+		Port            string `json:"port"`
+		ListenAddresses string `json:"listen_addresses"`
+		DataDirectory   string `json:"data_directory"`
+		PublicTables    *int   `json:"public_tables"`
+		SystemID        string `json:"system_id"`
+	}
+	if json.Unmarshal(raw, &proof) != nil || proof.Schema != "xinsight.ci-postgres-profile.v1" || proof.Classification != "ci_clean_vm_not_target" || proof.DataRoot != "/data/x-insight/postgres" {
+		return "", errors.New("database_profile_unavailable")
+	}
+	if proof.Topology == "native_postgresql" && proof.Host == "ubuntu_24.04_linux_amd64" && proof.NativeProcess && proof.Major == 16 && proof.Port == "54554" && proof.ContainerName == "" && proof.ContainerPGData == "" && proof.ListenAddresses == "127.0.0.1" && proof.DataDirectory == "/data/x-insight/postgres" && proof.PublicTables != nil && *proof.PublicTables == 0 && proof.SystemID != "" {
+		return "native", nil
+	}
+	return "", errors.New("database_profile_unavailable")
+}
+
+// The two fixture profiles have distinct fixed ports. Restore reuses the
+// selected server and may only change the dedicated database name.
+func installedDatabaseURL(raw string, restored bool, profile string) (*url.URL, error) {
+	port := "5432"
+	switch profile {
+	case "", "container":
+	case "native":
+		port = "54554"
+	default:
+		return nil, errors.New("restored_database_identity")
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "postgres" || u.Host != "127.0.0.1:"+port || u.User == nil || u.User.Username() != "xinsight_admin" ||
+		(restored && !strings.HasPrefix(u.Path, "/xinsight_restore_")) || (!restored && u.Path != "/xinsight") {
+		return nil, errors.New("restored_database_identity")
+	}
+	password, present := u.User.Password()
+	if !present || password == "" {
+		return nil, errors.New("restored_database_identity")
+	}
+	return u, nil
+}
+
 func (d *driver) openInstalledDatabase(ctx context.Context, restored bool) error {
 	raw, err := exec.CommandContext(ctx, "sudo", "-n", "cat", "/etc/x-insight/database/current/postgres-admin.dsn").Output()
 	if err != nil {
 		return errors.New("restored_database_unavailable")
 	}
-	u, err := url.Parse(strings.TrimSpace(string(raw)))
-	if err != nil || u.Host != "127.0.0.1:5432" || u.User == nil || u.User.Username() != "xinsight_admin" ||
-		(restored && !strings.HasPrefix(u.Path, "/xinsight_restore_")) || (!restored && u.Path != "/xinsight") {
-		return errors.New("restored_database_identity")
+	u, err := installedDatabaseURL(strings.TrimSpace(string(raw)), restored, d.databaseProfile)
+	if err != nil {
+		return err
 	}
 	d.db, err = sql.Open("pgx", u.String())
 	if err != nil {

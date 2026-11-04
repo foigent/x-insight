@@ -32,12 +32,16 @@ def file_identity(name):
 
 dsn_path = Path("/etc/x-insight/database/current/postgres-admin.dsn")
 dsn = urlsplit(dsn_path.read_text().strip())
-if (dsn.scheme != "postgres" or dsn.hostname != "127.0.0.1" or dsn.port != 5432
-        or unquote(dsn.username or "") != "xinsight_admin" or dsn.path != "/xinsight"
-        or not dsn.password):
+def valid_snapshot_database(dsn, profile):
+    port={"container":5432,"native":54554}.get(profile)
+    return (port is not None and dsn.scheme=="postgres" and dsn.hostname=="127.0.0.1" and dsn.port==port
+        and unquote(dsn.username or "")=="xinsight_admin" and dsn.path=="/xinsight" and bool(dsn.password))
+profile=os.environ.get("XINSIGHT_CI_DATABASE_PROFILE","container")
+if not valid_snapshot_database(dsn,profile):
     raise SystemExit("unexpected isolated PostgreSQL credential")
-pg_env = dict(os.environ, PGHOST="127.0.0.1", PGPORT="5432", PGUSER="xinsight_admin",
+pg_env = dict(os.environ, PGHOST="127.0.0.1", PGPORT=str(dsn.port), PGUSER="xinsight_admin",
               PGDATABASE="xinsight", PGPASSWORD=unquote(dsn.password))
+
 tables = (
     "schema_migrations", "source_fact_documents", "source_fact_streams",
     "source_content_collections", "source_content_manifests", "source_content_receipts",
@@ -149,12 +153,23 @@ legacy=json.loads(Path('/etc/x-insight/access-accounts.json').read_text())
 legacy_account_inventory=account_inventory([[a[k] for k in ('subject_id','username','role','disabled','password_hash')] for a in legacy['accounts']])
 account_inventory_value=None
 account_boundary=None
+account_state_digests=None
+account_ticket_summary=None
 present=command('/usr/lib/postgresql/16/bin/psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-c',
                 "SELECT to_regclass('xinsight_accounts.authority') IS NOT NULL",env=pg_env)
 if present=='t':
     rows=json.loads(command('/usr/lib/postgresql/16/bin/psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-c',
         "SELECT COALESCE(jsonb_agg(jsonb_build_array(subject_id,username,role,disabled,password_hash) ORDER BY subject_id)::text,'[]') FROM xinsight_accounts.accounts",env=pg_env))
     account_inventory_value=account_inventory(rows)
+    account_ticket_summary=json.loads(command('/usr/lib/postgresql/16/bin/psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-c',
+        "SELECT jsonb_build_object('total',count(*),'pending',count(*) FILTER(WHERE consumed_at IS NULL)) FROM xinsight_accounts.password_tickets",env=pg_env))
+
+    account_state_digests={}
+    for table in ('authority','accounts','password_tickets'):
+        value=command('/usr/lib/postgresql/16/bin/psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-c',
+            "SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text)::text,'[]') FROM xinsight_accounts."+table+" t",env=pg_env)
+        account_state_digests[table]=hashlib.sha256(value.encode()).hexdigest()
+
     account_boundary=json.loads(command('/usr/lib/postgresql/16/bin/psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-c',
         """SELECT jsonb_build_object('initialized',(SELECT initialized FROM xinsight_accounts.authority WHERE singleton),
         'roles_separated',NOT has_schema_privilege('xinsight_reader','xinsight_accounts','USAGE')
@@ -187,6 +202,6 @@ print(json.dumps({"schema_version": "xinsight.ci-fpv17-upgrade-snapshot.v1",
                   "migration_rows": migration_rows, "table_acl_rows": table_acl_rows,
                   "sync_privileges": sync_privileges,
                   "legacy_account_inventory": legacy_account_inventory,
-                  "account_inventory": account_inventory_value,"account_boundary":account_boundary,
+                  "account_inventory": account_inventory_value,"account_boundary":account_boundary,"account_state_digests":account_state_digests,"account_ticket_summary":account_ticket_summary,
                   "progress": progress, "worker_exes": worker_exes,
                   "files": files}, sort_keys=True))

@@ -130,7 +130,7 @@ it("keeps machine identifiers in reference details and Chinese phases roles and 
 });
 
 
-it.each(["xinsight:scope-changed", "xinsight:unauthorized"])("keeps mounted content empty when a body arrives after %s",async(event)=>{
+it.each(["xinsight:scope-changed", "xinsight:scope-pending", "xinsight:unauthorized"])("keeps mounted content empty when a body arrives after %s",async(event)=>{
  const raw='{"messages":[{"role":"user","content":"late-revoked-secret"}]}';
  const reference=structuredFixture(raw);
  let complete!:(value:content.VerifiedContent)=>void;let signal!:AbortSignal;
@@ -155,4 +155,18 @@ it("passes verified content and the original execution context through the runti
  render(<RuntimeRequestDetail executionContext={context} session={session} reading={reading} request={request} view="contents" onViewChange={vi.fn()} onInvalidated={vi.fn()} navigate={vi.fn()}/>);
  expect(await screen.findByText("清单记录：完整保存 · 可尝试读取")).toBeTruthy();expect(screen.getByText("是否可读以本次按需读取和核验结果为准。")).toBeTruthy();expect(spy).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole("button",{name:"读取并核验正文"}));await screen.findByText("Review editor");expect(spy.mock.calls.at(-1)?.[0].executionContext).toEqual(context);
+});
+
+// A 404 does not distinguish an absent member/collection from absent content
+// authority. Keep that feedback neutral and avoid a meaningless retry loop.
+it.each([403,404,410,503,429])("classifies a list failure %s without claiming a body was captured",async status=>{
+ vi.mocked(content.fetchContentPage).mockRejectedValue(new ApiRequestError(status,{type:"urn:test",title:"synthetic",status,code:status===410?"content_expired":"content_unavailable",correlation_id:"synthetic",retryable:status>=500}));
+ const invalidated=vi.fn();render(<ContentPanel session={session} reading={reading} request={request} onInvalidated={invalidated}/>);
+ const message=await screen.findByRole("alert");
+ if(status===404){expect(message.textContent).toContain("本次读取");expect(message.textContent).not.toContain("无权");}
+ expect(screen.queryByRole("button",{name:"读取并核验正文"})).toBeNull();
+ const retry=screen.queryByRole("button",{name:"重试内容清单"});
+ if(status===503||status===429){expect(retry).toBeTruthy();fireEvent.click(retry!);await waitFor(()=>expect(content.fetchContentPage).toHaveBeenCalledTimes(2));}
+ else expect(retry).toBeNull();
+ expect(invalidated).not.toHaveBeenCalled();
 });

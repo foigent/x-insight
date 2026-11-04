@@ -399,3 +399,29 @@ func TestUnknownBindingAndRevokedInstallationFailClosed(t *testing.T) {
 		t.Fatal("revoked installation committed received data", e)
 	}
 }
+
+func TestSafeFailureStatusKeepsRunAndRevisionPostgres(t *testing.T) {
+	s, id := install(t, 92)
+	r := request(id, 1, 920, "once")
+	status, err := s.Change(t.Context(), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, finish, err := s.Begin(t.Context(), id, "projects", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	private := errors.New("private upstream response token=SECRET")
+	finish(errors.Join(connectorsync.WithFailure("enrollment_list", "unavailable", private), connectorsync.ErrChanged))
+	got, err := s.Status(t.Context(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Revision != status.Revision || got.Error != "enrollment_list:unavailable" || got.Run == nil || got.Run.RequestID != r.RequestID || got.Run.Results["projects"] != "error" {
+		t.Fatalf("failure identity/result lost: %+v %v", got, err)
+	}
+	var code string
+	if err = database.QueryRow(`SELECT last_error FROM connector_sync_slots WHERE installation_id=$1 AND worker='projects'`, id).Scan(&code); err != nil || code != "enrollment_list:unavailable" {
+		t.Fatal("slot cause missing", code, err)
+	}
+}

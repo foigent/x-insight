@@ -147,7 +147,10 @@ mkdir -p "$BOOTSTRAP_DIR"
 if [ "$PREPARE_ONLY" -eq 1 ]; then
   export GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local
 fi
-LDFLAGS="-buildid= -X github.com/foigent/x-insight/internal/buildinfo.ProductVersion=$PRODUCT_VERSION -X github.com/foigent/x-insight/internal/buildinfo.Commit=$COMMIT -X github.com/foigent/x-insight/internal/buildinfo.BuildTime=$BUILD_TIME -X github.com/foigent/x-insight/internal/buildinfo.GoVersion=$GO_VERSION -X github.com/foigent/x-insight/internal/buildinfo.ManualVersion=$MANUAL_VERSION"
+# Strip external symbol/DWARF tables from distribution executables. Go runtime
+# stack traces and embedded build/module identity remain; native debuggers need
+# a source rebuild. All program/version/commit/manual identities stay injected.
+LDFLAGS="-buildid= -s -w -X github.com/foigent/x-insight/internal/buildinfo.ProductVersion=$PRODUCT_VERSION -X github.com/foigent/x-insight/internal/buildinfo.Commit=$COMMIT -X github.com/foigent/x-insight/internal/buildinfo.BuildTime=$BUILD_TIME -X github.com/foigent/x-insight/internal/buildinfo.GoVersion=$GO_VERSION -X github.com/foigent/x-insight/internal/buildinfo.ManualVersion=$MANUAL_VERSION"
 for command in xinsight-server xinsight-importer xinsightctl xinsight-launcher; do
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -buildvcs=false -ldflags="$LDFLAGS" \

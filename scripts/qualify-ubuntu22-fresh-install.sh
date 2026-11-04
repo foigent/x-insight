@@ -10,6 +10,20 @@ if [ "${GITHUB_ACTIONS:-}" != "true" ] || [ "${XINSIGHT_CI_EPHEMERAL_HOST:-}" !=
   exit 1
 fi
 
+# The historical script name is retained by frozen predecessor routes. Only
+# the explicit native profile adds a real Ubuntu24/PG16 route; no OS override.
+DATABASE_PROFILE="${XINSIGHT_CI_DATABASE_PROFILE:-container}"
+DATABASE_PORT=5432
+if [ "$DATABASE_PROFILE" = native ]; then DATABASE_PORT=54554; fi
+case "$DATABASE_PROFILE" in container|native) ;; *) echo 'unsupported CI database profile' >&2; exit 1 ;; esac
+if [ "$DATABASE_PROFILE" = native ]; then
+  python3 - <<'PY_NATIVE_HOST'
+import os, platform
+release = platform.freedesktop_os_release()
+assert release['ID']=='ubuntu' and release['VERSION_ID']=='24.04'
+assert platform.machine()=='x86_64' and not os.environ.get('XINSIGHTCTL_TEST_HOST')
+PY_NATIVE_HOST
+fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_ARTIFACT="$1"
 TARGET_PAYLOAD="$2"
@@ -103,14 +117,15 @@ ADMIN_PASSWORD="$(openssl rand -hex 24)"
 READER_PASSWORD="$(openssl rand -hex 24)"
 WORKSPACE_PASSWORD="$(openssl rand -hex 24)"
 IMPORTER_PASSWORD="$(openssl rand -hex 24)"
-ADMIN_DSN="postgres://xinsight_admin:${ADMIN_PASSWORD}@127.0.0.1:5432/xinsight?sslmode=disable"
-READER_DSN="postgres://xinsight_reader:${READER_PASSWORD}@127.0.0.1:5432/xinsight?sslmode=disable"
-WORKSPACE_DSN="postgres://xinsight_workspace:${WORKSPACE_PASSWORD}@127.0.0.1:5432/xinsight?sslmode=disable"
-IMPORTER_DSN="postgres://xinsight_importer:${IMPORTER_PASSWORD}@127.0.0.1:5432/xinsight?sslmode=disable"
+ADMIN_DSN="postgres://xinsight_admin:${ADMIN_PASSWORD}@127.0.0.1:${DATABASE_PORT}/xinsight?sslmode=disable"
+READER_DSN="postgres://xinsight_reader:${READER_PASSWORD}@127.0.0.1:${DATABASE_PORT}/xinsight?sslmode=disable"
+WORKSPACE_DSN="postgres://xinsight_workspace:${WORKSPACE_PASSWORD}@127.0.0.1:${DATABASE_PORT}/xinsight?sslmode=disable"
+IMPORTER_DSN="postgres://xinsight_importer:${IMPORTER_PASSWORD}@127.0.0.1:${DATABASE_PORT}/xinsight?sslmode=disable"
 
 sudo useradd --system --home /var/lib/x-insight --shell /usr/sbin/nologin xinsight
 sudo install -d -m 0755 /etc/x-insight /var/lib/x-insight /data/x-insight
-sudo install -d -m 0700 /etc/x-insight/database/sets/initial /data/x-insight/postgres
+sudo install -d -m 0700 /etc/x-insight/database/sets/initial
+if [ "$DATABASE_PROFILE" = container ]; then sudo install -d -m 0700 /data/x-insight/postgres; fi
 sudo install -m 0644 "$TARGET_PAYLOAD/deploy/postgres.compose.yml" /etc/x-insight/postgres.compose.yml
 sudo install -m 0644 "$TRUST_STORE" /etc/x-insight/trusted-release-keys.json
 PREPARED_ACCOUNTS="$RUNNER_TEMP/xinsight-fpv15-joint-private/access-accounts.json"
@@ -155,6 +170,30 @@ sudo ln -s /etc/x-insight/database/sets/initial /etc/x-insight/database/current
 
 sudo docker pull "$POSTGRES_IMAGE" > "$QUALIFICATION_ROOT/postgres-image-pull.txt"
 sudo docker image inspect "$POSTGRES_IMAGE" > "$QUALIFICATION_ROOT/postgres-image-inspect.json"
+if [ "$DATABASE_PROFILE" = native ]; then
+  # The normal installer still checks Docker/Compose and the pinned image;
+  # they remain available but do not provide this PostgreSQL process.
+  test -x /usr/bin/pg_createcluster
+  test ! -e /etc/postgresql/16/xi-ci
+  test -z "$(ss -H -ltn 'sport = :54554')"
+  sudo test ! -e /data/x-insight/postgres
+  sudo pg_createcluster --datadir=/data/x-insight/postgres --port=54554 --start-conf=manual 16 xi-ci -- --auth-local=peer --auth-host=scram-sha-256 > "$QUALIFICATION_ROOT/native-postgres-create.txt"
+  test "$(sudo stat -c '%a %U' /data/x-insight/postgres)" = "700 postgres"
+  sudo pg_conftool 16 xi-ci set listen_addresses 127.0.0.1
+  sudo pg_ctlcluster 16 xi-ci start
+  # Random hexadecimal fixture secret goes through stdin, never an argument.
+  printf "CREATE ROLE xinsight_admin LOGIN SUPERUSER PASSWORD '%s';\nCREATE DATABASE xinsight OWNER xinsight_admin;\n" "$ADMIN_PASSWORD" |
+    sudo -u postgres /usr/lib/postgresql/16/bin/psql -X -w -v ON_ERROR_STOP=1 -p 54554 -d postgres > /dev/null
+  sudo python3 - <<'PY_NATIVE_PROFILE' > "$QUALIFICATION_ROOT/postgres-profile-result.json"
+import json, pathlib, subprocess, platform
+raw=subprocess.check_output(['sudo','-u','postgres','/usr/lib/postgresql/16/bin/psql','-X','-w','-qAt','-v','ON_ERROR_STOP=1','-p','54554','-d','xinsight','-c',"SELECT json_build_object('version',current_setting('server_version'),'major',current_setting('server_version_num')::int/10000,'data_directory',current_setting('data_directory'),'listen_addresses',current_setting('listen_addresses'),'port',current_setting('port'),'system_id',(SELECT system_identifier::text FROM pg_control_system()),'public_tables',(SELECT count(*) FROM pg_tables WHERE schemaname='public'))"])
+v=json.loads(raw);assert v['major']==16 and v['data_directory']=='/data/x-insight/postgres' and v['listen_addresses']=='127.0.0.1' and v['port']=='54554' and v['public_tables']==0
+pid=pathlib.Path('/data/x-insight/postgres/postmaster.pid').read_text().splitlines()[0]
+assert pathlib.Path('/proc/'+pid+'/exe').resolve()==pathlib.Path('/usr/lib/postgresql/16/bin/postgres').resolve()
+release=platform.freedesktop_os_release();assert release['ID']=='ubuntu' and release['VERSION_ID']=='24.04'
+print(json.dumps({'schema_version':'xinsight.ci-postgres-profile.v1','classification':'ci_clean_vm_not_target','topology':'native_postgresql','host':'ubuntu_24.04_linux_amd64','native_process_verified':True,'data_root':v['data_directory'],'container_pgdata':None,**v},sort_keys=True))
+PY_NATIVE_PROFILE
+else
 POSTGRES_UID="$(sudo docker run --rm --entrypoint id "$POSTGRES_IMAGE" -u postgres)"
 POSTGRES_GID="$(sudo docker run --rm --entrypoint id "$POSTGRES_IMAGE" -g postgres)"
 if ! [[ "$POSTGRES_UID" =~ ^[1-9][0-9]*$ ]] || ! [[ "$POSTGRES_GID" =~ ^[1-9][0-9]*$ ]]; then
@@ -192,6 +231,13 @@ print(json.dumps({
     "container_pgdata": "/var/lib/postgresql/data",
 }, indent=2, sort_keys=True))
 PY
+
+fi
+
+PGPASSWORD="$ADMIN_PASSWORD" /usr/lib/postgresql/16/bin/psql -X -w -qAt -v ON_ERROR_STOP=1 \
+  -h 127.0.0.1 -p "$DATABASE_PORT" -U xinsight_admin -d xinsight \
+  -c "SELECT json_build_object('version',current_setting('server_version'),'major',current_setting('server_version_num')::int/10000,'port',current_setting('port'))" \
+  > "$QUALIFICATION_ROOT/postgres-version.json"
 
 QUAL_STAGE=install_check
 sudo env PATH="$CTL_PATH" "$TARGET_CTL" install --check \
@@ -453,12 +499,35 @@ curl --silent --show-error \
   http://127.0.0.1:8080/api/v1/executions/req-auth-denied-001 \
   > "$QUALIFICATION_ROOT/anonymous-api-status.txt"
 ss -ltnH > "$QUALIFICATION_ROOT/listeners.txt"
-if grep -Eq '(^|[[:space:]])(0\.0\.0\.0|\*|\[::\]):(5432|8080)([[:space:]]|$)' "$QUALIFICATION_ROOT/listeners.txt"; then
-  echo "X-Insight or PostgreSQL is exposed beyond loopback" >&2
-  exit 1
-fi
-grep -F '127.0.0.1:5432' "$QUALIFICATION_ROOT/listeners.txt" >/dev/null
-grep -F '127.0.0.1:8080' "$QUALIFICATION_ROOT/listeners.txt" >/dev/null
+python3 - "$QUALIFICATION_ROOT/listeners.txt" <<'PY_LISTENERS'
+import ipaddress, os, pathlib, sys
+def valid_target_listeners(lines, profile):
+    port = {"container":5432,"native":54554}.get(profile)
+    if port is None:
+        return False
+    expected = {port,8080}
+    seen = set()
+    for line in lines:
+        fields = line.split()
+        if len(fields)<4:
+            return False
+        host,sep,value=fields[3].rpartition(':')
+        if not sep or not value.isdecimal():
+            return False
+        selected=int(value)
+        if selected not in expected:
+            continue
+        try:
+            if not ipaddress.ip_address(host.strip('[]')).is_loopback:
+                return False
+        except ValueError:
+            return False
+        if host=='127.0.0.1':
+            seen.add(selected)
+    return seen==expected
+if not valid_target_listeners(pathlib.Path(sys.argv[1]).read_text().splitlines(),os.environ.get('XINSIGHT_CI_DATABASE_PROFILE','container')):
+    raise SystemExit('X-Insight or selected PostgreSQL listener boundary mismatch')
+PY_LISTENERS
 
 python3 - "$QUALIFICATION_ROOT" "$TARGET_ARTIFACT" "$TARGET_PRODUCT_VERSION" "$TARGET_MANUAL_VERSION" <<'PY' > "$QUALIFICATION_ROOT/qualification-result.json"
 import hashlib
@@ -545,8 +614,25 @@ if (
 ):
     raise SystemExit("packaged manual identity mismatch")
 postgres_profile = json.loads((root / "postgres-profile-result.json").read_text(encoding="utf-8"))
-if postgres_profile.get("data_root") != "/data/x-insight/postgres" or postgres_profile.get("container_pgdata") != "/var/lib/postgresql/data":
-    raise SystemExit(f"PostgreSQL profile mismatch: {postgres_profile}")
+postgres_version=json.loads((root/"postgres-version.json").read_text(encoding="utf-8"))
+database_profile=os.environ.get("XINSIGHT_CI_DATABASE_PROFILE","container")
+expected_port={"container":5432,"native":54554}.get(database_profile)
+if expected_port is None or postgres_version.get("major")!=16 or postgres_version.get("port")!=str(expected_port) or not isinstance(postgres_version.get("version"),str) or not postgres_version["version"]:
+    raise SystemExit("selected PostgreSQL version/port mismatch")
+def valid_postgres_profile(profile, topology):
+    if profile.get("schema_version")!="xinsight.ci-postgres-profile.v1" or profile.get("data_root")!="/data/x-insight/postgres":
+        return False
+    if topology=="container":
+        return profile.get("container_pgdata")=="/var/lib/postgresql/data" and profile.get("container_name")=="xinsight-postgres"
+    if topology=="native":
+        return (profile.get("topology")=="native_postgresql" and profile.get("host")=="ubuntu_24.04_linux_amd64"
+            and profile.get("native_process_verified") is True and profile.get("major")==16
+            and profile.get("listen_addresses")=="127.0.0.1" and profile.get("port")=="54554"
+            and profile.get("data_directory")=="/data/x-insight/postgres" and profile.get("public_tables")==0
+            and bool(profile.get("system_id")) and profile.get("container_pgdata") is None)
+    return False
+if not valid_postgres_profile(postgres_profile,os.environ.get("XINSIGHT_CI_DATABASE_PROFILE","container")):
+    raise SystemExit("PostgreSQL profile mismatch")
 feed_credential = json.loads((root / "feed-credential-status.json").read_text(encoding="utf-8"))
 if (
     feed_credential.get("schema_version") != "xinsight.feed-credential-status.v1"
@@ -559,8 +645,11 @@ if (
 result = {
     "schema_version": "xinsight.ci-fresh-install-qualification.v1",
     "classification": "ci_clean_vm_not_target",
-    "host": "ubuntu-22.04-amd64-systemd",
-    "postgresql": "16.14-compose-loopback",
+    "host": "ubuntu-"+__import__("platform").freedesktop_os_release()["VERSION_ID"]+"-amd64-systemd",
+    "database_profile": __import__("os").environ.get("XINSIGHT_CI_DATABASE_PROFILE","container"),
+    "postgresql": postgres_version["version"]+("-native-loopback" if database_profile=="native" else "-compose-loopback"),
+    "database_port": expected_port,
+    "listener_scope": "xi_app_and_selected_database",
     "target_artifact_sha256": "sha256:" + hashlib.sha256(artifact.read_bytes()).hexdigest(),
     "operations": ["fresh_install", "managed_launcher_dropin", "controller_mount_regression", "synthetic_fixture_import"],
     "final_product_version": status["install_state"]["current"]["product_version"],

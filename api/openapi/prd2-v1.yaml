@@ -4506,6 +4506,7 @@ components:
         session_ref:
           type: string
           pattern: '^xr_[A-Za-z0-9_-]{22}$'
+        username: {type: string, description: Verified local account username when available; never taken from a request URL.}
         subject_id:
           type: string
           pattern: '^xs_[a-z0-9]{16,64}$'
@@ -4563,6 +4564,16 @@ components:
       additionalProperties: false
       required: [session, csrf_token]
       properties:
+        reading_capabilities:
+          type: object
+          additionalProperties: false
+          description: Entry-point hints from the same effective grant snapshot as scope_revision; each request still checks its selected project and fields.
+          required: [summary, runtime, coverage, work_activity]
+          properties:
+            summary: {type: boolean}
+            runtime: {type: boolean}
+            coverage: {type: boolean}
+            work_activity: {type: boolean}
         scope_revision: {type: string, description: Current scoped authorization revision; refresh after a scope conflict.}
         session:
           $ref: '#/components/schemas/Session'

@@ -6,7 +6,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { acceptScopeSession, accessAPI, budgetAPI, runtimeAPI, workbenchAPI, investigationAPI, type AccessSessionResponse } from "./api";
+import { acceptScopeSession, accessAPI, invalidatePendingScopeResponses, budgetAPI, runtimeAPI, workbenchAPI, investigationAPI, type AccessSessionResponse } from "./api";
 vi.mock("./InvestigationQueuePage",()=>({InvestigationQueuePage:()=> {
  const [draft,setDraft]=useState("");
  return <><p>Authorized queue contents</p><label>Review draft<input value={draft} onChange={e=>setDraft(e.target.value)}/></label></>;
@@ -212,4 +212,25 @@ it("stops same-scope denied pages from remounting even on subsequent focus check
  fireEvent(window,new Event("xinsight:scope-changed"));expect(screen.queryByText("Authorized queue contents")).toBeNull();await screen.findByText("当前操作被拒绝");
  for(const event of ["focus","pageshow"]){fireEvent(window,new Event(event));await act(async()=>{});expect(screen.queryByText("Authorized queue contents")).toBeNull();expect(screen.getByText("当前操作被拒绝")).toBeTruthy();}
  fireEvent.click(screen.getByRole("button",{name:"返回总览"}));await screen.findByText("Scoped overview page");
+});
+
+it("discards a late protected response as soon as cross-tab verification starts, even before a new identity is known",async()=>{
+ acceptScopeSession(session);let resolve!:(value:Response)=>void;
+ vi.stubGlobal("fetch",vi.fn(()=>new Promise<Response>(r=>{resolve=r})));
+ const pending=investigationAPI.getExecution("xe1_fixture");const rejected=expect(pending).rejects.toMatchObject({name:"AbortError"});
+ invalidatePendingScopeResponses();
+ resolve(new Response(JSON.stringify({summary:{execution_id:"old-private"}}),{status:200,headers:{"Content-Type":"application/json","X-XInsight-Scope-Revision":session.scope_revision!}}));
+ await rejected;
+});
+it("keeps reauthentication rejection local while a real expired session still invalidates authentication",async()=>{
+ acceptScopeSession(session);const unauthorized=vi.fn();window.addEventListener("xinsight:unauthorized",unauthorized);
+ try{
+  const response=(code:string)=>new Response(JSON.stringify({type:"urn:test:auth",title:"Confirm identity",status:401,code,correlation_id:"synthetic",retryable:false}),{status:401,headers:{"Content-Type":"application/problem+json"}});
+  vi.stubGlobal("fetch",vi.fn().mockResolvedValueOnce(response("reauthentication_required")).mockResolvedValueOnce(response("authentication_required")));
+  const {managedAccountsAPI}=await import("./api");
+  await expect(managedAccountsAPI.change({action:"recover",subject_id:"xs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",expected_revision:1,password:"synthetic wrong confirmation"},session.csrf_token)).rejects.toMatchObject({status:401});
+  expect(unauthorized).not.toHaveBeenCalled();
+  await expect(managedAccountsAPI.change({action:"recover",subject_id:"xs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",expected_revision:1,password:"synthetic confirmation"},session.csrf_token)).rejects.toMatchObject({status:401});
+  expect(unauthorized).toHaveBeenCalledOnce();
+ }finally{window.removeEventListener("xinsight:unauthorized",unauthorized);}
 });

@@ -1,3 +1,13 @@
+# FPV22 source candidate: first-use and reading continuity
+
+Schema47 is unchanged. Normal entry follows effective reading grants; the UI displays server-verified account/role, separates invitation/recovery and holder setup from sign-in, preserves usability after local denials, and closes stale data on real authorization changes. Unknown submissions do not cause blind resubmission. Runtime and Work Activity have separate captured-body refusal checks.
+
+Sync failures gain bounded safe stage/category and per-unit correlation. Historical activation/projects causes remain unknown; their diagnosis is a freeze/signing prerequisite. No source authority or automatic rerun is added. Source facts use transactional ingest/cursors; completed-execution Feed receipts remain separate.
+
+Distribution uses standard Go symbol/DWARF stripping, retaining injected version/commit/build time/Go/manual identity. Native debugger symbols require a source rebuild. The five-component local sample is not a final package size. Exact Linux behavior, reproducibility, trust verification, FPV21/schema47 preserving upgrade, check and restore remain release gates. This source candidate is not published or installed.
+
+## Historical release notes retained below
+
 # FPV21 candidate: accounts and explicit project reading
 
 Schema47 adds durable local accounts, single-use holder activation/recovery, targeted session invalidation, and an owner metadata-grant editor. Owner management and explicitly granted reading compose; content remains separately authorized. Native private backup v2 binds account state, and Restore/Resume retires old activation links before service activation. Earlier release artifacts and acceptance records retain their original identities.

@@ -97,6 +97,7 @@ type accountConfigEntryWire struct {
 type Principal struct {
 	AuthRevision int64
 	SubjectID    string
+	Username     string
 	Role         Role
 }
 
@@ -190,7 +191,7 @@ func NewLocalProvider(config AccountConfig) (*LocalProvider, error) {
 			return nil, errors.New("access provider account hash parsing failed")
 		}
 		provider.accounts[entry.Username] = credentialAccount{
-			principal: Principal{SubjectID: entry.SubjectID, Role: entry.Role},
+			principal: Principal{SubjectID: entry.SubjectID, Username: entry.Username, Role: entry.Role},
 			disabled:  entry.Disabled,
 			hash:      hash,
 		}

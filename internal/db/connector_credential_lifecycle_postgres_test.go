@@ -28,6 +28,14 @@ import (
 )
 
 func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *testing.T) {
+	for _, expiredStatus := range []string{"active", "expired"} {
+		t.Run("elapsed_identity_status_"+expiredStatus, func(t *testing.T) {
+			testControlCredentialLifecyclePostgres16(t, expiredStatus)
+		})
+	}
+}
+
+func testControlCredentialLifecyclePostgres16(t *testing.T, expiredStatus string) {
 	base := os.Getenv("XINSIGHT_POSTGRES_DSN")
 	if base == "" {
 		if os.Getenv("XINSIGHT_REQUIRE_POSTGRES_TESTS") == "1" {
@@ -125,6 +133,54 @@ func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *test
 	makeRequest := func(kind, op, previous, replacement string) connectorcontrol.CredentialRequest {
 		return connectorcontrol.CredentialRequest{SchemaVersion: connectorcontrol.CredentialRequestSchema, Kind: kind, InstallationID: inv.InstallationID, DeploymentID: config.DeploymentID, ProjectID: redeem.ProjectID, FinalEventScope: redeem.FinalEventScope, SourceBindingSHA256: boot.SourceBindingSHA256, XInsightOrigin: xi, UniRouterOrigin: ur, OperationID: op, PreviousTokenSHA256: previous, ReplacementToken: replacement}
 	}
+	// Nonempty isolated evidence and reader authority must survive renewal and
+	// recovery. The account hash is an unusable fixture sentinel, never a login.
+	if _, err = database.ExecContext(ctx, `
+INSERT INTO source_systems(id,source_key,source_type,display_name)
+VALUES('11111111-1111-1111-1111-111111111111','unirouter','unirouter','Synthetic UR') ON CONFLICT DO NOTHING;
+INSERT INTO workbench_access_grants(subject_id,source_system_id,source_project_ref,allow_details,allow_source_context)
+VALUES('xs_0123456789abcdef','11111111-1111-1111-1111-111111111111','86',true,true);
+INSERT INTO xinsight_accounts.accounts(subject_id,username,role,password_hash)
+VALUES('xs_0123456789abcdef','lifecycle.reader','workbench_reader','unusable-isolated-fixture');
+INSERT INTO source_fact_streams(source_system_id,source_instance,org_id,project_id,profile,scope_generation,status,cursor_value,high_watermark)
+VALUES('11111111-1111-1111-1111-111111111111','synthetic-source','2','86','unirouter.execution-context.v1','1','active','retained-cursor','retained-high-watermark');
+INSERT INTO source_fact_documents(source_system_id,source_instance,org_id,project_id,request_id,profile,stage,source_fact_id,revision,event_id,source_hash,envelope_hash,source_bytes,envelope_bytes,source_json,occurred_at,recorded_at)
+VALUES('11111111-1111-1111-1111-111111111111','synthetic-source','2','86','retained-request','unirouter.execution-context.v1','terminal','uf1_'||repeat('1',64),1,'uf1_'||repeat('2',64),'sha256:'||encode(sha256(convert_to('{}','UTF8')),'hex'),'sha256:'||repeat('3',64),convert_to('{}','UTF8'),convert_to('{}','UTF8'),'{}',clock_timestamp(),clock_timestamp());`); err != nil {
+		t.Fatal("nonempty retained fixture", err)
+	}
+	preservedSnapshot := func() string {
+		t.Helper()
+		var snapshot string
+		err := database.QueryRowContext(ctx, `SELECT jsonb_build_object(
+'installations',(SELECT jsonb_agg(to_jsonb(i) ORDER BY id) FROM connector_installations i),
+'bindings',(SELECT jsonb_agg(to_jsonb(b) ORDER BY installation_id) FROM connector_installation_source_bindings b),
+'invitations',(SELECT jsonb_agg(to_jsonb(v) ORDER BY installation_id) FROM connector_installation_invitations v),
+'identity_authority',(SELECT jsonb_build_object('id',id,'permissions',permissions) FROM service_identities WHERE id=$1),
+'accounts',(SELECT jsonb_agg(to_jsonb(a) ORDER BY subject_id) FROM xinsight_accounts.accounts a),
+'grants',(SELECT jsonb_agg(to_jsonb(g) ORDER BY id) FROM workbench_access_grants g),
+'streams',(SELECT jsonb_agg(to_jsonb(f) ORDER BY id) FROM source_fact_streams f),
+'facts',(SELECT jsonb_agg(to_jsonb(f) ORDER BY event_id) FROM source_fact_documents f))::text`, identity).Scan(&snapshot)
+		if err != nil {
+			t.Fatal("preserved data snapshot", err)
+		}
+		return snapshot
+	}
+	originalData := preservedSnapshot()
+	assertRenewed := func(token string, receipt connectorcontrol.CredentialReceipt) {
+		t.Helper()
+		var status string
+		var identityExpiry, tokenExpiry time.Time
+		err := database.QueryRowContext(ctx, `SELECT s.status,s.expires_at,t.expires_at FROM service_identities s JOIN service_identity_tokens t ON t.service_identity_id=s.id WHERE s.id=$1 AND t.token_digest=$2`, identity, connectorcontrol.RawSHA256(token)).Scan(&status, &identityExpiry, &tokenExpiry)
+		if err != nil || status != "active" || !identityExpiry.Equal(tokenExpiry) || !identityExpiry.Equal(receipt.ReplacementExpiresAt) || time.Until(identityExpiry) < 23*time.Hour || time.Until(identityExpiry) > connectorcontrol.ControlCredentialTTL {
+			t.Fatal("identity and replacement did not renew together within finite TTL", status, err)
+		}
+		if setup, err := store.ReadConnectorSetup(ctx, inv.InstallationID); err != nil || setup.ControlIdentityIssue != "" {
+			t.Fatal("renewed shared identity predicate still blocked", setup.ControlIdentityIssue, err)
+		}
+		if preservedSnapshot() != originalData {
+			t.Fatal("renewal/recovery changed original bindings, reader authority, evidence or cursors")
+		}
+	}
 	newToken := "xib_" + strings.Repeat("B", 43)
 	rotate := makeRequest("rotate", "xcr_"+strings.Repeat("A", 22), oldDigest, newToken)
 	for _, tc := range []struct {
@@ -146,10 +202,26 @@ func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *test
 			}
 		})
 	}
+	// Identity expiry and token expiry are separate predicates: a still-valid
+	// bearer cannot rotate an elapsed identity, even when status remains active.
+	if _, err = database.ExecContext(ctx, `UPDATE service_identities SET expires_at=created_at+interval '1 microsecond' WHERE id=$1`, identity); err != nil {
+		t.Fatal(err)
+	}
+	if setup, e := store.ReadConnectorSetup(ctx, inv.InstallationID); e != nil || setup.ControlIdentityIssue != "control_identity_expired" || setup.ControlCredentialIssue != "" {
+		t.Fatal("identity-only expiry conflated with token", setup.ControlIdentityIssue, setup.ControlCredentialIssue, e)
+	}
+	if _, e := store.PrepareControlCredential(ctx, rotate, identity, oldDigest, time.Now().UTC(), nil); !errors.Is(e, connectorcontrol.ErrConflict) {
+		t.Fatal("valid token bypassed identity expiry", e)
+	}
+	// Restore only the synthetic fixture's pre-rotation expiry, never production.
+	if _, err = database.ExecContext(ctx, `UPDATE service_identities s SET expires_at=t.expires_at FROM service_identity_tokens t WHERE s.id=$1 AND t.token_digest=$2 AND t.service_identity_id=s.id`, identity, oldDigest); err != nil {
+		t.Fatal(err)
+	}
 	prepared, err := store.PrepareControlCredential(ctx, rotate, identity, oldDigest, time.Now().UTC(), nil)
 	if err != nil || prepared.State != "prepared" {
 		t.Fatal("rotate prepare", err)
 	}
+	assertRenewed(newToken, prepared)
 	if setup, e := store.ReadConnectorSetup(ctx, inv.InstallationID); e != nil || setup.ControlCredentialIssue != "control_credential_pending" {
 		t.Fatal("setup pending diagnostic", setup.ControlCredentialIssue, e)
 	}
@@ -226,12 +298,15 @@ func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *test
 	if e := <-lateResult; !errors.Is(e, connectorcontrol.ErrConflict) {
 		t.Fatal("lock-wait expiry accepted", e)
 	}
+	if setup, e := store.ReadConnectorSetup(ctx, inv.InstallationID); e != nil || setup.ControlIdentityIssue != "" || setup.ControlCredentialIssue != "control_credential_expired" {
+		t.Fatal("token-only expiry conflated with identity", setup.ControlIdentityIssue, setup.ControlCredentialIssue, e)
+	}
 	// Expire exactly the current lineage; a human ticket and old secret are both
 	// required to restore this same identity, with no new installation.
 	if _, err = database.ExecContext(ctx, `UPDATE service_identity_tokens SET expires_at=created_at+interval '1 microsecond' WHERE token_digest=$1`, current); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = database.ExecContext(ctx, `UPDATE service_identities SET status='expired',expires_at=created_at+interval '1 microsecond' WHERE id=$1`, identity); err != nil {
+	if _, err = database.ExecContext(ctx, `UPDATE service_identities SET status=$2,expires_at=created_at+interval '1 microsecond' WHERE id=$1`, identity, expiredStatus); err != nil {
 		t.Fatal(err)
 	}
 	if state := preflight(); state.IngressState != "recovery_required" || state.Reason != "control_credential_expired" {
@@ -239,6 +314,15 @@ func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *test
 	}
 	if setup, e := store.ReadConnectorSetup(ctx, inv.InstallationID); e != nil || setup.ControlCredentialIssue != "control_credential_expired" {
 		t.Fatal("setup expired diagnostic", setup.ControlCredentialIssue, e)
+	}
+	if setup, e := store.ReadConnectorSetup(ctx, inv.InstallationID); e != nil || setup.ControlIdentityIssue != "control_identity_expired" {
+		t.Fatal("elapsed identity must be diagnosed independently of token", setup.ControlIdentityIssue, e)
+	}
+	if _, e := store.InspectManagedConnector(ctx, inv.InstallationID); !errors.Is(e, connectorcontrol.ErrConflict) {
+		t.Fatal("elapsed active status bypassed managed identity expiry", e)
+	}
+	if _, e := store.PrepareControlCredential(ctx, late, identity, current, time.Now().UTC(), nil); !errors.Is(e, connectorcontrol.ErrConflict) {
+		t.Fatal("elapsed identity rotated without human recovery", e)
 	}
 	ticket := "xirt_" + strings.Repeat("E", 43)
 	if _, err = store.IssueControlCredentialRecovery(ctx, inv.InstallationID, "12345678-1234-4234-8234-123456789aba", "xs_0123456789abcdef", "xrr_"+strings.Repeat("Z", 22), "xirt_"+strings.Repeat("Z", 43), time.Now().UTC(), func(string) error { return errors.New("permission removed") }); !errors.Is(err, connectorcontrol.ErrConflict) {
@@ -267,6 +351,7 @@ func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *test
 	if err != nil || got.ControlIdentityID != identity || got.State != "prepared" {
 		t.Fatal("recover", err)
 	}
+	assertRenewed(recoveredToken, got)
 	if _, err = store.PrepareControlCredential(ctx, recover, "", "", time.Now().UTC(), func(string) error { return nil }); err != nil {
 		t.Fatal("recovery replay", err)
 	}
@@ -300,6 +385,18 @@ func TestControlCredentialLifecyclePostgres16InitialRotateConfirmRecover(t *test
 	}
 	if _, err = store.ReadControlCredentialOperation(ctx, inv.InstallationID, recover.OperationID, identity, connectorcontrol.RawSHA256(recoveredToken), time.Now().UTC()); !errors.Is(err, connectorcontrol.ErrConflict) {
 		t.Fatal("superseded query", err)
+	}
+	finalReceipt, err := store.ReadControlCredentialOperation(ctx, inv.InstallationID, recovery2.OperationID, identity, connectorcontrol.RawSHA256(recovery2.ReplacementToken), time.Now().UTC())
+	if err != nil {
+		t.Fatal("final recovery query", err)
+	}
+	finalConfirm := connectorcontrol.CredentialConfirm{SchemaVersion: connectorcontrol.CredentialRequestSchema, OperationID: recovery2.OperationID, RequestSHA256: finalReceipt.RequestSHA256}
+	if _, err = store.ConfirmControlCredential(ctx, inv.InstallationID, finalConfirm, identity, connectorcontrol.RawSHA256(recovery2.ReplacementToken), time.Now().UTC()); err != nil {
+		t.Fatal("final recovery confirm", err)
+	}
+	assertRenewed(recovery2.ReplacementToken, finalReceipt)
+	if state := preflight(); state.IngressState != "ready" {
+		t.Fatal("confirmed recovery not ready", state)
 	}
 	// Reconstruct an old managed source with no authoritative pointer but
 	// several token rows. The migration preflight must refuse to guess lineage.

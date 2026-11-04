@@ -1,3 +1,4 @@
+import { readingAccess } from "./accessPresentation";
 import { localizedLabels, getLocale, t, tx, useLocale, useMessageState } from "./i18n";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ApiRequestError, investigationQueueAPI, isAbortError, runtimeAPI, scopeSessionKey, workbenchAPI, workActivityAPI,
@@ -81,17 +82,19 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
   const identity = scopeSessionKey(session);
   const sink = useRef(onContext); sink.current = onContext;
   const permissions = session.session.permissions;
-  const canRuntime = permissions.includes("workbench.summary.read") && permissions.includes("workbench.details.read");
+  const available = readingAccess(session);
+  const canRuntime = available.runtime;
+  const canActivity = available.activity;
   const canDetails = permissions.includes("workbench.details.read");
   const canQueue = permissions.includes("investigation.scoped.read") || permissions.includes("evidence.read");
-  const canSources = permissions.includes("workbench.coverage.read");
+  const canSources = available.coverage;
   const activityChoiceKey = (item: { source_id: string; project_id: string }) => `${item.source_id}:${item.project_id}`;
   const chosenActivitySource = activityScopes?.items.find(item => activityChoiceKey(item) === activitySourceChoice);
   const activitySourceIDs = chosenActivitySource ? [chosenActivitySource.source_id] : activitySourceChoice === "__all__" ? [] : request.filters.source_ids;
   const activityProjectIDs = chosenActivitySource ? [chosenActivitySource.project_id] : activitySourceChoice === "__all__" ? [] :
     request.filters.source_projects.map(value => value.startsWith("project-") ? value.slice(8) : value);
   useEffect(() => {
-    if (!canRuntime) return;
+    if (!canActivity) return;
     const controller = new AbortController();
     void workActivityAPI.scopes(controller.signal).then(value => { if (!controller.signal.aborted) {
       setActivityScopes(value);
@@ -100,9 +103,9 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
     } })
       .catch(() => { if (!controller.signal.aborted) setActivityScopes(undefined); });
     return () => controller.abort();
-  }, [identity, canRuntime]);
+  }, [identity, canActivity]);
   useEffect(() => {
-    if (!canRuntime) { setActivitySummary(undefined); setActivityError(() => ""); return; }
+    if (!canActivity) { setActivitySummary(undefined); setActivityError(() => ""); return; }
     const controller = new AbortController();
     setActivitySummary(undefined); setActivityError(() => "");
     if (activitySourceChoice === "__overview__" && request.filters.cost_projects.length) {
@@ -119,7 +122,7 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
       .then(value => { if (!controller.signal.aborted) setActivitySummary(value); })
       .catch(reason => { if (!controller.signal.aborted && !isAbortError(reason)) setActivityError(() => failureMessage(reason)); });
     return () => controller.abort();
-  }, [request, identity, canRuntime, activitySourceChoice, activityScopes]);
+  }, [request, identity, canActivity, activitySourceChoice, activityScopes]);
   useEffect(() => { sink.current({ request, hours: Math.round((Date.parse(request.period.end_exclusive!) - Date.parse(request.period.start_inclusive!)) / 3600000), contribution, contributionMetric, economicReadingID: data.reading?.reading_id ?? (busy && revision === 0 ? initial?.economicReadingID : undefined), usageDimension: data.reading ? usageDimension(data.reading,data.summary?.actor_known_requests) : initial?.usageDimension, runtimeReadingID: data.runtimeReading?.reading_id ?? (busy && revision === 0 ? initial?.runtimeReadingID : undefined), activitySourceChoice }); }, [request, contribution, contributionMetric, data.reading, data.summary, data.runtimeReading, busy, revision, activitySourceChoice]);
   useEffect(() => { if (!canRuntime) setRecentView("economic"); }, [canRuntime]);
   useEffect(() => {
@@ -335,7 +338,7 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
       <article className="overview-panel overview-activity-entry"><header><h2>{tx("m0115")}</h2><small>{tx("m1216")}</small></header>
         {activitySummary ? <div className="overview-resource-summaries"><ResourceOutcomeRow title={t("m1217")} total={activitySummary.reported_resource_reads} outcomes={activitySummary.resource_read_outcomes} /><ResourceOutcomeRow title={t("m1218")} total={activitySummary.reported_resource_changes} outcomes={activitySummary.resource_change_outcomes} /></div> : null}
         <div className="overview-activity-attention"><span>{tx("m1219")}</span><strong>{activitySummary?.sources_needing_attention ?? "—"}</strong><small>{activitySummary ? t("m1220") : activityError || t("m1221")}</small></div>
-        {activitySummary ? <><p className="overview-activity-scope">{tx("m1222", { value0: activityScopeLabel, value1: activitySummary.reported_actions })}</p><p className="overview-activity-boundary" role="status">{activityCoverageLabels.length ? `${activityCoverageLabels.join("；")}。` : t("m1223")}</p></> : <p role={activityError ? "alert" : "status"}>{activityError || (canRuntime ? t("m1224") : t("m1225"))}</p>}
+        {activitySummary ? <><p className="overview-activity-scope">{tx("m1222", { value0: activityScopeLabel, value1: activitySummary.reported_actions })}</p><p className="overview-activity-boundary" role="status">{activityCoverageLabels.length ? `${activityCoverageLabels.join("；")}。` : t("m1223")}</p></> : <p role={activityError ? "alert" : "status"}>{activityError || (canActivity ? t("m1224") : t("m1225"))}</p>}
         {activityScopes?.items.length ? <details className="overview-activity-sources"><summary>{tx("m1226")}</summary><label className="overview-activity-source">{t("m1227")}<select value={activitySourceChoice} onChange={event => setActivitySourceChoice(event.target.value)}><option value="__overview__">{tx("m1156")}</option><option value="__all__">{tx("m1155")}</option>{activityScopes.items.filter((item, index, all) => all.findIndex(other => activityChoiceKey(other) === activityChoiceKey(item)) === index).map(item => <option key={activityChoiceKey(item)} value={activityChoiceKey(item)}>{tx("m1228", { value0: item.source_label, value1: item.project_label || t("m1154", { value0: item.project_id }) })}</option>)}</select></label></details> : null}
         <button type="button" disabled={!activitySummary} onClick={() => { const params = new URLSearchParams({ from: activitySummary!.from, to: activitySummary!.to }); if (activitySourceIDs.length) params.set("source_ids", activitySourceIDs.join(",")); if (activityProjectIDs.length) params.set("project_ids", activityProjectIDs.join(",")); navigate(`/work/activity?${params}`); }}>{tx("m1229")}</button>
         <OverviewInfo label={t("m0156")}><p>{tx("m1231", { value0: activitySummary ? outcomeZeroLabels(activitySummary.resource_read_outcomes) : t("m1230"), value1: activitySummary ? outcomeZeroLabels(activitySummary.resource_change_outcomes) : t("m1230") })}</p>

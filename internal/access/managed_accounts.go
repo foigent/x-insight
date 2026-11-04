@@ -14,6 +14,7 @@ import (
 
 var ErrAccountUnavailable = errors.New("account authority unavailable")
 var ErrAccountConflict = errors.New("account revision changed")
+var ErrAccountExists = errors.New("account username exists")
 var ErrAccountInvalid = errors.New("account operation invalid")
 
 const PermissionAccountsManage Permission = "accounts.manage"
@@ -105,7 +106,7 @@ func (p *DurableProvider) AuthenticateCurrent(username string, password []byte) 
 	if e != nil || !hashValid || !matches || a.Disabled || a.NeedsActivation {
 		return Principal{}, ErrInvalidCredentials
 	}
-	return Principal{SubjectID: a.SubjectID, Role: a.Role, AuthRevision: a.Revision}, nil
+	return Principal{SubjectID: a.SubjectID, Username: a.Username, Role: a.Role, AuthRevision: a.Revision}, nil
 }
 func (p *DurableProvider) CurrentPrincipal(subject string) (Principal, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -117,7 +118,7 @@ func (p *DurableProvider) CurrentPrincipal(subject string) (Principal, error) {
 	if a.Disabled || a.NeedsActivation {
 		return Principal{}, ErrUnauthenticated
 	}
-	return Principal{SubjectID: a.SubjectID, Role: a.Role, AuthRevision: a.Revision}, nil
+	return Principal{SubjectID: a.SubjectID, Username: a.Username, Role: a.Role, AuthRevision: a.Revision}, nil
 }
 func (p *DurableProvider) Subjects() ([]LocalSubject, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

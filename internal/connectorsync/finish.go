@@ -3,12 +3,20 @@ package connectorsync
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"time"
 )
 
 func (s *Store) finish(p *permit, result error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
+	logFailures(ctx, p, result)
+	committed := false
+	defer func() {
+		if !committed {
+			slog.ErrorContext(ctx, "connector_sync_status_unconfirmed", "installation_ref", reference(p.Installation), "run_ref", reference(p.Run), "revision", p.Revision, "unit_ref", reference(p.Unit), "stage", "finish", "category", "unconfirmed")
+		}
+	}()
 	tx, e := s.DB.BeginTx(ctx, nil)
 	if e != nil {
 		return
@@ -18,10 +26,7 @@ func (s *Store) finish(p *permit, result error) {
 	if e = tx.QueryRowContext(ctx, `SELECT revision FROM connector_sync_controls WHERE installation_id=$1 FOR UPDATE`, p.Installation).Scan(&rev); e != nil {
 		return
 	}
-	code := ""
-	if result != nil && !IsControlStop(result) {
-		code = "sync_failed"
-	}
+	code := diagnosticCode(result)
 	r, e := tx.ExecContext(ctx, `UPDATE connector_sync_slots SET busy=false,ended_at=clock_timestamp(),last_error=$5 WHERE installation_id=$1 AND worker=$2 AND token=$3 AND owner=$4`, p.Installation, p.Worker, p.Token, p.Owner, code)
 	if e != nil {
 		return
@@ -51,7 +56,7 @@ func (s *Store) finish(p *permit, result error) {
 			}
 		}
 	}
-	_ = tx.Commit()
+	committed = tx.Commit() == nil
 }
 
 func settle(ctx context.Context, tx *sql.Tx, id string) error {

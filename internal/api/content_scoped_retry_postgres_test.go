@@ -97,7 +97,7 @@ func newScopedContentFixtureWithBody(t *testing.T, body []byte) *scopedContentFi
 	return newScopedContentFixtureWithCustody(t, body, reviewbody.KeyRing{})
 }
 
-func newScopedContentFixtureWithCustody(t *testing.T, body []byte, keys reviewbody.KeyRing) *scopedContentFixture {
+func newScopedContentFixtureWithCustody(t *testing.T, body []byte, keys reviewbody.KeyRing, primaryRole ...access.Role) *scopedContentFixture {
 	t.Helper()
 	ctx, dsn, admin := responsibilityDatabase(t)
 	migrations := filepath.Join("..", "..", "migrations")
@@ -211,7 +211,14 @@ func newScopedContentFixtureWithCustody(t *testing.T, body []byte, keys reviewbo
 		_, _ = w.Write(body)
 	}))
 	t.Cleanup(source.Close)
-	provider := apiTestProvider{"scoped.content": {password: "synthetic responsibility password", principal: access.Principal{SubjectID: scopedContentSubject, Role: access.RoleScopedReviewer}}}
+	role := access.RoleScopedReviewer
+	if len(primaryRole) == 1 {
+		role = primaryRole[0]
+		if role != access.RoleScopedReader && role != access.RoleScopedReviewer {
+			t.Fatal("unsupported synthetic content role")
+		}
+	}
+	provider := apiTestProvider{"scoped.content": {password: "synthetic responsibility password", principal: access.Principal{SubjectID: scopedContentSubject, Username: "scoped.content", Role: role}}}
 	f.service, err = access.NewService(provider, access.DiscardAuditor{}, access.ServiceOptions{Now: func() time.Time {
 		f.mu.Lock()
 		defer f.mu.Unlock()

@@ -56,13 +56,19 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 		// Finish before moving to the next connection, including early continues.
 		func() {
 			var connectionErr error
+			stage := "inspect"
+			unit := ""
+			recordFailure := func(err error) {
+				safe := syncFailure(stage, err, unit)
+				connectionErr = errors.Join(connectionErr, safe)
+				failures = append(failures, safe)
+			}
 			changes := map[string]sourcefacts.ManagedConfig{}
 			applied := []db.ManagedEnrollment{}
 			defer func() { finish(connectionErr) }()
 			b, e := p.Store.InspectManagedConnector(ctx, id)
 			if e != nil {
-				connectionErr = e
-				failures = append(failures, e)
+				recordFailure(e)
 				return
 			}
 			verified, qualified := b.VerifiedSource()
@@ -70,21 +76,23 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 				connectorsync.Progress(ctx, true, 0)
 				return
 			}
+			stage = "receiver_binding"
 			if e = p.qualifyRoot(ctx, b); e != nil {
-				connectionErr = e
-				failures = append(failures, e)
+				recordFailure(e)
 				return
 			}
 			// Both public deliveries remain independent; a successful purpose-specific
 			// read is the first evidence of its usable delegated grant.
 			if phase := b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.PolicyMachinePurpose); phase != nil && phase.Operation.Status == "completed" && p.PolicyClient != nil {
+				stage = "policy_scopes"
 				client, e := p.PolicyClient(ctx, b)
 				if e == nil {
 					_, e = client.PolicyScopes(ctx, "")
 				}
 				if e != nil && !errors.Is(e, urmachine.ErrUnauthorized) {
-					connectionErr = e
-					failures = append(failures, e)
+					recordFailure(e)
+				} else if e != nil {
+					connectorsync.Deferred(ctx, syncFailure(stage, e))
 				}
 			}
 			phase := b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.EnrollmentMachinePurpose)
@@ -92,52 +100,56 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 				connectorsync.Progress(ctx, true, 0)
 				return
 			}
+			stage = "enrollment_client"
 			client, e := p.EnrollmentClient(ctx, b)
 			if e != nil {
-				connectionErr = e
-				failures = append(failures, e)
+				recordFailure(e)
 				return
 			}
+			stage = "enrollment_list"
 			projects, e := allEnrollmentProjects(ctx, client)
 			if errors.Is(e, urmachine.ErrUnauthorized) {
+				connectorsync.Deferred(ctx, syncFailure(stage, e))
 				return
 			}
 			if e != nil {
-				connectionErr = e
-				failures = append(failures, e)
+				recordFailure(e)
 				return
 			}
+			stage = "inspect"
 			b, e = p.Store.InspectManagedConnector(ctx, id)
 			if e == nil {
+				stage = "receiver_binding"
 				e = p.qualifyRoot(ctx, b)
 			}
 			if e != nil {
-				connectionErr = e
-				failures = append(failures, e)
+				recordFailure(e)
 				return
 			}
 			for _, project := range projects {
 				for _, enrollment := range project.Enrollments {
+					unit = project.ProjectID + "/" + enrollment.EnrollmentID
+					stage = "enrollment_save"
 					record := db.ManagedEnrollment{InstallationID: id, EnrollmentID: enrollment.EnrollmentID, SourceInstance: verified.SourceInstance, OrgID: strconv.FormatInt(verified.OrgID, 10), ProjectID: project.ProjectID, Revision: enrollment.Revision, Status: "pending"}
 					if enrollment.FactsStatus == "requires_migration" || enrollment.ContentStatus == "requires_migration" {
 						record.Status = "requires_migration"
-						if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-							connectionErr = e
-							failures = append(failures, e)
+						stage = "enrollment_save"
+						if e = saveManagedEnrollment(ctx, p.Store, record, p.now()); e != nil {
+							recordFailure(e)
 						}
 						continue
 					}
+					stage = "project_read"
 					old, e := p.Store.ManagedEnrollment(ctx, id, enrollment.EnrollmentID, project.ProjectID)
 					if e != nil && !errors.Is(e, connectorcontrol.ErrNotFound) {
-						connectionErr = e
-						failures = append(failures, e)
+						recordFailure(e)
 						continue
 					}
 					if enrollment.FactsStatus == "revoked" || enrollment.ContentStatus == "revoked" {
 						if old.Status != "" {
+							stage = "project_revoke"
 							if e = p.revoke(ctx, b, project.ProjectID, enrollment); e != nil {
-								connectionErr = e
-								failures = append(failures, e)
+								recordFailure(e)
 								continue
 							}
 						}
@@ -148,9 +160,9 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 							// original collection remains qualified below.
 						} else {
 							record.Status = "revoked"
-							if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-								connectionErr = e
-								failures = append(failures, e)
+							stage = "enrollment_save"
+							if e = saveManagedEnrollment(ctx, p.Store, record, p.now()); e != nil {
+								recordFailure(e)
 							}
 							continue
 						}
@@ -158,6 +170,7 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 					if old.Status == "revoked" {
 						continue
 					}
+					stage = "project_qualify"
 					cfg, original, e := p.qualifyOriginalProject(ctx, b, project.ProjectID, enrollment)
 					if e != nil {
 						e = fmt.Errorf("qualify original managed project: %w", e)
@@ -166,6 +179,7 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 						if old.Status == "requires_migration" {
 							e = sourcefacts.ErrScopeChanged
 						} else {
+							stage = "project_configure"
 							cfg, e = p.configure(ctx, b, client, project.ProjectID, enrollment)
 							if e != nil {
 								e = fmt.Errorf("configure new managed project: %w", e)
@@ -174,21 +188,21 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 					}
 					if e != nil {
 						if errors.Is(e, sourcefacts.ErrConflict) || errors.Is(e, sourcefacts.ErrScopeChanged) || errors.Is(e, urmachine.ErrConflict) {
+							recordFailure(e)
 							record.Status = "requires_migration"
-							if save := p.Store.SaveManagedEnrollment(ctx, record, p.now()); save != nil {
-								failures = append(failures, save)
+							stage = "enrollment_save"
+							if save := saveManagedEnrollment(ctx, p.Store, record, p.now()); save != nil {
+								recordFailure(save)
 							}
-							failures = append(failures, fmt.Errorf("managed enrollment requires migration after qualification: %w", e))
 						} else {
-							connectionErr = e
-							failures = append(failures, e)
+							recordFailure(e)
 						}
 						continue
 					}
+					stage = "configuration_encode"
 					raw, e := json.Marshal(cfg)
 					if e != nil {
-						connectionErr = e
-						failures = append(failures, e)
+						recordFailure(e)
 						continue
 					}
 					record.ConfigurationSHA256 = sourcefacts.Hash(raw)
@@ -209,18 +223,18 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 							record.Status = "requires_migration"
 							record.LegacyCCopyPending = true
 						}
-						if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-							connectionErr = e
-							failures = append(failures, e)
+						stage = "enrollment_save"
+						if e = saveManagedEnrollment(ctx, p.Store, record, p.now()); e != nil {
+							recordFailure(e)
 						}
 						continue
 					}
 					// Persist custody-only membership before any worker may commit copied C.
 					pending := record
 					pending.ConfigurationSHA256 = ""
-					if e = p.Store.SaveManagedEnrollment(ctx, pending, p.now()); e != nil {
-						connectionErr = e
-						failures = append(failures, e)
+					stage = "enrollment_save"
+					if e = saveManagedEnrollment(ctx, p.Store, pending, p.now()); e != nil {
+						recordFailure(e)
 						continue
 					}
 					changes[id+"-"+enrollment.EnrollmentID+"-project-"+project.ProjectID+".json"] = cfg
@@ -229,14 +243,16 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 				}
 			}
 			if len(changes) > 0 {
+				unit = ""
+				stage = "project_publish"
 				if e = p.Host.PublishManagedProjects(ctx, changes); e != nil {
-					connectionErr = e
-					failures = append(failures, e)
+					recordFailure(e)
 				} else {
 					for _, record := range applied {
-						if e = p.Store.SaveManagedEnrollment(ctx, record, p.now()); e != nil {
-							connectionErr = e
-							failures = append(failures, e)
+						unit = record.ProjectID + "/" + record.EnrollmentID
+						stage = "enrollment_save"
+						if e = saveManagedEnrollment(ctx, p.Store, record, p.now()); e != nil {
+							recordFailure(e)
 						}
 					}
 				}
@@ -244,6 +260,16 @@ func (p *ManagedProjects) Refresh(ctx context.Context) error {
 		}()
 	}
 	return errors.Join(failures...)
+}
+
+// Keep the save boundary attached to its own actual project even when its
+// caller just failed qualification or published several different projects.
+type enrollmentSaver interface {
+	SaveManagedEnrollment(context.Context, db.ManagedEnrollment, time.Time) error
+}
+
+func saveManagedEnrollment(ctx context.Context, store enrollmentSaver, record db.ManagedEnrollment, now time.Time) error {
+	return syncFailure("enrollment_save", store.SaveManagedEnrollment(ctx, record, now), record.ProjectID+"/"+record.EnrollmentID)
 }
 
 func (p *ManagedProjects) qualifyRoot(ctx context.Context, b connectorcontrol.ManagedBoundary) error {

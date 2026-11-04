@@ -1,10 +1,10 @@
 # Develop and qualify X-Insight
 
-This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md); Go, Node.js, synthetic fixtures, historical source reproduction and P3 qualification are not customer onboarding steps. The current preview is FPV20/schema 46. Historical scenarios below retain their original revisions and evidence scope.
+This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md); Go, Node.js, synthetic fixtures, historical source reproduction and P3 qualification are not customer onboarding steps. The published preview is FPV21/schema 47. This source prepares an unqualified FPV22/schema 47 candidate; its local results do not establish a signed package or installed upgrade. Historical scenarios below retain their original revisions and evidence scope.
 
 ## Prerequisites
 
-Use Go 1.25.12, Node.js 22.23.1, npm 10.9.8, Git, Python 3, and a POSIX shell. Database tests need a **dedicated, disposable PostgreSQL 16 instance** with a test administrator allowed to create roles and databases. Tests may create, migrate, restore, and drop their own fixture databases. Do not point them at business data. Installed-host qualification additionally requires its declared Linux/systemd environment.
+Use Go 1.25.12, Node.js 22.23.1, npm 10.9.8, Git, Python 3.10 or newer, and a POSIX shell. Database tests need a **dedicated, disposable PostgreSQL 16 instance** with a test administrator allowed to create roles and databases. Tests may create, migrate, restore, and drop their own fixture databases. Do not point them at business data. Installed-host qualification additionally requires its declared Linux/systemd environment.
 
 The public repository can be cloned over anonymous HTTPS with `git clone https://github.com/foigent/x-insight.git`. Check out the exact commit when reproducing a recorded result. GitHub's [exact-commit source archives](https://docs.github.com/en/rest/repos/contents#download-a-repository-archive-tar) also contain the complete source needed for the ordinary commands below, but have no `.git` database. The signed-release builder later in this guide requires a real, clean Git checkout; do not create a substitute commit to satisfy it.
 

@@ -115,7 +115,12 @@ func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out
 	if gateErr != nil {
 		return Outcome{}, gateErr
 	}
-	defer func() { connectorsync.Progress(ctx, out.State != StateReady, 0); finish(resultErr) }()
+	stage := "inspect"
+	defer func() {
+		resultErr = syncFailure(stage, resultErr)
+		connectorsync.Progress(ctx, out.State != StateReady, 0)
+		finish(resultErr)
+	}()
 	b, e := m.Store.InspectManagedConnector(ctx, id)
 	if e != nil {
 		return Outcome{}, e
@@ -129,10 +134,12 @@ func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out
 				return Outcome{}, e
 			}
 		}
+		stage = "original_activation"
 		out, e := m.Legacy.Reconcile(ctx, id, wake)
 		if e != nil {
 			return out, fmt.Errorf("reconcile original installation: %w", e)
 		}
+		stage = "inspect"
 		b, e = m.Store.InspectManagedConnector(ctx, id)
 		if e != nil {
 			return Outcome{}, e
@@ -140,25 +147,32 @@ func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out
 		if b.Installation.Status != "connected" {
 			return out, nil
 		}
+		stage = "receiver_proof"
 		r, worker, e := connectorcontrol.OriginalReceiverProof(b)
 		if e != nil {
 			return Outcome{State: StateUnavailable}, fmt.Errorf("read completed original receiver proof: %w", e)
 		}
 		if b.Descriptor == nil {
+			stage = "source_descriptor"
 			v, e := m.Host.FetchOriginalSourceDescriptor(ctx, b, m.TLSRoots)
 			if e != nil {
 				return Outcome{State: StateUnavailable}, fmt.Errorf("fetch original source descriptor: %w", e)
 			}
+			stage = "descriptor_commit"
 			e = m.Host.WithExistingFeed(ctx, worker, r, func() error { return m.Store.SaveManagedSourceDescriptor(ctx, v, m.now()) })
 			if e != nil {
 				return Outcome{}, fmt.Errorf("persist original source descriptor: %w", e)
 			}
+			stage = "inspect"
 			b, e = m.Store.InspectManagedConnector(ctx, id)
 			if e != nil {
 				return Outcome{}, e
 			}
-		} else if e = m.Host.WithExistingFeed(ctx, worker, r, func() error { return nil }); e != nil {
-			return Outcome{State: StateDrift}, e
+		} else {
+			stage = "receiver_binding"
+			if e = m.Host.WithExistingFeed(ctx, worker, r, func() error { return nil }); e != nil {
+				return Outcome{State: StateDrift}, e
+			}
 		}
 		return m.prepareMachines(ctx, b, b.Phase(connectorcontrol.ControlPhaseResumeSource, ""))
 	}
@@ -174,6 +188,7 @@ func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out
 		if b.Checkpoint == nil {
 			return Outcome{State: StateUnavailable}, nil
 		}
+		stage = "receiver_state"
 		config, e := m.Host.ManagedFeedConfigStatus(ctx)
 		if e != nil {
 			return Outcome{}, e
@@ -193,6 +208,7 @@ func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out
 		if e != nil {
 			return Outcome{}, e
 		}
+		stage = "activation_request"
 		r, e := m.newRequest(b, connectorcontrol.KindAdoptExistingReceiver, connectorcontrol.PhaseBindExistingReceiver, connectorcontrol.ControlPhaseRequestV3{Candidate: &candidate, CandidateSHA256: h}, nil)
 		if e != nil {
 			return Outcome{}, e
@@ -216,6 +232,7 @@ func (m *ManagedReconciler) Reconcile(ctx context.Context, id, wake string) (out
 		}
 		ah, _, _ := connectorcontrol.CanonicalSHA256(*b.LocalReceipt)
 		fh, _, _ := connectorcontrol.CanonicalSHA256(*b.FeedRead)
+		stage = "activation_request"
 		r, e := m.newRequest(b, connectorcontrol.KindAdoptExistingReceiver, connectorcontrol.PhaseConfirmExistingReceiver, connectorcontrol.ControlPhaseRequestV3{AdoptionBindingSHA256: bind.Result.ResultV3.Result.AdoptionBindingSHA256, XIAdoptionReceipt: b.LocalReceipt, XIAdoptionReceiptSHA256: ah, FeedReadReceipt: b.FeedRead, FeedReadReceiptSHA256: fh}, bind)
 		if e != nil {
 			return Outcome{}, e
@@ -241,7 +258,9 @@ func legacyWakeOperation(b connectorcontrol.ManagedBoundary) (string, error) {
 	}
 	return "", connectorcontrol.ErrConflict
 }
-func (m *ManagedReconciler) prepareMachines(ctx context.Context, b connectorcontrol.ManagedBoundary, predecessor *connectorcontrol.ActivationPhase) (Outcome, error) {
+func (m *ManagedReconciler) prepareMachines(ctx context.Context, b connectorcontrol.ManagedBoundary, predecessor *connectorcontrol.ActivationPhase) (out Outcome, resultErr error) {
+	stage := "receiver_proof"
+	defer func() { resultErr = syncFailure(stage, resultErr) }()
 	verified, ok := b.VerifiedSource()
 	if !ok || predecessor == nil {
 		return Outcome{}, fmt.Errorf("machine preparation source/predecessor authority: %w", connectorcontrol.ErrConflict)
@@ -251,18 +270,22 @@ func (m *ManagedReconciler) prepareMachines(ctx context.Context, b connectorcont
 		if b.Phase(connectorcontrol.PhaseDeliverMachineCandidate, purpose) != nil {
 			continue
 		}
+		stage = "machine_prepare"
 		prepared, e := m.Host.PrepareMachineCredential(ctx, id, purpose, verified.SourceInstance, strconv.FormatInt(verified.OrgID, 10), verified.AllowedIP)
 		if e != nil {
 			return Outcome{}, fmt.Errorf("prepare protected machine candidate: %w", e)
 		}
+		stage = "machine_request"
 		r, e := m.newRequest(b, connectorcontrol.KindPairMachine, connectorcontrol.PhaseDeliverMachineCandidate, connectorcontrol.ControlPhaseRequestV3{SourceInstance: verified.SourceInstance, SourceBindingSHA256: b.SourceBindingSHA256, Registration: &prepared.Registration, RegistrationSHA256: prepared.RegistrationSHA256, CustodyReceipt: &prepared.CustodyReceipt, CustodyReceiptSHA256: prepared.CustodyReceiptSHA256}, predecessor)
 		if e != nil {
 			return Outcome{}, fmt.Errorf("construct closed machine operation: %w", e)
 		}
+		stage = "machine_enqueue"
 		if _, e = m.Store.EnqueueManagedControlOperation(ctx, r, m.now()); e != nil {
 			return Outcome{}, fmt.Errorf("enqueue protected machine candidate: %w", e)
 		}
 	}
+	stage = "machine_config"
 	policyFile, e := m.Host.MachineCredentialPath(id, connectorcontrol.PolicyMachinePurpose)
 	if e != nil {
 		return Outcome{}, fmt.Errorf("resolve policy root credential: %w", e)
@@ -283,6 +306,7 @@ func (m *ManagedReconciler) prepareMachines(ctx context.Context, b connectorcont
 			}
 		}
 	}
+	stage = "machine_runtime"
 	if e = m.Host.EnsureControllerURMachineRuntime(ctx, id); e != nil {
 		return Outcome{State: StateDeferred}, fmt.Errorf("load machine runtime: %w", e)
 	}
