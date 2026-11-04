@@ -65,10 +65,74 @@ qualification_exit() {
   set +e
   # This job may later hold synthetic machine credentials. Never emit raw
   # journal, systemctl status/ExecStart, environment or database output.
-  sudo python3 - "$QUAL_STAGE" "$exit_code" > "$QUALIFICATION_ROOT/service-failure-diagnostic.json" <<'PY'
+  sudo python3 - "$QUAL_STAGE" "$exit_code" "$DATABASE_PROFILE" > "$QUALIFICATION_ROOT/service-failure-diagnostic.json" <<'PY'
 import json, re, subprocess, sys
 stage, code = sys.argv[1], int(sys.argv[2])
 units = ('xinsight.service', 'xinsight-connector-controller.service', 'xinsight-source-facts.service')
+native = sys.argv[3] == 'native'
+if native:
+    units += ('postgresql@16-xinsightci.service',)
+
+def bounded_command(args):
+    # Same bounded reader used by the existing managed qualification diagnostic.
+    limit = 128 * 1024
+    process = None
+    try:
+        process = subprocess.Popen(['/usr/bin/timeout', '4s', *args], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        raw = process.stdout.read(limit + 1)
+        truncated = len(raw) > limit
+        if truncated:
+            process.terminate()
+        try:
+            status = process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            status = process.wait()
+        return raw[:limit].decode('utf-8', errors='replace'), status, truncated
+    except (OSError, subprocess.SubprocessError):
+        return '', None, False
+    finally:
+        if process is not None:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            process.stdout.close()
+
+def postgres_error_categories(text):
+    # Only finite labels leave this function; raw PostgreSQL or journal text
+    # can contain credentials later in this same disposable qualification.
+    patterns = {
+        'data_path_permission_denied': r'(?:/data/x-insight|data directory).*Permission denied',
+        'config_permission_denied': r'(?:configuration file|pg_hba.conf|pg_ident.conf).*Permission denied',
+        'ssl_key_permission_denied': r'(?:private key file|SSL certificate).*Permission denied',
+        'ssl_key_permissions_invalid': r'private key file.*(?:group or world access|must be owned)',
+        'socket_or_pid_permission_denied': r'(?:socket|lock file|PID file|pid file).*Permission denied',
+        'shared_memory_resource_exhausted': r'(?:shared memory|semaphore).*(?:No space left|Cannot allocate|could not)',
+        'port_conflict': r'(?:Address already in use|another postmaster|Port conflict)',
+        'invalid_configuration': r'(?:unrecognized configuration parameter|invalid value for parameter|configuration file.*contains errors)',
+        'required_file_missing': r'(?:could not open|could not access|cannot access|No such file).*No such file',
+        'pid_file_missing': r'(?:PID file|pid file).*(?:No such file|not found|not readable|not yet)',
+        'systemd_start_protocol_failed': r'(?:did not take the steps required|Failed with result .protocol.)',
+    }
+    return sorted(name for name, pattern in patterns.items() if re.search(pattern, text, re.I))
+
+def native_database_diagnostic():
+    journal, journal_exit, journal_truncated = bounded_command([
+        'journalctl', '--unit=postgresql@16-xinsightci.service', '--output=cat', '--lines=40', '--no-pager'])
+    logfile, log_exit, log_truncated = bounded_command([
+        'tail', '-c', '65536', '/var/log/postgresql/postgresql-16-xinsightci.log'])
+    access = {}
+    for label, path in (('data_parent', '/data'), ('application_data_parent', '/data/x-insight'),
+                        ('cluster_data', '/data/x-insight/postgres'), ('runtime_directory', '/run/postgresql')):
+        _, status, _ = bounded_command(['runuser', '-u', 'postgres', '--', 'test', '-x', path])
+        access[label] = status
+    return {'unit': 'postgresql@16-xinsightci.service',
+            'journal_command_exit': journal_exit, 'journal_truncated': journal_truncated,
+            'log_command_exit': log_exit, 'log_truncated': log_truncated,
+            'error_categories': postgres_error_categories(journal + '\n' + logfile),
+            'postgres_directory_traverse_exit': access,
+            'raw_text_exported': False}
+
 properties = ('LoadState', 'ActiveState', 'SubState', 'Result', 'ExecMainCode', 'ExecMainStatus', 'MainPID', 'NRestarts')
 states = {
     'LoadState': {'loaded', 'not-found', 'bad-setting', 'error', 'masked', 'merged', 'stub'},
@@ -93,10 +157,12 @@ for unit in units:
         else:
             parsed[name] = int(value) if re.fullmatch(r'[0-9]{1,12}', value) else None
     results.append({'unit': unit, 'properties': parsed})
-print(json.dumps({'schema_version': 'xinsight.ci-service-failure.v1', 'classification': 'ci_synthetic_not_target',
-                  'stage': stage if re.fullmatch(r'[a-z_]{1,40}', stage) else 'unclassified',
-                  'qualification_exit': code, 'failure_category': 'stage_failure_unclassified',
-                  'services': results}, sort_keys=True))
+result = {'schema_version': 'xinsight.ci-service-failure.v1', 'classification': 'ci_synthetic_not_target',
+          'stage': stage if re.fullmatch(r'[a-z_]{1,40}', stage) else 'unclassified',
+          'qualification_exit': code, 'failure_category': 'stage_failure_unclassified', 'services': results}
+if native:
+    result['native_database'] = native_database_diagnostic()
+print(json.dumps(result, sort_keys=True))
 PY
   if [ -s "$QUALIFICATION_ROOT/service-failure-diagnostic.json" ]; then
     cat "$QUALIFICATION_ROOT/service-failure-diagnostic.json" >&2
@@ -177,10 +243,13 @@ if [ "$DATABASE_PROFILE" = native ]; then
   test ! -e /etc/postgresql/16/xinsightci
   test -z "$(ss -H -ltn 'sport = :54554')"
   sudo test ! -e /data/x-insight/postgres
+  QUAL_STAGE=native_database_create
   sudo pg_createcluster --datadir=/data/x-insight/postgres --port=54554 --start-conf=manual 16 xinsightci -- --auth-local=peer --auth-host=scram-sha-256 > "$QUALIFICATION_ROOT/native-postgres-create.txt"
   test "$(sudo stat -c '%a %U' /data/x-insight/postgres)" = "700 postgres"
   sudo pg_conftool 16 xinsightci set listen_addresses 127.0.0.1
+  QUAL_STAGE=native_database_start
   sudo pg_ctlcluster 16 xinsightci start
+  QUAL_STAGE=native_database_bootstrap
   # Random hexadecimal fixture secret goes through stdin, never an argument.
   printf "CREATE ROLE xinsight_admin LOGIN SUPERUSER PASSWORD '%s';\nCREATE DATABASE xinsight OWNER xinsight_admin;\n" "$ADMIN_PASSWORD" |
     sudo -u postgres /usr/lib/postgresql/16/bin/psql -X -w -v ON_ERROR_STOP=1 -p 54554 -d postgres > /dev/null

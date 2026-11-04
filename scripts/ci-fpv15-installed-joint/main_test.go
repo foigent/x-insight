@@ -75,21 +75,8 @@ func TestFPV17UpgradeRequestSurvivesURSanitizedChildEnvironment(t *testing.T) {
 	if got, err := readFPV17UpgradeRequest(adminDSN); err != nil || got != nil {
 		t.Fatal("existing lanes must remain unchanged without request", err)
 	}
-	raw, err := json.Marshal(request)
-	if err != nil {
-		t.Fatal(err)
-	}
 	requestPath := filepath.Join(private, "fpv17-upgrade-request.json")
-	if err := os.WriteFile(requestPath, raw, 0600); err != nil {
-		t.Fatal(err)
-	}
-	child := exec.Command(os.Args[0], "-test.run=^TestFPV17UpgradeRequestSanitizedChild$")
-	child.Env = []string{"PATH=" + os.Getenv("PATH"), "GITHUB_ACTIONS=true", "XINSIGHT_CI_EPHEMERAL_HOST=1", "XINSIGHT_CI_INSTALLED_JOINT=1"}
-	child.Stdin = strings.NewReader(strings.Replace(producerInput, "/private/admin.dsn", adminDSN, 1))
-	if output, err := child.CombinedOutput(); err != nil {
-		t.Fatalf("sanitized UR child lost upgrade request: %v: %s", err, output)
-	}
-	for _, schema := range []string{"46", "", "44", "47"} {
+	for _, schema := range []string{"45", "46", "47"} {
 		request.PredecessorSchema = schema
 		raw, err := json.Marshal(request)
 		if err != nil {
@@ -99,11 +86,26 @@ func TestFPV17UpgradeRequestSurvivesURSanitizedChildEnvironment(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := readFPV17UpgradeRequest(adminDSN)
-		if schema == "46" {
-			if err != nil || got == nil || got.PredecessorSchema != "46" {
-				t.Fatal("schema46 predecessor lost", err)
-			}
-		} else if err == nil {
+		if err != nil || got == nil || got.PredecessorSchema != schema {
+			t.Fatal("exact supported predecessor lost", schema, err)
+		}
+		child := exec.Command(os.Args[0], "-test.run=^TestFPV17UpgradeRequestSanitizedChild$")
+		child.Env = []string{"PATH=" + os.Getenv("PATH"), "GITHUB_ACTIONS=true", "XINSIGHT_CI_EPHEMERAL_HOST=1", "XINSIGHT_CI_INSTALLED_JOINT=1"}
+		child.Stdin = strings.NewReader(strings.Replace(producerInput, "/private/admin.dsn", adminDSN, 1))
+		if output, err := child.CombinedOutput(); err != nil {
+			t.Fatalf("sanitized UR child lost schema%s request: %v: %s", schema, err, output)
+		}
+	}
+	for _, schema := range []string{"", "44", "48"} {
+		request.PredecessorSchema = schema
+		raw, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(requestPath, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := readFPV17UpgradeRequest(adminDSN); err == nil {
 			t.Fatal("unknown or missing predecessor schema accepted", schema)
 		}
 	}
@@ -126,6 +128,74 @@ func TestFPV17UpgradeRequestSanitizedChild(t *testing.T) {
 	request, err := readFPV17UpgradeRequest(input.Installed.XIAdminDSNFile)
 	if err != nil || request == nil || request.SchemaVersion != "xinsight.ci-fpv17-installed-upgrade-request.v1" {
 		t.Fatal("fixture request not available through scrubbed child environment", err)
+	}
+}
+
+func TestFPV21ProducedUpgradeRequestReachesDriver(t *testing.T) {
+	root := t.TempDir()
+	private := filepath.Join(root, "xinsight-fpv15-joint-private")
+	if err := os.Mkdir(private, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for path, value := range map[string]any{
+		filepath.Join(private, "installed-input.json"): map[string]any{"mode": "new_install"},
+		filepath.Join(root, "account-upgrade-ci-predecessor.json"): map[string]any{
+			"old_commit": "6463d980958fae86d975eecde239b9534ec831a5", "old_product": "0.2.0-dev.fpv21", "old_schema": "47"},
+	} {
+		raw, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	source, err := os.ReadFile("../qualify-ubuntu22-installed-joint.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := strings.Index(string(source), "if json.loads((root/'installed-input.json')")
+	end := strings.Index(string(source), "with (root/'installed-input.json').open('rb')")
+	if start < 0 || end <= start {
+		t.Fatal("actual installed request producer missing")
+	}
+	xi, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program := "import json,os,pathlib,sys\nroot=pathlib.Path(sys.argv[1]);xi=pathlib.Path(sys.argv[2])\n" + string(source[start:end])
+	command := exec.Command("python3", "-I", "-B", "-c", program, private, xi)
+	command.Env = []string{"PATH=" + os.Getenv("PATH"), "RUNNER_TEMP=" + root, "XINSIGHT_CI_UPGRADE_PRESTATE=1"}
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("actual schema47 request producer failed: %v: %s", err, output)
+	}
+	adminDSN := filepath.Join(private, "xi-admin.dsn")
+	request, err := readFPV17UpgradeRequest(adminDSN)
+	if err != nil || request == nil || request.PredecessorSchema != "47" || !predecessorHasCollectionIntent(request.PredecessorSchema) {
+		t.Fatal("actual generated FPV21 request rejected or lost pre-upgrade intent", err)
+	}
+	path := filepath.Join(private, "fpv17-upgrade-request.json")
+	for name, change := range map[string]func(*fpv17UpgradeRequest){
+		"unknown schema":  func(r *fpv17UpgradeRequest) { r.PredecessorSchema = "48" },
+		"wrong format":    func(r *fpv17UpgradeRequest) { r.SchemaVersion = "unknown" },
+		"relative script": func(r *fpv17UpgradeRequest) { r.Script = "qualify-ubuntu22-fpv17-upgrade.sh" },
+		"wrong artifact":  func(r *fpv17UpgradeRequest) { r.CandidateArtifact = "/other/candidate.tar.gz" },
+		"wrong payload":   func(r *fpv17UpgradeRequest) { r.CandidatePayload = "/other/fresh-install-payload" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			invalid := *request
+			change(&invalid)
+			raw, err := json.Marshal(invalid)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, raw, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := readFPV17UpgradeRequest(adminDSN); err == nil {
+				t.Fatal("invalid generated request admitted")
+			}
+		})
 	}
 }
 

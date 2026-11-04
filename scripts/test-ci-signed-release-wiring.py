@@ -1306,6 +1306,60 @@ def check_profile_listener_and_database_chain() -> None:
     print(f'selected listener/joint/snapshot contracts: {positives} positive, {negatives} negative; real Linux pending')
 
 
+def check_native_failure_diagnostic() -> None:
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
+    contents=path.read_text()
+    match=re.search(r"<<'PY'\n(import json, re, subprocess, sys\nstage, code = .*?)\nPY",contents,re.S)
+    require(match is not None,'native failure diagnostic missing')
+    nodes=[n for n in ast.parse(match[1]).body if isinstance(n,ast.FunctionDef)]
+    namespace={'re':re,'subprocess':subprocess}
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    classify=namespace['postgres_error_categories']
+    examples={
+        'data_path_permission_denied':'FATAL: could not access /data/x-insight/postgres: Permission denied',
+        'config_permission_denied':'FATAL: could not open configuration file: Permission denied',
+        'ssl_key_permission_denied':'FATAL: could not open private key file: Permission denied',
+        'ssl_key_permissions_invalid':'FATAL: private key file has group or world access',
+        'socket_or_pid_permission_denied':'FATAL: could not create lock file: Permission denied',
+        'shared_memory_resource_exhausted':'FATAL: could not create shared memory segment: No space left on device',
+        'port_conflict':'could not bind: Address already in use',
+        'invalid_configuration':'FATAL: unrecognized configuration parameter',
+        'required_file_missing':'FATAL: could not open file: No such file or directory',
+        'pid_file_missing':"Cannot open PID file: No such file or directory",
+        'systemd_start_protocol_failed':"Failed with result 'protocol'.",
+    }
+    secret='postgres://secret-marker-key-password-token-body@untrusted.invalid'
+    for category,message in examples.items():
+        require(category in classify(message+' '+secret),'native startup classification lost: '+category)
+    require(classify(secret)==[],'unknown native startup text became a diagnosed cause')
+    calls=[]
+    def command(args):
+        calls.append(args)
+        return (examples['systemd_start_protocol_failed'] if args[0]=='journalctl' else examples['data_path_permission_denied'])+' '+secret,0,False
+    namespace['bounded_command']=command
+    result=namespace['native_database_diagnostic']();encoded=json.dumps(result)
+    require(secret not in encoded and 'untrusted.invalid' not in encoded and result['raw_text_exported'] is False,
+            'native diagnostic leaked raw text')
+    require(result['error_categories']==['data_path_permission_denied','systemd_start_protocol_failed'],
+            'native diagnostic combined wrong categories')
+    require(calls==[['journalctl','--unit=postgresql@16-xinsightci.service','--output=cat','--lines=40','--no-pager'],
+                    ['tail','-c','65536','/var/log/postgresql/postgresql-16-xinsightci.log']]+
+                   [['runuser','-u','postgres','--','test','-x',path] for path in
+                    ('/data','/data/x-insight','/data/x-insight/postgres','/run/postgresql')],
+            'native diagnostic broadened service/log scope')
+    require(result['postgres_directory_traverse_exit']==dict.fromkeys(
+        ('data_parent','application_data_parent','cluster_data','runtime_directory'),0),
+        'native traversal status lost or raw permission output exported')
+    namespace['bounded_command']=lambda args: ('unclassified '+secret,124,True)
+    unavailable=namespace['native_database_diagnostic']()
+    require(unavailable['error_categories']==[] and unavailable['journal_command_exit']==124 and unavailable['journal_truncated'] and
+            unavailable['log_truncated'] and secret not in json.dumps(unavailable),'native partial diagnostic leaked or invented cause')
+    require(contents.index('QUAL_STAGE=native_database_start')<contents.index('sudo pg_ctlcluster 16 xinsightci start') and
+            "units += ('postgresql@16-xinsightci.service',)" in contents,
+            'native failure still has wrong stage or omits actual PG unit')
+    print('native startup diagnostic:11 fixed categories; unknown/secret/truncated input closed; exact unit/log only; runtime cause still unknown')
+
+
 def check_prepared_account_fixture_policy() -> None:
     path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-installed-joint.sh'
     contents=path.read_text()
@@ -1403,6 +1457,7 @@ def check_installed_fixture_shell_preflight() -> None:
 
 
 if __name__ == "__main__":
+    check_native_failure_diagnostic()
     check_installed_fixture_shell_preflight()
     check_prepared_account_fixture_policy()
     check_profile_listener_and_database_chain()

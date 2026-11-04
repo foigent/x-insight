@@ -291,7 +291,7 @@ func run() (string, time.Duration, error) {
 			return d.fail("predecessor_upgrade_failed", err)
 		}
 	}
-	if upgradeRequest == nil || upgradeRequest.PredecessorSchema == "46" {
+	if upgradeRequest == nil || predecessorHasCollectionIntent(upgradeRequest.PredecessorSchema) {
 		d.advance("collection_intent")
 		if err := d.collectionIntent(ctx, input.ManagedMode == "adopt_existing"); err != nil {
 			return d.fail(err.Error())
@@ -1000,7 +1000,7 @@ func readFPV17UpgradeRequest(adminDSNFile string) (*fpv17UpgradeRequest, error) 
 	var extra any
 	if decoder.Decode(&request) != nil || decoder.Decode(&extra) != io.EOF ||
 		request.SchemaVersion != "xinsight.ci-fpv17-installed-upgrade-request.v1" ||
-		(request.PredecessorSchema != "45" && request.PredecessorSchema != "46") ||
+		(request.PredecessorSchema != "45" && !predecessorHasCollectionIntent(request.PredecessorSchema)) ||
 		request.CandidateArtifact != "/opt/xinsight-ci-artifacts/candidate.tar.gz" ||
 		request.CandidatePayload != filepath.Join(filepath.Dir(filepath.Dir(adminDSNFile)), "fresh-install-payload") ||
 		!filepath.IsAbs(request.Script) || filepath.Clean(request.Script) != request.Script ||
