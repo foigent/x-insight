@@ -1227,15 +1227,17 @@ def check_native_postgres_profile() -> None:
     path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
     contents=path.read_text()
     require('test -z "$(ss -H -ltn \'sport = :54554\')"' in contents and
-            'test ! -e /etc/postgresql/16/xi-ci' in contents,
+            'test ! -e /etc/postgresql/16/xinsightci' in contents,
             'native fixture must refuse an existing listener or cluster')
     require("release['ID']=='ubuntu' and release['VERSION_ID']=='24.04'" in contents and
             "not os.environ.get('XINSIGHTCTL_TEST_HOST')" in contents and
             "pathlib.Path('/proc/'+pid+'/exe').resolve()" in contents,
             'native profile must attest actual OS and executable, never fixture override')
+    cluster=re.search(r'sudo pg_createcluster [^\n]+16 ([a-zA-Z0-9_-]+) --',contents)
+    require(cluster is not None and re.fullmatch(r'[a-z][a-z0-9]*',cluster[1]) is not None, 'native cluster name is incompatible with systemd template')
     require('sudo docker pull "$POSTGRES_IMAGE"' in contents and 'sudo pg_createcluster' in contents and
-            'sudo pg_conftool 16 xi-ci set listen_addresses 127.0.0.1' in contents and
-            'sudo pg_ctlcluster 16 xi-ci start' in contents,
+            'sudo pg_conftool 16 xinsightci set listen_addresses 127.0.0.1' in contents and
+            'sudo pg_ctlcluster 16 xinsightci start' in contents,
             'normal installer prerequisites and native loopback server must remain')
     blocks=re.findall(r"<<'PY'[^\n]*\n(.*?)\nPY",contents,re.S)
     nodes=[node for block in blocks for node in ast.parse(block).body if isinstance(node,ast.FunctionDef) and node.name=='valid_postgres_profile']
@@ -1304,7 +1306,105 @@ def check_profile_listener_and_database_chain() -> None:
     print(f'selected listener/joint/snapshot contracts: {positives} positive, {negatives} negative; real Linux pending')
 
 
+def check_prepared_account_fixture_policy() -> None:
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-installed-joint.sh'
+    contents=path.read_text()
+    match=re.search(r"<<'PY_PREPARED_FIXTURE'\n(.*?)\nPY_PREPARED_FIXTURE",contents,re.S)
+    require(match is not None,'prepared account policy missing')
+    nodes=[n for n in ast.parse(match[1]).body if isinstance(n,ast.FunctionDef) and n.name=='fixture_account_action']
+    require(len(nodes)==1,'prepared account policy missing or duplicated')
+    namespace={};exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    evaluate=namespace['fixture_account_action']
+    require(contents.count('if [ "$FIXTURE_ACTION" = reuse ]; then')==2,'entry and fixture creation must use one consistent account decision')
+    fpv21={'old_commit':'6463d980958fae86d975eecde239b9534ec831a5','old_product':'0.2.0-dev.fpv21','old_schema':'47'}
+    legacy=[{'old_commit':'164582cab0e7f169c265c2494d04920c61af833d','old_product':'0.2.0-dev.fpv17','old_schema':'45'},
+            {'old_commit':'08435e0949dfae0ae65497d2e12ca356f6d820f0','old_product':'0.2.0-dev.fpv20','old_schema':'46'}]
+    require(evaluate('new_install',None,True)=='reuse' and evaluate('adopt_existing',None,False)=='create','original install/adopt fixture policy changed')
+    require(evaluate('fpv17_upgrade_prestate',fpv21,True)=='reuse','same FPV21 imported identities must be reused')
+    for predecessor in legacy:require(evaluate('fpv17_upgrade_prestate',predecessor,False)=='create','original legacy fixture creation changed')
+    invalid=[('new_install',None,False),('adopt_existing',None,True),('fpv17_upgrade_prestate',fpv21,False),('fpv17_upgrade_prestate',None,False),('unknown',fpv21,True)]
+    invalid += [('fpv17_upgrade_prestate',x,True) for x in legacy]
+    for field in ('old_commit','old_product','old_schema'):
+        wrong=dict(fpv21);wrong[field]='other';invalid.append(('fpv17_upgrade_prestate',wrong,True))
+    for args in invalid:
+        try:evaluate(*args)
+        except ValueError:pass
+        else:raise ValueError('mismatched or stale fixture account state accepted')
+    print('prepared account prestate: 5 positive,10 negative; same identities reused, no reset')
+
+
+def check_installed_fixture_shell_preflight() -> None:
+    import hashlib,shlex
+    root=WORKFLOW.parents[2]
+    script=root/'scripts/qualify-ubuntu22-installed-joint.sh'
+    contents=script.read_text()
+    entry=contents[contents.index('PRIVATE="$RUNNER_TEMP/'):contents.index('mkdir -m 0700 "$EVIDENCE"')]
+    offset=contents.index('STAGE=fixture\n')
+    start=contents.index('if [ "$FIXTURE_ACTION" = reuse ]; then',offset)
+    fixture=contents[start:contents.index('sudo install -m 0600 "$PRIVATE/access-accounts.json"',start)]
+    stub='#!/bin/sh\nset -eu\ncat >/dev/null\nprintf called > "$RUNNER_TEMP/generator-called"\nmkdir -m 0700 "$RUNNER_TEMP/xinsight-fpv15-joint-private"\nprintf created > "$RUNNER_TEMP/xinsight-fpv15-joint-private/access-accounts.json"\nprintf \'{"state":"generated"}\\n\'\n'
+    # Execute the actual safe shell entry and later fixture branch together.
+    # Only the external fixture generator is a sentinel; no fake Linux/CI env.
+    harness=entry+'\nmkdir -m 0700 "$EVIDENCE"\n'+('printf %s '+shlex.quote(stub)+' > "$EVIDENCE/fixture"\nchmod 0700 "$EVIDENCE/fixture"\n')+fixture+'\nprintf "%s" "$FIXTURE_ACTION"\n'
+    fpv21={'old_commit':'6463d980958fae86d975eecde239b9534ec831a5','old_product':'0.2.0-dev.fpv21','old_schema':'47'}
+    fpv17={'old_commit':'164582cab0e7f169c265c2494d04920c61af833d','old_product':'0.2.0-dev.fpv17','old_schema':'45'}
+    fpv20={'old_commit':'08435e0949dfae0ae65497d2e12ca356f6d820f0','old_product':'0.2.0-dev.fpv20','old_schema':'46'}
+    wrong=dict(fpv21,old_commit='other')
+    cases=[('new_prepared','new_install',None,True,True,False,'reuse'),
+           ('fpv21_prepared','fpv17_upgrade_prestate',fpv21,True,True,False,'reuse'),
+           ('fpv17_create','fpv17_upgrade_prestate',fpv17,False,False,False,'create'),
+           ('fpv20_create','fpv17_upgrade_prestate',fpv20,False,False,False,'create'),
+           ('adopt_create','adopt_existing',None,False,False,False,'create'),
+           ('fpv17_residue','fpv17_upgrade_prestate',fpv17,False,True,False,None),
+           ('fpv20_residue','fpv17_upgrade_prestate',fpv20,False,True,False,None),
+           ('adopt_residue','adopt_existing',None,False,True,False,None),
+           ('fpv21_missing_prepared','fpv17_upgrade_prestate',fpv21,False,True,False,None),
+           ('fpv21_mismatched','fpv17_upgrade_prestate',wrong,True,True,False,None),
+           ('new_missing_prepared','new_install',None,False,False,False,None),
+           ('existing_evidence','new_install',None,True,True,True,None),
+           ('prepared_symlink','fpv17_upgrade_prestate',fpv21,True,'symlink',False,None)]
+    for name,mode,predecessor,prepared,private_present,evidence_present,expected in cases:
+        with tempfile.TemporaryDirectory(prefix='xi-account-shell-') as temporary:
+            temp=Path(temporary);private=temp/'xinsight-fpv15-joint-private';evidence=temp/'xinsight-installed-joint-qualification'
+            if private_present:
+                if private_present=='symlink':
+                    target=temp/'owned-synthetic-target';target.mkdir();private.symlink_to(target,target_is_directory=True)
+                else:private.mkdir()
+                accounts=b'{"accounts":[{"subject_id":"xs_0000000000000001","username":"unchanged.admin"},{"subject_id":"xs_0000000000000002","username":"unchanged.reader"}]}\n'
+                (private/'access-accounts.json').write_bytes(accounts)
+            before=hashlib.sha256((private/'access-accounts.json').read_bytes()).hexdigest() if private_present else None
+            if prepared:(temp/'prepared-joint-fixture-result.json').write_text(json.dumps({'schema_version':'xinsight.ci-joint-fixture-result.v1','state':'prepared','manifest_path':str(private/'manifest.json')}))
+            if predecessor:(temp/'account-upgrade-ci-predecessor.json').write_text(json.dumps(predecessor))
+            if evidence_present:evidence.mkdir();(evidence/'sentinel').write_text('preserve')
+            env={'PATH':os.environ['PATH'],'LANG':'C','RUNNER_TEMP':str(temp),'MODE':mode}
+            result=subprocess.run(['bash','-eu','-c',harness],env=env,capture_output=True,text=True)
+            if expected is None:
+                require(result.returncode!=0 and not (temp/'generator-called').exists(),'shell accepted stale/mismatched account fixture: '+name)
+                if not evidence_present:require(not evidence.exists(),'rejected shell created evidence: '+name)
+            else:
+                require(result.returncode==0 and result.stdout==expected,'actual shell prestate routing failed: '+name)
+                if expected=='reuse':
+                    require((evidence/'fixture-result.json').read_bytes()==(temp/'prepared-joint-fixture-result.json').read_bytes() and not (temp/'generator-called').exists(),'prepared result was regenerated: '+name)
+                else:require((temp/'generator-called').read_text()=='called','legacy fixture generator not called exactly once: '+name)
+            if before:require(hashlib.sha256((private/'access-accounts.json').read_bytes()).hexdigest()==before,'existing account identities changed: '+name)
+    # The real fixed entry remains fail-closed on this non-admitted invocation.
+    for path,args in [(script,['/nonexistent-ur-fixture','fpv17_upgrade_prestate']),
+                      (root/'scripts/qualify-ubuntu22-fresh-install.sh',['/nonexistent-artifact','/nonexistent-payload','/nonexistent-trust'])]:
+        result=subprocess.run(['bash',str(path),*args],env={'PATH':os.environ['PATH'],'LANG':'C'},capture_output=True,text=True)
+        require(result.returncode==2 if path==script else result.returncode==1,'unadmitted real entry did not reject: '+path.name)
+    native=(root/'scripts/qualify-ubuntu22-fresh-install.sh').read_text()
+    expressions=[r'test ! -e /etc/postgresql/16/([a-zA-Z0-9_-]+)',
+                 r'sudo pg_createcluster [^\n]+16 ([a-zA-Z0-9_-]+) --',
+                 r'sudo pg_conftool 16 ([a-zA-Z0-9_-]+) set listen_addresses',
+                 r'sudo pg_ctlcluster 16 ([a-zA-Z0-9_-]+) start']
+    names=[re.search(pattern,native)[1] for pattern in expressions]
+    require(names==['xinsightci']*4 and '-' not in names[0],'native cluster identity differs across fixed commands')
+    print('actual shell prestate/fixture branch:5 positive/8 negative; original identities unchanged; real fixed entry2 denials; native name4 exact')
+
+
 if __name__ == "__main__":
+    check_installed_fixture_shell_preflight()
+    check_prepared_account_fixture_policy()
     check_profile_listener_and_database_chain()
     check_native_postgres_profile()
     source = WORKFLOW.read_text(encoding="utf-8")

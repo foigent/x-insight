@@ -174,13 +174,13 @@ if [ "$DATABASE_PROFILE" = native ]; then
   # The normal installer still checks Docker/Compose and the pinned image;
   # they remain available but do not provide this PostgreSQL process.
   test -x /usr/bin/pg_createcluster
-  test ! -e /etc/postgresql/16/xi-ci
+  test ! -e /etc/postgresql/16/xinsightci
   test -z "$(ss -H -ltn 'sport = :54554')"
   sudo test ! -e /data/x-insight/postgres
-  sudo pg_createcluster --datadir=/data/x-insight/postgres --port=54554 --start-conf=manual 16 xi-ci -- --auth-local=peer --auth-host=scram-sha-256 > "$QUALIFICATION_ROOT/native-postgres-create.txt"
+  sudo pg_createcluster --datadir=/data/x-insight/postgres --port=54554 --start-conf=manual 16 xinsightci -- --auth-local=peer --auth-host=scram-sha-256 > "$QUALIFICATION_ROOT/native-postgres-create.txt"
   test "$(sudo stat -c '%a %U' /data/x-insight/postgres)" = "700 postgres"
-  sudo pg_conftool 16 xi-ci set listen_addresses 127.0.0.1
-  sudo pg_ctlcluster 16 xi-ci start
+  sudo pg_conftool 16 xinsightci set listen_addresses 127.0.0.1
+  sudo pg_ctlcluster 16 xinsightci start
   # Random hexadecimal fixture secret goes through stdin, never an argument.
   printf "CREATE ROLE xinsight_admin LOGIN SUPERUSER PASSWORD '%s';\nCREATE DATABASE xinsight OWNER xinsight_admin;\n" "$ADMIN_PASSWORD" |
     sudo -u postgres /usr/lib/postgresql/16/bin/psql -X -w -v ON_ERROR_STOP=1 -p 54554 -d postgres > /dev/null
