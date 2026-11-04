@@ -3,6 +3,7 @@ package api_test
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/pem"
 	"github.com/foigent/x-insight/internal/reviewbody"
 	"github.com/foigent/x-insight/internal/sourcefacts"
 	"github.com/foigent/x-insight/internal/workbench"
@@ -12,6 +13,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -197,6 +199,59 @@ func TestManagedAccountHTTPActivationRecoveryAndSessionIsolationPostgres(t *test
 	}
 	if got := query(`SELECT count(*)::text FROM access_audit_records WHERE action='access.account.password_set'`); got != "1" {
 		t.Fatal("missing exactly one completion audit")
+	}
+}
+
+func TestFPV21AccountPrestateHelperUsesRealAccountHTTPPostgres(t *testing.T) {
+	server, _, _, query := startManagedAccountAPI(t)
+	const inventory = `SELECT jsonb_agg(jsonb_build_object('subject_id',subject_id,'username',username,'role',role,'password_hash',password_hash,'revision',revision,'disabled',disabled,'needs_activation',needs_activation) ORDER BY subject_id)::text FROM xinsight_accounts.accounts WHERE username IN ('owner','reader')`
+	before := query(inventory)
+	ca := filepath.Join(t.TempDir(), "synthetic-api-ca.pem")
+	if err := os.WriteFile(ca, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.Certificate().Raw}), 0600); err != nil {
+		t.Fatal(err)
+	}
+	script, err := filepath.Abs("../../scripts/ci-fpv21-account-prestate.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Run the actual helper against the real scoped API/store. This is an
+	// account HTTP contract test, not an installed Linux upgrade claim.
+	const program = `import json,runpy,sys,urllib.parse
+helper=runpy.run_path(sys.argv[1])
+origin,ca=sys.argv[2:]
+password=json.load(sys.stdin)['password']
+client=helper['Client'](origin,ca,expected_port=urllib.parse.urlsplit(origin).port)
+client.login('owner',password)
+state=helper['prepare'](client,password)
+result=helper['verify'](client,state)
+print(json.dumps(result,sort_keys=True))
+`
+	command := exec.CommandContext(t.Context(), "python3", "-I", "-B", "-c", program, script, server.URL, ca)
+	command.Env = []string{"PATH=" + os.Getenv("PATH"), "LANG=C"}
+	input, err := json.Marshal(map[string]string{"password": managedPassword})
+	if err != nil {
+		t.Fatal(err)
+	}
+	command.Stdin = bytes.NewReader(input)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("actual account prestate helper failed: %v: %s", err, output)
+	}
+	var proof struct {
+		Schema           string `json:"schema_version"`
+		Subject          bool   `json:"subject_preserved"`
+		Revision         bool   `json:"preexisting_recovery_revision_preserved"`
+		Spent            int    `json:"spent_tickets_refused"`
+		Pending          bool   `json:"pending_ticket_completed_once"`
+		Login            bool   `json:"normal_login_after_upgrade"`
+		NewProjectGrants *int   `json:"new_project_grants"`
+	}
+	if json.Unmarshal(output, &proof) != nil || proof.Schema != "xinsight.ci-schema47-account-prestate.v1" ||
+		!proof.Subject || !proof.Revision || proof.Spent != 2 || !proof.Pending || !proof.Login || proof.NewProjectGrants == nil || *proof.NewProjectGrants != 0 {
+		t.Fatal("actual helper account lifecycle receipt invalid")
+	}
+	if query(inventory) != before {
+		t.Fatal("account prestate changed original owner or reader credentials/identity")
 	}
 }
 func TestManagedOwnerProjectReadPreviewAndDefaultDenyPostgres(t *testing.T) {

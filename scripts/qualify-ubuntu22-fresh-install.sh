@@ -246,7 +246,39 @@ if [ "$DATABASE_PROFILE" = native ]; then
   QUAL_STAGE=native_database_create
   sudo pg_createcluster --datadir=/data/x-insight/postgres --port=54554 --start-conf=manual 16 xinsightci -- --auth-local=peer --auth-host=scram-sha-256 > "$QUALIFICATION_ROOT/native-postgres-create.txt"
   test "$(sudo stat -c '%a %U' /data/x-insight/postgres)" = "700 postgres"
-  sudo pg_conftool 16 xinsightci set listen_addresses 127.0.0.1
+  QUAL_STAGE=native_database_config
+  # postgresql-common293 quotes a dotted numeric string as a number. Write
+  # this sole generated setting in PostgreSQL syntax, preserving other bytes
+  # and file identity; do not alter the systemd startup path to bypass it.
+  sudo python3 - <<'PY_NATIVE_CONFIG'
+import os, pathlib, re, stat
+
+def write_native_listen_config(path):
+    fd = os.open(path, os.O_RDWR | os.O_NOFOLLOW)
+    with os.fdopen(fd, 'r+b') as file:
+        before = os.fstat(file.fileno())
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_size > 1024 * 1024:
+            raise ValueError('unexpected native PostgreSQL configuration file')
+        original = file.read(1024 * 1024 + 1)
+        pattern = rb'(?m)^[ \t]*(?:#[ \t]*)?listen_addresses[ \t]*=.*$'
+        if len(original) > 1024 * 1024 or len(re.findall(pattern, original)) != 1:
+            raise ValueError('native listen setting must occur exactly once')
+        updated = re.sub(pattern, b"listen_addresses = '127.0.0.1'", original, count=1)
+        file.seek(0)
+        file.write(updated)
+        file.truncate()
+        after = os.fstat(file.fileno())
+        if (before.st_dev, before.st_ino, before.st_mode, before.st_uid, before.st_gid) != \
+           (after.st_dev, after.st_ino, after.st_mode, after.st_uid, after.st_gid):
+            raise ValueError('native configuration file identity changed')
+
+write_native_listen_config(pathlib.Path('/etc/postgresql/16/xinsightci/postgresql.conf'))
+PY_NATIVE_CONFIG
+  sudo -u postgres /usr/lib/postgresql/16/bin/postgres -D /data/x-insight/postgres \
+    -c config_file=/etc/postgresql/16/xinsightci/postgresql.conf -C listen_addresses \
+    > "$QUALIFICATION_ROOT/native-postgres-config-listen.txt" 2> "$QUALIFICATION_ROOT/native-postgres-config-check.private.log"
+  test "$(cat "$QUALIFICATION_ROOT/native-postgres-config-listen.txt")" = 127.0.0.1
+  printf 'native_postgres_configuration=parsed listen_addresses=127.0.0.1\n'
   QUAL_STAGE=native_database_start
   sudo pg_ctlcluster 16 xinsightci start
   QUAL_STAGE=native_database_bootstrap

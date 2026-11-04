@@ -1236,7 +1236,8 @@ def check_native_postgres_profile() -> None:
     cluster=re.search(r'sudo pg_createcluster [^\n]+16 ([a-zA-Z0-9_-]+) --',contents)
     require(cluster is not None and re.fullmatch(r'[a-z][a-z0-9]*',cluster[1]) is not None, 'native cluster name is incompatible with systemd template')
     require('sudo docker pull "$POSTGRES_IMAGE"' in contents and 'sudo pg_createcluster' in contents and
-            'sudo pg_conftool 16 xinsightci set listen_addresses 127.0.0.1' in contents and
+            "write_native_listen_config(pathlib.Path('/etc/postgresql/16/xinsightci/postgresql.conf'))" in contents and
+            '-c config_file=/etc/postgresql/16/xinsightci/postgresql.conf -C listen_addresses' in contents and
             'sudo pg_ctlcluster 16 xinsightci start' in contents,
             'normal installer prerequisites and native loopback server must remain')
     blocks=re.findall(r"<<'PY'[^\n]*\n(.*?)\nPY",contents,re.S)
@@ -1306,6 +1307,105 @@ def check_profile_listener_and_database_chain() -> None:
     print(f'selected listener/joint/snapshot contracts: {positives} positive, {negatives} negative; real Linux pending')
 
 
+def check_schema47_prestate_input_route() -> None:
+    root=WORKFLOW.parents[2]
+    joint=(root/'scripts/qualify-ubuntu22-installed-joint.sh').read_text()
+    start=joint.index("driver_mode='new_install' if mode=='fpv17_upgrade_prestate'")
+    producer=joint[start:joint.index("if mode=='adopt_existing':",start)]
+    upgrade=(root/'scripts/qualify-ubuntu22-fpv17-upgrade.sh').read_text()
+    assignment=next(line for line in upgrade.splitlines() if line.startswith('INSTALLED_INPUT='))
+    calls=[]
+    for action in ('prepare','verify'):
+        at=upgrade.index('python3 "$ROOT/scripts/ci-fpv21-account-prestate.py" '+action)
+        begin=upgrade.rfind('  sudo env GITHUB_ACTIONS=true',0,at)
+        end=upgrade.index('\n',upgrade.index('> "$QUAL/',at))+1
+        require(begin>=0,'actual schema47 helper invocation missing')
+        calls.append(upgrade[begin:end])
+    with tempfile.TemporaryDirectory(prefix='xi-prestate-input-') as temporary:
+        temp=Path(temporary);private=temp/'xinsight-fpv15-joint-private';private.mkdir(mode=0o700)
+        keys=('admin_password_file','reader_password_file','reader_subject_id','ur_cert_file','ur_key_file','ur_ca_file','xi_ca_file')
+        manifest={key:str(private/key) for key in keys}
+        namespace={'json':json,'root':private,'mode':'fpv17_upgrade_prestate','m':manifest,
+                   'ids':['xid_'+'A'*22],'source':'198.18.0.2'}
+        exec(compile(producer,'actual installed-input producer','exec'),namespace)
+        original=(private/'installed-input.json').read_bytes()
+        stub=temp/'read-helper-input.py'
+        stub.write_text('''import json,pathlib,runpy,sys
+args=sys.argv[1:];at=args.index('python3')
+helper=runpy.run_path(args[at+1]);action=args[at+2];path=pathlib.Path(args[at+3])
+payload=json.loads(helper['private_read'](path))
+assert action in ('prepare','verify') and path.parent.name=='xinsight-fpv15-joint-private'
+assert payload['schema_version']=='xinsight.ci-installed-joint.v1' and 'installed' not in payload
+assert payload['xi_origin']=='https://127.0.0.1:9443' and payload['xi_admin_username']=='joint.admin'
+assert pathlib.Path(payload['xi_admin_password_file']).parent==path.parent
+print(json.dumps({'action':action,'schema_version':payload['schema_version'],'private_input':True}))
+''')
+        qual=temp/'xinsight-account-upgrade-qualification';qual.mkdir(mode=0o700)
+        env={'PATH':os.environ['PATH'],'ROOT':str(root),'RUNNER_TEMP':str(temp),'QUAL':str(qual),
+             'PYTHON':sys.executable,'STUB':str(stub)}
+        harness='sudo() { "$PYTHON" "$STUB" "$@"; }\n'+assignment+'\n'+''.join(calls)
+        result=subprocess.run(['bash','-eu','-c',harness],env=env,capture_output=True,text=True)
+        require(result.returncode==0,'actual schema47 prepare/verify inputs do not reach private producer file')
+        for action,name in [('prepare','account-prestate-prepare.json'),('verify','account-prestate-result.json')]:
+            receipt=json.loads((qual/name).read_text())
+            require(receipt['action']==action and receipt['private_input'],'helper input route lost action or privacy')
+        broken=harness.replace('INSTALLED_INPUT="$RUNNER_TEMP/xinsight-fpv15-joint-private/',
+                               'INSTALLED_INPUT="$RUNNER_TEMP/xinsight-installed-joint-qualification/')
+        result=subprocess.run(['bash','-eu','-c',broken],env=env,capture_output=True,text=True)
+        require(result.returncode!=0 and (private/'installed-input.json').read_bytes()==original and
+                not (temp/'xinsight-installed-joint-qualification/installed-input.json').exists(),
+                'old evidence-directory input bug accepted or private input copied to evidence')
+    print('schema47 actual producer→prepare/verify shell arguments→private reader:2 positive; old evidence path rejected; flat contract/no private evidence copy')
+
+
+def check_native_configuration_writer() -> None:
+    import stat
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
+    contents=path.read_text()
+    match=re.search(r"<<'PY_NATIVE_CONFIG'\n(.*?)\nPY_NATIVE_CONFIG",contents,re.S)
+    require(match is not None,'native standard configuration writer missing')
+    nodes=[n for n in ast.parse(match[1]).body if isinstance(n,ast.FunctionDef)]
+    namespace={'os':os,'re':re,'stat':stat}
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    write=namespace['write_native_listen_config']
+    with tempfile.TemporaryDirectory(prefix='xi-native-config-') as temporary:
+        root=Path(temporary)
+        for name,setting in [('commented',b"#listen_addresses = 'localhost'"),
+                             ('active',b'  listen_addresses = 127.0.0.1')]:
+            file=root/(name+'.conf');original=b'# generated fixture\n'+setting+b'\nport = 54554\nshared_buffers = 128MB\n'
+            file.write_bytes(original);file.chmod(0o640);before=file.stat()
+            write(file);after=file.stat()
+            expected=original.replace(setting,b"listen_addresses = '127.0.0.1'")
+            require(file.read_bytes()==expected and
+                    (before.st_dev,before.st_ino,before.st_mode,before.st_uid,before.st_gid)==
+                    (after.st_dev,after.st_ino,after.st_mode,after.st_uid,after.st_gid),
+                    'native writer changed other bytes or file identity: '+name)
+        for name,original in [('missing',b'port = 54554\n'),
+                              ('duplicate',b"listen_addresses = 'localhost'\n#listen_addresses = '*'\n"),
+                              ('oversize',b'x'*(1024*1024+1))]:
+            file=root/(name+'.conf');file.write_bytes(original)
+            try:write(file)
+            except (ValueError,OSError):pass
+            else:raise ValueError('native ambiguous configuration accepted: '+name)
+            require(file.read_bytes()==original,'rejected native configuration was modified: '+name)
+        target=root/'target.conf';original=b"listen_addresses = 'localhost'\n";target.write_bytes(original)
+        link=root/'symlink.conf';link.symlink_to(target)
+        try:write(link)
+        except OSError:pass
+        else:raise ValueError('native symlink configuration accepted')
+        hard=root/'hardlink.conf';os.link(target,hard)
+        try:write(hard)
+        except ValueError:pass
+        else:raise ValueError('native multiply linked configuration accepted')
+        require(target.read_bytes()==original,'rejected links changed native target')
+    parse=contents.index('-c config_file=/etc/postgresql/16/xinsightci/postgresql.conf -C listen_addresses')
+    start=contents.index('sudo pg_ctlcluster 16 xinsightci start')
+    require(parse<start and 'sudo pg_conftool 16 xinsightci set listen_addresses' not in contents and
+            'test "$(cat "$QUALIFICATION_ROOT/native-postgres-config-listen.txt")" = 127.0.0.1' in contents,
+            'native daemon can start before real PG parser/exact address check')
+    print('native configuration writer:2 positive/5 negative; exact quoted address, other bytes and file identity preserved; real PG parser required before systemd')
+
+
 def check_native_failure_diagnostic() -> None:
     path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
     contents=path.read_text()
@@ -1357,7 +1457,7 @@ def check_native_failure_diagnostic() -> None:
     require(contents.index('QUAL_STAGE=native_database_start')<contents.index('sudo pg_ctlcluster 16 xinsightci start') and
             "units += ('postgresql@16-xinsightci.service',)" in contents,
             'native failure still has wrong stage or omits actual PG unit')
-    print('native startup diagnostic:11 fixed categories; unknown/secret/truncated input closed; exact unit/log only; runtime cause still unknown')
+    print('native startup diagnostic:11 fixed categories; unknown/secret/truncated input closed; exact unit/log only; real Linux execution still required')
 
 
 def check_prepared_account_fixture_policy() -> None:
@@ -1449,7 +1549,7 @@ def check_installed_fixture_shell_preflight() -> None:
     native=(root/'scripts/qualify-ubuntu22-fresh-install.sh').read_text()
     expressions=[r'test ! -e /etc/postgresql/16/([a-zA-Z0-9_-]+)',
                  r'sudo pg_createcluster [^\n]+16 ([a-zA-Z0-9_-]+) --',
-                 r'sudo pg_conftool 16 ([a-zA-Z0-9_-]+) set listen_addresses',
+                 r"write_native_listen_config\(pathlib.Path\('/etc/postgresql/16/([a-zA-Z0-9_-]+)/postgresql.conf'\)\)",
                  r'sudo pg_ctlcluster 16 ([a-zA-Z0-9_-]+) start']
     names=[re.search(pattern,native)[1] for pattern in expressions]
     require(names==['xinsightci']*4 and '-' not in names[0],'native cluster identity differs across fixed commands')
@@ -1457,6 +1557,8 @@ def check_installed_fixture_shell_preflight() -> None:
 
 
 if __name__ == "__main__":
+    check_schema47_prestate_input_route()
+    check_native_configuration_writer()
     check_native_failure_diagnostic()
     check_installed_fixture_shell_preflight()
     check_prepared_account_fixture_policy()

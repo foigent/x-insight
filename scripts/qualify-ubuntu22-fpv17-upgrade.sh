@@ -46,11 +46,12 @@ snapshot() {
     python3 "$ROOT/scripts/ci-fpv17-upgrade-snapshot.py" > "$1"
 }
 SCHEMA47_PRESTATE=0
+INSTALLED_INPUT="$RUNNER_TEMP/xinsight-fpv15-joint-private/installed-input.json"
 if [ "$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["old_schema"])' "$RUNNER_TEMP/account-upgrade-ci-predecessor.json")" = 47 ]; then
   SCHEMA47_PRESTATE=1
   sudo env GITHUB_ACTIONS=true XINSIGHT_CI_EPHEMERAL_HOST=1 \
     python3 "$ROOT/scripts/ci-fpv21-account-prestate.py" prepare \
-      "$RUNNER_TEMP/xinsight-installed-joint-qualification/installed-input.json" "$QUAL/account-prestate.private.json" \
+      "$INSTALLED_INPUT" "$QUAL/account-prestate.private.json" \
       > "$QUAL/account-prestate-prepare.json"
 fi
 # Only the read-only check's equality window is quiesced. Restore both
@@ -201,7 +202,7 @@ PY
 if [ "$SCHEMA47_PRESTATE" = 1 ]; then
   sudo env GITHUB_ACTIONS=true XINSIGHT_CI_EPHEMERAL_HOST=1 \
     python3 "$ROOT/scripts/ci-fpv21-account-prestate.py" verify \
-      "$RUNNER_TEMP/xinsight-installed-joint-qualification/installed-input.json" "$QUAL/account-prestate.private.json" \
+      "$INSTALLED_INPUT" "$QUAL/account-prestate.private.json" \
       > "$QUAL/account-prestate-result.json"
 fi
 python3 - "$QUAL" "$SCHEMA47_PRESTATE" <<'PY_FINAL_RESULT'

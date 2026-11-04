@@ -538,17 +538,24 @@ func (manager PostgresManager) retireCleanBaselineDatabase(
 	if !exists {
 		return nil
 	}
-	var sessions int
-	if err := database.QueryRowContext(
-		ctx,
-		`SELECT count(*) FROM pg_stat_activity WHERE datname = $1`,
-		targetDatabase,
-	).Scan(&sessions); err != nil {
-		return errors.New("database retirement session inspection failed")
+	if predecessor {
+		var sessions int
+		if err := database.QueryRowContext(
+			ctx,
+			`SELECT count(*) FROM pg_stat_activity WHERE datname = $1`,
+			targetDatabase,
+		).Scan(&sessions); err != nil {
+			return errors.New("database retirement session inspection failed")
+		}
+		if sessions != 0 {
+			return fmt.Errorf("database retirement target still has active sessions")
+		}
 	}
-	if sessions != 0 {
-		return fmt.Errorf("database retirement target still has active sessions")
-	}
+	// Verification helpers have closed their connections, but pgx Close does
+	// not acknowledge server-side backend exit. Ordinary (never FORCE) DROP
+	// performs PostgreSQL's locked session/transaction check and natural-exit
+	// synchronization. Persistent client connections still reject deletion.
+	// Keep the predecessor's existing immediate precheck above unchanged.
 	if _, err := database.ExecContext(
 		ctx,
 		`DROP DATABASE `+pgx.Identifier{targetDatabase}.Sanitize(),
