@@ -105,6 +105,7 @@ export type AccessPermission =
 export interface AccessSession {
   session_ref: string;
   subject_id: string;
+  username?: string;
   role: AccessRole;
   permissions: AccessPermission[];
   created_at: string;
@@ -115,6 +116,7 @@ export interface AccessSession {
 
 export interface AccessSessionResponse {
  scope_revision?: string;
+  reading_capabilities?: { summary: boolean; runtime: boolean; coverage: boolean; work_activity: boolean };
   session: AccessSession;
   csrf_token: string;
 }
@@ -1460,7 +1462,8 @@ let scopeGeneration=0;
 // Activity timestamps and CSRF refreshes do not change the authorization identity.
 export function scopeSessionKey(current: AccessSessionResponse | null): string {
  return current ? JSON.stringify([current.session.subject_id, current.session.session_ref,
-  current.session.role, [...current.session.permissions].sort(), current.scope_revision]) : "";
+  current.session.role, [...current.session.permissions].sort(), current.scope_revision,
+  current.reading_capabilities ? [current.reading_capabilities.summary,current.reading_capabilities.runtime,current.reading_capabilities.coverage,current.reading_capabilities.work_activity] : null]) : "";
 }
 export function acceptScopeSession(current: AccessSessionResponse | null){
  const next=scopeSessionKey(current);
@@ -1469,7 +1472,11 @@ export function acceptScopeSession(current: AccessSessionResponse | null){
  managedOwner=current?.session.permissions.includes("accounts.manage") ?? false;
 }
 export function currentScopeSessionKey(){return scopeIdentity;}
-function invalidateScope(){scopeGeneration++;window.dispatchEvent(new Event("xinsight:scope-changed"));}
+export function scopeResponseGeneration(){return scopeGeneration;}
+// Revalidation can keep the same identity. Responses started before it must
+// still be discarded while the protected shell is closed.
+export function invalidatePendingScopeResponses(){scopeGeneration++;window.dispatchEvent(new Event("xinsight:scope-pending"));}
+function invalidateScope(){invalidatePendingScopeResponses();window.dispatchEvent(new Event("xinsight:scope-changed"));}
 
 async function requestJSON<T>(path: string, signal?: AbortSignal): Promise<T> {
   return requestAccessJSON<T>(path, { signal });
@@ -1497,6 +1504,7 @@ async function requestAccessJSON<T>(
     headers["X-CSRF-Token"] = options.csrfToken;
   }
   const scopedRequest=scopedRevision!==undefined&&!path.startsWith("/api/v1/access/")&&(!managedOwner||path.startsWith("/api/v1/runtime/")||path.startsWith("/api/v1/workbench/")||path.startsWith("/api/v1/work-activity"));
+  const protectedRequest=scopeIdentity!==""&&!path.startsWith("/api/v1/access/");
   const generation=scopeGeneration;
   if(scopedRequest)headers["X-XInsight-Scope-Revision"]=scopedRevision!;
   const response = await fetch(path, {
@@ -1508,13 +1516,18 @@ async function requestAccessJSON<T>(
     signal: options.signal,
   });
   const decoded = await decodeResponseJSON(response);
+  if(protectedRequest&&generation!==scopeGeneration)throw new DOMException("Authorization changed","AbortError");
+  const returnedRevision=response.headers.get("X-XInsight-Scope-Revision");
+  if(protectedRequest&&((scopedRevision!==undefined&&returnedRevision&&returnedRevision!==scopedRevision)||(isProblem(decoded)&&["scope_revision_changed","scope_denied","scope_route_denied"].includes(decoded.code)))){
+    invalidateScope();throw new ApiRequestError(response.status===200?409:response.status,isProblem(decoded)?decoded:undefined);
+  }
   if(scopedRequest){
     if(generation!==scopeGeneration)throw new DOMException("Authorization changed","AbortError");
     const next=response.headers.get("X-XInsight-Scope-Revision");
-    // Cost/runtime qualification and optional personal-filter access can be absent
-    // within an otherwise valid scope. Only this precise denial with the unchanged server revision is
-    // local; missing/changed revisions and other 403 codes still invalidate.
-    const qualificationPath=(method==="GET"&&path==="/api/v1/workbench/saved-filters")||(method==="POST"&&path==="/api/v1/workbench/readings")||path.startsWith("/api/v1/workbench/budgets/")||path.startsWith("/api/v1/runtime/");
+    // A selected project or field can be denied while the session remains
+    // valid. Only the typed denial from a known reading surface, bound to the
+    // unchanged server revision, is local. Every other denial stays fail-closed.
+    const qualificationPath=(method==="GET"&&path==="/api/v1/workbench/saved-filters")||(method==="POST"&&path==="/api/v1/workbench/readings")||path.startsWith("/api/v1/workbench/budgets/")||path.startsWith("/api/v1/runtime/")||/^\/api\/v1\/work-activity(?:[/?]|$)/.test(path)||(method==="GET"&&/^\/api\/v1\/workbench\/readings\/[^/?]+\/(?:contributions|series|details|recent-requests|sources|source-facts)(?:[/?]|$)/.test(path));
     const currentQualificationDenial=qualificationPath&&response.status===403&&next===scopedRevision&&isProblem(decoded)&&decoded.code==="workbench_scope_denied";
     if((next&&next!==scopedRevision)||(response.status===403&&!currentQualificationDenial)||(isProblem(decoded)&&decoded.code==="scope_revision_changed")){
       invalidateScope();throw new ApiRequestError(response.status===200?409:response.status,isProblem(decoded)?decoded:undefined);
@@ -1522,7 +1535,7 @@ async function requestAccessJSON<T>(
   }
   if (!response.ok) {
     const problem = isProblem(decoded) ? decoded : undefined;
-    if (response.status === 401 && options.notifyUnauthorized !== false) {
+    if (response.status === 401 && options.notifyUnauthorized !== false && problem?.code !== "reauthentication_required") {
       window.dispatchEvent(new Event("xinsight:unauthorized"));
     }
     throw new ApiRequestError(response.status, problem);
@@ -2384,8 +2397,8 @@ export interface ProjectReadGrant {id:string;subject_id:string;source_system_id:
 export interface ProjectReadOptions {sources:Array<{id:string;name:string}>;projects:Array<{source_system_id:string;source_project_ref:string}>;grants:ProjectReadGrant[]}
 export const managedAccountsAPI={
  list:(signal?:AbortSignal)=>requestAccessJSON<{items:ManagedAccount[]}>("/api/v1/access/accounts",{signal}),
- change:(command:Record<string,unknown>,csrfToken:string)=>requestAccessJSON<{account:ManagedAccount;activation_link?:string;expires_at?:string}>("/api/v1/access/accounts",{method:"POST",body:command,csrfToken,notifyUnauthorized:false}),
+ change:(command:Record<string,unknown>,csrfToken:string)=>requestAccessJSON<{account:ManagedAccount;activation_link?:string;expires_at?:string}>("/api/v1/access/accounts",{method:"POST",body:command,csrfToken}),
  setPassword:(token:string,password:string,confirmation:string)=>requestAccessJSON<{username:string;status:string}>("/api/v1/access/account-password",{method:"POST",body:{token,password,confirmation},notifyUnauthorized:false}),
  grantOptions:(signal?:AbortSignal)=>requestAccessJSON<ProjectReadOptions>("/api/v1/access/project-read-grants",{signal}),
- grant:(command:ProjectReadCommand,password:string,csrfToken:string)=>requestAccessJSON<unknown>("/api/v1/access/project-read-grants",{method:"POST",body:{...command,password},csrfToken,notifyUnauthorized:false})
+ grant:(command:ProjectReadCommand,password:string,csrfToken:string)=>requestAccessJSON<unknown>("/api/v1/access/project-read-grants",{method:"POST",body:{...command,password},csrfToken})
 };

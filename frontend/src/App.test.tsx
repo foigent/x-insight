@@ -73,6 +73,7 @@ const workbenchSession: AccessSessionResponse = {
     ...investigatorSession.session,
     session_ref: "xr_workbench00000000000001",
     subject_id: "xs_8899aabbccddeeff",
+    username: "workbench.one",
     role: "workbench_reader",
     permissions: [
       "workbench.summary.read",
@@ -1362,6 +1363,7 @@ describe("PRD2 investigation UI", () => {
     expect(window.location.pathname).toBe("/inbox");
     expect(screen.queryByText(workbenchSession.session.subject_id)).toBeNull();
     expect(screen.queryByText(workbenchSession.session.role)).toBeNull();
+    expect(screen.getByLabelText("当前账号与角色").textContent).toContain("workbench.one");
     expect(screen.queryByText("管理")).toBeNull();
     expect(screen.queryByRole("link", { name: /运行态势/ })).toBeNull();
     expect(fetchMock.mock.calls.some(([input]) => String(input).startsWith("/api/v1/posture"))).toBe(false);

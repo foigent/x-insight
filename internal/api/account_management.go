@@ -64,6 +64,8 @@ func accountProblem(w http.ResponseWriter, e error) {
 		writeProblem(w, 429, "authentication_rate_limited", "Authentication is rate limited", true)
 	case errors.Is(e, access.ErrAccountConflict):
 		writeProblem(w, 409, "account_revision_changed", "Account or authorization changed; refresh before retrying", false)
+	case errors.Is(e, access.ErrAccountExists):
+		writeProblem(w, 409, "account_username_exists", "The username already exists; use the existing account", false)
 	case errors.Is(e, access.ErrAccountInvalid):
 		writeProblem(w, 400, "invalid_account_operation", "Account operation or activation link is invalid or expired", false)
 	default:

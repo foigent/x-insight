@@ -20,10 +20,39 @@ test -f "${RUNNER_TEMP:?}/xinsight-fresh-install-qualification/qualification-res
 PRIVATE="$RUNNER_TEMP/xinsight-fpv15-joint-private"
 EVIDENCE="$RUNNER_TEMP/xinsight-installed-joint-qualification"
 test ! -e "$EVIDENCE"
-if [ "$MODE" = new_install ]; then
+FIXTURE_ACTION="$(python3 - "$MODE" "$RUNNER_TEMP" <<'PY_PREPARED_FIXTURE'
+import json, pathlib, sys
+
+def fixture_account_action(mode, predecessor, prepared):
+    if mode=='new_install':
+        if prepared: return 'reuse'
+        raise ValueError('prepared_fixture_required')
+    if mode=='adopt_existing':
+        if not prepared: return 'create'
+        raise ValueError('unexpected_prepared_fixture')
+    if mode!='fpv17_upgrade_prestate' or not isinstance(predecessor,dict):
+        raise ValueError('invalid_fixture_prestate')
+    identity=tuple(predecessor.get(k) for k in ('old_commit','old_product','old_schema'))
+    if identity==('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47'):
+        if prepared: return 'reuse'
+        raise ValueError('schema47_prepared_fixture_required')
+    legacy={('164582cab0e7f169c265c2494d04920c61af833d','0.2.0-dev.fpv17','45'),
+            ('08435e0949dfae0ae65497d2e12ca356f6d820f0','0.2.0-dev.fpv20','46')}
+    if identity in legacy and not prepared: return 'create'
+    raise ValueError('unexpected_fixture_prestate')
+
+mode,root=sys.argv[1],pathlib.Path(sys.argv[2])
+predecessor=json.loads((root/'account-upgrade-ci-predecessor.json').read_text()) if mode=='fpv17_upgrade_prestate' else None
+prepared=(root/'prepared-joint-fixture-result.json').is_file()
+try: print(fixture_account_action(mode,predecessor,prepared))
+except ValueError: raise SystemExit('installed fixture account prestate mismatch')
+PY_PREPARED_FIXTURE
+)"
+if [ "$FIXTURE_ACTION" = reuse ]; then
   test -f "$RUNNER_TEMP/prepared-joint-fixture-result.json"
   test -d "$PRIVATE" && test ! -L "$PRIVATE"
 else
+  test "$FIXTURE_ACTION" = create
   test ! -e "$PRIVATE"
 fi
 mkdir -m 0700 "$EVIDENCE"
@@ -235,7 +264,7 @@ STAGE=fixture
 # A benchmark-only local address is outside the controller's original allow
 # list. This forces the product to publish and actually load its exact /32.
 sudo ip address add 198.18.0.2/32 dev lo
-if [ "$MODE" = new_install ]; then
+if [ "$FIXTURE_ACTION" = reuse ]; then
   # The supported installer already imported these exact identities once.
   cp "$RUNNER_TEMP/prepared-joint-fixture-result.json" "$EVIDENCE/fixture-result.json"
 else
@@ -393,16 +422,22 @@ def installed_joint_passed(returncode, mode, receipts):
 xi,ur,root,out=map(pathlib.Path,sys.argv[1:])
 from urllib.parse import urlsplit,urlunsplit
 u=urlsplit((root/'xi-admin.dsn').read_text().strip())
-if u.hostname!='127.0.0.1' or u.port!=5432 or u.username!='xinsight_admin': raise SystemExit('unexpected isolated DB')
-env={k:v for k,v in os.environ.items() if k in ('PATH','HOME','GOCACHE','GOMODCACHE','GOPATH','GOTOOLCHAIN','SSL_CERT_FILE')}
+def valid_joint_database(u, profile):
+    port={'container':5432,'native':54554}.get(profile)
+    return port is not None and u.scheme=='postgres' and u.hostname=='127.0.0.1' and u.port==port and u.username=='xinsight_admin' and u.path=='/xinsight' and bool(u.password)
+profile=os.environ.get('XINSIGHT_CI_DATABASE_PROFILE','container')
+if not valid_joint_database(u,profile): raise SystemExit('unexpected isolated DB')
+env={k:v for k,v in os.environ.items() if k in ('PATH','HOME','GOCACHE','GOMODCACHE','GOPATH','GOTOOLCHAIN','SSL_CERT_FILE','XINSIGHT_CI_DATABASE_PROFILE')}
 env.update(GITHUB_ACTIONS='true',XINSIGHT_CI_EPHEMERAL_HOST='1',XINSIGHT_CI_INSTALLED_JOINT='1',
+           XINSIGHT_CI_DATABASE_PROFILE=profile,
            REQUIRE_TEST_DATABASE='1',XI_JOINT_TEST_CHECKOUT=str(xi),
            TEST_DATABASE_URL=urlunsplit((u.scheme,u.netloc,'/uniroute_test',u.query,'')))
 if json.loads((root/'installed-input.json').read_text())['mode'] == 'new_install' and os.environ.get('XINSIGHT_CI_UPGRADE_PRESTATE') == '1':
     predecessor=json.loads((root.parent/'account-upgrade-ci-predecessor.json').read_text())
     assert (predecessor['old_commit'],predecessor['old_product'],predecessor['old_schema']) in {
         ('164582cab0e7f169c265c2494d04920c61af833d','0.2.0-dev.fpv17','45'),
-        ('08435e0949dfae0ae65497d2e12ca356f6d820f0','0.2.0-dev.fpv20','46')}
+        ('08435e0949dfae0ae65497d2e12ca356f6d820f0','0.2.0-dev.fpv20','46'),
+        ('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47')}
     request={'schema_version':'xinsight.ci-fpv17-installed-upgrade-request.v1',
              'predecessor_schema':predecessor['old_schema'],
              'script':str(xi/'scripts/qualify-ubuntu22-fpv17-upgrade.sh'),

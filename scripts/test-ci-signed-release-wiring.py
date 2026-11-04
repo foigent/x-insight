@@ -83,6 +83,11 @@ def check(source: str) -> None:
         )
     require(builds.count("scripts/build-signed-release.sh") == 2, "current build count changed")
 
+    fpv21 = step(fresh, 'Install exact public FPV21 schema47 predecessor on clean VM')
+    require("matrix.lifecycle == 'fpv21_upgrade'" in fpv21 and
+            'XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv21' in fpv21 and
+            'prepare-ci-fpv17-predecessor.sh' in fpv21,
+            'actual installed FPV21/schema47 predecessor lane is missing')
     historical = step(signed, "Rebuild and verify frozen rc13 signed candidate")
     for required in (
         f"XINSIGHT_RC13_COMMIT: {RC13_COMMIT}",
@@ -157,7 +162,7 @@ def check(source: str) -> None:
             'installed UR fixture checkout lacks exact commit readback')
     require('qualify-ubuntu22-installed-joint.sh' in step(fresh, 'Qualify installed controller and consumer lifecycle'),
             'fresh install does not run the installed business lifecycle')
-    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade]' in fresh and 'fail-fast: false' in fresh,
+    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade]' in fresh and 'fail-fast: false' in fresh,
             'new installation, restored predecessor and FPV17 upgrade need independent VMs')
     predecessor = step(fresh, 'Reproduce and install exact FPV14 predecessor on clean VM')
     require("if: matrix.lifecycle == 'adopt_existing'" in predecessor and
@@ -169,7 +174,7 @@ def check(source: str) -> None:
             'prepare-ci-fpv17-predecessor.sh' in fpv17 and
             "p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh'" in fpv17,
             'FPV17 lane must install its independently rebuilt CI-only predecessor')
-    prestate = step(fresh, 'Qualify exact predecessor to FPV21 installed upgrade and source continuation')
+    prestate = step(fresh, 'Qualify exact predecessor to current candidate installed upgrade and source continuation')
     require("if: matrix.lifecycle == 'fpv17_upgrade'" in prestate and
             'XINSIGHT_CI_UPGRADE_PRESTATE: "1"' in prestate and
             'qualify-ubuntu22-installed-joint.sh' in prestate,
@@ -183,6 +188,18 @@ def check(source: str) -> None:
             'XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv20' in fpv20 and
             'GH_TOKEN: ${{ github.token }}' in fpv20,
             'FPV20 must reuse the exact published predecessor in its own VM')
+    require("runs-on: ${{ matrix.os || 'ubuntu-22.04' }}" in fresh and 'database_profile: [container]' in fresh,
+            'original container lanes must remain on Ubuntu22 with explicit topology')
+    for lifecycle in ('new_install','fpv21_upgrade'):
+        require(f'- lifecycle: {lifecycle}\n            database_profile: native\n            os: ubuntu-24.04' in fresh,
+                'missing exact Ubuntu24 native lane: '+lifecycle)
+    require(fresh.count('database_profile: native')==2 and 'XINSIGHT_CI_DATABASE_PROFILE: ${{ matrix.database_profile }}' in fresh,
+            'native topology matrix must have exactly two independent entries')
+    require('apt.postgresql.org/pub/repos/apt ${{ matrix.database_profile' in fresh and
+            'sudo apt-get install -y postgresql-16 postgresql-common' in fresh,
+            'native lane must prepare actual matching Ubuntu PostgreSQL16 server')
+    require('${{ matrix.lifecycle }}-${{ matrix.database_profile }}' in fresh,
+            'topology evidence names must be unique')
     prepared = step(fresh, 'Prepare synthetic accounts before native durable initialization')
     require("if: matrix.lifecycle == 'new_install'" in prepared and
             fresh.index('Prepare synthetic accounts before native durable initialization') < fresh.index('Qualify fresh install on a second clean Ubuntu VM'),
@@ -1075,8 +1092,12 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     checksum = 'sha256:' + hashlib.sha256((root / 'migrations/000046_add_connector_sync_control.up.sql').read_bytes()).hexdigest()
     migrations = [{'version': f'{i:06d}_fixture', 'checksum_sha256': 'sha256:'+'a'*64,
                    'dirty': False, 'applied_at': '2026-01-01T00:00:00Z'} for i in range(1, 46)]
-    if old_schema == 46:
+    if old_schema >= 46:
         migrations.append({'version':'000046_add_connector_sync_control','checksum_sha256':checksum,
+                           'dirty':False,'applied_at':'2026-01-01T00:00:00Z'})
+    if old_schema == 47:
+        migrations.append({'version':'000047_add_local_account_lifecycle',
+                           'checksum_sha256':'sha256:'+hashlib.sha256((root/'migrations/000047_add_local_account_lifecycle.up.sql').read_bytes()).hexdigest(),
                            'dirty':False,'applied_at':'2026-01-01T00:00:00Z'})
     tables = ('connector_sync_controls', 'connector_sync_slots', 'connector_sync_runs')
     columns = {'connector_sync_controls': ('last_checked_at', 'last_data_at', 'last_error'),
@@ -1091,10 +1112,10 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
         'functions': [[n, r, 'EXECUTE', False] for n in ('xinsight_sync_scope', 'xinsight_sync_receiver', 'xinsight_sync_units')
                       for r in ('xinsight_workspace', 'xinsight_importer')],
     }
-    old = {'product_version': '0.2.0-dev.fpv17' if old_schema==45 else '0.2.0-dev.fpv20', 'database_schema': str(old_schema),
-           'commit': '164582cab0e7f169c265c2494d04920c61af833d', 'release_dir': '/synthetic/fpv17'}
-    new = {'product_version': '0.2.0-dev.fpv21', 'database_schema': '47',
-           'commit': 'b'*40, 'release_dir': '/synthetic/fpv21'}
+    old = {'product_version': {45:'0.2.0-dev.fpv17',46:'0.2.0-dev.fpv20',47:'0.2.0-dev.fpv21'}[old_schema], 'database_schema': str(old_schema),
+           'commit': {45:'164582cab0e7f169c265c2494d04920c61af833d',46:'08435e0949dfae0ae65497d2e12ca356f6d820f0',47:'6463d980958fae86d975eecde239b9534ec831a5'}[old_schema], 'release_dir': '/synthetic/fpv'+str({45:17,46:20,47:21}[old_schema])}
+    new = {'product_version': '0.2.0-dev.fpv22', 'database_schema': '47',
+           'commit': 'b'*40, 'release_dir': '/synthetic/fpv22'}
     stable = ('workbench_access_grants', 'work_event_collections', 'work_event_documents',
               'connector_installation_source_bindings', 'installation_identity', 'role_boundary',
               'source_fact_streams', 'source_content_collections', 'adapter_import_states')
@@ -1111,9 +1132,13 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     }
     before['database']['schema_migrations'] = str(old_schema)+':'+'a'*32
     before['legacy_account_inventory']={'count':2,'sha256':'c'*64}
-    if old_schema==46:
+    if old_schema>=46:
         before['table_acl_rows'].update({t:'reviewed-new-acl' for t in tables})
     before['database']['table_acl'] = 'a'*32
+    if old_schema==47:
+        before['account_inventory']={'count':3,'sha256':'e'*64}
+        before['account_ticket_summary']={'total':1,'pending':1}
+        before['account_state_digests']={t:'d'*64 for t in ('authority','accounts','password_tickets')}
     after = copy.deepcopy(before)
     after.update(status={'managed': True, 'active_journal': None,
                          'install_state': {'current': new, 'previous': old, 'database_schema_current': '47'}},
@@ -1123,13 +1148,14 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
                               for u in ('xinsight-feed.service', 'xinsight-source-facts.service')},
                  sync_privileges=privileges)
     after['database']['schema_migrations'] = '47:'+'b'*32
-    after['account_inventory']=copy.deepcopy(before['legacy_account_inventory'])
+    after['account_inventory']=copy.deepcopy(before['account_inventory' if old_schema==47 else 'legacy_account_inventory'])
     after['account_boundary']={'initialized':True,'roles_separated':True,'function_owner':'xinsight_admin'}
     after['database']['table_acl'] = 'b'*32
     if old_schema==45:
         after['migration_rows'].append({'version': '000046_add_connector_sync_control',
             'checksum_sha256': checksum, 'dirty': False, 'applied_at': '2026-01-02T00:00:00Z'})
-    after['migration_rows'].append({'version':'000047_add_local_account_lifecycle',
+    if old_schema<47:
+        after['migration_rows'].append({'version':'000047_add_local_account_lifecycle',
         'checksum_sha256':'sha256:'+hashlib.sha256((root/'migrations/000047_add_local_account_lifecycle.up.sql').read_bytes()).hexdigest(),
         'dirty':False,'applied_at':'2026-01-02T00:00:00Z'})
     after['table_acl_rows'].update({t: 'reviewed-new-acl' for t in tables})
@@ -1172,6 +1198,13 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
         ('changed key', lambda s: s['files']['review-body.key'].__setitem__(3, 'b'*64)),
         ('rewound content cursor', lambda s: s['progress']['source_content'][0].__setitem__(2, '1')),
     ]
+    if old_schema==47:
+        cases.extend([
+            ('lost pending ticket count', lambda s: s['account_ticket_summary'].update(pending=0)),
+            ('changed durable authority', lambda s: s['account_state_digests'].update(authority='changed')),
+            ('changed current account revision', lambda s: s['account_state_digests'].update(accounts='changed')),
+            ('lost or changed one-use tickets', lambda s: s['account_state_digests'].update(password_tickets='changed')),
+        ])
     with tempfile.TemporaryDirectory(prefix='xi-upgrade-delta-') as directory:
         paths = [Path(directory)/name for name in ('before.json', 'after.json', 'check.json', 'receipt.json')]
         def evaluate(value):
@@ -1190,7 +1223,347 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     return result
 
 
+def check_native_postgres_profile() -> None:
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
+    contents=path.read_text()
+    require('test -z "$(ss -H -ltn \'sport = :54554\')"' in contents and
+            'test ! -e /etc/postgresql/16/xinsightci' in contents,
+            'native fixture must refuse an existing listener or cluster')
+    require("release['ID']=='ubuntu' and release['VERSION_ID']=='24.04'" in contents and
+            "not os.environ.get('XINSIGHTCTL_TEST_HOST')" in contents and
+            "pathlib.Path('/proc/'+pid+'/exe').resolve()" in contents,
+            'native profile must attest actual OS and executable, never fixture override')
+    cluster=re.search(r'sudo pg_createcluster [^\n]+16 ([a-zA-Z0-9_-]+) --',contents)
+    require(cluster is not None and re.fullmatch(r'[a-z][a-z0-9]*',cluster[1]) is not None, 'native cluster name is incompatible with systemd template')
+    require('sudo docker pull "$POSTGRES_IMAGE"' in contents and 'sudo pg_createcluster' in contents and
+            "write_native_listen_config(pathlib.Path('/etc/postgresql/16/xinsightci/postgresql.conf'))" in contents and
+            '-c config_file=/etc/postgresql/16/xinsightci/postgresql.conf -C listen_addresses' in contents and
+            'sudo pg_ctlcluster 16 xinsightci start' in contents,
+            'normal installer prerequisites and native loopback server must remain')
+    blocks=re.findall(r"<<'PY'[^\n]*\n(.*?)\nPY",contents,re.S)
+    nodes=[node for block in blocks for node in ast.parse(block).body if isinstance(node,ast.FunctionDef) and node.name=='valid_postgres_profile']
+    require(len(nodes)==1,'native topology result validator missing')
+    namespace={};exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    evaluate=namespace['valid_postgres_profile']
+    container={'schema_version':'xinsight.ci-postgres-profile.v1','data_root':'/data/x-insight/postgres','container_pgdata':'/var/lib/postgresql/data','container_name':'xinsight-postgres'}
+    native={'schema_version':'xinsight.ci-postgres-profile.v1','data_root':'/data/x-insight/postgres','container_pgdata':None,'topology':'native_postgresql','host':'ubuntu_24.04_linux_amd64','native_process_verified':True,'major':16,'listen_addresses':'127.0.0.1','port':'54554','data_directory':'/data/x-insight/postgres','public_tables':0,'system_id':'123'}
+    require(evaluate(container,'container') and evaluate(native,'native'),'exact topology result rejected')
+    require(not evaluate(container,'native') and not evaluate(native,'container') and not evaluate(native,'unknown'),'topology cross-claim accepted')
+    for key,value in [('schema_version','wrong'),('data_root','/other'),('topology','container'),('host','ubuntu_22.04_linux_amd64'),('native_process_verified',False),('major',15),('listen_addresses','*'),('port','5433'),('data_directory','/other'),('public_tables',1),('system_id',''),('container_pgdata','/var/lib/postgresql/data')]:
+        changed=dict(native);changed[key]=value
+        require(not evaluate(changed,'native'),'invalid native proof accepted: '+key)
+    print('Ubuntu24/native PostgreSQL topology contract: 2 positive, 15 negative, real Linux runtime pending')
+
+
+def check_profile_listener_and_database_chain() -> None:
+    import ipaddress
+    from urllib.parse import urlsplit,unquote
+    root=WORKFLOW.parents[2]
+    def function(path,name):
+        contents=path.read_text()
+        if path.suffix=='.py': blocks=[contents]
+        else: blocks=[body for delimiter,body in re.findall(r"<<'([A-Z_]+)'[^\n]*\n(.*?)\n\1(?:\n|$)",contents,re.S) if delimiter.startswith('PY')]
+        nodes=[n for block in blocks for n in ast.parse(block).body if isinstance(n,ast.FunctionDef) and n.name==name]
+        require(len(nodes)==1,'missing actual profile guard: '+name)
+        namespace={'ipaddress':ipaddress,'unquote':unquote}
+        exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+        return namespace[name]
+    fresh=root/'scripts/qualify-ubuntu22-fresh-install.sh'
+    evaluate=function(fresh,'valid_target_listeners')
+    def listener(host,port):return f'LISTEN 0 244 {host}:{port} 0.0.0.0:*'
+    app=listener('127.0.0.1',8080)
+    positives=0; negatives=0
+    for profile,port,other in [('container',5432,54554),('native',54554,5432)]:
+        require(evaluate([app,listener('127.0.0.1',port)],profile),'exact selected listeners rejected');positives+=1
+        require(evaluate([app,listener('127.0.0.1',port),listener('0.0.0.0',other)],profile),'unrelated runner PostgreSQL treated as selected target');positives+=1
+        for rows in [[],[app],[listener('127.0.0.1',port)],[app,listener('127.0.0.1',other)],['malformed',app,listener('127.0.0.1',port)]]:
+            require(not evaluate(rows,profile),'missing/wrong/malformed selected listener accepted');negatives+=1
+        for host in ('0.0.0.0','*','[::]','10.0.0.1','[2001:db8::1]'):
+            require(not evaluate([app,listener('127.0.0.1',port),listener(host,port)],profile),'nonloopback selected database listener accepted');negatives+=1
+            require(not evaluate([app,listener('127.0.0.1',port),listener(host,8080)],profile),'nonloopback application listener accepted');negatives+=1
+    require(not evaluate([app,listener('127.0.0.1',5432)],'unknown'),'unknown listener profile accepted');negatives+=1
+    for file,name in [('qualify-ubuntu22-installed-joint.sh','valid_joint_database'),('ci-fpv17-upgrade-snapshot.py','valid_snapshot_database')]:
+        guard=function(root/'scripts'/file,name)
+        for profile,port,other in [('container',5432,54554),('native',54554,5432)]:
+            url=f'postgres://xinsight_admin:unused-isolated@127.0.0.1:{port}/xinsight?sslmode=disable'
+            require(guard(urlsplit(url),profile),'actual chain rejects selected database profile');positives+=1
+            for invalid in [url.replace(f':{port}/',f':{other}/'),url.replace(f':{port}/',':55555/'),url.replace('127.0.0.1','0.0.0.0'),url.replace('xinsight_admin','other_admin'),url.replace('/xinsight','/other'),url.replace(':unused-isolated','')]:
+                require(not guard(urlsplit(invalid),profile),'actual chain accepts another database/profile');negatives+=1
+            require(not guard(urlsplit(url),'unknown'),'unknown database profile accepted');negatives+=1
+    installed=(root/'scripts/qualify-ubuntu22-installed-joint.sh').read_text()
+    snapshot=(root/'scripts/ci-fpv17-upgrade-snapshot.py').read_text()
+    upgrade=(root/'scripts/qualify-ubuntu22-fpv17-upgrade.sh').read_text()
+    driver=(root/'scripts/ci-fpv15-installed-joint/main.go').read_text()
+    require('XINSIGHT_CI_DATABASE_PROFILE=profile' in installed and 'PGPORT=str(dsn.port)' in snapshot and
+            'XINSIGHT_CI_DATABASE_PROFILE="${XINSIGHT_CI_DATABASE_PROFILE:-container}"' in upgrade,
+            'selected profile/port must survive joint and sudo snapshot boundaries')
+    require('readInstalledDatabaseProfile(input.Installed.XIAdminDSNFile)' in driver and
+            '"XINSIGHT_CI_DATABASE_PROFILE="+d.databaseProfile' in driver.replace(' ',''),
+            'frozen UR child scrub must be handled by existing topology proof, then explicit upgrade env')
+    contents=fresh.read_text()
+    require('"postgresql": postgres_version["version"]+' in contents and
+            "current_setting('server_version')" in contents and '"16.14-compose-loopback"' not in contents,
+            'fresh result must use the verified actual server version/profile')
+    print(f'selected listener/joint/snapshot contracts: {positives} positive, {negatives} negative; real Linux pending')
+
+
+def check_schema47_prestate_input_route() -> None:
+    root=WORKFLOW.parents[2]
+    joint=(root/'scripts/qualify-ubuntu22-installed-joint.sh').read_text()
+    start=joint.index("driver_mode='new_install' if mode=='fpv17_upgrade_prestate'")
+    producer=joint[start:joint.index("if mode=='adopt_existing':",start)]
+    upgrade=(root/'scripts/qualify-ubuntu22-fpv17-upgrade.sh').read_text()
+    assignment=next(line for line in upgrade.splitlines() if line.startswith('INSTALLED_INPUT='))
+    calls=[]
+    for action in ('prepare','verify'):
+        at=upgrade.index('python3 "$ROOT/scripts/ci-fpv21-account-prestate.py" '+action)
+        begin=upgrade.rfind('  sudo env GITHUB_ACTIONS=true',0,at)
+        end=upgrade.index('\n',upgrade.index('> "$QUAL/',at))+1
+        require(begin>=0,'actual schema47 helper invocation missing')
+        calls.append(upgrade[begin:end])
+    with tempfile.TemporaryDirectory(prefix='xi-prestate-input-') as temporary:
+        temp=Path(temporary);private=temp/'xinsight-fpv15-joint-private';private.mkdir(mode=0o700)
+        keys=('admin_password_file','reader_password_file','reader_subject_id','ur_cert_file','ur_key_file','ur_ca_file','xi_ca_file')
+        manifest={key:str(private/key) for key in keys}
+        namespace={'json':json,'root':private,'mode':'fpv17_upgrade_prestate','m':manifest,
+                   'ids':['xid_'+'A'*22],'source':'198.18.0.2'}
+        exec(compile(producer,'actual installed-input producer','exec'),namespace)
+        original=(private/'installed-input.json').read_bytes()
+        stub=temp/'read-helper-input.py'
+        stub.write_text('''import json,pathlib,runpy,sys
+args=sys.argv[1:];at=args.index('python3')
+helper=runpy.run_path(args[at+1]);action=args[at+2];path=pathlib.Path(args[at+3])
+payload=json.loads(helper['private_read'](path))
+assert action in ('prepare','verify') and path.parent.name=='xinsight-fpv15-joint-private'
+assert payload['schema_version']=='xinsight.ci-installed-joint.v1' and 'installed' not in payload
+assert payload['xi_origin']=='https://127.0.0.1:9443' and payload['xi_admin_username']=='joint.admin'
+assert pathlib.Path(payload['xi_admin_password_file']).parent==path.parent
+print(json.dumps({'action':action,'schema_version':payload['schema_version'],'private_input':True}))
+''')
+        qual=temp/'xinsight-account-upgrade-qualification';qual.mkdir(mode=0o700)
+        env={'PATH':os.environ['PATH'],'ROOT':str(root),'RUNNER_TEMP':str(temp),'QUAL':str(qual),
+             'PYTHON':sys.executable,'STUB':str(stub)}
+        harness='sudo() { "$PYTHON" "$STUB" "$@"; }\n'+assignment+'\n'+''.join(calls)
+        result=subprocess.run(['bash','-eu','-c',harness],env=env,capture_output=True,text=True)
+        require(result.returncode==0,'actual schema47 prepare/verify inputs do not reach private producer file')
+        for action,name in [('prepare','account-prestate-prepare.json'),('verify','account-prestate-result.json')]:
+            receipt=json.loads((qual/name).read_text())
+            require(receipt['action']==action and receipt['private_input'],'helper input route lost action or privacy')
+        broken=harness.replace('INSTALLED_INPUT="$RUNNER_TEMP/xinsight-fpv15-joint-private/',
+                               'INSTALLED_INPUT="$RUNNER_TEMP/xinsight-installed-joint-qualification/')
+        result=subprocess.run(['bash','-eu','-c',broken],env=env,capture_output=True,text=True)
+        require(result.returncode!=0 and (private/'installed-input.json').read_bytes()==original and
+                not (temp/'xinsight-installed-joint-qualification/installed-input.json').exists(),
+                'old evidence-directory input bug accepted or private input copied to evidence')
+    print('schema47 actual producer→prepare/verify shell arguments→private reader:2 positive; old evidence path rejected; flat contract/no private evidence copy')
+
+
+def check_native_configuration_writer() -> None:
+    import stat
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
+    contents=path.read_text()
+    match=re.search(r"<<'PY_NATIVE_CONFIG'\n(.*?)\nPY_NATIVE_CONFIG",contents,re.S)
+    require(match is not None,'native standard configuration writer missing')
+    nodes=[n for n in ast.parse(match[1]).body if isinstance(n,ast.FunctionDef)]
+    namespace={'os':os,'re':re,'stat':stat}
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    write=namespace['write_native_listen_config']
+    with tempfile.TemporaryDirectory(prefix='xi-native-config-') as temporary:
+        root=Path(temporary)
+        for name,setting in [('commented',b"#listen_addresses = 'localhost'"),
+                             ('active',b'  listen_addresses = 127.0.0.1')]:
+            file=root/(name+'.conf');original=b'# generated fixture\n'+setting+b'\nport = 54554\nshared_buffers = 128MB\n'
+            file.write_bytes(original);file.chmod(0o640);before=file.stat()
+            write(file);after=file.stat()
+            expected=original.replace(setting,b"listen_addresses = '127.0.0.1'")
+            require(file.read_bytes()==expected and
+                    (before.st_dev,before.st_ino,before.st_mode,before.st_uid,before.st_gid)==
+                    (after.st_dev,after.st_ino,after.st_mode,after.st_uid,after.st_gid),
+                    'native writer changed other bytes or file identity: '+name)
+        for name,original in [('missing',b'port = 54554\n'),
+                              ('duplicate',b"listen_addresses = 'localhost'\n#listen_addresses = '*'\n"),
+                              ('oversize',b'x'*(1024*1024+1))]:
+            file=root/(name+'.conf');file.write_bytes(original)
+            try:write(file)
+            except (ValueError,OSError):pass
+            else:raise ValueError('native ambiguous configuration accepted: '+name)
+            require(file.read_bytes()==original,'rejected native configuration was modified: '+name)
+        target=root/'target.conf';original=b"listen_addresses = 'localhost'\n";target.write_bytes(original)
+        link=root/'symlink.conf';link.symlink_to(target)
+        try:write(link)
+        except OSError:pass
+        else:raise ValueError('native symlink configuration accepted')
+        hard=root/'hardlink.conf';os.link(target,hard)
+        try:write(hard)
+        except ValueError:pass
+        else:raise ValueError('native multiply linked configuration accepted')
+        require(target.read_bytes()==original,'rejected links changed native target')
+    parse=contents.index('-c config_file=/etc/postgresql/16/xinsightci/postgresql.conf -C listen_addresses')
+    start=contents.index('sudo pg_ctlcluster 16 xinsightci start')
+    require(parse<start and 'sudo pg_conftool 16 xinsightci set listen_addresses' not in contents and
+            'test "$(cat "$QUALIFICATION_ROOT/native-postgres-config-listen.txt")" = 127.0.0.1' in contents,
+            'native daemon can start before real PG parser/exact address check')
+    print('native configuration writer:2 positive/5 negative; exact quoted address, other bytes and file identity preserved; real PG parser required before systemd')
+
+
+def check_native_failure_diagnostic() -> None:
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-fresh-install.sh'
+    contents=path.read_text()
+    match=re.search(r"<<'PY'\n(import json, re, subprocess, sys\nstage, code = .*?)\nPY",contents,re.S)
+    require(match is not None,'native failure diagnostic missing')
+    nodes=[n for n in ast.parse(match[1]).body if isinstance(n,ast.FunctionDef)]
+    namespace={'re':re,'subprocess':subprocess}
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    classify=namespace['postgres_error_categories']
+    examples={
+        'data_path_permission_denied':'FATAL: could not access /data/x-insight/postgres: Permission denied',
+        'config_permission_denied':'FATAL: could not open configuration file: Permission denied',
+        'ssl_key_permission_denied':'FATAL: could not open private key file: Permission denied',
+        'ssl_key_permissions_invalid':'FATAL: private key file has group or world access',
+        'socket_or_pid_permission_denied':'FATAL: could not create lock file: Permission denied',
+        'shared_memory_resource_exhausted':'FATAL: could not create shared memory segment: No space left on device',
+        'port_conflict':'could not bind: Address already in use',
+        'invalid_configuration':'FATAL: unrecognized configuration parameter',
+        'required_file_missing':'FATAL: could not open file: No such file or directory',
+        'pid_file_missing':"Cannot open PID file: No such file or directory",
+        'systemd_start_protocol_failed':"Failed with result 'protocol'.",
+    }
+    secret='postgres://secret-marker-key-password-token-body@untrusted.invalid'
+    for category,message in examples.items():
+        require(category in classify(message+' '+secret),'native startup classification lost: '+category)
+    require(classify(secret)==[],'unknown native startup text became a diagnosed cause')
+    calls=[]
+    def command(args):
+        calls.append(args)
+        return (examples['systemd_start_protocol_failed'] if args[0]=='journalctl' else examples['data_path_permission_denied'])+' '+secret,0,False
+    namespace['bounded_command']=command
+    result=namespace['native_database_diagnostic']();encoded=json.dumps(result)
+    require(secret not in encoded and 'untrusted.invalid' not in encoded and result['raw_text_exported'] is False,
+            'native diagnostic leaked raw text')
+    require(result['error_categories']==['data_path_permission_denied','systemd_start_protocol_failed'],
+            'native diagnostic combined wrong categories')
+    require(calls==[['journalctl','--unit=postgresql@16-xinsightci.service','--output=cat','--lines=40','--no-pager'],
+                    ['tail','-c','65536','/var/log/postgresql/postgresql-16-xinsightci.log']]+
+                   [['runuser','-u','postgres','--','test','-x',path] for path in
+                    ('/data','/data/x-insight','/data/x-insight/postgres','/run/postgresql')],
+            'native diagnostic broadened service/log scope')
+    require(result['postgres_directory_traverse_exit']==dict.fromkeys(
+        ('data_parent','application_data_parent','cluster_data','runtime_directory'),0),
+        'native traversal status lost or raw permission output exported')
+    namespace['bounded_command']=lambda args: ('unclassified '+secret,124,True)
+    unavailable=namespace['native_database_diagnostic']()
+    require(unavailable['error_categories']==[] and unavailable['journal_command_exit']==124 and unavailable['journal_truncated'] and
+            unavailable['log_truncated'] and secret not in json.dumps(unavailable),'native partial diagnostic leaked or invented cause')
+    require(contents.index('QUAL_STAGE=native_database_start')<contents.index('sudo pg_ctlcluster 16 xinsightci start') and
+            "units += ('postgresql@16-xinsightci.service',)" in contents,
+            'native failure still has wrong stage or omits actual PG unit')
+    print('native startup diagnostic:11 fixed categories; unknown/secret/truncated input closed; exact unit/log only; real Linux execution still required')
+
+
+def check_prepared_account_fixture_policy() -> None:
+    path=WORKFLOW.parents[2]/'scripts/qualify-ubuntu22-installed-joint.sh'
+    contents=path.read_text()
+    match=re.search(r"<<'PY_PREPARED_FIXTURE'\n(.*?)\nPY_PREPARED_FIXTURE",contents,re.S)
+    require(match is not None,'prepared account policy missing')
+    nodes=[n for n in ast.parse(match[1]).body if isinstance(n,ast.FunctionDef) and n.name=='fixture_account_action']
+    require(len(nodes)==1,'prepared account policy missing or duplicated')
+    namespace={};exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+    evaluate=namespace['fixture_account_action']
+    require(contents.count('if [ "$FIXTURE_ACTION" = reuse ]; then')==2,'entry and fixture creation must use one consistent account decision')
+    fpv21={'old_commit':'6463d980958fae86d975eecde239b9534ec831a5','old_product':'0.2.0-dev.fpv21','old_schema':'47'}
+    legacy=[{'old_commit':'164582cab0e7f169c265c2494d04920c61af833d','old_product':'0.2.0-dev.fpv17','old_schema':'45'},
+            {'old_commit':'08435e0949dfae0ae65497d2e12ca356f6d820f0','old_product':'0.2.0-dev.fpv20','old_schema':'46'}]
+    require(evaluate('new_install',None,True)=='reuse' and evaluate('adopt_existing',None,False)=='create','original install/adopt fixture policy changed')
+    require(evaluate('fpv17_upgrade_prestate',fpv21,True)=='reuse','same FPV21 imported identities must be reused')
+    for predecessor in legacy:require(evaluate('fpv17_upgrade_prestate',predecessor,False)=='create','original legacy fixture creation changed')
+    invalid=[('new_install',None,False),('adopt_existing',None,True),('fpv17_upgrade_prestate',fpv21,False),('fpv17_upgrade_prestate',None,False),('unknown',fpv21,True)]
+    invalid += [('fpv17_upgrade_prestate',x,True) for x in legacy]
+    for field in ('old_commit','old_product','old_schema'):
+        wrong=dict(fpv21);wrong[field]='other';invalid.append(('fpv17_upgrade_prestate',wrong,True))
+    for args in invalid:
+        try:evaluate(*args)
+        except ValueError:pass
+        else:raise ValueError('mismatched or stale fixture account state accepted')
+    print('prepared account prestate: 5 positive,10 negative; same identities reused, no reset')
+
+
+def check_installed_fixture_shell_preflight() -> None:
+    import hashlib,shlex
+    root=WORKFLOW.parents[2]
+    script=root/'scripts/qualify-ubuntu22-installed-joint.sh'
+    contents=script.read_text()
+    entry=contents[contents.index('PRIVATE="$RUNNER_TEMP/'):contents.index('mkdir -m 0700 "$EVIDENCE"')]
+    offset=contents.index('STAGE=fixture\n')
+    start=contents.index('if [ "$FIXTURE_ACTION" = reuse ]; then',offset)
+    fixture=contents[start:contents.index('sudo install -m 0600 "$PRIVATE/access-accounts.json"',start)]
+    stub='#!/bin/sh\nset -eu\ncat >/dev/null\nprintf called > "$RUNNER_TEMP/generator-called"\nmkdir -m 0700 "$RUNNER_TEMP/xinsight-fpv15-joint-private"\nprintf created > "$RUNNER_TEMP/xinsight-fpv15-joint-private/access-accounts.json"\nprintf \'{"state":"generated"}\\n\'\n'
+    # Execute the actual safe shell entry and later fixture branch together.
+    # Only the external fixture generator is a sentinel; no fake Linux/CI env.
+    harness=entry+'\nmkdir -m 0700 "$EVIDENCE"\n'+('printf %s '+shlex.quote(stub)+' > "$EVIDENCE/fixture"\nchmod 0700 "$EVIDENCE/fixture"\n')+fixture+'\nprintf "%s" "$FIXTURE_ACTION"\n'
+    fpv21={'old_commit':'6463d980958fae86d975eecde239b9534ec831a5','old_product':'0.2.0-dev.fpv21','old_schema':'47'}
+    fpv17={'old_commit':'164582cab0e7f169c265c2494d04920c61af833d','old_product':'0.2.0-dev.fpv17','old_schema':'45'}
+    fpv20={'old_commit':'08435e0949dfae0ae65497d2e12ca356f6d820f0','old_product':'0.2.0-dev.fpv20','old_schema':'46'}
+    wrong=dict(fpv21,old_commit='other')
+    cases=[('new_prepared','new_install',None,True,True,False,'reuse'),
+           ('fpv21_prepared','fpv17_upgrade_prestate',fpv21,True,True,False,'reuse'),
+           ('fpv17_create','fpv17_upgrade_prestate',fpv17,False,False,False,'create'),
+           ('fpv20_create','fpv17_upgrade_prestate',fpv20,False,False,False,'create'),
+           ('adopt_create','adopt_existing',None,False,False,False,'create'),
+           ('fpv17_residue','fpv17_upgrade_prestate',fpv17,False,True,False,None),
+           ('fpv20_residue','fpv17_upgrade_prestate',fpv20,False,True,False,None),
+           ('adopt_residue','adopt_existing',None,False,True,False,None),
+           ('fpv21_missing_prepared','fpv17_upgrade_prestate',fpv21,False,True,False,None),
+           ('fpv21_mismatched','fpv17_upgrade_prestate',wrong,True,True,False,None),
+           ('new_missing_prepared','new_install',None,False,False,False,None),
+           ('existing_evidence','new_install',None,True,True,True,None),
+           ('prepared_symlink','fpv17_upgrade_prestate',fpv21,True,'symlink',False,None)]
+    for name,mode,predecessor,prepared,private_present,evidence_present,expected in cases:
+        with tempfile.TemporaryDirectory(prefix='xi-account-shell-') as temporary:
+            temp=Path(temporary);private=temp/'xinsight-fpv15-joint-private';evidence=temp/'xinsight-installed-joint-qualification'
+            if private_present:
+                if private_present=='symlink':
+                    target=temp/'owned-synthetic-target';target.mkdir();private.symlink_to(target,target_is_directory=True)
+                else:private.mkdir()
+                accounts=b'{"accounts":[{"subject_id":"xs_0000000000000001","username":"unchanged.admin"},{"subject_id":"xs_0000000000000002","username":"unchanged.reader"}]}\n'
+                (private/'access-accounts.json').write_bytes(accounts)
+            before=hashlib.sha256((private/'access-accounts.json').read_bytes()).hexdigest() if private_present else None
+            if prepared:(temp/'prepared-joint-fixture-result.json').write_text(json.dumps({'schema_version':'xinsight.ci-joint-fixture-result.v1','state':'prepared','manifest_path':str(private/'manifest.json')}))
+            if predecessor:(temp/'account-upgrade-ci-predecessor.json').write_text(json.dumps(predecessor))
+            if evidence_present:evidence.mkdir();(evidence/'sentinel').write_text('preserve')
+            env={'PATH':os.environ['PATH'],'LANG':'C','RUNNER_TEMP':str(temp),'MODE':mode}
+            result=subprocess.run(['bash','-eu','-c',harness],env=env,capture_output=True,text=True)
+            if expected is None:
+                require(result.returncode!=0 and not (temp/'generator-called').exists(),'shell accepted stale/mismatched account fixture: '+name)
+                if not evidence_present:require(not evidence.exists(),'rejected shell created evidence: '+name)
+            else:
+                require(result.returncode==0 and result.stdout==expected,'actual shell prestate routing failed: '+name)
+                if expected=='reuse':
+                    require((evidence/'fixture-result.json').read_bytes()==(temp/'prepared-joint-fixture-result.json').read_bytes() and not (temp/'generator-called').exists(),'prepared result was regenerated: '+name)
+                else:require((temp/'generator-called').read_text()=='called','legacy fixture generator not called exactly once: '+name)
+            if before:require(hashlib.sha256((private/'access-accounts.json').read_bytes()).hexdigest()==before,'existing account identities changed: '+name)
+    # The real fixed entry remains fail-closed on this non-admitted invocation.
+    for path,args in [(script,['/nonexistent-ur-fixture','fpv17_upgrade_prestate']),
+                      (root/'scripts/qualify-ubuntu22-fresh-install.sh',['/nonexistent-artifact','/nonexistent-payload','/nonexistent-trust'])]:
+        result=subprocess.run(['bash',str(path),*args],env={'PATH':os.environ['PATH'],'LANG':'C'},capture_output=True,text=True)
+        require(result.returncode==2 if path==script else result.returncode==1,'unadmitted real entry did not reject: '+path.name)
+    native=(root/'scripts/qualify-ubuntu22-fresh-install.sh').read_text()
+    expressions=[r'test ! -e /etc/postgresql/16/([a-zA-Z0-9_-]+)',
+                 r'sudo pg_createcluster [^\n]+16 ([a-zA-Z0-9_-]+) --',
+                 r"write_native_listen_config\(pathlib.Path\('/etc/postgresql/16/([a-zA-Z0-9_-]+)/postgresql.conf'\)\)",
+                 r'sudo pg_ctlcluster 16 ([a-zA-Z0-9_-]+) start']
+    names=[re.search(pattern,native)[1] for pattern in expressions]
+    require(names==['xinsightci']*4 and '-' not in names[0],'native cluster identity differs across fixed commands')
+    print('actual shell prestate/fixture branch:5 positive/8 negative; original identities unchanged; real fixed entry2 denials; native name4 exact')
+
+
 if __name__ == "__main__":
+    check_schema47_prestate_input_route()
+    check_native_configuration_writer()
+    check_native_failure_diagnostic()
+    check_installed_fixture_shell_preflight()
+    check_prepared_account_fixture_policy()
+    check_profile_listener_and_database_chain()
+    check_native_postgres_profile()
     source = WORKFLOW.read_text(encoding="utf-8")
     check(source)
     for forbidden in ("rc13-signed/*.tar.gz", "rc13-signed/bootstrap/xinsight-release-linux-amd64-*",
@@ -1202,6 +1575,7 @@ if __name__ == "__main__":
     check_fpv17_upgrade_lane()
     check_fpv17_upgrade_delta()
     check_fpv17_upgrade_delta(old_schema=46)
+    check_fpv17_upgrade_delta(old_schema=47)
     check_capless_root_references(source)
     for required in ('--bounding-set=-all', 'XINSIGHT_CAPLESS_REFERENCE_TEST=1', '-test.count=1'):
         try:
@@ -1260,7 +1634,9 @@ if __name__ == "__main__":
     expect_rejected(source, 'npm install --global "$(node -p "require(\'./package.json\').packageManager")"', 'npm --version')
     expect_rejected(source, 'bash scripts/verify-protected-runtime.sh', 'true')
     expect_rejected(source, "XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'", "XINSIGHT_REQUIRE_POSTGRES_TESTS: '0'")
-    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade]', 'lifecycle: [new_install, adopt_existing]')
+    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade]', 'lifecycle: [new_install, adopt_existing]')
+    expect_rejected(source, 'database_profile: native', 'database_profile: container')
+    expect_rejected(source, 'os: ubuntu-24.04', 'os: ubuntu-22.04')
     expect_rejected(source, "permissions:\n  contents: read", "permissions:\n  contents: write")
     expect_rejected(source, "GH_TOKEN: ${{ github.token }}", "GH_TOKEN: ${{ secrets.MAINTAINER_TOKEN }}")
     expect_rejected(source, "ref: db10730d64a9302887ad59c53921e98c757927e7", "ref: main")

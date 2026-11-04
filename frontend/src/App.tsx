@@ -1,4 +1,6 @@
 import {AccountsPage,AccountPasswordPage} from "./AccountPages";
+import { readingAccess, roleLabel } from "./accessPresentation";
+import { announceSessionChange, sessionChangeKey } from "./sessionChange";
 import { LanguageSelector, getLocale, t, tx, useLocale, useMessageState } from "./i18n";
 import {ConnectorSetupPage} from "./ConnectorSetupPage";
 import { readWorkbenchNavigation, readRuntimeNavigation, navigationOwner, type RuntimeNavigation, type WorkbenchNavigation } from "./workbenchNavigation";
@@ -6,7 +8,7 @@ import { BudgetPage } from "./BudgetPage";
 import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { AccessSessionsPage, LoginPage } from "./AccessPages";
-import { acceptScopeSession, accessAPI, ApiRequestError, isAbortError, scopeSessionKey, type AccessSessionResponse, type WorkbenchReadingRequest } from "./api";
+import { acceptScopeSession, accessAPI, ApiRequestError, invalidatePendingScopeResponses, isAbortError, scopeResponseGeneration, scopeSessionKey, type AccessSessionResponse, type WorkbenchReadingRequest } from "./api";
 import { ExecutionDetailPage } from "./ExecutionDetailPage";
 import { ExecutionSearchPage } from "./ExecutionSearchPage";
 import {
@@ -58,6 +60,7 @@ function AppContent() {
   const [route, setRoute] = useState<Route>(() => readRoute());
   const [session, setSession] = useState<AccessSessionResponse | null>(null);
   const scopeKey = scopeSessionKey(session);
+  const responseGeneration = scopeResponseGeneration();
   const scopedRead = session?.session.permissions.includes("investigation.scoped.read") ?? false;
   const [accessState, setAccessState] = useState<"loading" | "authenticated" | "unauthenticated" | "error" | "scope-denied">("loading");
   const deniedScope=useRef<string|null>(null);
@@ -65,6 +68,7 @@ function AppContent() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const runtimeSnapshot=useRef<RuntimeSnapshot|null>(null);
   const keepRuntime=useCallback((value:RuntimeSnapshot)=>{
+    if(responseGeneration!==scopeResponseGeneration())return;
     runtimeSnapshot.current=value;
     if(!session||!value.reading||!value.applied)return;
     const reading:RuntimeNavigation={version:1,owner:navigationOwner(session),readingID:value.reading.reading_id,
@@ -73,18 +77,20 @@ function AppContent() {
         filters:{source_ids:[...value.applied.filters.source_ids],source_projects:[...value.applied.filters.source_projects],cost_projects:[...value.applied.filters.cost_projects]}},
       entry:value.view.entry,selectedRef:value.view.selected?.request_ref,detailView:value.view.selected?.observation_count===0?"contents":value.view.detailView??"story"};
     window.history.replaceState({...window.history.state,runtimeReading:reading},"",window.location.href);
-  },[session]);
+  },[session,responseGeneration]);
   const workbenchSnapshot=useRef<WorkbenchSnapshot|null>(null);
   const workbenchTransitionConfig=useRef<WorkbenchReadingRequest|null>(null);
-  const keepWorkbench=useCallback((value:WorkbenchSnapshot|null)=>{workbenchSnapshot.current=value},[]);
+  const keepWorkbench=useCallback((value:WorkbenchSnapshot|null)=>{if(responseGeneration===scopeResponseGeneration())workbenchSnapshot.current=value},[responseGeneration]);
   const keepWorkbenchNavigation=useCallback((value:WorkbenchNavigation)=>{
+    if(responseGeneration!==scopeResponseGeneration())return;
     const old=window.history.state?.workbenchReading;
     const related=old?.readingID===value.readingID&&old?.owner===value.owner?old.related:undefined;
     window.history.replaceState({...window.history.state, workbenchReading:{...value, ...(related?{related}:{})}}, "", window.location.href);
-  },[]);
+  },[responseGeneration]);
   const keepOverview=useCallback((value:OverviewContext)=>{
+    if(responseGeneration!==scopeResponseGeneration())return;
     window.history.replaceState({...window.history.state, overviewContext:value, overviewIdentity:scopeKey}, "", window.location.href);
-  },[scopeKey]);
+  },[scopeKey,responseGeneration]);
 
   const unauthenticate = useCallback(() => {
     runtimeSnapshot.current=null;
@@ -143,30 +149,33 @@ function AppContent() {
   }, [unauthenticate]);
 
   useEffect(()=>{
-    if(!scopedRead&&!session?.session.permissions.includes("accounts.manage"))return;
+    if(!session)return;
     let alive=true;let revisionRequest=0;const controller=new AbortController();
     const refresh=(event?:Event)=>{
-      const invalidated=event?.type==="xinsight:scope-changed";
+      const denied=event?.type==="xinsight:scope-changed";
+      const invalidated=denied||event?.type==="xinsight:session-changed"||event?.type==="xinsight:session-expiry";
       if(document.visibilityState==="hidden"&&!invalidated)return;
       const request=++revisionRequest;
       // Ordinary focus/pageshow checks preserve mounted drafts. A reported denial
       // closes the old content immediately while its authorization is rechecked.
-      if(invalidated){deniedScope.current=scopeKey;workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;runtimeSnapshot.current=null;setAccessState("loading");}
+      if(invalidated){invalidatePendingScopeResponses();if(denied)deniedScope.current=scopeKey;workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;runtimeSnapshot.current=null;setAccessState("loading");}
       void accessAPI.session(controller.signal).then(current=>{
         if(!alive||request!==revisionRequest)return;
-        if(scopeSessionKey(current)!==scopeKey){workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;}
+        if(scopeSessionKey(current)!==scopeKey){workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;runtimeSnapshot.current=null;window.history.replaceState(null,"",window.location.href);}
         const unchangedDenial=deniedScope.current===scopeSessionKey(current);
         if(!unchangedDenial)deniedScope.current=null;
-        acceptScopeSession(current);setSession(current);setAccessState(scopedRead&&unchangedDenial?"scope-denied":"authenticated");
+        acceptScopeSession(current);setSession(current);setAccessState(unchangedDenial?"scope-denied":"authenticated");
         if(!routeAllowed(readRoute(),current)){window.history.replaceState(null,"",homePath(current));setRoute(readRoute());}
       }).catch(error=>{if(!alive||request!==revisionRequest||isAbortError(error))return;workbenchSnapshot.current=null;workbenchTransitionConfig.current=null;if(error instanceof ApiRequestError&&error.status===401)unauthenticate();else setAccessState("error");});
     };
-    window.addEventListener("pageshow",refresh);window.addEventListener("focus",refresh);window.addEventListener("xinsight:scope-changed",refresh);
+    const changedInAnotherTab=(event:StorageEvent)=>{if(event.key===sessionChangeKey)refresh(new Event("xinsight:session-changed"));};
+    window.addEventListener("pageshow",refresh);window.addEventListener("focus",refresh);window.addEventListener("xinsight:scope-changed",refresh);window.addEventListener("xinsight:session-expiry",refresh);window.addEventListener("storage",changedInAnotherTab);
     refresh();
-    return()=>{alive=false;controller.abort();window.removeEventListener("pageshow",refresh);window.removeEventListener("focus",refresh);window.removeEventListener("xinsight:scope-changed",refresh);};
+    return()=>{alive=false;controller.abort();window.removeEventListener("pageshow",refresh);window.removeEventListener("focus",refresh);window.removeEventListener("xinsight:scope-changed",refresh);window.removeEventListener("xinsight:session-expiry",refresh);window.removeEventListener("storage",changedInAnotherTab);};
   },[route,scopedRead,scopeKey,unauthenticate]);
 
   const navigate = useCallback((path: string, selectedRuntimeRequestRef?: string, activityReading?: RuntimeNavigation, workbenchSelection?: WorkbenchNavigation) => {
+    if(responseGeneration!==scopeResponseGeneration())return;
     const current=window.location.pathname+window.location.search;
     const retained=window.history.state?.workbenchOrigin;
     const origin=validOriginPath(retained)?retained:validOriginPath(current)?current:null;
@@ -209,7 +218,7 @@ function AppContent() {
     setRoute(readRoute());
     setMobileNavOpen(false);
     window.scrollTo?.({ top: 0, behavior: "auto" });
-  }, [scopeKey, session]);
+  }, [scopeKey, session,responseGeneration]);
 
   function navigateFromLink(event: MouseEvent<HTMLAnchorElement>, path: string) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -224,6 +233,7 @@ function AppContent() {
     workbenchSnapshot.current=null;
     workbenchTransitionConfig.current=null;
     acceptScopeSession(current);
+    announceSessionChange();
     setSession(current);
     setAccessState("authenticated");
     window.history.replaceState(null, "", homePath(current));
@@ -237,6 +247,7 @@ function AppContent() {
     setLogoutError(() => "");
     try {
       await accessAPI.logout(session.csrf_token);
+      announceSessionChange();
       unauthenticate();
     } catch (failure) {
       if (failure instanceof ApiRequestError && failure.status === 401) {
@@ -259,7 +270,9 @@ function AppContent() {
   if (accessState === "scope-denied") {
     return <main className="access-state-shell" id="main-content" tabIndex={-1}>
       <h1>{tx("m0107")}</h1><p>{tx("m0108")}</p>
-      <button onClick={()=>{deniedScope.current=null;navigate("/inbox");setAccessState("authenticated");}}>{tx("m0109")}</button>
+      {session ? <p>{session.session.username ?? session.session.subject_id} · {roleLabel(session.session.role)}</p> : null}
+      <button onClick={()=>{deniedScope.current=null;navigate(session?homePath(session):"/login");setAccessState("authenticated");}}>{tx("m0109")}</button>
+      <button onClick={()=>void logout()}>{tx("m0114")}</button>
     </main>;
   }
 
@@ -282,6 +295,7 @@ function AppContent() {
         <section className="login-card" aria-labelledby="access-scope-title">
           <div className="login-brand" aria-hidden="true">XI</div>
           <h1 id="access-scope-title">{tx("m0112")}</h1>
+          <p>{session.session.username ?? session.session.subject_id} · {roleLabel(session.session.role)}</p>
           <p className="login-boundary" role="status">{tx("m0113")}</p>
           <button className="primary-button" onClick={() => void logout()}>{tx("m0114")}</button>
           {logoutError ? <p className="login-error" role="alert">{logoutError}</p> : null}
@@ -301,8 +315,9 @@ function AppContent() {
   let runtimeNavigation:RuntimeNavigation|undefined;
   let runtimeNavigationInvalid=false;
   try{runtimeNavigation=readRuntimeNavigation(window.history.state?.runtimeReading)}catch{runtimeNavigationInvalid=true}
-  const canReadWorkbench=session.session.permissions.includes("workbench.summary.read");
-  const canReadRuntime=canReadWorkbench&&session.session.permissions.includes("workbench.details.read");
+  const available=readingAccess(session);
+  const canReadWorkbench=available.summary;
+  const canReadRuntime=available.runtime;
   const capabilities=new URLSearchParams(window.location.search).get("view")==="capabilities";
   const usage=new URLSearchParams(window.location.search).get("view")==="usage";
   const budgets=new URLSearchParams(window.location.search).get("view")==="budgets";
@@ -341,7 +356,7 @@ function AppContent() {
           {canReadEvidence||canReadWorkbench ? <NavLink active={route.kind === "inbox"||overviewOrigin} href="/inbox" icon="posture" label={t("m0121")} detail={t("m0130")} onClick={navigateFromLink} /> : null}
           {canReadWorkbench ? <NavLink active={inWorkbench&&usageTopic} href="/workbench/cost?view=usage" icon="workbench" label={t("m0116")} detail={t("m0131")} onClick={navigateFromLink} /> : null}
           {canInvestigate||canReadRuntime ? <NavLink active={executionTopic&&route.kind!=="work-activity"} href={canReadRuntime?"/workbench/runtime":"/executions"} icon="executions" label={t("m0118")} detail={t("m0132")} onClick={navigateFromLink} /> : null}
-          {canReadRuntime ? <NavLink active={route.kind==="work-activity"} href="/work/activity" icon="executions" label={t("m0115")} detail={t("m0133")} onClick={navigateFromLink} /> : null}
+          {available.activity ? <NavLink active={route.kind==="work-activity"} href="/work/activity" icon="executions" label={t("m0115")} detail={t("m0133")} onClick={navigateFromLink} /> : null}
           {canInvestigate ? <>
             <NavLink active={safetyTopic} href="/investigation/queue" icon="cases" label={t("m0119")} detail={t("m0134")} onClick={navigateFromLink} />
           </> : null}
@@ -386,14 +401,14 @@ function AppContent() {
 
       <header className="workbench-topbar">
         <nav className="workbench-breadcrumb" aria-label={t("m0150")}><span>{tx("m0151")}</span><span aria-hidden="true">/</span>{origin?<a href={origin} onClick={event=>navigateFromLink(event,origin)}>{topic}</a>:<span>{topic}</span>}{route.kind==="detail"||route.kind==="case-detail"?<><span aria-hidden="true">/</span><span>{route.kind==="detail"?t("m0152"):t("m0153")}</span></>:null}</nav>
-        <span className="workbench-space">{tx("m0126")}</span>
+        <span className="workbench-space" aria-label={t("session.current")}><strong>{session.session.username ?? session.session.subject_id}</strong> · {roleLabel(session.session.role)}</span>
       </header>
 
       <main id="main-content" tabIndex={-1} className={`workspace${route.kind === "detail" ? " workspace-detail" : ""}`}>
         {(executionTopic||safetyTopic)?<nav className="topic-tabs" aria-label={t("m0154", { value0: topic })}>
           {executionTopic&&canReadRuntime ? <>
             <a href="/workbench/runtime" aria-current={route.kind==="runtime"&&!capabilities?"page":undefined} onClick={event=>navigateFromLink(event,"/workbench/runtime")}>{tx("m0155")}</a>
-            <a href="/work/activity" aria-current={route.kind==="work-activity"?"page":undefined} onClick={event=>navigateFromLink(event,"/work/activity")}>{tx("m0156")}</a>
+            {available.activity ? <a href="/work/activity" aria-current={route.kind==="work-activity"?"page":undefined} onClick={event=>navigateFromLink(event,"/work/activity")}>{tx("m0156")}</a> : null}
             <a href="/workbench/runtime?view=capabilities" aria-current={route.kind==="runtime"&&capabilities?"page":undefined} onClick={event=>navigateFromLink(event,"/workbench/runtime?view=capabilities")}>{tx("m0157")}</a>
           </> : null}
           {(!executionTopic||canInvestigate) ? (executionTopic?[["/executions",t("m0158"),["search","detail"]],["/sessions",t("m0159"),["sessions","session-detail"]],["/compare",t("m0160"),["compare"]]]:[["/investigation/queue",t("m0134"),["investigation-queue"]],["/cases",t("m0161"),["cases","case-detail"]],["/discovery",t("m0162"),["discovery"]]]).filter(([path])=>!scoped||!["/sessions","/discovery"].includes(path as string)).map(([path,label,kinds])=><a key={path as string} href={path as string} aria-current={(kinds as string[]).includes(route.kind)?"page":undefined} onClick={event=>navigateFromLink(event,path as string)}>{label as string}</a>) : null}
@@ -524,24 +539,29 @@ function readRoute(location: Pick<Location,"pathname" | "search"> = window.locat
 }
 
 function homePath(session: AccessSessionResponse): string {
+ const available=readingAccess(session);
+ if(session.reading_capabilities){
+  if(available.summary)return "/inbox";
+  if(available.runtime)return "/workbench/runtime";
+  if(session.session.permissions.includes("accounts.manage"))return "/access/accounts";
+  if(session.session.permissions.includes("investigation.scoped.read"))return "/investigation/queue";
+ }
  if(session.session.permissions.includes("accounts.manage") && session.scope_revision==="no_authorized_scope")return "/access/accounts";
   return session.session.permissions.some(permission => ["evidence.read", "workbench.summary.read"].includes(permission)) ? "/inbox" : "/workbench/cost";
 }
 
 function routeAllowed(route: Route, session: AccessSessionResponse): boolean {
+ const available=readingAccess(session);
  if(route.kind==="connector-setup")return session.session.permissions.includes("connector.installations.manage");
   if (route.kind === "login") {
     return true;
   }
   if (route.kind === "inbox") {
-    return session.session.permissions.some(permission => ["evidence.read", "workbench.summary.read"].includes(permission));
+    return session.session.permissions.includes("evidence.read") || available.summary;
   }
-  if (route.kind === "runtime" || route.kind === "work-activity") {
-    return session.session.permissions.includes("workbench.summary.read") && session.session.permissions.includes("workbench.details.read");
-  }
-  if (route.kind === "workbench") {
-    return session.session.permissions.includes("workbench.summary.read");
-  }
+  if (route.kind === "runtime") return available.runtime;
+  if (route.kind === "work-activity") return available.activity;
+  if (route.kind === "workbench") return available.summary;
   if(route.kind === "accounts")return session.session.permissions.includes("accounts.manage");
  if (route.kind === "access-sessions") {
     return session.session.permissions.includes("access.sessions.read");

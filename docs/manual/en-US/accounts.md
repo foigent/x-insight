@@ -1,6 +1,6 @@
 # Accounts and project reading
 
-This chapter describes the FPV21/schema47 candidate. A local pass does not establish an installed release or Target acceptance.
+This chapter describes the FPV22/schema47 source candidate. A local pass does not establish an installed release or Target acceptance.
 
 ## First owner and existing installations
 
@@ -19,7 +19,13 @@ An existing administrator identity prevents creating another first owner. If nor
 
 ## Normal account operations
 
-Sign in as owner and open **Accounts** (`/access/accounts`). Invite a reader or reviewer, recover an existing account, or disable/enable it. Confirm each change using your current password. Share the single-use activation/recovery link only with that holder; the holder sets their own password. Recovery immediately blocks the target's old password and sessions. Password completion and disable/enable advance only that account's authentication revision. Other people stay signed in; no service restart is required. Enabling a pending account still requires its activation. Normal account management cannot disable, demote or recover an owner. Usernames and stable subjects are not renamed here.
+Sign in as owner and open **Accounts** (`/access/accounts`). **Invite a new account** is for a username that does not exist. Review the invitation, then confirm the named target and action using your current password in that confirmation. To recover an existing reader, choose **Create recovery link** on that exact row under **Existing accounts**, review the named account, then confirm. This is separate from inviting a new account and from confirming a project-reading grant. Share the single-use activation/recovery link only with that holder; the holder sets their own password. Recovery immediately blocks the target's old password and sessions. Password completion and disable/enable advance only that account's authentication revision. Other people stay signed in; no service restart is required. Enabling a pending account still requires its activation. Normal account management cannot disable, demote or recover an owner. Usernames and stable subjects are not renamed here.
+
+After the action succeeds, its result identifies the target and shows its activation or recovery link. **Awaiting password setup** means the link has been issued, not that the holder has completed it. The holder opens the complete link once, sets and confirms their own password, and sees which account was updated. Setting a password does not sign in as that account. If the browser still has another account signed in, use the explicit sign-out-and-sign-in action; the normal login form is prefilled with the verified target username. The signed-in page displays the actual server-verified account and role.
+
+If a change succeeded but the list could not be refreshed, keep the result and refresh the state without repeating the change. If submission outcome is unknown, the page blocks another write until its state is checked. A password submission with an unknown outcome does not reuse the one-use link; check the current session or try normal sign-in. Do not infer failure merely from a missing confirmation or repeatedly generate links.
+
+The normal entry follows current reading capabilities: a metadata-only account opens Runtime without probing economic summaries or resource activity it cannot read. A local denied panel does not log the account out. Expiry, revocation, or a changed account still closes protected data and requires a current session. Body-unavailable feedback does not establish that a body was captured or that this account has permission to read one.
 
 ## Owner reading is explicit
 

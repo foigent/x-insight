@@ -42,8 +42,18 @@ for unit in "${units[@]}"; do
 done
 snapshot() {
   sudo env GITHUB_ACTIONS=true XINSIGHT_CI_EPHEMERAL_HOST=1 \
+    XINSIGHT_CI_DATABASE_PROFILE="${XINSIGHT_CI_DATABASE_PROFILE:-container}" \
     python3 "$ROOT/scripts/ci-fpv17-upgrade-snapshot.py" > "$1"
 }
+SCHEMA47_PRESTATE=0
+INSTALLED_INPUT="$RUNNER_TEMP/xinsight-fpv15-joint-private/installed-input.json"
+if [ "$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["old_schema"])' "$RUNNER_TEMP/account-upgrade-ci-predecessor.json")" = 47 ]; then
+  SCHEMA47_PRESTATE=1
+  sudo env GITHUB_ACTIONS=true XINSIGHT_CI_EPHEMERAL_HOST=1 \
+    python3 "$ROOT/scripts/ci-fpv21-account-prestate.py" prepare \
+      "$INSTALLED_INPUT" "$QUAL/account-prestate.private.json" \
+      > "$QUAL/account-prestate-prepare.json"
+fi
 # Only the read-only check's equality window is quiesced. Restore both
 # workers before the actual upgrade so hostctl must preserve active service.
 sudo systemctl stop "${units[@]}"
@@ -57,7 +67,7 @@ predecessor=json.loads(pathlib.Path(sys.argv[2]).read_text())
 current=before['status']['install_state']['current']
 assert predecessor['schema_version']=='xinsight.ci-account-upgrade-predecessor.v1'
 assert before['status']['managed'] and before['status'].get('active_journal') is None
-assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0')}
+assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0'),('0.2.0-dev.fpv21','47','6463d980958fae86d975eecde239b9534ec831a5')}
 assert (current['product_version'],current['database_schema'],current['commit']) == (predecessor['old_product'],predecessor['old_schema'],predecessor['old_commit'])
 assert before['status']['install_state']['database_schema_current']==current['database_schema']
 assert before['release']==current['release_dir']
@@ -75,7 +85,7 @@ before,after,check=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:
 assert before==after, 'upgrade --check changed installed state, database, key, grants, config or process'
 assert check['operation']=='upgrade' and check['supported'] and check['mutating'] is False
 assert check['current']['product_version']==before['status']['install_state']['current']['product_version']
-assert check['target']['product_version']=='0.2.0-dev.fpv21'
+assert check['target']['product_version']=='0.2.0-dev.fpv22'
 assert check['current']['database_schema']==before['status']['install_state']['current']['database_schema'] and check['target']['database_schema']=='47'
 assert any(c['name']=='control_credential_lifecycle' and c['status']=='pass' for c in check['checks'])
 PY
@@ -96,14 +106,14 @@ for unit in "${units[@]}"; do
   test "$(systemctl is-active "$unit")" = active
   test "$(systemctl show "$unit" --property=InvocationID --value)" != "$(cat "$QUAL/$unit.before-upgrade-invocation")"
 done
-python3 - "$QUAL/before-private.json" "$QUAL/after-upgrade-private.json" "$QUAL/upgrade-check-private.json" "$QUAL/upgrade-receipt-private.json" "$CANDIDATE_PAYLOAD" > "$QUAL/qualification-result.json" <<'PY'
+python3 - "$QUAL/before-private.json" "$QUAL/after-upgrade-private.json" "$QUAL/upgrade-check-private.json" "$QUAL/upgrade-receipt-private.json" "$CANDIDATE_PAYLOAD" > "$QUAL/qualification-base.json" <<'PY'
 import collections, hashlib, json, pathlib, sys
 before,after,check,receipt=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:5]]
 old=before['status']['install_state']['current']; new=after['status']['install_state']['current']
 assert receipt['kind']=='upgrade' and receipt['status']=='completed'
 assert receipt['before']['commit']==old['commit'] and receipt['after']['commit']==check['target']['commit']
 assert after['status']['managed'] and after['status'].get('active_journal') is None
-assert new['product_version']=='0.2.0-dev.fpv21' and new['commit']==check['target']['commit']
+assert new['product_version']=='0.2.0-dev.fpv22' and new['commit']==check['target']['commit']
 assert new['database_schema']==after['status']['install_state']['database_schema_current']=='47'
 assert after['status']['install_state']['previous']['commit']==old['commit']
 assert after['release']==new['release_dir']!=before['release']
@@ -120,7 +130,7 @@ stable=('workbench_access_grants',
 assert all(after['database'][table]==before['database'][table] for table in stable)
 old_migrations,new_migrations=before['migration_rows'],after['migration_rows']
 old_count=int(old['database_schema'])
-assert old_count in (45,46) and len(old_migrations)==old_count and len(new_migrations)==47
+assert old_count in (45,46,47) and len(old_migrations)==old_count and len(new_migrations)==47
 assert new_migrations[:old_count]==old_migrations, 'prior ledger rows changed'
 expected_names={46:'000046_add_connector_sync_control',47:'000047_add_local_account_lifecycle'}
 for version,added in enumerate(new_migrations[old_count:],old_count+1):
@@ -129,7 +139,12 @@ for version,added in enumerate(new_migrations[old_count:],old_count+1):
     assert added['checksum_sha256']==expected
 assert before['database']['schema_migrations'].split(':',1)[0]==str(old_count)
 assert after['database']['schema_migrations'].split(':',1)[0]=='47'
-assert after['account_inventory']==before['legacy_account_inventory'], 'native import changed account identities or password hashes'
+assert after['account_inventory']==before['account_inventory' if old_count==47 else 'legacy_account_inventory'], 'native upgrade changed account identities or password hashes'
+if old_count==47:
+    assert before['account_inventory']!=before['legacy_account_inventory'], 'schema47 prestate did not exercise changed live authority'
+    assert before['account_ticket_summary']['total']>0 and before['account_ticket_summary']['pending']>0, 'schema47 prestate has no pending ticket'
+    assert after['account_ticket_summary']==before['account_ticket_summary'], 'ticket counts changed'
+    assert after['account_state_digests']==before['account_state_digests'], 'existing schema47 authority/accounts/tickets changed'
 assert after['account_boundary']=={'initialized':True,'roles_separated':True,'function_owner':'xinsight_admin'}, 'private account authority ACL differs'
 old_acl,new_acl=before['table_acl_rows'],after['table_acl_rows']
 assert all(name in new_acl and new_acl[name]==acl for name,acl in old_acl.items()), 'prior table ACL changed'
@@ -175,12 +190,34 @@ if old_feed!=new_feed:
 assert after['files']==before['files'], 'original review-body key or host config changed'
 assert any(c['name']=='representative_read' and c['status']=='pass' for c in receipt['checks'])
 print(json.dumps({'schema_version':'xinsight.ci-account-upgrade.v1',
-                  'classification':'ci_synthetic_not_target','state':'passed',
-                  'predecessor':old['product_version'],'target':'0.2.0-dev.fpv21',
+                  'classification':'ci_synthetic_not_target','state':'base_checks_verified',
+                  'predecessor':old['product_version'],'target':'0.2.0-dev.fpv22',
                   'database_schema':'47','check_no_side_effects':True,
-                  'migration47_exact_append_verified':True,'accounts_import_preserved':True,'private_account_acl_verified':True,'prior_table_acls_preserved':True,
+                  'migration47_exact_append_verified':old_count<47,'schema47_ledger_unchanged':old_count==47,'accounts_import_preserved':old_count<47,'existing_managed_accounts_preserved':old_count==47,'private_account_acl_verified':True,'prior_table_acls_preserved':True,
                   'history_cursors_ciphertext_grants_preserved':True,
                   'review_body_key_preserved':True,'new_server_invocation_verified':True,
                   'active_workers_restored_by_upgrade':True,
                   'target_commit':new['commit']},sort_keys=True))
 PY
+if [ "$SCHEMA47_PRESTATE" = 1 ]; then
+  sudo env GITHUB_ACTIONS=true XINSIGHT_CI_EPHEMERAL_HOST=1 \
+    python3 "$ROOT/scripts/ci-fpv21-account-prestate.py" verify \
+      "$INSTALLED_INPUT" "$QUAL/account-prestate.private.json" \
+      > "$QUAL/account-prestate-result.json"
+fi
+python3 - "$QUAL" "$SCHEMA47_PRESTATE" <<'PY_FINAL_RESULT'
+import json,pathlib,sys
+root=pathlib.Path(sys.argv[1]);result=json.loads((root/'qualification-base.json').read_text())
+assert result['state']=='base_checks_verified'
+if sys.argv[2]=='1':
+    proof=json.loads((root/'account-prestate-result.json').read_text())
+    assert proof['schema_version']=='xinsight.ci-schema47-account-prestate.v1'
+    assert proof['classification']=='ci_synthetic_not_target'
+    assert proof['subject_preserved'] and proof['preexisting_recovery_revision_preserved']
+    assert proof['spent_tickets_refused']==2 and proof['pending_ticket_completed_once']
+    assert proof['normal_login_after_upgrade'] and proof['new_project_grants']==0
+    result['schema47_account_prestate']=proof
+result['state']='passed'
+with (root/'qualification-result.json').open('x') as output:
+    json.dump(result,output,sort_keys=True);output.write(chr(10))
+PY_FINAL_RESULT

@@ -16,7 +16,7 @@ vi.mock("./ExecutionDetailPage", () => ({
 
 const base = Date.parse("2026-09-13T00:00:00Z");
 const session = {
-  session: { session_ref: "xr_manager_probe", subject_id: "xs_manager_probe", role: "scoped_reader",
+  session: { session_ref: "xr_manager_probe", subject_id: "xs_manager_probe", role: "workbench_investigation_reader",
     permissions: ["workbench.summary.read", "workbench.details.read", "investigation.scoped.read"],
     created_at: "", last_seen_at: "", idle_expires_at: "", absolute_expires_at: "" },
   csrf_token: "synthetic-manager-csrf", scope_revision: "sha256:manager-scope",

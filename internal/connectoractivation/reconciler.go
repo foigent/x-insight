@@ -82,7 +82,11 @@ func (reconciler *ProductReconciler) Inspect(
 	if gateErr != nil {
 		return Outcome{}, gateErr
 	}
-	defer func() { connectorsync.Progress(ctx, out.State != StateReady, 0); finish(resultErr) }()
+	defer func() {
+		resultErr = syncFailure("inspect", resultErr)
+		connectorsync.Progress(ctx, out.State != StateReady, 0)
+		finish(resultErr)
+	}()
 	boundary, err := reconciler.loadBoundary(ctx, installationID, wakeOperationID)
 	if err != nil {
 		return Outcome{}, fmt.Errorf("inspect original activation boundary: %w", err)
@@ -100,7 +104,9 @@ func (reconciler *ProductReconciler) Reconcile(
 	ctx context.Context,
 	installationID string,
 	wakeOperationID string,
-) (Outcome, error) {
+) (out Outcome, resultErr error) {
+	stage := "inspect"
+	defer func() { resultErr = syncFailure(stage, resultErr) }()
 	boundary, err := reconciler.loadBoundary(ctx, installationID, wakeOperationID)
 	if err != nil {
 		return Outcome{}, fmt.Errorf("inspect original activation boundary: %w", err)
@@ -115,12 +121,14 @@ func (reconciler *ProductReconciler) Reconcile(
 	if prepare.Operation.Status != "completed" || prepare.Result == nil {
 		return Outcome{State: StateDeferred}, nil
 	}
+	stage = "activation_claim"
 	boundary, err = reconciler.claimActivationMutationAuthority(ctx, boundary)
 	if err != nil {
 		return Outcome{}, fmt.Errorf("claim original activation authority: %w", err)
 	}
 
 	installedAt := reconciler.now().UTC()
+	stage = "activation_epoch"
 	epochAuthority, err := checkpointepoch.ApplyInstallationEpoch(
 		ctx,
 		reconciler.epochPort,
@@ -143,6 +151,7 @@ func (reconciler *ProductReconciler) Reconcile(
 	}
 
 	if boundary.RegisterReceiver == nil || boundary.RegisterReceiver.Operation.Status != "completed" {
+		stage = "feed_stage"
 		config, err := reconciler.host.StageManagedFeedConfig(ctx, boundary.UniRouterOrigin)
 		if err != nil {
 			return Outcome{}, err
@@ -150,6 +159,7 @@ func (reconciler *ProductReconciler) Reconcile(
 		if validateManagedConfig(config) != nil {
 			return Outcome{}, fmt.Errorf("managed feed config readback is invalid")
 		}
+		stage = "feed_credential"
 		registration, err := reconciler.host.PrepareFeedCredential(ctx, "", "")
 		if err != nil {
 			return Outcome{}, err
@@ -162,6 +172,7 @@ func (reconciler *ProductReconciler) Reconcile(
 			NetworkBinding:            &config.NetworkBinding,
 			RequiredSourceState:       "paused",
 		}
+		stage = "feed_register"
 		_, err = reconciler.store.EnqueueControlPhase(ctx, connectorcontrol.EnqueueControlPhaseInput{
 			InstallationID:          boundary.Installation.InstallationID,
 			Phase:                   connectorcontrol.ControlPhaseRegisterReceiver,
@@ -179,6 +190,7 @@ func (reconciler *ProductReconciler) Reconcile(
 	if register.Operation.Status != "completed" || register.Result == nil {
 		return Outcome{State: StateDeferred}, nil
 	}
+	stage = "feed_stage"
 	stagedConfig, err := reconciler.host.StageManagedFeedConfig(ctx, boundary.UniRouterOrigin)
 	if err != nil {
 		return Outcome{}, err
@@ -189,6 +201,7 @@ func (reconciler *ProductReconciler) Reconcile(
 		stagedConfig.NetworkBinding.BindingSHA256 != register.Result.Result.NetworkBindingSHA256 {
 		return Outcome{}, fmt.Errorf("staged feed config differs from the registered network binding")
 	}
+	stage = "feed_promote"
 	config, err := reconciler.host.PromoteManagedFeedConfig(
 		ctx,
 		stagedConfig.ConfigSHA256,
@@ -204,6 +217,7 @@ func (reconciler *ProductReconciler) Reconcile(
 	if registration == nil {
 		return Outcome{}, fmt.Errorf("registered receiver authority is missing")
 	}
+	stage = "feed_credential"
 	dormant, err := reconciler.host.PromoteFeedCredentialDormant(
 		ctx,
 		registration.OperationID,
@@ -218,6 +232,7 @@ func (reconciler *ProductReconciler) Reconcile(
 	}
 
 	if boundary.ResumeSource == nil {
+		stage = "feed_register"
 		_, err = reconciler.store.EnqueueControlPhase(ctx, connectorcontrol.EnqueueControlPhaseInput{
 			InstallationID:          boundary.Installation.InstallationID,
 			Phase:                   connectorcontrol.ControlPhaseResumeSource,
@@ -245,6 +260,7 @@ func (reconciler *ProductReconciler) Reconcile(
 		return Outcome{State: StateDeferred}, nil
 	}
 	workerAuthority := captureWorkerActivationAuthority(boundary)
+	stage = "inspect"
 	freshBoundary, err := reconciler.loadBoundary(ctx, installationID, wakeOperationID)
 	if err != nil {
 		return Outcome{}, err
@@ -265,6 +281,7 @@ func (reconciler *ProductReconciler) Reconcile(
 		return Outcome{}, connectorcontrol.ErrConflict
 	}
 	freshRegistration := freshRegister.Operation.Request.ReceiverRegistration
+	stage = "feed_activate"
 	worker, err := reconciler.host.ActivateFeedWorkerLast(
 		ctx,
 		freshRegistration.OperationID,
@@ -276,6 +293,7 @@ func (reconciler *ProductReconciler) Reconcile(
 	if !worker.Present || !worker.Active || !worker.Enabled {
 		return Outcome{}, fmt.Errorf("feed worker activation readback is incomplete")
 	}
+	stage = "activation_commit"
 	connected, err := reconciler.store.FinalizeInstallationConnected(
 		ctx,
 		freshBoundary.Installation.InstallationID,

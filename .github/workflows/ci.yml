@@ -768,12 +768,22 @@ jobs:
 
   fresh_install:
     name: Fresh Install Qualification
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade]
+        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade]
+        database_profile: [container]
+        include:
+          - lifecycle: new_install
+            database_profile: native
+            os: ubuntu-24.04
+          - lifecycle: fpv21_upgrade
+            database_profile: native
+            os: ubuntu-24.04
+    env:
+      XINSIGHT_CI_DATABASE_PROFILE: ${{ matrix.database_profile }}
     needs: [changes, signed_release]
     if: needs.changes.outputs.safe_docs_only != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && needs.changes.outputs.current_release_required == 'true'))
 
@@ -823,9 +833,12 @@ jobs:
           sudo apt-get install -y ca-certificates curl
           sudo install -d /usr/share/postgresql-common/pgdg
           sudo curl --fail --silent --show-error --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
-          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${{ matrix.database_profile == 'native' && 'noble' || 'jammy' }}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
           sudo apt-get update
           sudo apt-get install -y postgresql-client-16 nginx
+          if [ "${XINSIGHT_CI_DATABASE_PROFILE}" = native ]; then
+            sudo apt-get install -y postgresql-16 postgresql-common
+          fi
           /usr/lib/postgresql/16/bin/pg_dump --version
           /usr/lib/postgresql/16/bin/pg_restore --version
           /usr/lib/postgresql/16/bin/createdb --version
@@ -864,7 +877,7 @@ jobs:
           test "$(sha256sum "$artifact" | cut -d ' ' -f1)" = "$(sha256sum /opt/xinsight-ci-artifacts/candidate.tar.gz | cut -d ' ' -f1)"
 
       - name: Prepare synthetic accounts before native durable initialization
-        if: matrix.lifecycle == 'new_install'
+        if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'fpv21_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
         run: |
@@ -926,14 +939,31 @@ jobs:
           subprocess.run([p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh',p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
           PY_FPV20
 
+      - name: Install exact public FPV21 schema47 predecessor on clean VM
+        if: matrix.lifecycle == 'fpv21_upgrade'
+        env:
+          XINSIGHT_CI_EPHEMERAL_HOST: "1"
+          XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv21
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          download_root="${RUNNER_TEMP}/signed-release-artifact"
+          trust="${download_root}/_temp/ci-trusted-release-keys.json"
+          bash scripts/prepare-ci-fpv17-predecessor.sh /opt/xinsight-ci-artifacts/candidate.tar.gz "${RUNNER_TEMP}/fresh-install-payload" "$trust"
+          python3 - <<'PY_FPV21'
+          import json,os,pathlib,subprocess
+          p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'account-upgrade-ci-predecessor.json').read_text())
+          fixture='scripts/qualify-ubuntu22-fresh-install.sh' if os.environ.get('XINSIGHT_CI_DATABASE_PROFILE')=='native' else p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh'
+          subprocess.run([fixture,p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
+          PY_FPV21
+
       - name: Qualify installed controller and consumer lifecycle
         if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'adopt_existing'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
         run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" "${{ matrix.lifecycle }}"
 
-      - name: Qualify exact predecessor to FPV21 installed upgrade and source continuation
-        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade'
+      - name: Qualify exact predecessor to current candidate installed upgrade and source continuation
+        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade' || matrix.lifecycle == 'fpv21_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
           XINSIGHT_CI_UPGRADE_PRESTATE: "1"
@@ -943,7 +973,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: ci-non-publishable-xinsight-fresh-install-${{ github.sha }}-${{ matrix.lifecycle }}
+          name: ci-non-publishable-xinsight-fresh-install-${{ github.sha }}-${{ matrix.lifecycle }}-${{ matrix.database_profile }}
           path: |
             ${{ runner.temp }}/xinsight-fresh-install-qualification/install-check.json
             ${{ runner.temp }}/xinsight-fresh-install-qualification/install-receipt.json
@@ -964,6 +994,7 @@ jobs:
             ${{ runner.temp }}/xinsight-fresh-install-qualification/final-status.json
             ${{ runner.temp }}/xinsight-fresh-install-qualification/listeners.txt
             ${{ runner.temp }}/xinsight-fresh-install-qualification/postgres-profile-result.json
+            ${{ runner.temp }}/xinsight-fresh-install-qualification/postgres-version.json
             ${{ runner.temp }}/xinsight-fresh-install-qualification/qualification-result.json
             ${{ runner.temp }}/xinsight-fresh-install-qualification/service-failure-diagnostic.json
             ${{ runner.temp }}/xinsight-installed-joint-qualification/qualification-result.json
@@ -972,6 +1003,7 @@ jobs:
             ${{ runner.temp }}/xinsight-installed-joint-qualification/access-validation.json
             ${{ runner.temp }}/xinsight-installed-joint-qualification/nginx-body-ingress.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-result.json
+            ${{ runner.temp }}/xinsight-account-upgrade-qualification/account-prestate-result.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-failure.json
             release/ci-non-publishable.txt
           if-no-files-found: error

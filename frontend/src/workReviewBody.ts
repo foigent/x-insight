@@ -26,6 +26,7 @@ export async function fetchVerifiedWorkReviewBody(ref: string, digest: string, s
   signal.addEventListener("abort", cancel, { once: true });
   if (signal.aborted) cancel();
   window.addEventListener("xinsight:scope-changed", cancel);
+  window.addEventListener("xinsight:scope-pending", cancel);
   window.addEventListener("xinsight:unauthorized", cancel);
   const current = () => {
     if (Date.now() >= deadline) throw new LocalizedError(() => t("m2478"));
@@ -83,6 +84,7 @@ export async function fetchVerifiedWorkReviewBody(ref: string, digest: string, s
     cancelExpiry?.();
     signal.removeEventListener("abort", cancel);
     window.removeEventListener("xinsight:scope-changed", cancel);
+    window.removeEventListener("xinsight:scope-pending", cancel);
     window.removeEventListener("xinsight:unauthorized", cancel);
     if (activeRead === controller) activeRead = undefined;
   }

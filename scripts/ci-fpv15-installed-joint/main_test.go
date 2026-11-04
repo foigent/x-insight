@@ -75,21 +75,8 @@ func TestFPV17UpgradeRequestSurvivesURSanitizedChildEnvironment(t *testing.T) {
 	if got, err := readFPV17UpgradeRequest(adminDSN); err != nil || got != nil {
 		t.Fatal("existing lanes must remain unchanged without request", err)
 	}
-	raw, err := json.Marshal(request)
-	if err != nil {
-		t.Fatal(err)
-	}
 	requestPath := filepath.Join(private, "fpv17-upgrade-request.json")
-	if err := os.WriteFile(requestPath, raw, 0600); err != nil {
-		t.Fatal(err)
-	}
-	child := exec.Command(os.Args[0], "-test.run=^TestFPV17UpgradeRequestSanitizedChild$")
-	child.Env = []string{"PATH=" + os.Getenv("PATH"), "GITHUB_ACTIONS=true", "XINSIGHT_CI_EPHEMERAL_HOST=1", "XINSIGHT_CI_INSTALLED_JOINT=1"}
-	child.Stdin = strings.NewReader(strings.Replace(producerInput, "/private/admin.dsn", adminDSN, 1))
-	if output, err := child.CombinedOutput(); err != nil {
-		t.Fatalf("sanitized UR child lost upgrade request: %v: %s", err, output)
-	}
-	for _, schema := range []string{"46", "", "44", "47"} {
+	for _, schema := range []string{"45", "46", "47"} {
 		request.PredecessorSchema = schema
 		raw, err := json.Marshal(request)
 		if err != nil {
@@ -99,11 +86,26 @@ func TestFPV17UpgradeRequestSurvivesURSanitizedChildEnvironment(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := readFPV17UpgradeRequest(adminDSN)
-		if schema == "46" {
-			if err != nil || got == nil || got.PredecessorSchema != "46" {
-				t.Fatal("schema46 predecessor lost", err)
-			}
-		} else if err == nil {
+		if err != nil || got == nil || got.PredecessorSchema != schema {
+			t.Fatal("exact supported predecessor lost", schema, err)
+		}
+		child := exec.Command(os.Args[0], "-test.run=^TestFPV17UpgradeRequestSanitizedChild$")
+		child.Env = []string{"PATH=" + os.Getenv("PATH"), "GITHUB_ACTIONS=true", "XINSIGHT_CI_EPHEMERAL_HOST=1", "XINSIGHT_CI_INSTALLED_JOINT=1"}
+		child.Stdin = strings.NewReader(strings.Replace(producerInput, "/private/admin.dsn", adminDSN, 1))
+		if output, err := child.CombinedOutput(); err != nil {
+			t.Fatalf("sanitized UR child lost schema%s request: %v: %s", schema, err, output)
+		}
+	}
+	for _, schema := range []string{"", "44", "48"} {
+		request.PredecessorSchema = schema
+		raw, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(requestPath, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := readFPV17UpgradeRequest(adminDSN); err == nil {
 			t.Fatal("unknown or missing predecessor schema accepted", schema)
 		}
 	}
@@ -126,6 +128,74 @@ func TestFPV17UpgradeRequestSanitizedChild(t *testing.T) {
 	request, err := readFPV17UpgradeRequest(input.Installed.XIAdminDSNFile)
 	if err != nil || request == nil || request.SchemaVersion != "xinsight.ci-fpv17-installed-upgrade-request.v1" {
 		t.Fatal("fixture request not available through scrubbed child environment", err)
+	}
+}
+
+func TestFPV21ProducedUpgradeRequestReachesDriver(t *testing.T) {
+	root := t.TempDir()
+	private := filepath.Join(root, "xinsight-fpv15-joint-private")
+	if err := os.Mkdir(private, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for path, value := range map[string]any{
+		filepath.Join(private, "installed-input.json"): map[string]any{"mode": "new_install"},
+		filepath.Join(root, "account-upgrade-ci-predecessor.json"): map[string]any{
+			"old_commit": "6463d980958fae86d975eecde239b9534ec831a5", "old_product": "0.2.0-dev.fpv21", "old_schema": "47"},
+	} {
+		raw, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	source, err := os.ReadFile("../qualify-ubuntu22-installed-joint.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := strings.Index(string(source), "if json.loads((root/'installed-input.json')")
+	end := strings.Index(string(source), "with (root/'installed-input.json').open('rb')")
+	if start < 0 || end <= start {
+		t.Fatal("actual installed request producer missing")
+	}
+	xi, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program := "import json,os,pathlib,sys\nroot=pathlib.Path(sys.argv[1]);xi=pathlib.Path(sys.argv[2])\n" + string(source[start:end])
+	command := exec.Command("python3", "-I", "-B", "-c", program, private, xi)
+	command.Env = []string{"PATH=" + os.Getenv("PATH"), "RUNNER_TEMP=" + root, "XINSIGHT_CI_UPGRADE_PRESTATE=1"}
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("actual schema47 request producer failed: %v: %s", err, output)
+	}
+	adminDSN := filepath.Join(private, "xi-admin.dsn")
+	request, err := readFPV17UpgradeRequest(adminDSN)
+	if err != nil || request == nil || request.PredecessorSchema != "47" || !predecessorHasCollectionIntent(request.PredecessorSchema) {
+		t.Fatal("actual generated FPV21 request rejected or lost pre-upgrade intent", err)
+	}
+	path := filepath.Join(private, "fpv17-upgrade-request.json")
+	for name, change := range map[string]func(*fpv17UpgradeRequest){
+		"unknown schema":  func(r *fpv17UpgradeRequest) { r.PredecessorSchema = "48" },
+		"wrong format":    func(r *fpv17UpgradeRequest) { r.SchemaVersion = "unknown" },
+		"relative script": func(r *fpv17UpgradeRequest) { r.Script = "qualify-ubuntu22-fpv17-upgrade.sh" },
+		"wrong artifact":  func(r *fpv17UpgradeRequest) { r.CandidateArtifact = "/other/candidate.tar.gz" },
+		"wrong payload":   func(r *fpv17UpgradeRequest) { r.CandidatePayload = "/other/fresh-install-payload" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			invalid := *request
+			change(&invalid)
+			raw, err := json.Marshal(invalid)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, raw, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := readFPV17UpgradeRequest(adminDSN); err == nil {
+				t.Fatal("invalid generated request admitted")
+			}
+		})
 	}
 }
 
@@ -421,6 +491,102 @@ func TestOperationDiagnosticNeverExportsPrivateFields(t *testing.T) {
 		}
 		if got := safeOperationFailure(raw, "backup", nil); got != "operation_diagnostic_unavailable" {
 			t.Fatalf("wrong operation accepted: %q", got)
+		}
+	}
+}
+
+func TestInstalledDatabaseProfileAndRestoreBoundary(t *testing.T) {
+	for _, profile := range []string{"", "container", "native"} {
+		port := "5432"
+		if profile == "native" {
+			port = "54554"
+		}
+		for _, restored := range []bool{false, true} {
+			database := "xinsight"
+			if restored {
+				database = "xinsight_restore_profile_test"
+			}
+			raw := "postgres://xinsight_admin:isolated-unused@127.0.0.1:" + port + "/" + database + "?sslmode=disable"
+			if _, err := installedDatabaseURL(raw, restored, profile); err != nil {
+				t.Fatal("valid fixed profile rejected", profile, restored)
+			}
+			wrong := "54554"
+			if profile == "native" {
+				wrong = "5432"
+			}
+			for _, invalid := range []string{strings.Replace(raw, ":"+port+"/", ":"+wrong+"/", 1), strings.Replace(raw, ":"+port+"/", ":55555/", 1), strings.Replace(raw, "127.0.0.1", "0.0.0.0", 1), strings.Replace(raw, "xinsight_admin", "other_admin", 1), strings.Replace(raw, "/"+database, "/other_database", 1), strings.Replace(raw, ":isolated-unused", "", 1)} {
+				if _, err := installedDatabaseURL(invalid, restored, profile); err == nil {
+					t.Fatal("invalid fixed profile accepted", profile, restored)
+				}
+			}
+			if _, err := installedDatabaseURL(raw, restored, "unknown"); err == nil {
+				t.Fatal("unknown profile accepted")
+			}
+		}
+	}
+}
+
+func TestInstalledDatabaseProfileComesFromExistingProof(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "xinsight-fresh-install-qualification")
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	admin := filepath.Join(root, "xinsight-fpv15-joint-private", "xi-admin.dsn")
+	file := filepath.Join(dir, "postgres-profile-result.json")
+	completion := filepath.Join(dir, "qualification-result.json")
+	write := func(path string, proof map[string]any) {
+		t.Helper()
+		raw, _ := json.Marshal(proof)
+		if err := os.WriteFile(path, raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := readInstalledDatabaseProfile(admin); err == nil {
+		t.Fatal("missing completion proof accepted")
+	}
+	container := map[string]any{"schema_version": "xinsight.ci-fresh-install-qualification.v1", "classification": "ci_clean_vm_not_target", "host": "ubuntu-22.04-amd64-systemd"}
+	// Frozen container predecessors need no new sidecar or environment field.
+	write(completion, container)
+	if got, err := readInstalledDatabaseProfile(admin); err != nil || got != "container" {
+		t.Fatal("legacy container completion rejected", err)
+	}
+	container["database_profile"] = "container"
+	write(completion, container)
+	if got, err := readInstalledDatabaseProfile(admin); err != nil || got != "container" {
+		t.Fatal("explicit container completion rejected", err)
+	}
+	completeNative := map[string]any{"schema_version": "xinsight.ci-fresh-install-qualification.v1", "classification": "ci_clean_vm_not_target", "host": "ubuntu-24.04-amd64-systemd", "database_profile": "native"}
+	write(completion, completeNative)
+	if _, err := readInstalledDatabaseProfile(admin); err == nil {
+		t.Fatal("native completion without topology proof accepted")
+	}
+	native := map[string]any{"schema_version": "xinsight.ci-postgres-profile.v1", "classification": "ci_clean_vm_not_target", "data_root": "/data/x-insight/postgres", "topology": "native_postgresql", "host": "ubuntu_24.04_linux_amd64", "native_process_verified": true, "major": 16, "port": "54554", "container_pgdata": nil, "listen_addresses": "127.0.0.1", "data_directory": "/data/x-insight/postgres", "public_tables": 0, "system_id": "123"}
+	write(file, native)
+	if got, err := readInstalledDatabaseProfile(admin); err != nil || got != "native" {
+		t.Fatal("valid native topology proof rejected", err)
+	}
+	for key, value := range map[string]any{"schema_version": "other", "classification": "target", "data_root": "/other", "topology": "container", "host": "ubuntu_22.04_linux_amd64", "native_process_verified": false, "major": 15, "port": "5432", "container_name": "xinsight-postgres", "listen_addresses": "*", "data_directory": "/other", "public_tables": 1, "system_id": ""} {
+		changed := map[string]any{}
+		for k, v := range native {
+			changed[k] = v
+		}
+		changed[key] = value
+		write(file, changed)
+		if _, err := readInstalledDatabaseProfile(admin); err == nil {
+			t.Fatal("invalid native proof accepted", key)
+		}
+	}
+	write(file, native)
+	for key, value := range map[string]any{"schema_version": "wrong", "classification": "target", "host": "ubuntu-22.04-amd64-systemd", "database_profile": "unknown"} {
+		changed := map[string]any{}
+		for k, v := range completeNative {
+			changed[k] = v
+		}
+		changed[key] = value
+		write(completion, changed)
+		if _, err := readInstalledDatabaseProfile(admin); err == nil {
+			t.Fatal("invalid completion accepted", key)
 		}
 	}
 }

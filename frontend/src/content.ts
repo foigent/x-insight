@@ -87,7 +87,8 @@ async function boundedBytes(response: Response, maximum: number, signal: AbortSi
 
 async function rejectResponse(response: Response, session: AccessSessionResponse, signal: AbortSignal): Promise<never> {
   let problem: unknown;
-  try { problem=JSON.parse(new TextDecoder().decode(await boundedBytes(response,65536,signal,()=>assertScope(session,signal)))); } catch { throw new ApiRequestError(response.status); }
+  try { problem=JSON.parse(new TextDecoder().decode(await boundedBytes(response,65536,signal,()=>assertScope(session,signal)))); } catch { if(response.status===403)window.dispatchEvent(new Event("xinsight:scope-changed"));throw new ApiRequestError(response.status); }
+  if (response.status===403 && !(object(problem)&&problem.code==="workbench_scope_denied"&&response.headers.get("X-XInsight-Scope-Revision")===session.scope_revision)) window.dispatchEvent(new Event("xinsight:scope-changed"));
   if (object(problem)&&typeof problem.code==="string") {
     if (response.status===409||problem.code==="scope_revision_changed"||problem.code==="workbench_access_changed") window.dispatchEvent(new Event("xinsight:scope-changed"));
     throw new ApiRequestError(response.status,problem as never);
@@ -135,7 +136,7 @@ export async function fetchVerifiedContent(reading: Reading, request: ContentReq
   if(activeRead)throw new ApiRequestError(429);
   const control=new AbortController();activeRead=control;
   const cancel=()=>control.abort();signal.addEventListener("abort",cancel,{once:true});if(signal.aborted)cancel();
-  const onScopeChange=()=>control.abort();window.addEventListener("xinsight:scope-changed",onScopeChange);window.addEventListener("xinsight:unauthorized",onScopeChange);
+  const onScopeChange=()=>control.abort();window.addEventListener("xinsight:scope-changed",onScopeChange);window.addEventListener("xinsight:scope-pending",onScopeChange);window.addEventListener("xinsight:unauthorized",onScopeChange);
   try {
     assertScope(session,control.signal);
     if(!reference.content_ref||!reference.representation||!["complete","partial"].includes(reference.capture_status)||reference.representation.saved_bytes>MAX_CONTENT_BYTES)throw failure();
@@ -156,5 +157,5 @@ export async function fetchVerifiedContent(reading: Reading, request: ContentReq
     let text:string|null=null;
     if(/^(text\/|application\/(?:json|[^;]+\+json)$)/.test(metadata.representation.media_type)) { try {text=new TextDecoder("utf-8",{fatal:true}).decode(bytes.subarray(0,MAX_TEXT_PREVIEW_BYTES),{stream:bytes.byteLength>MAX_TEXT_PREVIEW_BYTES});}catch{/* Preserve binary/invalid UTF-8 as verified bytes. */} }
     return {reference,readableUntil,bytes,text,previewOnly:bytes.byteLength>MAX_TEXT_PREVIEW_BYTES};
-  } finally {control.abort();signal.removeEventListener("abort",cancel);window.removeEventListener("xinsight:scope-changed",onScopeChange);window.removeEventListener("xinsight:unauthorized",onScopeChange);if(activeRead===control)activeRead=undefined;}
+  } finally {control.abort();signal.removeEventListener("abort",cancel);window.removeEventListener("xinsight:scope-changed",onScopeChange);window.removeEventListener("xinsight:scope-pending",onScopeChange);window.removeEventListener("xinsight:unauthorized",onScopeChange);if(activeRead===control)activeRead=undefined;}
 }

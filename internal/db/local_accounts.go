@@ -160,6 +160,9 @@ func accountAudit(ctx context.Context, tx *sql.Tx, kind, actor, action, target s
 func accountWriteError(e error) error {
 	var pg *pgconn.PgError
 	if errors.As(e, &pg) {
+		if pg.Code == "23505" && pg.SchemaName == "xinsight_accounts" && pg.TableName == "accounts" && pg.ConstraintName == "accounts_username_key" {
+			return access.ErrAccountExists
+		}
 		switch pg.Code {
 		case "23505", "40001":
 			return access.ErrAccountConflict

@@ -6,7 +6,7 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 
 ## 版本与支持边界
 
-产品 `0.2.0-dev.fpv21`，手册 `0.2.0-dev.fpv21/manual-r1`。
+产品 `0.2.0-dev.fpv22`，手册 `0.2.0-dev.fpv22/manual-r1`。
 
 | 项目 | 当前合同 |
 | --- | --- |
@@ -14,17 +14,17 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 | 数据库 | PostgreSQL 16，同机 loopback 专用数据库 |
 | 应用 | Linux amd64；受管安装使用 systemd |
 | 安装器运行主机前置 | Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证 |
-| 原文记载的隔离验证配置 | Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV21 Target 已验 |
-| 待取得的原生主机制品资格 | Ubuntu 22.04、专用固定镜像 PostgreSQL16 容器；真正新装证据待取得 |
+| 原文记载的隔离验证配置 | Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV22 Target 已验 |
+| 待取得的原生主机制品资格 | Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；精确 FPV22 新装与 FPV21 升级资格均待实跑 |
 | 配置 | `xinsight.config.v1` |
 | API | `xinsight.investigation.v1`、`xinsight.access.v1`, `xinsight.accounts.v1` |
 | 默认语言 | English；语言控件可切换简体中文 |
 
 这是开发候选，不表示公共稳定发行或 Production 验收。仓库还保留 Ubuntu 22.04 CI 安装路径和冻结 rc.13 profile，其制品与结果分别管理。安装必须匹配精确 profile、已验签制品、信任权威及主机资格，不能照搬历史说明。
 
-安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV21 精确制品在 Ubuntu22.04／容器 PostgreSQL 上的资格仍待验证，已装系统依赖和已完成证据分别记录。
+安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV22 精确新装与 FPV21 升级在 Ubuntu22.04／容器 PostgreSQL 和 Ubuntu24.04／原生 PostgreSQL16 上的资格均待实跑，已装系统依赖和已完成证据分别记录。
 
-配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
+配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
 
 ## 构建与本地试用
 
@@ -58,8 +58,8 @@ dry-run 只读检查身份与工具链；prepare-only 构建二进制和 payload
 独立核对 bootstrap verifier 与信任权威后，验签并解入全新目录：
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv21
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv21
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv22
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv22
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
@@ -83,7 +83,9 @@ sudo /opt/x-insight/current/bin/xinsightctl status
 
 不存在 XI 留存策略时，设置草稿提出完整正文、90天、每项目5GiB、单条32MiB，须明确确认；已有生效或停用策略继续复用。UR 来源采集独立批准，正常草稿为完整正文、30天、每项目5GiB、单条32MiB，并受实际协议与观察点支持限制。元数据采集不默认授予正文采集或阅读权。企业策略变更须有相应管理员权限，项目/用户例外继续有效。
 
-中断后返回同一请求，查看当前状态再重试；浏览器只保留当前主体的非秘密请求引用。邀请过期须重新审阅同意。不要新建替代来源来掩盖原连接失败。有效控制凭据在原 installation 上续期；跨期恢复要求两端管理员和来源保留的原 secret。撤权或范围漂移不自动恢复。
+中断后返回同一请求，查看当前状态再重试；浏览器只保留当前主体的非秘密请求引用。邀请过期须重新审阅同意。不要新建替代来源来掩盖原连接失败。控制身份与当前 token 分别检查到期时间；仍显示 active 也可能已过期。轮换会将同一身份与替代 token 续至有限的 24 小时到期时间。UniRouter 允许自动通信时，可在有效 token 最后 6 小时内轮换；手动模式不会自动轮换。XI 的自动同步只控制本端采集，不会开启 UniRouter 自动通信或恢复凭据。控制身份到期会阻断激活和项目更新，其它独立且仍有效的通道可能继续运行。
+
+跨期恢复要求两端当前管理员和来源保留的原 secret，撤权或范围漂移不自动恢复。UniRouter 返回 202 或接受恢复只表示待处理；手动模式还需在原连接明确执行 UniRouter“同步一次”，接续同一个待处理操作，不会因此打开自动通信。读回同一身份、当前凭据的新到期时间和确认状态后，再核对激活、项目更新和实际数据。空任务或仅提交成功不等于恢复完成。这与 reader 密码无关，无需为恢复控制连接而重置该账号。
 
 ## 普通用户的范围授权
 

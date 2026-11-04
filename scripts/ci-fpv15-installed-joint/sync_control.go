@@ -52,13 +52,17 @@ func (d *driver) collectionIntent(ctx context.Context, preserved bool) error {
 	return nil
 }
 
-// Schema45 has no sync preference API. Schema46 already has the owner's exact
+func predecessorHasCollectionIntent(schema string) bool {
+	return schema == "46" || schema == "47"
+}
+
+// Schema45 has no sync preference API. Schemas46/47 already have the owner's exact
 // choice, which the native upgrade must preserve without another mutation.
 func (d *driver) upgradedCollectionIntent(ctx context.Context, predecessorSchema string) error {
 	if predecessorSchema == "45" {
 		return d.collectionIntent(ctx, true)
 	}
-	if predecessorSchema != "46" || d.collectionChoice == nil {
+	if !predecessorHasCollectionIntent(predecessorSchema) || d.collectionChoice == nil {
 		return errors.New("collection_sync_prestate_invalid")
 	}
 	want := d.collectionChoice

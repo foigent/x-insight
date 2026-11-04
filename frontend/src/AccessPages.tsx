@@ -11,12 +11,13 @@ import {
 } from "./api";
 
 export function LoginPage({
-  onAuthenticated,
+  onAuthenticated, initialUsername = "",
 }: {
   onAuthenticated: (session: AccessSessionResponse) => void;
+  initialUsername?: string;
 }) {
   useLocale();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(initialUsername);
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useMessageState("");

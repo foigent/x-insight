@@ -17,6 +17,7 @@ function message(error:unknown) {
     if(error.problem?.code==="content_read_busy")return t("m0375");
     if(error.status===401)return t("m0225");
     if(error.status===403)return t("m0376");
+    if(error.status===404)return t("content.unavailableInReading");
     if(error.status===409)return t("m0377");
     if(error.status===429)return t("m0378");
     if(error.status===410)return t("m0379");
@@ -47,8 +48,8 @@ export function ContentPanel({session,reading,request,onInvalidated,navigate,exe
   useEffect(()=>{
     generation.current++;setDisplayOwner(identity);setLoaded(null);setReadingBody(false);load();
     const revoke=()=>{generation.current++;pageControl.current?.abort();bodyControl.current?.abort();setItems([]);setPage(null);setLoaded(null);setReadingBody(false);onInvalidated(new ApiRequestError(409));};
-    window.addEventListener("xinsight:scope-changed",revoke);window.addEventListener("xinsight:unauthorized",revoke);
-    return()=>{generation.current++;pageControl.current?.abort();bodyControl.current?.abort();window.removeEventListener("xinsight:scope-changed",revoke);window.removeEventListener("xinsight:unauthorized",revoke);};
+    window.addEventListener("xinsight:scope-changed",revoke);window.addEventListener("xinsight:scope-pending",revoke);window.addEventListener("xinsight:unauthorized",revoke);
+    return()=>{generation.current++;pageControl.current?.abort();bodyControl.current?.abort();window.removeEventListener("xinsight:scope-changed",revoke);window.removeEventListener("xinsight:scope-pending",revoke);window.removeEventListener("xinsight:unauthorized",revoke);};
   },[load,onInvalidated]);
   useEffect(()=>{
     const expiry=loaded?.readableUntil??loaded?.reference.expires_at;
@@ -101,6 +102,6 @@ export function ContentPanel({session,reading,request,onInvalidated,navigate,exe
       <button type="button" onClick={()=>setLoaded(null)}>{tx("m0433")}</button>
     </article>:null}
     {page?.next_cursor?<button disabled={busy} onClick={()=>load(page.next_cursor)}>{tx("m0434")}</button>:null}
-    {error&&!busy?<button onClick={()=>load()}>{tx("m0435")}</button>:null}
+    {error&&!busy&&(!(error instanceof ApiRequestError)||error.status===429||error.status>=500)?<button onClick={()=>load()}>{tx("m0435")}</button>:null}
   </section>;
 }

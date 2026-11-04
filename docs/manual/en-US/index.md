@@ -6,7 +6,7 @@ X-Insight (XI) can be used independently for supported imports, reported work ac
 
 ## Version and support
 
-Product `0.2.0-dev.fpv21`; manual `0.2.0-dev.fpv21/manual-r1`.
+Product `0.2.0-dev.fpv22`; manual `0.2.0-dev.fpv22/manual-r1`.
 
 | Item | Current contract |
 | --- | --- |
@@ -14,17 +14,17 @@ Product `0.2.0-dev.fpv21`; manual `0.2.0-dev.fpv21/manual-r1`.
 | Database | Dedicated PostgreSQL 16, loopback only |
 | Application | Linux amd64; systemd for managed installations |
 | Installer runtime host prerequisite | Ubuntu 22.04 or 24.04 amd64 with systemd; exact artifact/topology qualification is separate |
-| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV21 Target acceptance |
-| Pending native-host artifact qualification | Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container; fresh-install evidence pending |
+| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV22 Target acceptance |
+| Pending native-host artifact qualification | Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container, and Ubuntu 24.04 with native PostgreSQL 16; exact FPV22 fresh install and FPV21 upgrade evidence pending |
 | Configuration | `xinsight.config.v1` |
 | APIs | `xinsight.investigation.v1`, `xinsight.access.v1`, `xinsight.accounts.v1` |
 | Default language | English; Simplified Chinese is available in the language control |
 
 This is a development candidate, not a public stable release or a production acceptance claim. The repository also retains an Ubuntu 22.04 CI installation lane and a frozen rc.13 profile. Their results and artifacts are distinct. Use the exact profile, signed artifact, trust authority, and host qualification for the intended installation; do not apply historical instructions to another profile.
 
-Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Exact FPV21 artifact qualification on Ubuntu 22.04 with container PostgreSQL is pending; preinstalled OS dependencies and completed evidence must be recorded separately.
+Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Exact FPV22 fresh-install and FPV21 upgrade qualification on Ubuntu 22.04 with container PostgreSQL and Ubuntu 24.04 with native PostgreSQL16 is pending; preinstalled OS dependencies and completed evidence must be recorded separately.
 
-The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.
+The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`, `0.2.0-dev.fpv21`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.
 
 ## Build and try locally
 
@@ -58,8 +58,8 @@ Managed installation needs an explicitly selected, qualified host, a dedicated e
 After independently checking the bootstrap verifier and trust authority, verify and extract into a new directory:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv21
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv21
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv22
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv22
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
@@ -83,7 +83,9 @@ The setup page distinguishes waiting for consent, preparing the connection, wait
 
 With no existing XI retention policy, setup proposes full body,90days,5GiB per project,32MiB per item. This is a draft requiring explicit confirmation. Existing active or disabled policy is reused. UniRouter source capture is independently approved; its normal proposal is full body,30days,5GiB per project,32MiB per item, subject to actual supported protocols and observation points. Metadata collection does not implicitly authorize body capture or reading. Enterprise source-policy changes require the corresponding administrator permissions; project/user exceptions remain effective.
 
-For interrupted setup, return to the same request and inspect its current state before retrying. The UI keeps non-secret request references for the current subject. An expired invitation needs a new review and consent. Do not create a replacement source to hide a failed original connection. Active control credentials renew on the original installation; recovery after expiry requires administrators on both sides and the original retained source secret. Revoked access or scope drift is not silently restored.
+For interrupted setup, return to the same request and inspect its current state before retrying. The UI keeps non-secret request references for the current subject. An expired invitation needs a new review and consent. Do not create a replacement source to hide a failed original connection. Control identity expiry and current-token expiry are checked separately; an active status can still be elapsed. Rotation renews the same identity and its replacement token for a finite24hours. UniRouter automatic communication can rotate a live token within its last6hours; manual mode does not rotate automatically. XI Auto controls its own collectors and does not enable UniRouter automatic communication or restore credentials. Expired control authority blocks activation and project updates; other independent, still-authorized channels may continue.
+
+Recovery after expiry requires current administrators on both sides and the original retained source secret. Revoked access or scope drift is not silently restored. A202 recovery response means pending. In UniRouter manual mode, explicitly continue that same pending operation with its connection Sync once; this does not enable Auto. Verify the same identity, new current-token expiry and confirmed state, then actual activation, project updates and data. An empty run or accepted submission is not recovery success. Control recovery is unrelated to the reader password and does not require resetting that account.
 
 ## Grant ordinary users the right scope
 

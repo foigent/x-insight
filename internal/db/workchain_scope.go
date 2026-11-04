@@ -139,13 +139,33 @@ func commitWorkspaceTx(ctx context.Context, tx *sql.Tx, beforeCommit ...func() e
 }
 
 func (s *ScopedWorkchainStore) CurrentRevision(ctx context.Context, subject string, reviewer bool) (string, error) {
+	revision, _, err := s.CurrentAccess(ctx, subject, reviewer)
+	return revision, err
+}
+
+// CurrentAccess derives navigation hints from the same locked grant snapshot
+// as its revision. It does not authorize any subsequent reading or mutation.
+func (s *ScopedWorkchainStore) CurrentAccess(ctx context.Context, subject string, reviewer bool) (string, workbench.ReadingCapabilities, error) {
 	scoped, finish, err := s.Begin(ctx, subject, reviewer, nil)
 	if errors.Is(err, workchain.ErrDenied) {
-		return noAuthorizedScopeRevision, nil
+		return noAuthorizedScopeRevision, workbench.ReadingCapabilities{}, nil
 	}
 	if err != nil {
-		return "", err
+		return "", workbench.ReadingCapabilities{}, err
 	}
-	revision := workchain.FromContext(scoped).Revision
-	return revision, finish()
+	a := workchain.FromContext(scoped)
+	return a.Revision, readingCapabilities(a.Authorization), finish()
+}
+
+// Match the existing per-grant predicates used by the reading stores. These
+// are entry-point hints; selected filters remain independently authorized.
+func readingCapabilities(a workbench.Authorization) workbench.ReadingCapabilities {
+	var c workbench.ReadingCapabilities
+	for _, g := range a.Grants {
+		c.Summary = c.Summary || g.AllowSummary
+		c.Runtime = c.Runtime || runtimeGrant(g) || contentGrant(g)
+		c.Coverage = c.Coverage || g.AllowCoverage
+		c.WorkActivity = c.WorkActivity || (g.AllowResource && g.CostProject == "")
+	}
+	return c
 }
