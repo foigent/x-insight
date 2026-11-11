@@ -33,7 +33,8 @@ def fixture_account_action(mode, predecessor, prepared):
     if mode!='fpv17_upgrade_prestate' or not isinstance(predecessor,dict):
         raise ValueError('invalid_fixture_prestate')
     identity=tuple(predecessor.get(k) for k in ('old_commit','old_product','old_schema'))
-    if identity==('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47'):
+    if identity in {('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47'),
+                    ('bd4503a13a46156f8361e56730abef96cc5628bd','0.2.0-dev.fpv22','47')}:
         if prepared: return 'reuse'
         raise ValueError('schema47_prepared_fixture_required')
     legacy={('164582cab0e7f169c265c2494d04920c61af833d','0.2.0-dev.fpv17','45'),
@@ -437,7 +438,8 @@ if json.loads((root/'installed-input.json').read_text())['mode'] == 'new_install
     assert (predecessor['old_commit'],predecessor['old_product'],predecessor['old_schema']) in {
         ('164582cab0e7f169c265c2494d04920c61af833d','0.2.0-dev.fpv17','45'),
         ('08435e0949dfae0ae65497d2e12ca356f6d820f0','0.2.0-dev.fpv20','46'),
-        ('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47')}
+        ('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47'),
+        ('bd4503a13a46156f8361e56730abef96cc5628bd','0.2.0-dev.fpv22','47')}
     request={'schema_version':'xinsight.ci-fpv17-installed-upgrade-request.v1',
              'predecessor_schema':predecessor['old_schema'],
              'script':str(xi/'scripts/qualify-ubuntu22-fpv17-upgrade.sh'),

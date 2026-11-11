@@ -305,8 +305,8 @@ function AppContent() {
   }
 
   const canReadEvidence = session.session.permissions.includes("evidence.read");
-  const scoped=session.session.permissions.includes("investigation.scoped.read");
-  const canInvestigate=canReadEvidence||scoped;
+  const scoped=readingAccess(session).scoped;
+  const canInvestigate=(canReadEvidence||scoped) && !(scoped && session.scope_revision === "no_authorized_scope");
   const productHome = homePath(session);
   const overviewContext: OverviewContext | undefined = window.history.state?.overviewIdentity === scopeKey ? window.history.state?.overviewContext : undefined;
   let workbenchNavigation: WorkbenchNavigation | undefined;
@@ -316,6 +316,7 @@ function AppContent() {
   let runtimeNavigationInvalid=false;
   try{runtimeNavigation=readRuntimeNavigation(window.history.state?.runtimeReading)}catch{runtimeNavigationInvalid=true}
   const available=readingAccess(session);
+  const canReadOverview=available.overview;
   const canReadWorkbench=available.summary;
   const canReadRuntime=available.runtime;
   const capabilities=new URLSearchParams(window.location.search).get("view")==="capabilities";
@@ -353,7 +354,7 @@ function AppContent() {
         </div>
 
         <nav className="nav-list" id="product-navigation" aria-label={t("m0129")}>
-          {canReadEvidence||canReadWorkbench ? <NavLink active={route.kind === "inbox"||overviewOrigin} href="/inbox" icon="posture" label={t("m0121")} detail={t("m0130")} onClick={navigateFromLink} /> : null}
+          {canReadOverview ? <NavLink active={route.kind === "inbox"||overviewOrigin} href="/inbox" icon="posture" label={t("m0121")} detail={t("m0130")} onClick={navigateFromLink} /> : null}
           {canReadWorkbench ? <NavLink active={inWorkbench&&usageTopic} href="/workbench/cost?view=usage" icon="workbench" label={t("m0116")} detail={t("m0131")} onClick={navigateFromLink} /> : null}
           {canInvestigate||canReadRuntime ? <NavLink active={executionTopic&&route.kind!=="work-activity"} href={canReadRuntime?"/workbench/runtime":"/executions"} icon="executions" label={t("m0118")} detail={t("m0132")} onClick={navigateFromLink} /> : null}
           {available.activity ? <NavLink active={route.kind==="work-activity"} href="/work/activity" icon="executions" label={t("m0115")} detail={t("m0133")} onClick={navigateFromLink} /> : null}
@@ -417,8 +418,10 @@ function AppContent() {
         {route.kind === "runtime" && window.history.state?.workActivityContext?.owner === scopeKey &&
           typeof window.history.state?.activityOrigin === "string" && /^\/work\/activity(?:\?[^#]*)?$/.test(window.history.state.activityOrigin) ?
           <button className="overview-return" type="button" onClick={() => navigate(window.history.state.activityOrigin)}>{tx("m0166")}</button> : null}
-        {overviewContext && route.kind !== "inbox" && route.kind !== "work-activity" && !overviewOrigin ? <button className="overview-return" type="button" onClick={() => navigate("/inbox")}>{tx("m0167")}</button> : null}
-        {route.kind === "inbox" ? (
+        {canReadOverview && overviewContext && route.kind !== "inbox" && route.kind !== "work-activity" && !overviewOrigin ? <button className="overview-return" type="button" onClick={() => navigate("/inbox")}>{tx("m0167")}</button> : null}
+        {!routeAllowed(route, session) ? (
+          <section className="access-session-panel"><h1>{tx("m0107")}</h1><p>{tx("m0108")}</p></section>
+        ) : route.kind === "inbox" && canReadOverview ? (
           canReadWorkbench ? <OverviewPage session={session} navigate={navigate} context={overviewContext} onContext={keepOverview} /> : <PosturePage session={session} navigate={navigate} />
         ) : route.kind === "workbench" && session.session.permissions.includes("workbench.summary.read") ? (
           budgets ? <BudgetPage session={session} navigate={navigate} /> : <WorkbenchPage key={`${scopeKey}:${usage?"usage":"cost"}`} navigation={workbenchNavigation} navigationInvalid={navigationInvalid} onNavigation={keepWorkbenchNavigation} initialConfig={workbenchTransitionConfig.current??overviewContext?.request} session={session} navigate={navigate} snapshot={workbenchSnapshot.current} onSnapshot={keepWorkbench} usage={usage} />
@@ -540,14 +543,14 @@ function readRoute(location: Pick<Location,"pathname" | "search"> = window.locat
 
 function homePath(session: AccessSessionResponse): string {
  const available=readingAccess(session);
- if(session.reading_capabilities){
+ if(session.reading_capabilities || session.scoped_data_access){
   if(available.summary)return "/inbox";
   if(available.runtime)return "/workbench/runtime";
   if(session.session.permissions.includes("accounts.manage"))return "/access/accounts";
   if(session.session.permissions.includes("investigation.scoped.read"))return "/investigation/queue";
  }
  if(session.session.permissions.includes("accounts.manage") && session.scope_revision==="no_authorized_scope")return "/access/accounts";
-  return session.session.permissions.some(permission => ["evidence.read", "workbench.summary.read"].includes(permission)) ? "/inbox" : "/workbench/cost";
+  return available.overview ? "/inbox" : "/workbench/cost";
 }
 
 function routeAllowed(route: Route, session: AccessSessionResponse): boolean {
@@ -557,7 +560,7 @@ function routeAllowed(route: Route, session: AccessSessionResponse): boolean {
     return true;
   }
   if (route.kind === "inbox") {
-    return session.session.permissions.includes("evidence.read") || available.summary;
+    return available.overview;
   }
   if (route.kind === "runtime") return available.runtime;
   if (route.kind === "work-activity") return available.activity;
@@ -570,6 +573,10 @@ function routeAllowed(route: Route, session: AccessSessionResponse): boolean {
     return session.session.permissions.includes("service_identities.read");
   }
   if (route.kind === "review-policy") return session.session.permissions.includes("review.policy.manage");
+  if (available.scoped && ["sessions", "session-detail", "discovery"].includes(route.kind)) return false;
+  if (available.scoped && session.scope_revision === "no_authorized_scope" && ["search", "detail", "compare", "cases", "case-detail", "investigation-queue"].includes(route.kind)) {
+    return route.kind === "investigation-queue" && session.session.permissions.includes("investigation.scoped.read");
+  }
   if(session.session.permissions.includes("investigation.scoped.read")) return ["search","detail","compare","cases","case-detail","investigation-queue"].includes(route.kind);
   return session.session.permissions.includes("evidence.read");
 }

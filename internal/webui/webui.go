@@ -1,12 +1,17 @@
 package webui
 
 import (
+	"bytes"
+	"compress/gzip"
 	"embed"
 	"io/fs"
+	"mime"
 	"net/http"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 //go:embed dist/* manual/zh-CN/* manual/en-US/*
@@ -28,6 +33,22 @@ func Handler() http.Handler {
 		panic("webui: embedded release asset parity failed: " + err.Error())
 	}
 	files := http.FileServer(http.FS(assets))
+	compressedAssets := make(map[string][]byte, len(allowedAssets))
+	for name := range allowedAssets {
+		contents, err := fs.ReadFile(assets, strings.TrimPrefix(name, "/"))
+		if err != nil {
+			panic("webui: validated static asset is unavailable")
+		}
+		var compressed bytes.Buffer
+		writer := gzip.NewWriter(&compressed)
+		if _, err := writer.Write(contents); err != nil {
+			panic("webui: static asset compression failed")
+		}
+		if err := writer.Close(); err != nil {
+			panic("webui: static asset compression failed")
+		}
+		compressedAssets[name] = compressed.Bytes()
+	}
 	manual, err := fs.Sub(embedded, "manual")
 	if err != nil {
 		panic("webui: embedded manual directory is unavailable")
@@ -70,11 +91,44 @@ func Handler() http.Handler {
 				return
 			}
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			w.Header().Add("Vary", "Accept-Encoding")
+			if r.Header.Get("Range") == "" && acceptsGzip(r.Header.Values("Accept-Encoding")) {
+				contents := compressedAssets[cleanPath]
+				w.Header().Set("Content-Encoding", "gzip")
+				w.Header().Set("Content-Type", mime.TypeByExtension(path.Ext(cleanPath)))
+				w.Header().Set("Content-Length", strconv.Itoa(len(contents)))
+				http.ServeContent(w, r, path.Base(cleanPath), time.Time{}, bytes.NewReader(contents))
+				return
+			}
 			files.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
+}
+
+func acceptsGzip(values []string) bool {
+	wildcard := false
+	for _, value := range values {
+		for _, entry := range strings.Split(value, ",") {
+			coding, parameters, err := mime.ParseMediaType(strings.TrimSpace(entry))
+			if err != nil {
+				continue
+			}
+			quality := 1.0
+			if text, ok := parameters["q"]; ok {
+				quality, err = strconv.ParseFloat(text, 64)
+			}
+			accepted := err == nil && quality > 0 && quality <= 1
+			if coding == "gzip" {
+				return accepted
+			}
+			if coding == "*" {
+				wildcard = accepted
+			}
+		}
+	}
+	return wildcard
 }
 
 func isProductRoute(cleanPath string) bool {

@@ -140,6 +140,9 @@ tree_contains() {
 # The prior schema45 baseline remains in Git history (2c05fcb and b942691).
 # The body-copy correction adds only workspace last_data_at column authority
 # for the same transaction fence; sync preferences remain owner-controlled.
+# The scoped-owner entry correction adds only the GET-session route-boundary hint
+# and its optional OpenAPI field. Login and request enforcement retain their
+# existing behavior. Protocol, migration and checkpoint identities stay pinned.
 # Runtime verification stays read-only; stale-baseline rejection is mandatory.
 protocol_workflow=".github/workflows/foigent-protocol-conformance.yml"
 expected_protocol_action='        uses: foigent/event-connector-spec/actions/source-neutral-v2@ad8fe7a38c9d7335657630baa8670dd07556b98c'
@@ -164,7 +167,7 @@ while read -r expected path; do
     exit 1
   fi
 done <<'BASELINE'
-fa223af556b1b2cde4fc80e2677a3bc00db2725861393482d04cf12f23beb9da api/openapi/prd2-v1.yaml
+becfd327511db235189abb9ef5b58ecd27ac71adb3b7cf11fb8de023d4f2e672 api/openapi/prd2-v1.yaml
 7147f90de8c5686f5575ee8ed313ed1425c7051b59143240d35a006421adb58d cmd/xinsight-launcher/main.go
 73a609ed59aa34093d4b611140bd468bef828b13f828d97c97e5b3a02e1ff69a cmd/xinsight-server/main.go
 fe6c8436a5b42800e31e7cd63dba1226cb2134c223998abfdb889da523493856 cmd/xinsightctl/main.go
@@ -180,7 +183,7 @@ edb9e69baac748bce103e7b16ee477eb8e1ffc6a40939c337903cb25861cd519 contracts/openi
 2735e9f736ecb3c59910e448721bdffa579cd9244b44461e173f8e040bd93980 internal/adapters/openinference/compatibility.go
 e1c167f8eb41ec136beaa31964817e4493dea7202c14f9edddf246bc586b0705 internal/adapters/unirouter/completed_execution.go
 811af109962686bb21ca12dd182e1e9adc3b9927bcc152359434a8d6a236250f internal/adapters/unirouter/execution_evidence_bundle.go
-a8c27564042f726de2b1768e37033fea03fcd94f003ec9fa6f82c98c9d3aac38 internal/api/access.go
+fd5d82a7a9c09be804cde7bd64d4f713cd8161d05fade420dd5f9fe5a9ebf8f5 internal/api/access.go
 a8b5f767701a52189b7980a1d7a711cef6d08eb926feb99a7aba579ffb6fe7fb internal/api/investigation.go
 b4190c2d059ec131bc45e81dcb6de50b361b1e2b49499ae1537e39259b5d2324 internal/api/problem.go
 d0c1b307bb4d9a4f7de169cf0916d0c325b0a4d4374a71ed7ce9fbaf0a0e7d69 internal/api/posture.go

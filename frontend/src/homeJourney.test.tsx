@@ -8,6 +8,7 @@ import {setLocale,t} from "./i18n";
 
 const owner:AccessSessionResponse={scope_revision:"scope-home",csrf_token:"synthetic",reading_capabilities:{summary:true,runtime:true,coverage:true,work_activity:true},session:{session_ref:"xr_home",subject_id:"xs_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",username:"owner",role:"platform_admin",permissions:["accounts.manage","evidence.read","workbench.summary.read","workbench.details.read","workbench.coverage.read"],created_at:"2026-11-04T00:00:00Z",last_seen_at:"2026-11-04T00:00:00Z",idle_expires_at:"2026-11-04T00:30:00Z",absolute_expires_at:"2026-11-04T12:00:00Z"}};
 const reader:AccessSessionResponse={...owner,reading_capabilities:{summary:false,runtime:true,coverage:true,work_activity:false},session:{...owner.session,username:"reader",subject_id:"xs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",role:"workbench_investigation_reader",permissions:["investigation.scoped.read","workbench.summary.read","workbench.details.read","workbench.coverage.read"]}};
+const metadataOwner: AccessSessionResponse = { ...owner, scoped_data_access: true, reading_capabilities: reader.reading_capabilities };
 function reading():Runtime.Reading {const now=new Date().toISOString();return{reading_id:"xrt_home",contract_version:"xinsight.runtime-reading.v1",metric_version:"xinsight.runtime.request-observations.v1",period:{start_inclusive:now,end_exclusive:now,timezone:"UTC"},cutoff:now,expires_at:new Date(Date.now()+1800000).toISOString(),authorization_revision:"sha256:auth",interpretation_revision:"sha256:rule",membership_ref:"sha256:membership",requests_with_entry_time:4,requests_with_unknown_entry_time:0,observation_count:5,coverage:{period_completeness:"unknown",timeline_complete:false,time_basis:"trusted_request_started",unknown_entry_time_basis:"authorized_observation_in_period",missing_predecessors:0,streams:[],gaps:[]}};}
 function response(value:unknown,status=200){return new Response(JSON.stringify(value),{status,headers:{"Content-Type":"application/json","X-XInsight-Scope-Revision":"scope-home"}});}
 function denied(){return response({type:"urn:test:scope",title:"Not permitted for this field",status:403,code:"workbench_scope_denied",correlation_id:"synthetic",retryable:false},403);}
@@ -31,6 +32,112 @@ afterEach(()=>{cleanup();acceptScopeSession(null);vi.restoreAllMocks();vi.unstub
 // All product pages are real components. Only their data sources are isolated;
 // typed local HTTP denials still run through the real API invalidation logic.
 describe("normal entry and partial authorization journey",()=>{
+ it.each([metadataOwner, reader])("uses the authoritative session after ordinary $session.username login", async current => {
+  window.history.replaceState(null, "", "/login");
+  const { sessions, fetcher } = setup(current);
+  sessions.mockRejectedValueOnce(new ApiRequestError(401));
+  // The login response deliberately has role permissions but no effective scope.
+  const login = vi.spyOn(accessAPI, "login").mockResolvedValue({ session: current.session, csrf_token: "synthetic" });
+  render(<App />);
+  await screen.findByRole("heading", { name: t("m0007") });
+  fireEvent.change(screen.getByLabelText(t("m0014")), { target: { value: current.session.username } });
+  fireEvent.change(screen.getByLabelText(t("m0015")), { target: { value: "synthetic-local-password" } });
+  fireEvent.submit(document.querySelector("form")!);
+  await screen.findByText("1 / 4");
+  expect(login).toHaveBeenCalledOnce();
+  expect(sessions.mock.invocationCallOrder[1]).toBeGreaterThan(login.mock.invocationCallOrder[0]);
+  expect(window.location.pathname).toBe("/workbench/runtime");
+  expect(screen.getByLabelText("Current account and role").textContent).toContain(current.session.username);
+  expect(document.querySelector('a[href="/inbox"]')).toBeNull();
+  expect(fetcher).not.toHaveBeenCalled();
+ });
+
+ it.each(["/", "/inbox", "/inbox?period=24h", "/sessions", "/sessions/legacy-session", "/discovery"])("redirects the real metadata-only owner from %s without mounting legacy pages", async path => {
+  window.history.replaceState(null, "", path);
+  const { fetcher } = setup(metadataOwner);
+  render(<App />);
+  await screen.findByText("1 / 4");
+  expect(window.location.pathname).toBe("/workbench/runtime");
+  expect(document.querySelector('a[href="/inbox"]')).toBeNull();
+  expect(document.querySelector('a[href="/sessions"]')).toBeNull();
+  expect(document.querySelector('a[href="/discovery"]')).toBeNull();
+  expect(document.querySelector('a[href="/access/accounts"]')).not.toBeNull();
+  expect(fetcher).not.toHaveBeenCalled();
+ });
+
+ it("guards a retained inbox immediately, survives back/forward, and normalizes a refreshed address", async () => {
+  window.history.replaceState(null, "", "/workbench/runtime");
+  const { fetcher } = setup(metadataOwner);
+  let view = render(<App />);
+  await screen.findByText("1 / 4");
+  fireEvent.click(document.querySelector('a[href="/access/accounts"]')!);
+  await screen.findByRole("heading", { name: "Accounts" });
+  act(() => window.history.back());
+  await screen.findByText("1 / 4");
+  act(() => window.history.forward());
+  await screen.findByRole("heading", { name: "Accounts" });
+
+  act(() => {
+   window.history.pushState(null, "", "/inbox");
+   window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  // Revalidation is asynchronous. The unauthorized renderer must never mount.
+  expect(fetcher).not.toHaveBeenCalled();
+  await screen.findByText("1 / 4");
+  expect(window.location.pathname).toBe("/workbench/runtime");
+  view.unmount();
+  window.history.replaceState(null, "", "/inbox");
+  view = render(<App />);
+  await screen.findByText("1 / 4");
+  expect(window.location.pathname).toBe("/workbench/runtime");
+  expect(fetcher).not.toHaveBeenCalled();
+ });
+
+ it("clears a metadata-only owner's revoked runtime and ignores its late response", async () => {
+  window.history.replaceState(null, "", "/workbench/runtime");
+  const { sessions, fetcher } = setup(metadataOwner);
+  render(<App />);
+  await screen.findByText("1 / 4");
+  await waitFor(() => expect(sessions).toHaveBeenCalledTimes(2));
+  let finishOld!: (value: Response) => void;
+  fetcher.mockImplementationOnce(() => new Promise<Response>(resolve => { finishOld = resolve; }));
+  const old = investigationAPI.getExecution("xe1_old");
+  const rejected = expect(old).rejects.toMatchObject({ name: "AbortError" });
+  const revoked = { ...metadataOwner, scope_revision: "no_authorized_scope", reading_capabilities: { summary: false, runtime: false, coverage: false, work_activity: false } };
+  sessions.mockResolvedValue(revoked);
+  fireEvent(window, new StorageEvent("storage", { key: sessionChangeKey, newValue: "synthetic-revoke" }));
+  expect(screen.queryByText("1 / 4")).toBeNull();
+  finishOld(response({ summary: { execution_id: "late-old-private" } }));
+  await rejected;
+  await screen.findByRole("heading", { name: "Accounts" });
+  expect(window.location.pathname).toBe("/access/accounts");
+  expect(document.querySelector('a[href="/inbox"]')).toBeNull();
+  expect(document.querySelector('a[href="/investigation/queue"]')).toBeNull();
+  expect(JSON.stringify(window.history.state)).not.toContain("late-old-private");
+ });
+
+ it("ends a metadata-only owner's expired session after an ordinary focus check", async () => {
+  window.history.replaceState(null, "", "/workbench/runtime");
+  const { sessions } = setup(metadataOwner);
+  render(<App />);
+  await screen.findByText("1 / 4");
+  await waitFor(() => expect(sessions).toHaveBeenCalledTimes(2));
+  sessions.mockRejectedValueOnce(new ApiRequestError(401));
+  fireEvent(window, new Event("focus"));
+  await screen.findByRole("heading", { name: t("m0007") });
+  expect(screen.queryByText("1 / 4")).toBeNull();
+  expect(window.location.pathname).toBe("/login");
+ });
+
+ it("does not infer scoped owner reading authority when effective hints are unavailable", async () => {
+  const { fetcher } = setup({ ...metadataOwner, reading_capabilities: undefined });
+  render(<App />);
+  await screen.findByRole("heading", { name: "Accounts" });
+  expect(window.location.pathname).toBe("/access/accounts");
+  expect(document.querySelector('a[href="/inbox"]')).toBeNull();
+  expect(document.querySelector('a[href="/workbench/runtime"]')).toBeNull();
+  expect(fetcher).not.toHaveBeenCalled();
+ });
  it("keeps the actual overview and navigation usable after local economic/activity denials",async()=>{
   const {sessions,fetcher,frozen}=setup(owner);render(<App/>);
   await screen.findByText("3 / 4");await waitFor(()=>expect(fetcher.mock.calls.some(([path])=>String(path).startsWith("/api/v1/work-activity/summary"))).toBe(true));

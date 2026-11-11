@@ -88,6 +88,19 @@ def check(source: str) -> None:
             'XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv21' in fpv21 and
             'prepare-ci-fpv17-predecessor.sh' in fpv21,
             'actual installed FPV21/schema47 predecessor lane is missing')
+    fpv22 = step(fresh, 'Verify the FPV22 delta and install its exact predecessor')
+    require("matrix.lifecycle == 'fpv22_upgrade'" in fpv22 and
+            'XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv22' in fpv22 and
+            'prepare-ci-fpv17-predecessor.sh' in fpv22 and
+            'qualify-ci-fpv22-delta.py' in fpv22 and
+            '"$delta_dir/reconstructed.tar.gz" "$candidate"' in fpv22 and
+            fpv22.index('qualify-ci-fpv22-delta.py') < fpv22.index('sudo install'),
+            'FPV22 must qualify from the published basis and use the reconstructed target')
+    require('if [ "$LIFECYCLE" != fpv22_upgrade ]; then' in step(fresh, 'Verify and extract exact signed candidate'),
+            'FPV22 lane must not stage the reference full target before reconstruction')
+    require("matrix.lifecycle == 'fpv22_upgrade'" in
+            step(fresh, 'Qualify exact predecessor to current candidate installed upgrade and source continuation'),
+            'FPV22 reconstruction must feed the installed target controller')
     historical = step(signed, "Rebuild and verify frozen rc13 signed candidate")
     for required in (
         f"XINSIGHT_RC13_COMMIT: {RC13_COMMIT}",
@@ -162,7 +175,7 @@ def check(source: str) -> None:
             'installed UR fixture checkout lacks exact commit readback')
     require('qualify-ubuntu22-installed-joint.sh' in step(fresh, 'Qualify installed controller and consumer lifecycle'),
             'fresh install does not run the installed business lifecycle')
-    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade]' in fresh and 'fail-fast: false' in fresh,
+    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade]' in fresh and 'fail-fast: false' in fresh,
             'new installation, restored predecessor and FPV17 upgrade need independent VMs')
     predecessor = step(fresh, 'Reproduce and install exact FPV14 predecessor on clean VM')
     require("if: matrix.lifecycle == 'adopt_existing'" in predecessor and
@@ -213,6 +226,8 @@ def check(source: str) -> None:
             'failed installed lifecycle loses safe stage receipts')
     require('xinsight-account-upgrade-qualification/qualification-failure.json' in upload,
             'FPV17 upgrade failure loses fixed stage and exit code')
+    require('fpv22-delta-qualification/qualification-result.json' in upload and
+            'fpv22-delta-qualification/*' not in upload, 'FPV22 lane must upload only its result receipt')
     require('xinsight-account-upgrade-qualification/qualification-result.json' in upload,
             'FPV17 same-schema qualification receipt is not uploaded')
     for unsafe in ('xinsight-fpv15-joint-private', '*.log', 'nginx-error.log', 'joint-private.log'):
@@ -1114,8 +1129,8 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     }
     old = {'product_version': {45:'0.2.0-dev.fpv17',46:'0.2.0-dev.fpv20',47:'0.2.0-dev.fpv21'}[old_schema], 'database_schema': str(old_schema),
            'commit': {45:'164582cab0e7f169c265c2494d04920c61af833d',46:'08435e0949dfae0ae65497d2e12ca356f6d820f0',47:'6463d980958fae86d975eecde239b9534ec831a5'}[old_schema], 'release_dir': '/synthetic/fpv'+str({45:17,46:20,47:21}[old_schema])}
-    new = {'product_version': '0.2.0-dev.fpv22', 'database_schema': '47',
-           'commit': 'b'*40, 'release_dir': '/synthetic/fpv22'}
+    new = {'product_version': '0.2.0-dev.fpv23', 'database_schema': '47',
+           'commit': 'b'*40, 'release_dir': '/synthetic/fpv23'}
     stable = ('workbench_access_grants', 'work_event_collections', 'work_event_documents',
               'connector_installation_source_bindings', 'installation_identity', 'role_boundary',
               'source_fact_streams', 'source_content_collections', 'adapter_import_states')
@@ -1475,6 +1490,8 @@ def check_prepared_account_fixture_policy() -> None:
             {'old_commit':'08435e0949dfae0ae65497d2e12ca356f6d820f0','old_product':'0.2.0-dev.fpv20','old_schema':'46'}]
     require(evaluate('new_install',None,True)=='reuse' and evaluate('adopt_existing',None,False)=='create','original install/adopt fixture policy changed')
     require(evaluate('fpv17_upgrade_prestate',fpv21,True)=='reuse','same FPV21 imported identities must be reused')
+    fpv22={'old_commit':'bd4503a13a46156f8361e56730abef96cc5628bd','old_product':'0.2.0-dev.fpv22','old_schema':'47'}
+    require(evaluate('fpv17_upgrade_prestate',fpv22,True)=='reuse','same FPV22 imported identities must be reused')
     for predecessor in legacy:require(evaluate('fpv17_upgrade_prestate',predecessor,False)=='create','original legacy fixture creation changed')
     invalid=[('new_install',None,False),('adopt_existing',None,True),('fpv17_upgrade_prestate',fpv21,False),('fpv17_upgrade_prestate',None,False),('unknown',fpv21,True)]
     invalid += [('fpv17_upgrade_prestate',x,True) for x in legacy]
@@ -1634,7 +1651,7 @@ if __name__ == "__main__":
     expect_rejected(source, 'npm install --global "$(node -p "require(\'./package.json\').packageManager")"', 'npm --version')
     expect_rejected(source, 'bash scripts/verify-protected-runtime.sh', 'true')
     expect_rejected(source, "XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'", "XINSIGHT_REQUIRE_POSTGRES_TESTS: '0'")
-    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade]', 'lifecycle: [new_install, adopt_existing]')
+    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade]', 'lifecycle: [new_install, adopt_existing]')
     expect_rejected(source, 'database_profile: native', 'database_profile: container')
     expect_rejected(source, 'os: ubuntu-24.04', 'os: ubuntu-22.04')
     expect_rejected(source, "permissions:\n  contents: read", "permissions:\n  contents: write")

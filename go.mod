@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/klauspost/compress v1.20.2
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	golang.org/x/crypto v0.53.0
 	golang.org/x/term v0.44.0

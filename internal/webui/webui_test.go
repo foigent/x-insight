@@ -1,18 +1,79 @@
 package webui_test
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/foigent/x-insight/internal/webui"
 )
+
+func TestImmutableAssetGzipNegotiationAndOriginalBytes(t *testing.T) {
+	handler := webui.Handler()
+	index := httptest.NewRecorder()
+	handler.ServeHTTP(index, httptest.NewRequest(http.MethodGet, "/login", nil))
+	for _, route := range assetReferencePattern.FindAllString(index.Body.String(), -1) {
+		original := httptest.NewRecorder()
+		handler.ServeHTTP(original, httptest.NewRequest(http.MethodGet, route, nil))
+		for _, encoding := range []string{"gzip", "br, gzip, deflate", "GZIP;q=0.5", "*;q=0.8"} {
+			t.Run(route+encoding, func(t *testing.T) {
+				request := httptest.NewRequest(http.MethodGet, route, nil)
+				request.Header.Set("Accept-Encoding", encoding)
+				response := httptest.NewRecorder()
+				handler.ServeHTTP(response, request)
+				if response.Code != http.StatusOK || response.Header().Get("Content-Encoding") != "gzip" || response.Header().Get("Vary") != "Accept-Encoding" {
+					t.Fatalf("negotiation status%d headers%v", response.Code, response.Header())
+				}
+				reader, err := gzip.NewReader(response.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				decoded, err := io.ReadAll(reader)
+				reader.Close()
+				if err != nil || !bytes.Equal(decoded, original.Body.Bytes()) {
+					t.Fatal("compressed representation differs from the manifest-verified asset", err)
+				}
+				size, err := strconv.Atoi(response.Header().Get("Content-Length"))
+				if err != nil || size >= original.Body.Len() || response.Header().Get("Content-Type") != original.Header().Get("Content-Type") {
+					t.Fatalf("representation size%d original%d type%q", size, original.Body.Len(), response.Header().Get("Content-Type"))
+				}
+				request.Method = http.MethodHead
+				head := httptest.NewRecorder()
+				handler.ServeHTTP(head, request)
+				if head.Body.Len() != 0 || head.Header().Get("Content-Length") != response.Header().Get("Content-Length") || head.Header().Get("Content-Encoding") != "gzip" {
+					t.Fatal("HEAD does not describe the GET representation")
+				}
+			})
+		}
+		for _, encoding := range []string{"", "br", "gzip;q=0", "gzip;q=0, *;q=1", "*;q=0", "gzip;q=invalid", "gzip;q=2", "gzip;q=NaN"} {
+			request := httptest.NewRequest(http.MethodGet, route, nil)
+			request.Header.Set("Accept-Encoding", encoding)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Header().Get("Content-Encoding") != "" || !bytes.Equal(response.Body.Bytes(), original.Body.Bytes()) || response.Header().Get("Vary") != "Accept-Encoding" {
+				t.Fatalf("identity representation changed for %q", encoding)
+			}
+		}
+		request := httptest.NewRequest(http.MethodGet, route, nil)
+		request.Header.Set("Accept-Encoding", "gzip")
+		request.Header.Set("Range", "bytes=0-15")
+		partial := httptest.NewRecorder()
+		handler.ServeHTTP(partial, request)
+		if partial.Code != http.StatusPartialContent || partial.Header().Get("Content-Encoding") != "" || !bytes.Equal(partial.Body.Bytes(), original.Body.Bytes()[:16]) {
+			t.Fatal("original asset range behavior changed")
+		}
+	}
+}
 
 var assetReferencePattern = regexp.MustCompile(`/assets/[A-Za-z0-9][A-Za-z0-9._-]*`)
 

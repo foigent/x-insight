@@ -130,6 +130,7 @@ on:
       - scripts/ci/run-litellm-postgres-convergence.sh
       - go.mod
       - .github/workflows/foigent-protocol-conformance.yml
+      - .github/actions/upload-bounded-artifact/**
   push:
     branches: [main]
     paths:
@@ -259,6 +260,7 @@ on:
       - scripts/ci/run-litellm-postgres-convergence.sh
       - go.mod
       - .github/workflows/foigent-protocol-conformance.yml
+      - .github/actions/upload-bounded-artifact/**
   workflow_dispatch:
 
 permissions:
@@ -329,12 +331,12 @@ jobs:
 
       - name: Upload Execution Evidence Draft conformance report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: ./.github/actions/upload-bounded-artifact
         with:
+          kind: protocol
           name: execution-evidence-draft-conformance-${{ github.run_id }}
           path: ${{ runner.temp }}/execution-evidence-draft-conformance.json
           if-no-files-found: error
-          retention-days: 14
 
       - name: Verify Phase 2C single-writer Reference runtime
         run: bash scripts/verify-phase2c-reference-runtime.sh

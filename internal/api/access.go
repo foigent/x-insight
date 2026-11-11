@@ -35,6 +35,7 @@ type loginRequest struct {
 }
 
 type sessionResponse struct {
+	ScopedDataAccess    bool                           `json:"scoped_data_access,omitempty"`
 	ReadingCapabilities *workbench.ReadingCapabilities `json:"reading_capabilities,omitempty"`
 	ScopeRevision       string                         `json:"scope_revision,omitempty"`
 	Session             productaccess.SessionView      `json:"session"`
@@ -127,7 +128,9 @@ func (s *Server) handleAccessSession(w http.ResponseWriter, r *http.Request) {
 			capabilities = &available
 		}
 	}
-	writeJSON(w, http.StatusOK, sessionResponse{ScopeRevision: revision, ReadingCapabilities: capabilities,
+	_, managed := s.access.ManagedAccounts()
+	scopedData := productaccess.IsScopedRole(authentication.Session.Role) || managed && authentication.Session.Role == productaccess.RolePlatformAdmin
+	writeJSON(w, http.StatusOK, sessionResponse{ScopeRevision: revision, ReadingCapabilities: capabilities, ScopedDataAccess: scopedData,
 		Session:   authentication.Session,
 		CSRFToken: s.access.CSRFToken(authentication),
 	})

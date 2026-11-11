@@ -17,12 +17,16 @@ func TestManagedSessionIdentityAndMetadataOnlyEntryHintsPostgres(t *testing.T) {
 		t.Helper()
 		n, raw := owner.call("GET", "/api/v1/access/session?username=reader", nil, nil)
 		var reply struct {
+			ScopedData   bool                          `json:"scoped_data_access"`
 			Session      access.SessionView            `json:"session"`
 			Revision     string                        `json:"scope_revision"`
 			Capabilities workbench.ReadingCapabilities `json:"reading_capabilities"`
 		}
 		if n != 200 || json.Unmarshal(raw, &reply) != nil || reply.Session.Username != "owner" || reply.Session.SubjectID != managedOwnerID || reply.Session.Role != access.RolePlatformAdmin {
 			t.Fatalf("current identity not server-derived: status%d", n)
+		}
+		if !reply.ScopedData {
+			t.Fatal("managed owner session omitted the enforced scoped data boundary")
 		}
 		return reply.Revision, reply.Capabilities
 	}
@@ -50,6 +54,11 @@ func TestManagedSessionIdentityAndMetadataOnlyEntryHintsPostgres(t *testing.T) {
 	revision, caps := readSession()
 	if revision == "" || revision == "no_authorized_scope" || caps != (workbench.ReadingCapabilities{Runtime: true, Coverage: true}) {
 		t.Fatalf("wrong effective entry hints%+v", caps)
+	}
+	for _, path := range []string{"/api/v1/posture", "/api/v1/saved-views", "/api/v1/sessions", "/api/v1/sessions/legacy-session", "/api/v1/discovery/hypotheses"} {
+		if n, _ = owner.call("GET", path, nil, nil); n != 403 {
+			t.Fatalf("managed owner legacy data route admitted: %s status%d", path, n)
+		}
 	}
 	path := "/api/v1/work-activity/summary?from=" + url.QueryEscape(time.Now().UTC().Add(-time.Hour).Format(time.RFC3339)) + "&to=" + url.QueryEscape(time.Now().UTC().Format(time.RFC3339))
 	response, e := owner.client.Get(s.URL + path)
