@@ -146,11 +146,25 @@ it("restores an authorized usage reading without requesting its unavailable purp
 it("links from overview to usage with a dimension present in its reading",async()=>{
   window.history.replaceState(null,"","/inbox");
   vi.mocked(accessAPI.session).mockResolvedValue({...session,session:{...session.session,permissions:["workbench.summary.read"]}});
+  let finishReading!: (value: WorkbenchReading) => void;
+  const pendingReading = new Promise<WorkbenchReading>(resolve => { finishReading = resolve; });
+  vi.mocked(workbenchAPI.createReading).mockReturnValueOnce(pendingReading);
   render(<App/>);
-  const link=await screen.findByRole("link",{name:/使用与目的/});
-  await waitFor(()=>expect(screen.getAllByText("当前读取不支持此维度").length).toBeGreaterThan(0));
+  const navigation = await screen.findByRole("navigation", { name: "产品功能" });
+  const link = within(navigation).getByRole("link", { name: /使用与目的/ });
+  expect(window.history.state?.overviewContext?.economicReadingID).toBeUndefined();
+
+  await act(async () => { finishReading(reading); });
+  await screen.findByText("本次阅读未提供用途维度；不能判断没有用途。");
+  // The overview publishes the retained reading after rendering its status text.
+  await waitFor(() => expect(window.history.state?.overviewContext).toMatchObject({
+    economicReadingID: reading.reading_id, usageDimension: "source_project",
+  }));
   fireEvent.click(link);
+  expect(window.location.pathname + window.location.search).toBe("/workbench/cost?view=usage");
   expect(window.history.state.workbenchReading).toMatchObject({readingID:reading.reading_id,dimension:"source_project"});
+  await waitFor(() => expect(workbenchAPI.reading).toHaveBeenCalledWith(reading.reading_id, expect.any(AbortSignal)));
+  expect(workbenchAPI.createReading).toHaveBeenCalledTimes(1);
 });
 
 it("does not replace a selected purpose contribution when that dimension is absent",async()=>{

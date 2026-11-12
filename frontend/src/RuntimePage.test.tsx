@@ -54,6 +54,53 @@ it("uses one independent cohort for outcome, dimension, measurement and request 
   expect(screen.getByText(/没有可信开始时间/)).toBeTruthy();
 });
 
+it.each([
+  { locale: "en-US", label: "Source project", action: "Read history", hint: /2 or project-2/ },
+  { locale: "zh-CN", label: "来源项目", action: "读取历史", hint: /2 或 project-2/ },
+] as const)("reads the displayed numeric source project in $locale", async ({ locale, label, action, hint }) => {
+  setLegacyLocale(locale);
+  render(<RuntimePage session={session} />);
+  const submit = await screen.findByRole("button", { name: action });
+  await waitFor(() => expect((submit as HTMLButtonElement).disabled).toBe(false));
+  const input = screen.getByLabelText(label);
+  fireEvent.change(input, { target: { value: "2" } });
+  fireEvent.click(submit);
+  expect(runtimeAPI.createReading).toHaveBeenLastCalledWith(expect.objectContaining({
+    filters: { source_ids: [], source_projects: ["project-2"], cost_projects: [] },
+  }), session.csrf_token, expect.any(AbortSignal));
+  expect(input.getAttribute("aria-describedby")).toBe(screen.getByText(hint).id);
+});
+
+it("deduplicates numeric aliases without altering explicit references or the source and cost filters", async () => {
+  render(<RuntimePage session={session} />);
+  await screen.findByText("1 / 4");
+  fireEvent.change(screen.getByLabelText("来源标识"), { target: { value: "source-a, source-b, source-a" } });
+  fireEvent.change(screen.getByLabelText("来源项目"), { target: { value: "2, project-2, 2, 02, 0, external-2, 9007199254740993, 10000000000000000000" } });
+  fireEvent.change(screen.getByLabelText("费用项目"), { target: { value: "2, cost-a" } });
+  const filters = {
+    source_ids: ["source-a", "source-b"],
+    source_projects: ["project-2", "02", "0", "external-2", "project-9007199254740993", "10000000000000000000"],
+    cost_projects: ["2", "cost-a"],
+  };
+  fireEvent.click(screen.getByRole("button", { name: "读取历史" }));
+  expect(runtimeAPI.createReading).toHaveBeenLastCalledWith(expect.objectContaining({ filters }), session.csrf_token, expect.any(AbortSignal));
+  fireEvent.click(screen.getByRole("button", { name: "查看当前筛选的租约观察" }));
+  await waitFor(() => expect(runtimeAPI.current).toHaveBeenLastCalledWith(filters, undefined, expect.any(AbortSignal)));
+});
+
+it("keeps the API denial for a source project outside the reader grant", async () => {
+  render(<RuntimePage session={session} />);
+  await screen.findByText("1 / 4");
+  vi.mocked(runtimeAPI.createReading).mockRejectedValueOnce(new ApiRequestError(403));
+  fireEvent.change(screen.getByLabelText("来源项目"), { target: { value: "project-1" } });
+  fireEvent.click(screen.getByRole("button", { name: "读取历史" }));
+  expect(runtimeAPI.createReading).toHaveBeenLastCalledWith(expect.objectContaining({
+    filters: { source_ids: [], source_projects: ["project-1"], cost_projects: [] },
+  }), session.csrf_token, expect.any(AbortSignal));
+  expect((await screen.findByRole("alert")).textContent).toBe("当前没有这部分资料的读取权限。");
+  expect(screen.queryByRole("button", { name: "request-one" })).toBeNull();
+});
+
 it("rejects a late old-reading dimension response after applying new filters", async () => {
   let resolve!: (x: Runtime.Dimensions) => void;
   vi.mocked(runtimeAPI.dimensions).mockImplementationOnce(() => new Promise(r => { resolve = r; }));

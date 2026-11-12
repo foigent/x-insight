@@ -5,7 +5,7 @@ import { ActionWitnessPanel } from "./ActionWitnessPanel";
 import { Identifier, compactIdentifier } from "./Identifier";
 import type { ExecutionContext } from "./assessmentTypes";
 import { ReviewStart } from "./ReviewStart";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { accessAPI, ApiRequestError, isAbortError, runtimeAPI, scopeSessionKey, type AccessSessionResponse } from "./api";
 import type * as Runtime from "./runtime";
 import "./runtime.css";
@@ -136,7 +136,12 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
   const readingDeadline = useRef(saved.current?.deadline ?? 0);
   const identity = scopeSessionKey(session);
   const csv = (value: string) => [...new Set(value.split(",").map(v => v.trim()).filter(Boolean))];
-  const filters = () => ({ source_ids: csv(source), source_projects: csv(project), cost_projects: csv(costProject) });
+  const projectHintID = useId();
+  const filters = () => {
+    // Runtime displays numeric project IDs and filters on their canonical references.
+    const projectRefs = csv(project).map(value => /^[1-9][0-9]{0,18}$/.test(value) ? `project-${value}` : value);
+    return { source_ids: csv(source), source_projects: [...new Set(projectRefs)], cost_projects: csv(costProject) };
+  };
   const invalidate = useCallback((e: unknown) => { setReading(null); setApplied(null); setView(initialView()); setError(e); }, []);
   const create = useCallback((input: Runtime.ReadingRequest) => {
     const seq = ++generation.current;
@@ -234,9 +239,10 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
     <form className="runtime-filters" onSubmit={event => { event.preventDefault(); create({ contract_version: "xinsight.runtime-reading.v1", metric_version: "xinsight.runtime.request-observations.v1", period: inheritedPeriod ?? { relative_hours: hours, display_timezone: timezone }, filters: filters() }); }}>
       <label>{t("m0473")}<select value={inheritedPeriod?"inherited":hours} onChange={e => { setInheritedPeriod(undefined); setHours(Number(e.target.value)); }}>{inheritedPeriod?<option value="inherited">{tx("m2085")}</option>:null}<option value={24}>{tx("m0590")}</option><option value={168}>{tx("m0591")}</option><option value={720}>{tx("m0592")}</option></select></label>
       <label>{t("m2086")}<input value={source} onChange={e => setSource(e.target.value)} placeholder={t("m2087")} /></label>
-      <label>{t("m1180")}<input value={project} onChange={e => setProject(e.target.value)} placeholder={t("m2088")} /></label>
+      <label>{t("m1180")}<input value={project} onChange={e => setProject(e.target.value)} placeholder={t("m2088")} aria-describedby={projectHintID} /></label>
       <label>{t("m1182")}<input value={costProject} onChange={e => setCostProject(e.target.value)} placeholder={t("m2089")} /></label>
       <button className="primary-button" disabled={busy}>{tx("m2090")}</button>
+      <p id={projectHintID}>{tx("runtime.sourceProjectFilterHint")}</p>
       <p>{tx("m2092", { value0: inheritedPeriod?t("m2091"):"", value1: timezone })}</p>
     </form>
     {busy ? <p role="status">{retainedNavigation.current ? t("m2093") : t("m2094")}</p> : null}

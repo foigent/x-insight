@@ -12,8 +12,8 @@ import tempfile
 MIB = 1 << 20
 KIB = 1 << 10
 # Per archive, including a conservative allowance for ZIP expansion.
-# One normal product PR and its main push use 198.03125 MiB of CI ceilings,
-# plus two protocol reports of at most 128 KiB each.
+# The workflow matrix sets the number of installed archives.
+# scripts/test-ci-artifact-bounds.py checks the combined PR and main ceiling.
 LIMITS = {
     'signed': (96 * MIB, {'pull_request': 7, 'push': 14}),
     'coverage': (4 * MIB, {'pull_request': 7}),

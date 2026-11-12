@@ -306,7 +306,7 @@ describe("WorkbenchPage", () => {
     render(<WorkbenchPage session={session} navigate={vi.fn()} />);
     await screen.findAllByText("¥0.000017");
     await user.selectOptions(screen.getByLabelText("期间"), "720");
-    await user.type(screen.getByPlaceholderText("全部已授权项目"), "unapplied-project");
+    await user.type(screen.getByPlaceholderText("项目引用，如 project-2"), "unapplied-project");
     await user.click(screen.getByRole("button", {name:"保存当前筛选"}));
     expect(save.mock.calls[0]?.[0].config.period.relative_hours).toBe(24);
     expect(save.mock.calls[0]?.[0].config.filters.source_projects).toEqual([]);
