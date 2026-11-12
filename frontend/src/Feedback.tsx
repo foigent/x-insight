@@ -82,8 +82,14 @@ function errorMessage(error: unknown): { title: string; description: string } {
     case "invalid_argument":
       return { title: t("m0700"), description: t("m0701") };
     default:
-      if (error.status === 401 || error.status === 403) {
-        return { title: t("m0702"), description: t("m0703") };
+      if (error.status === 401) {
+        return { title: t("error.authentication_required.title"), description: t("error.authentication_required.description") };
+      }
+      if (error.status === 403) {
+        if (error.problem?.code === "permission_denied" || error.problem?.code === "workbench_scope_denied") {
+          return { title: t("m0702"), description: t("m0703") };
+        }
+        return { title: t("error.request_denied.title"), description: t("error.request_denied.description") };
       }
       return { title: t("m0704"), description: t("m0705") };
   }

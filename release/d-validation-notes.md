@@ -1,3 +1,13 @@
+# FPV23 source proposal
+
+FPV23 keeps schema47 and admits the exact published FPV22 as an upgrade source. Navigation follows effective reading capabilities for owners with restricted scope and readers. Known authorization failures provide an appropriate destination. The server compresses immutable UI assets when the client accepts gzip.
+
+The standalone release verifier can reconstruct a signed bundle from the exact cached signed FPV22 bundle and an approved Zstd delta. It verifies the target signature and complete bundle before the verified target controller runs the existing upgrade checks. The original full bundle remains available through its approved distribution path.
+
+FPV23 is a local version proposal. Exact CI, Linux, signed release, and original installation acceptance remain pending.
+
+## Historical release notes retained below
+
 # FPV22 source candidate: first-use and reading continuity
 
 Schema47 is unchanged. Normal entry follows effective reading grants; the UI displays server-verified account/role, separates invitation/recovery and holder setup from sign-in, preserves usability after local denials, and closes stale data on real authorization changes. Unknown submissions do not cause blind resubmission. Runtime and Work Activity have separate captured-body refusal checks.

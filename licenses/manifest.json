@@ -62,6 +62,17 @@
       ]
     },
     {
+      "name": "github.com/klauspost/compress",
+      "version": "v1.20.2",
+      "redistributed_in": "Go binary",
+      "license_files": [
+        {
+          "path": "licenses/github.com_klauspost_compress/LICENSE",
+          "sha256": "0d9e582ee4bff57bf1189c9e514e6da7ce277f9cd3bc2d488b22fbb39a6d87cf"
+        }
+      ]
+    },
+    {
       "name": "github.com/santhosh-tekuri/jsonschema/v6",
       "version": "v6.0.2",
       "redistributed_in": "Go binary",

@@ -4564,6 +4564,9 @@ components:
       additionalProperties: false
       required: [session, csrf_token]
       properties:
+        scoped_data_access:
+          type: boolean
+          description: Present and true on authoritative session reads when investigation data uses the explicit scoped route boundary, including managed owners. Does not grant access to any project or field. Absent on legacy unscoped sessions and login responses.
         reading_capabilities:
           type: object
           additionalProperties: false

@@ -38,9 +38,11 @@ def validate(repository_root: pathlib.Path) -> None:
         "go run ./cmd/xinsight-draft-evidence-validator",
         "--event pull_request --base \"$PR_BASE_SHA\" --head \"$HEAD_SHA\"",
         "--event push --base \"$PUSH_BASE_SHA\" --head \"$HEAD_SHA\"",
-        "actions/upload-artifact@v6",
+        "uses: ./.github/actions/upload-bounded-artifact",
+        "kind: protocol",
     ):
         require(conformance, fragment, "Foigent Protocol Conformance")
+    forbid(conformance, "uses: actions/upload-artifact@", "Foigent Protocol Conformance")
 
     for fragment in (
         "name: Execution Evidence Drift Observer",

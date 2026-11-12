@@ -162,6 +162,59 @@ embedded binaries/UI, schema contract, both manuals and notices. A successful
 artifact check remains separate from first install, predecessor/recovery,
 ordinary-user access and the installed two-product acceptance.
 
+### Reconstruct an approved upgrade bundle from a cached release
+
+An independently admitted `xinsight-release` that supports `materialize-delta`
+can reconstruct the ordinary signed upgrade bundle from a cached signed basis.
+Use the exact artifact recorded by the native installation state after the
+normal read-only admission. Missing or changed basis, an incompatible decoder
+profile, or any identity mismatch stops the delta path. Any full download is a
+separately approved use of the exact same complete artifact.
+
+The owner-reviewed delivery record must bind the standalone bootstrap and
+existing public trust store, plus a delta plan's exact SHA-256. The plan uses
+`schema_version: xinsight.release-delta.v1`, `codec: zstd-raw-tar-v1`, and
+`target_os: linux`, `target_arch: amd64`. `basis` and `target` each carry the
+exact `commit`, `version`, and `bundle` and `raw_tar` identities. `patch`,
+`manifest`, and `signature` carry identities for the three input files. Every
+identity is an object with `bytes` and `sha256` (`sha256:` followed by 64
+lowercase hex characters). Use the digest from the independently verified
+record; computing a digest from a download by itself does not admit that plan.
+
+The patch is a standard `zstd --patch-from` frame made from the exact two raw
+payload tar streams, with a content length and checksum. The profile allows up
+to 64 MiB each for the raw tar, decoder window, and complete bundle, and 32 MiB
+for the patch. The bootstrap uses the same Go version as the target producer
+to recreate the canonical gzip bytes. It verifies the basis and the target
+manifest with the existing trust store, checks the signed payload and the
+exact full-bundle digest, then applies the ordinary full-bundle verifier.
+
+```sh
+xinsight-release materialize-delta --plan /approved/input/delta.json \
+  --plan-sha256 SHA256_REFERENCE_FROM_AUTHORITY --basis /approved/cache/basis.tar.gz \
+  --patch /approved/input/payload.zst --manifest /approved/input/release-manifest.json \
+  --signature /approved/input/release-manifest.sig \
+  --trust-store /etc/x-insight/trusted-release-keys.json \
+  --output /approved/private-staging/target.tar.gz
+```
+
+Use an existing private staging directory. `--check` in place of `--output`
+verifies the entire reconstruction without writing a file. A materialization
+uses no installation state or network and never replaces an existing output.
+Only the verified full bundle goes to the existing `xinsightctl upgrade --check`
+and upgrade procedure. Backup, current release checks, migration, journal,
+rollback, and recovery still belong to the native controller.
+
+A first transfer needs a full admitted bootstrap. A transport may carry it as
+a standard gzip attachment only if the independently reviewed record binds
+both the compressed attachment and the final executable hashes and sizes.
+Verify the compressed input, decompress with the standard system gzip into
+private exclusive staging with output bounded by the reviewed executable size,
+and check the exact raw size and hash before making it executable. The existing
+signed delivery directory still takes the verified **raw** bootstrap filename;
+the gzip attachment is transport input outside that directory. It must not be
+added to the existing delivery inventory or run directly.
+
 ### Publish a portable record after approval
 
 For a future publication, the owner must bind the canonical release/download

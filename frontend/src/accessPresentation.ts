@@ -4,12 +4,17 @@ import { t, type MessageKey } from "./i18n";
 export function readingAccess(current: AccessSessionResponse) {
   const permissions = current.session.permissions;
   const hints = current.reading_capabilities;
-  const runtime = permissions.includes("workbench.summary.read") && permissions.includes("workbench.details.read") && hints?.runtime !== false;
+  const scoped = current.scoped_data_access === true || permissions.includes("investigation.scoped.read");
+  const legacyDefault = current.scoped_data_access !== true;
+  const summary = permissions.includes("workbench.summary.read") && (hints?.summary ?? legacyDefault);
+  const runtime = permissions.includes("workbench.summary.read") && permissions.includes("workbench.details.read") && (hints?.runtime ?? legacyDefault);
   return {
-    summary: permissions.includes("workbench.summary.read") && hints?.summary !== false,
+    scoped,
+    summary,
+    overview: summary || (!scoped && !hints && permissions.includes("evidence.read")),
     runtime,
-    activity: runtime && hints?.work_activity !== false,
-    coverage: permissions.includes("workbench.coverage.read") && hints?.coverage !== false,
+    activity: runtime && (hints?.work_activity ?? legacyDefault),
+    coverage: permissions.includes("workbench.coverage.read") && (hints?.coverage ?? legacyDefault),
   };
 }
 

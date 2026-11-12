@@ -1,0 +1,36 @@
+name: Upload bounded CI artifact
+description: Check and stage the allowlisted files before uploading a size-bounded archive.
+inputs:
+  name:
+    description: Artifact name
+    required: true
+  path:
+    description: Newline-delimited file paths or final-component star patterns
+    required: true
+  kind:
+    description: CI artifact class that sets the archive limit and retention
+    required: true
+  if-no-files-found:
+    description: Behavior when the allowlist matches no files
+    default: warn
+runs:
+  using: composite
+  steps:
+    - name: Admit and stage the allowlist
+      id: admit
+      if: ${{ always() }}
+      shell: bash
+      env:
+        ARTIFACT_PATHS: ${{ inputs.path }}
+        ARTIFACT_KIND: ${{ inputs.kind }}
+        ARTIFACT_MISSING: ${{ inputs.if-no-files-found }}
+      run: python3 "$GITHUB_ACTION_PATH/admit.py"
+    - name: Upload the checked snapshot
+      if: ${{ always() && steps.admit.outcome == 'success' && steps.admit.outputs.directory != '' }}
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ steps.admit.outputs.directory }}
+        retention-days: ${{ steps.admit.outputs.retention-days }}
+        if-no-files-found: error
+        compression-level: 6

@@ -115,6 +115,7 @@ export interface AccessSession {
 }
 
 export interface AccessSessionResponse {
+  scoped_data_access?: boolean;
  scope_revision?: string;
   reading_capabilities?: { summary: boolean; runtime: boolean; coverage: boolean; work_activity: boolean };
   session: AccessSession;
@@ -1462,7 +1463,7 @@ let scopeGeneration=0;
 // Activity timestamps and CSRF refreshes do not change the authorization identity.
 export function scopeSessionKey(current: AccessSessionResponse | null): string {
  return current ? JSON.stringify([current.session.subject_id, current.session.session_ref,
-  current.session.role, [...current.session.permissions].sort(), current.scope_revision,
+  current.session.role, [...current.session.permissions].sort(), current.scope_revision, current.scoped_data_access === true,
   current.reading_capabilities ? [current.reading_capabilities.summary,current.reading_capabilities.runtime,current.reading_capabilities.coverage,current.reading_capabilities.work_activity] : null]) : "";
 }
 export function acceptScopeSession(current: AccessSessionResponse | null){

@@ -227,6 +227,10 @@ func Verify(bundlePath string, options VerifyOptions) (VerifiedBundle, error) {
 	if err != nil {
 		return VerifiedBundle{}, err
 	}
+	return verifyBundleBytes(bundleBytes, options)
+}
+
+func verifyBundleBytes(bundleBytes []byte, options VerifyOptions) (VerifiedBundle, error) {
 	releaseName, files, headers, err := readEnvelope(bundleBytes)
 	if err != nil {
 		return VerifiedBundle{}, err
@@ -252,25 +256,8 @@ func Verify(bundlePath string, options VerifyOptions) (VerifiedBundle, error) {
 			return VerifiedBundle{}, fmt.Errorf("%w: envelope metadata", ErrInvalidBundle)
 		}
 	}
-	var signature DetachedSignature
-	if err := decodeStrictBytes(signatureBytes, &signature); err != nil {
-		return VerifiedBundle{}, fmt.Errorf("%w: signature record: %v", ErrInvalidBundle, err)
-	}
-	if signature.SchemaVersion != SignatureSchemaVersion || signature.Algorithm != SignatureAlgorithm || signature.KeyID != manifest.Signature.KeyID ||
-		signature.ManifestSHA256 != sha256Reference(manifestBytes) {
-		return VerifiedBundle{}, fmt.Errorf("%w: signature metadata", ErrInvalidBundle)
-	}
-	store, err := LoadTrustStore(options.TrustStorePath)
-	if err != nil {
+	if err := verifyManifestSignature(manifest, manifestBytes, signatureBytes, options.TrustStorePath); err != nil {
 		return VerifiedBundle{}, err
-	}
-	publicKey, err := trustedPublicKey(store, signature.KeyID, manifest.CreatedAt)
-	if err != nil {
-		return VerifiedBundle{}, err
-	}
-	signatureValue, err := base64.StdEncoding.Strict().DecodeString(signature.Signature)
-	if err != nil || len(signatureValue) != ed25519.SignatureSize || !ed25519.Verify(publicKey, manifestBytes, signatureValue) {
-		return VerifiedBundle{}, ErrUntrustedRelease
 	}
 	if manifest.ArtifactDigest != sha256Reference(payload) || manifest.ArtifactSizeBytes != int64(len(payload)) {
 		return VerifiedBundle{}, fmt.Errorf("%w: payload digest", ErrInvalidBundle)
@@ -285,11 +272,49 @@ func Verify(bundlePath string, options VerifyOptions) (VerifiedBundle, error) {
 	if err := validateRequiredEntries(actualEntries, manifest.ProductVersion, manifest.DatabaseSchema.Current, manifest.Manual.Language); err != nil {
 		return VerifiedBundle{}, err
 	}
+	if err := verifyManifestExpectations(manifest, options); err != nil {
+		return VerifiedBundle{}, err
+	}
+	return VerifiedBundle{
+		ReleaseName:    releaseName,
+		BundleSHA256:   sha256Reference(bundleBytes),
+		ManifestSHA256: sha256Reference(manifestBytes),
+		Manifest:       manifest,
+		manifest:       bytes.Clone(manifestBytes),
+		payload:        payload,
+	}, nil
+}
+
+func verifyManifestSignature(manifest ReleaseManifest, manifestBytes, signatureBytes []byte, trustStorePath string) error {
+	var signature DetachedSignature
+	if err := decodeStrictBytes(signatureBytes, &signature); err != nil {
+		return fmt.Errorf("%w: signature record: %v", ErrInvalidBundle, err)
+	}
+	if signature.SchemaVersion != SignatureSchemaVersion || signature.Algorithm != SignatureAlgorithm || signature.KeyID != manifest.Signature.KeyID ||
+		signature.ManifestSHA256 != sha256Reference(manifestBytes) {
+		return fmt.Errorf("%w: signature metadata", ErrInvalidBundle)
+	}
+	store, err := LoadTrustStore(trustStorePath)
+	if err != nil {
+		return err
+	}
+	publicKey, err := trustedPublicKey(store, signature.KeyID, manifest.CreatedAt)
+	if err != nil {
+		return err
+	}
+	signatureValue, err := base64.StdEncoding.Strict().DecodeString(signature.Signature)
+	if err != nil || len(signatureValue) != ed25519.SignatureSize || !ed25519.Verify(publicKey, manifestBytes, signatureValue) {
+		return ErrUntrustedRelease
+	}
+	return nil
+}
+
+func verifyManifestExpectations(manifest ReleaseManifest, options VerifyOptions) error {
 	if options.ExpectedCommit != "" && manifest.Commit != options.ExpectedCommit {
-		return VerifiedBundle{}, fmt.Errorf("%w: unexpected commit", ErrInvalidBundle)
+		return fmt.Errorf("%w: unexpected commit", ErrInvalidBundle)
 	}
 	if options.ExpectedVersion != "" && manifest.ProductVersion != options.ExpectedVersion {
-		return VerifiedBundle{}, fmt.Errorf("%w: unexpected product version", ErrInvalidBundle)
+		return fmt.Errorf("%w: unexpected product version", ErrInvalidBundle)
 	}
 	expectedOS := options.ExpectedOS
 	if expectedOS == "" {
@@ -300,23 +325,16 @@ func Verify(bundlePath string, options VerifyOptions) (VerifiedBundle, error) {
 		expectedArch = "amd64"
 	}
 	if manifest.TargetOS != expectedOS || manifest.TargetArch != expectedArch || manifest.CGOEnabled {
-		return VerifiedBundle{}, ErrUnsupportedPlatform
+		return ErrUnsupportedPlatform
 	}
 	verificationTime := options.Now
 	if verificationTime.IsZero() {
 		verificationTime = time.Now().UTC()
 	}
 	if manifest.CreatedAt.After(verificationTime.Add(5 * time.Minute)) {
-		return VerifiedBundle{}, fmt.Errorf("%w: release creation time is in the future", ErrInvalidBundle)
+		return fmt.Errorf("%w: release creation time is in the future", ErrInvalidBundle)
 	}
-	return VerifiedBundle{
-		ReleaseName:    releaseName,
-		BundleSHA256:   sha256Reference(bundleBytes),
-		ManifestSHA256: sha256Reference(manifestBytes),
-		Manifest:       manifest,
-		manifest:       bytes.Clone(manifestBytes),
-		payload:        payload,
-	}, nil
+	return nil
 }
 
 // VerifiedManifest returns the exact signed manifest retained by Verify. The
@@ -545,11 +563,16 @@ func collectPayload(root string) ([]payloadSource, error) {
 	return sources, nil
 }
 
+func newArchiveGzipWriter(output io.Writer, createdAt time.Time) *gzip.Writer {
+	writer, _ := gzip.NewWriterLevel(output, gzip.BestCompression)
+	writer.Header.ModTime = createdAt
+	writer.Header.OS = 255
+	return writer
+}
+
 func buildPayloadArchive(sources []payloadSource, createdAt time.Time) ([]byte, error) {
 	var output bytes.Buffer
-	gzipWriter, _ := gzip.NewWriterLevel(&output, gzip.BestCompression)
-	gzipWriter.Header.ModTime = createdAt
-	gzipWriter.Header.OS = 255
+	gzipWriter := newArchiveGzipWriter(&output, createdAt)
 	tarWriter := tar.NewWriter(gzipWriter)
 	directories := payloadDirectories(sources)
 	for _, directory := range directories {
@@ -580,9 +603,7 @@ func buildPayloadArchive(sources []payloadSource, createdAt time.Time) ([]byte, 
 
 func buildEnvelope(releaseName string, createdAt time.Time, manifest []byte, signature []byte, payload []byte) ([]byte, error) {
 	var output bytes.Buffer
-	gzipWriter, _ := gzip.NewWriterLevel(&output, gzip.BestCompression)
-	gzipWriter.Header.ModTime = createdAt
-	gzipWriter.Header.OS = 255
+	gzipWriter := newArchiveGzipWriter(&output, createdAt)
 	tarWriter := tar.NewWriter(gzipWriter)
 	if err := tarWriter.WriteHeader(archiveHeader(releaseName, 0, 0o755, tar.TypeDir, createdAt)); err != nil {
 		return nil, err

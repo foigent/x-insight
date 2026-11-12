@@ -11,6 +11,7 @@ case "$PREDECESSOR" in
   fpv17) OLD_COMMIT=164582cab0e7f169c265c2494d04920c61af833d ;;
   fpv20) OLD_COMMIT=08435e0949dfae0ae65497d2e12ca356f6d820f0 ;;
   fpv21) OLD_COMMIT=6463d980958fae86d975eecde239b9534ec831a5 ;;
+  fpv22) OLD_COMMIT=bd4503a13a46156f8361e56730abef96cc5628bd ;;
   *) exit 2 ;;
 esac
 OLD_SOURCE="${RUNNER_TEMP:?}/installed-${PREDECESSOR}-source"
@@ -49,6 +50,14 @@ else
       gh release download v0.2.0-dev.fpv21 --repo foigent/x-insight --dir "$OLD_SIGNED" \
         --pattern "xinsight-v$OLD_VERSION-linux-amd64-$OLD_COMMIT.tar.gz" \
         --pattern "xinsight-release-linux-amd64-$OLD_COMMIT" --pattern trusted-release-keys.json ;;
+    fpv22)
+      OLD_TREE=2e595f5035376f6d51efbb4911cb6279e8dec924
+      OLD_VERSION=0.2.0-dev.fpv22
+      OLD_ARTIFACT_HASH=c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d
+      OLD_BOOTSTRAP_HASH=3b2929c459c10434ddbd2f24356fd1b8fd4539e30b14f317b506059e308f95da
+      gh release download v0.2.0-dev.fpv22 --repo foigent/x-insight --dir "$OLD_SIGNED" \
+        --pattern "xinsight-v$OLD_VERSION-linux-amd64-$OLD_COMMIT.tar.gz" \
+        --pattern "xinsight-release-linux-amd64-$OLD_COMMIT" --pattern trusted-release-keys.json ;;
     *) exit 2 ;;
   esac
   test "$(git -C "$ROOT" rev-parse "$OLD_COMMIT^{tree}")" = "$OLD_TREE"
@@ -85,8 +94,8 @@ combined=private/'combined-trust.json'
 with combined.open('x') as f: json.dump(dict(schema_version=current['schema_version'],keys=keys),f)
 old_matrix=json.loads((old_payload/'release/compatibility-matrix.json').read_text())
 new_matrix=json.loads((payload/'release/compatibility-matrix.json').read_text())
-assert (old_matrix['product_version'],old_matrix['database_schema']) in {('0.2.0-dev.fpv17','45'),('0.2.0-dev.fpv20','46'),('0.2.0-dev.fpv21','47')}
-assert (new_matrix['product_version'],new_matrix['database_schema'])==('0.2.0-dev.fpv22','47')
+assert (old_matrix['product_version'],old_matrix['database_schema']) in {('0.2.0-dev.fpv17','45'),('0.2.0-dev.fpv20','46'),('0.2.0-dev.fpv21','47'),('0.2.0-dev.fpv22','47')}
+assert (new_matrix['product_version'],new_matrix['database_schema'])==('0.2.0-dev.fpv23','47')
 assert old_matrix['product_version'] in new_matrix['supported_upgrade_from_versions']
 record=dict(schema_version='xinsight.ci-account-upgrade-predecessor.v1',old_commit=old_commit,old_product=old_matrix['product_version'],old_schema=old_matrix['database_schema'],old_source=str(source),old_artifact=str(old_artifact),old_payload=str(old_payload),
             combined_trust=str(combined),candidate_ctl=str(payload/'bin/xinsightctl'),candidate_artifact=str(artifact))

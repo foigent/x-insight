@@ -36,6 +36,8 @@ func run(args []string, stdout io.Writer) error {
 		return runVerify(args[1:], stdout)
 	case "extract":
 		return runExtract(args[1:], stdout)
+	case "materialize-delta":
+		return runMaterializeDelta(args[1:], stdout)
 	case "campaign-authority":
 		return runCampaignAuthority(args[1:], stdout)
 	default:
@@ -217,5 +219,5 @@ func writeOutput(writer io.Writer, value any) error {
 }
 
 func usage() error {
-	return fmt.Errorf("usage: xinsight-release keygen|pack|verify|extract|campaign-authority")
+	return fmt.Errorf("usage: xinsight-release keygen|pack|verify|extract|materialize-delta|campaign-authority")
 }

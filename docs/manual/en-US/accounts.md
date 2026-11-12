@@ -1,6 +1,6 @@
 # Accounts and project reading
 
-This chapter describes the FPV22/schema47 source candidate. A local pass does not establish an installed release or Target acceptance.
+This chapter describes the FPV23/schema47 source candidate. A local pass does not establish an installed release or Target acceptance.
 
 ## First owner and existing installations
 
