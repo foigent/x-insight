@@ -1,12 +1,13 @@
 {
   "record_kind": "Foigent X-Insight release public-key authority",
-  "state": "FPV22 owner-signed release candidate: exact product main CI and seven configured Linux qualification lanes accepted; actual owner signature verified on 2026-11-05. Publication, anonymous exact signed-package Linux readback, original-host FPV21-to-FPV22 upgrade and full ordinary-user/control-rotation acceptance remain pending. The published FPV21 preview and historical artifacts remain unchanged.",
+  "state": "FPV23 owner-signed release candidate. Exact product main CI, eight configured Linux lanes, actual owner signature and exact local delta reconstruction accepted. The release publication record separately binds the immutable authority commit. Public Linux readback and original-host and installed-pair acceptance have separate records.",
   "product": "x-insight",
   "release_version_scope": [
     "0.2.0-dev.fpv19",
     "0.2.0-dev.fpv20",
     "0.2.0-dev.fpv21",
-    "0.2.0-dev.fpv22"
+    "0.2.0-dev.fpv22",
+    "0.2.0-dev.fpv23"
   ],
   "release_channel": "release_candidate",
   "algorithm": "ed25519",
@@ -18,39 +19,134 @@
   "not_before": "2026-10-18T10:42:42.832Z",
   "not_after": "2026-11-17T10:42:42.832Z",
   "time_policy": "The unchanged verifier compares the signed manifest.created_at (real source commit timestamp), not current wall-clock expiry. No original UR key birthday, activation date or lifetime is asserted.",
-  "new_XI_private_representation": "The actual FPV22 holder ceremony reused the existing owner Ed25519 material for this release scope. No new cryptographic key or original key birthday is asserted; no private representation is distributed.",
+  "new_XI_private_representation": "The FPV23 holder reused the existing owner Ed25519 material within its authorized release scope. Public distribution contains the public trust and signed outputs.",
   "authority_channel": {
     "repository": "https://github.com/foigent/x-insight",
     "record_path": "docs/community/release-authority.json",
     "consumer_rule": "Pin the actual authority-record commit and formal source commit named in the approved final release record; do not trust mutable main or a commit supplied only by the package.",
-    "attestation_basis": "The release owner authorizes this unchanged public fingerprint for the listed XI release scopes, including the complete FPV22 package. Private approval and custody records are retained separately.",
+    "attestation_basis": "The release owner authorizes this unchanged public fingerprint for the listed XI release scopes, including the exact FPV23 archive and its detached signed manifest. Private approval and custody records are retained separately.",
     "administrative_boundary": "Authority source and Release may share the same owner GitHub account. This model trusts that canonical owner identity; it does not assert an independent administrative domain or resistance to full owner-account compromise."
   },
   "public_trust_store": "docs/community/trusted-release-keys.json",
   "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
   "formal_release": {
-    "product_version": "0.2.0-dev.fpv22",
+    "product_version": "0.2.0-dev.fpv23",
     "release_channel": "release_candidate",
-    "source_commit": "bd4503a13a46156f8361e56730abef96cc5628bd",
-    "source_tree": "2e595f5035376f6d51efbb4911cb6279e8dec924",
-    "canonical_release_tag": "v0.2.0-dev.fpv22",
-    "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv22",
-    "publication_state": "pending",
-    "bundle_name": "xinsight-v0.2.0-dev.fpv22-linux-amd64-bd4503a13a46156f8361e56730abef96cc5628bd.tar.gz",
-    "bundle_bytes": 22374819,
-    "bundle_sha256": "sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d",
-    "manifest_sha256": "sha256:55a05afcbf406560f6ae0c2d80822f1188e98e49f8535763b05af0e049e89040",
-    "payload_sha256": "sha256:5cea4f260cc694e2136189a98012d7247a784c92fb72def8791e0377f76972f2",
-    "bootstrap_name": "xinsight-release-linux-amd64-bd4503a13a46156f8361e56730abef96cc5628bd",
-    "bootstrap_bytes": 7942292,
-    "bootstrap_sha256": "sha256:3b2929c459c10434ddbd2f24356fd1b8fd4539e30b14f317b506059e308f95da",
+    "source_commit": "82ca877d023058e48c93975c50171f606f8924f2",
+    "source_tree": "8e0879573dd1eed6be7c1bcc755c0a41adb9c346",
+    "canonical_release_tag": "v0.2.0-dev.fpv23",
+    "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv23",
+    "publication_state": "see_canonical_release_record",
+    "bundle_name": "xinsight-v0.2.0-dev.fpv23-linux-amd64-82ca877d023058e48c93975c50171f606f8924f2.tar.gz",
+    "bundle_bytes": 22408187,
+    "bundle_sha256": "sha256:4497590a188a6abb90f7e90c1b71d279b7aff4fdde2ec458b48795a19c4feb2d",
+    "manifest_sha256": "sha256:f350731d64c699ba2fa31d4fe30934eef6b4f1233e838b6dffeca3f714eb6f72",
+    "payload_sha256": "sha256:cb51730b6031cbde7437a25a8063f9e26fb5e97e93701bc00710a5c0aba7c465",
+    "bootstrap_name": "xinsight-release-linux-amd64-82ca877d023058e48c93975c50171f606f8924f2",
+    "bootstrap_bytes": 8249492,
+    "bootstrap_sha256": "sha256:d62533b18b8dca3e0f5517e39a28b286cc9a4a37331d3b11f6992a50a3bf804c",
     "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
     "database_schema": "47",
-    "qualification_status": "Exact product main CI/protocol and seven configured Linux lanes passed. Five Linux binaries retain build identity and runtime source-line data after symbol stripping; all179 unsigned payload files and Linux bootstrap match accepted CI bytes/modes. The actual owner signature was verified using the unchanged owner public trust. The owner-signed package has not yet completed public download/native Linux readback or original-host upgrade and owner/reader/control-rotation acceptance. CI synthetic evidence is separate from original-host results.",
-    "installation_guide": "docs/community/releases/v0.2.0-dev.fpv22.md"
+    "qualification_status": "Exact product main CI/protocol and eight configured Linux lanes passed. All 180 payload files and the Linux verifier match accepted CI bytes and modes. The formal owner signature and byte-identical reconstruction from the exact signed FPV22 archive passed the standard verifier locally. Public Linux readback, original-host upgrade and installed-pair acceptance are recorded separately.",
+    "installation_guide": "docs/community/releases/v0.2.0-dev.fpv23.md",
+    "delta": {
+      "codec": "zstd-raw-tar-v1",
+      "basis_archive_name": "xinsight-v0.2.0-dev.fpv22-linux-amd64-bd4503a13a46156f8361e56730abef96cc5628bd.tar.gz",
+      "basis": {
+        "commit": "bd4503a13a46156f8361e56730abef96cc5628bd",
+        "version": "0.2.0-dev.fpv22",
+        "bundle": {
+          "bytes": 22374819,
+          "sha256": "sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d"
+        },
+        "raw_tar": {
+          "bytes": 62936064,
+          "sha256": "sha256:f4b44dfa7bdcd0f3fe556f16bf319eafa9dddb6fd50f4ad7196874ce592cf212"
+        }
+      },
+      "plan_name": "delta.json",
+      "plan_sha256": "sha256:436bffa3b793426783756fda8d3f3d689b8bc3f5e7c5f1565695f0adb4cfbeb1",
+      "patch_name": "payload.zst",
+      "manifest_name": "release-manifest.json",
+      "signature_name": "release-manifest.sig",
+      "compressed_bootstrap_name": "xinsight-release-linux-amd64.gz"
+    },
+    "release_assets": {
+      "INSTALL-AND-VERIFY-FPV23.md": {
+        "bytes": 8292,
+        "sha256": "sha256:46e72eeaffddf8add8e7a5695fd1b754316baaffffe0a174aec86053f14cd371"
+      },
+      "RELEASE-NOTES.md": {
+        "bytes": 1291,
+        "sha256": "sha256:86592c82f5eeacef0323d703038df2913086bc5cd3d7015574bd25e0b5398783"
+      },
+      "SHA256SUMS": {
+        "bytes": 1070,
+        "sha256": "sha256:a4f3c7d71184abeab64e14765e706f4ccdac5cfd29815ed1d64d068671aae14f"
+      },
+      "delta.json": {
+        "bytes": 1290,
+        "sha256": "sha256:436bffa3b793426783756fda8d3f3d689b8bc3f5e7c5f1565695f0adb4cfbeb1"
+      },
+      "payload.zst": {
+        "bytes": 6063597,
+        "sha256": "sha256:2ea4447d77b9742aff600fe20d7b9792aa9b6530316ab06f338cb0e8b6096eb7"
+      },
+      "release-manifest.json": {
+        "bytes": 48436,
+        "sha256": "sha256:f350731d64c699ba2fa31d4fe30934eef6b4f1233e838b6dffeca3f714eb6f72"
+      },
+      "release-manifest.sig": {
+        "bytes": 387,
+        "sha256": "sha256:1c619fbdd82202246bb968fdaf3ce3daac9951eaac67fa128820dc9e47307ff0"
+      },
+      "trusted-release-keys.json": {
+        "bytes": 602,
+        "sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd"
+      },
+      "verify-result.json": {
+        "bytes": 645,
+        "sha256": "sha256:321be654ecf8c4cf345a2499b0a13d777d3569297860780d3cee44afd2d4f5b6"
+      },
+      "xinsight-release-linux-amd64-82ca877d023058e48c93975c50171f606f8924f2": {
+        "bytes": 8249492,
+        "sha256": "sha256:d62533b18b8dca3e0f5517e39a28b286cc9a4a37331d3b11f6992a50a3bf804c"
+      },
+      "xinsight-release-linux-amd64.gz": {
+        "bytes": 3239827,
+        "sha256": "sha256:a3623b41f562ed255a43a72697ded9eea7699f7d6e45eaf7b3248775f1879021"
+      },
+      "xinsight-v0.2.0-dev.fpv23-linux-amd64-82ca877d023058e48c93975c50171f606f8924f2.tar.gz": {
+        "bytes": 22408187,
+        "sha256": "sha256:4497590a188a6abb90f7e90c1b71d279b7aff4fdde2ec458b48795a19c4feb2d"
+      }
+    }
   },
   "revocation": "Owner-authenticated status changes are recorded here and in the public trust store. No revocation is asserted in this preparation.",
   "prior_formal_releases": [
+    {
+      "product_version": "0.2.0-dev.fpv22",
+      "release_channel": "release_candidate",
+      "source_commit": "bd4503a13a46156f8361e56730abef96cc5628bd",
+      "source_tree": "2e595f5035376f6d51efbb4911cb6279e8dec924",
+      "canonical_release_tag": "v0.2.0-dev.fpv22",
+      "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv22",
+      "publication_state": "published_prerelease",
+      "bundle_name": "xinsight-v0.2.0-dev.fpv22-linux-amd64-bd4503a13a46156f8361e56730abef96cc5628bd.tar.gz",
+      "bundle_bytes": 22374819,
+      "bundle_sha256": "sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d",
+      "manifest_sha256": "sha256:55a05afcbf406560f6ae0c2d80822f1188e98e49f8535763b05af0e049e89040",
+      "payload_sha256": "sha256:5cea4f260cc694e2136189a98012d7247a784c92fb72def8791e0377f76972f2",
+      "bootstrap_name": "xinsight-release-linux-amd64-bd4503a13a46156f8361e56730abef96cc5628bd",
+      "bootstrap_bytes": 7942292,
+      "bootstrap_sha256": "sha256:3b2929c459c10434ddbd2f24356fd1b8fd4539e30b14f317b506059e308f95da",
+      "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
+      "database_schema": "47",
+      "qualification_status": "Exact CI, owner signature and public prerelease were verified. One original-host preserving FPV21-to-FPV22 upgrade with private backup and isolated restore was verified on schema 47. Installed-pair and first-use results retain their own scope. The publication-day authority is preserved at its original commit.",
+      "installation_guide": "docs/community/releases/v0.2.0-dev.fpv22.md",
+      "published_at": "2026-11-05T05:19:36Z",
+      "original_authority_record_commit": "a4768ab62d62769926cc45a8110c95e5b47fdf03"
+    },
     {
       "product_version": "0.2.0-dev.fpv21",
       "release_channel": "release_candidate",
