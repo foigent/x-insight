@@ -316,7 +316,7 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
       <div className="overview-filter-meta"><div className="overview-active-filters"><span>{tx("m1175", { value0: activeFilterCount ? t("m1173", { value0: appliedSourceNames.join("、") || t("m1172"), value1: appliedFilters.source_projects.join("、") || t("m0618"), value2: appliedFilters.cost_projects.join("、") || t("m0618") }) : t("m1174"), value1: formatDateTime(request.period.start_inclusive), value2: formatDateTime(request.period.end_exclusive), value3: moneyTitle })}</span>{activeFilterCount ? <button type="button" onClick={clearFilters}>{tx("m1176")}</button> : null}</div>
       <details className="overview-advanced" open={advancedOpen} onToggle={event => setAdvancedOpen(event.currentTarget.open)}><summary>{tx("m1177")}</summary><div className="overview-advanced-content">
         <label>{t("m1178")}<input value={source} onChange={event => setSource(event.target.value)} placeholder={t("m1179")} /></label>
-        <label>{t("m1180")}<input value={project} onChange={event => setProject(event.target.value)} placeholder={t("m1181")} /></label>
+        <label>{t("m1180")}<input value={project} onChange={event => setProject(event.target.value)} placeholder={t("m2726")} /></label>
         <label>{t("m1182")}<input value={costProject} onChange={event => setCostProject(event.target.value)} placeholder={t("m1181")} /></label>
         <p className="overview-period">{tx("m1183", { value0: formatDateTime(request.period.start_inclusive), value1: formatDateTime(request.period.end_exclusive) })}</p>
       </div></details></div>

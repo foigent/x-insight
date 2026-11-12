@@ -776,7 +776,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade]
+        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade]
         database_profile: [container]
         include:
           - lifecycle: new_install
@@ -846,8 +846,8 @@ jobs:
           /usr/lib/postgresql/16/bin/pg_restore --version
           /usr/lib/postgresql/16/bin/createdb --version
 
-      - name: Install the standard delta producer on the FPV22 lane
-        if: matrix.lifecycle == 'fpv22_upgrade'
+      - name: Install the standard delta producer on the published delta lanes
+        if: matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
         run: sudo apt-get install -y zstd
 
       - name: Download exact non-publishable signed candidate
@@ -882,13 +882,13 @@ jobs:
           sudo test ! -e /opt/xinsight-ci-artifacts
           sudo test ! -L /opt/xinsight-ci-artifacts
           sudo install -d -o root -g root -m 0755 /opt/xinsight-ci-artifacts
-          if [ "$LIFECYCLE" != fpv22_upgrade ]; then
+          if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ]; then
             sudo install -o root -g root -m 0444 "$artifact" /opt/xinsight-ci-artifacts/candidate.tar.gz
             test "$(sha256sum "$artifact" | cut -d ' ' -f1)" = "$(sha256sum /opt/xinsight-ci-artifacts/candidate.tar.gz | cut -d ' ' -f1)"
           fi
 
       - name: Prepare synthetic accounts before native durable initialization
-        if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade'
+        if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
         run: |
@@ -967,18 +967,23 @@ jobs:
           subprocess.run([fixture,p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
           PY_FPV21
 
-      - name: Verify the FPV22 delta and install its exact predecessor
-        if: matrix.lifecycle == 'fpv22_upgrade'
+      - name: Verify the delta and install its exact published predecessor
+        if: matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
-          XINSIGHT_CI_ACCOUNT_PREDECESSOR: fpv22
+          LIFECYCLE: ${{ matrix.lifecycle }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          case "$LIFECYCLE" in
+            fpv22_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR=fpv22 ;;
+            fpv23_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR=fpv23 ;;
+            *) exit 2 ;;
+          esac
           download_root="${RUNNER_TEMP}/signed-release-artifact"
           trust="${download_root}/_temp/ci-trusted-release-keys.json"
           candidate=/opt/xinsight-ci-artifacts/candidate.tar.gz
           bash scripts/prepare-ci-fpv17-predecessor.sh "$candidate" "${RUNNER_TEMP}/fresh-install-payload" "$trust"
-          delta_dir="${RUNNER_TEMP}/fpv22-delta-qualification"
+          delta_dir="${RUNNER_TEMP}/${XINSIGHT_CI_ACCOUNT_PREDECESSOR}-delta-qualification"
           unset GH_TOKEN
           python3 scripts/qualify-ci-fpv22-delta.py \
             "${download_root}/_temp/xinsight-signed-a" "$delta_dir"
@@ -986,11 +991,11 @@ jobs:
           sudo test ! -L "$candidate"
           sudo install -o root -g root -m 0444 "$delta_dir/reconstructed.tar.gz" "$candidate"
           cmp "$delta_dir/reconstructed.tar.gz" "$candidate"
-          python3 - <<'PY_FPV22'
+          python3 - <<'PY_PUBLISHED_DELTA'
           import json,os,pathlib,subprocess
           p=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'account-upgrade-ci-predecessor.json').read_text())
           subprocess.run([p['old_source']+'/scripts/qualify-ubuntu22-fresh-install.sh',p['old_artifact'],p['old_payload'],p['combined_trust']],check=True)
-          PY_FPV22
+          PY_PUBLISHED_DELTA
 
       - name: Qualify installed controller and consumer lifecycle
         if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'adopt_existing'
@@ -999,7 +1004,7 @@ jobs:
         run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" "${{ matrix.lifecycle }}"
 
       - name: Qualify exact predecessor to current candidate installed upgrade and source continuation
-        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade'
+        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
           XINSIGHT_CI_UPGRADE_PRESTATE: "1"
@@ -1041,6 +1046,7 @@ jobs:
             ${{ runner.temp }}/xinsight-installed-joint-qualification/nginx-body-ingress.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-result.json
             ${{ runner.temp }}/fpv22-delta-qualification/qualification-result.json
+            ${{ runner.temp }}/fpv23-delta-qualification/qualification-result.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/account-prestate-result.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-failure.json
             release/ci-non-publishable.txt

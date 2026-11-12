@@ -1,3 +1,11 @@
+# FPV24 source candidate
+
+Runtime accepts a project number such as `2` as the exact reference `project-2`. The source selection and grant checks still apply. Overview and cost filters accept source project references, and body access uses its separate grant. The database remains on schema 47.
+
+The upgrade list includes the published FPV23. Current qualification covers reconstruction from the exact predecessor and the native upgrade with preserved accounts, grants, and history. The signed artifact and original installation require their own acceptance.
+
+## Historical release notes
+
 # FPV23 source proposal
 
 FPV23 keeps schema47 and admits the exact published FPV22 as an upgrade source. Navigation follows effective reading capabilities for owners with restricted scope and readers. Known authorization failures provide an appropriate destination. The server compresses immutable UI assets when the client accepts gzip.

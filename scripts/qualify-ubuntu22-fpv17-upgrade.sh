@@ -67,7 +67,7 @@ predecessor=json.loads(pathlib.Path(sys.argv[2]).read_text())
 current=before['status']['install_state']['current']
 assert predecessor['schema_version']=='xinsight.ci-account-upgrade-predecessor.v1'
 assert before['status']['managed'] and before['status'].get('active_journal') is None
-assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0'),('0.2.0-dev.fpv21','47','6463d980958fae86d975eecde239b9534ec831a5'),('0.2.0-dev.fpv22','47','bd4503a13a46156f8361e56730abef96cc5628bd')}
+assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0'),('0.2.0-dev.fpv21','47','6463d980958fae86d975eecde239b9534ec831a5'),('0.2.0-dev.fpv22','47','bd4503a13a46156f8361e56730abef96cc5628bd'),('0.2.0-dev.fpv23','47','82ca877d023058e48c93975c50171f606f8924f2')}
 assert (current['product_version'],current['database_schema'],current['commit']) == (predecessor['old_product'],predecessor['old_schema'],predecessor['old_commit'])
 assert before['status']['install_state']['database_schema_current']==current['database_schema']
 assert before['release']==current['release_dir']
@@ -85,7 +85,7 @@ before,after,check=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:
 assert before==after, 'upgrade --check changed installed state, database, key, grants, config or process'
 assert check['operation']=='upgrade' and check['supported'] and check['mutating'] is False
 assert check['current']['product_version']==before['status']['install_state']['current']['product_version']
-assert check['target']['product_version']=='0.2.0-dev.fpv23'
+assert check['target']['product_version']=='0.2.0-dev.fpv24'
 assert check['current']['database_schema']==before['status']['install_state']['current']['database_schema'] and check['target']['database_schema']=='47'
 assert any(c['name']=='control_credential_lifecycle' and c['status']=='pass' for c in check['checks'])
 PY
@@ -112,15 +112,20 @@ before,after,check,receipt=[json.loads(pathlib.Path(p).read_text()) for p in sys
 old=before['status']['install_state']['current']; new=after['status']['install_state']['current']
 assert receipt['kind']=='upgrade' and receipt['status']=='completed'
 assert receipt['before']['commit']==old['commit'] and receipt['after']['commit']==check['target']['commit']
-if old['product_version']=='0.2.0-dev.fpv22':
-    assert old['bundle_sha256']=='sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d'
-    assert old['artifact_path']=='/opt/xinsight-ci-artifacts/fpv22.tar.gz'
+delta_bases={
+    '0.2.0-dev.fpv22': ('fpv22','sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d'),
+    '0.2.0-dev.fpv23': ('fpv23','sha256:4497590a188a6abb90f7e90c1b71d279b7aff4fdde2ec458b48795a19c4feb2d'),
+}
+if old['product_version'] in delta_bases:
+    basis,digest=delta_bases[old['product_version']]
+    assert old['bundle_sha256']==digest
+    assert old['artifact_path']==f'/opt/xinsight-ci-artifacts/{basis}.tar.gz'
     assert new['artifact_path']=='/opt/xinsight-ci-artifacts/candidate.tar.gz'
     assert receipt['backup_path'].startswith('/var/backups/x-insight/') and receipt['backup_path'].endswith('.tar')
     assert any(c['name']=='backup' and c['status']=='pass' and c['detail']==receipt['backup_sha256']
                for c in receipt['checks'])
 assert after['status']['managed'] and after['status'].get('active_journal') is None
-assert new['product_version']=='0.2.0-dev.fpv23' and new['commit']==check['target']['commit']
+assert new['product_version']=='0.2.0-dev.fpv24' and new['commit']==check['target']['commit']
 assert new['database_schema']==after['status']['install_state']['database_schema_current']=='47'
 assert after['status']['install_state']['previous']['commit']==old['commit']
 assert after['release']==new['release_dir']!=before['release']
@@ -198,7 +203,7 @@ assert after['files']==before['files'], 'original review-body key or host config
 assert any(c['name']=='representative_read' and c['status']=='pass' for c in receipt['checks'])
 print(json.dumps({'schema_version':'xinsight.ci-account-upgrade.v1',
                   'classification':'ci_synthetic_not_target','state':'base_checks_verified',
-                  'predecessor':old['product_version'],'target':'0.2.0-dev.fpv23',
+                  'predecessor':old['product_version'],'target':'0.2.0-dev.fpv24',
                   'database_schema':'47','check_no_side_effects':True,
                   'migration47_exact_append_verified':old_count<47,'schema47_ledger_unchanged':old_count==47,'accounts_import_preserved':old_count<47,'existing_managed_accounts_preserved':old_count==47,'private_account_acl_verified':True,'prior_table_acls_preserved':True,
                   'history_cursors_ciphertext_grants_preserved':True,
