@@ -1,12 +1,14 @@
 package pullfeed
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -89,9 +91,15 @@ func TestSyncFirstFeedActivationAndRestartUseRequiredPermit(t *testing.T) {
 		t.Fatal("unknown receiver bound", e)
 	}
 	var calls atomic.Int32
+	var refuse atomic.Bool
+	const privateBody = "synthetic private upstream refusal"
 	now := time.Now().UTC()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
+		if refuse.Load() {
+			http.Error(w, privateBody, http.StatusUnauthorized)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(mustLivePage(t, FeedPage{SchemaVersion: SchemaVersion, SourceInstance: "sync-initial-source", GeneratedAt: now, Items: []FeedItem{}, NextCursor: "initial-cursor", HighWatermark: "initial-cursor"}))
 	}))
@@ -210,5 +218,34 @@ func TestSyncFirstFeedActivationAndRestartUseRequiredPermit(t *testing.T) {
 	}
 	if _, e = worker.PollOnce(ctx); !errors.Is(e, connectorsync.ErrPaused) || calls.Load() != 3 {
 		t.Fatal("restart/poll bypassed manual", calls.Load(), e)
+	}
+
+	current, e := gate.Status(ctx, id)
+	if e != nil {
+		t.Fatal(e)
+	}
+	r.Action = "once"
+	r.ExpectedRevision = current.Revision
+	r.RequestID = stateTestUUID(t)
+	if _, e = gate.Change(ctx, r); e != nil {
+		t.Fatal(e)
+	}
+	refuse.Store(true)
+	var logs bytes.Buffer
+	priorLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(priorLogger) })
+	if _, e = worker.PollOnce(ctx); e == nil || calls.Load() != 4 {
+		t.Fatal("synthetic refusal was not observed", calls.Load(), e)
+	}
+	var diagnostic string
+	e = database.QueryRowContext(ctx, `SELECT last_error FROM connector_sync_slots WHERE installation_id=$1 AND worker='feed'`, id).Scan(&diagnostic)
+	if e != nil || diagnostic != "feed_poll:authorization" {
+		t.Fatal("feed receipt", diagnostic, e)
+	}
+	output := logs.String()
+	if !strings.Contains(output, "stage=feed_poll category=authorization") ||
+		strings.Contains(output, privateBody) || strings.Contains(output, credential) || strings.Contains(output, server.URL) {
+		t.Fatal("expected a closed, redacted feed diagnostic")
 	}
 }

@@ -20,8 +20,10 @@ PUBLISHED_BASES = {
                        'sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d'),
     '0.2.0-dev.fpv23': ('82ca877d023058e48c93975c50171f606f8924f2', 22408187,
                        'sha256:4497590a188a6abb90f7e90c1b71d279b7aff4fdde2ec458b48795a19c4feb2d'),
+    '0.2.0-dev.fpv24': ('fa1e64e1d1259c3b7d631baa7794952b0ae72d93', 22409208,
+                       'sha256:34aa6dd9e9ecff09015fe45c34d22e204bc6ca43c223413f6329bfba9c4aa92c'),
 }
-TARGET_VERSION = '0.2.0-dev.fpv24'
+TARGET_VERSION = '0.2.0-dev.fpv25'
 
 
 def require(condition, message):

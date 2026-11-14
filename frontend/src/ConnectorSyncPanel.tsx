@@ -11,6 +11,7 @@ const effectiveKeys: Record<string, MessageKey> = {
 const stageKeys:Record<string,MessageKey> = {
  inspect:"syncStageInspect", original_activation:"syncStageActivation", activation_epoch:"syncStageActivation", activation_claim:"syncStageActivation", activation_request:"syncStageActivation", activation_commit:"syncStageActivation",
  receiver_proof:"syncStageReceiver", receiver_binding:"syncStageReceiver", receiver_state:"syncStageReceiver", feed_stage:"syncStageReceiver", feed_credential:"syncStageReceiver", feed_register:"syncStageReceiver", feed_promote:"syncStageReceiver", feed_activate:"syncStageReceiver",
+ feed_activation:"syncStageFeedActivation", feed_poll:"syncStageFeedPoll",
  source_descriptor:"syncStageDescriptor", descriptor_commit:"syncStageDescriptor",
  machine_prepare:"syncStageMachine", machine_request:"syncStageMachine", machine_enqueue:"syncStageMachine", machine_config:"syncStageMachine", machine_runtime:"syncStageMachine",
  policy_scopes:"syncStagePolicy", enrollment_client:"syncStageEnrollment", enrollment_list:"syncStageEnrollment",

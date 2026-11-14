@@ -12,6 +12,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/foigent/x-insight/internal/connectorsync"
 )
 
 func TestLiveWorkerActivationIsForwardOnlyAndDurable(t *testing.T) {
@@ -278,16 +280,53 @@ func TestLiveWorkerAuthFailureIsPermanentAndCursorStaysPut(t *testing.T) {
 		t.Fatal("auth failure must not call committer")
 		return LiveItemCommitResult{}, nil
 	}), now)
+	var recorded error
+	worker.config.BeginSync = func(ctx context.Context, _ PostgresWorkerState) (context.Context, func(error), error) {
+		return ctx, func(err error) { recorded = err }, nil
+	}
 
 	_, err := worker.PollOnce(context.Background())
 	var workerErr *LiveWorkerError
 	if !errors.As(err, &workerErr) || workerErr.Retryable || workerErr.Code != "source_status_401" {
 		t.Fatalf("error=%v", err)
 	}
+	var diagnostic *connectorsync.Failure
+	if !errors.As(recorded, &diagnostic) || diagnostic.Error() != "feed_poll:authorization" || !errors.Is(recorded, err) {
+		t.Fatalf("safe sync diagnostic=%v", recorded)
+	}
 	if state.state.Cursor != "cursor-0" ||
 		state.state.Status != WorkerStatusError ||
 		state.state.LastErrorCode != "source_status_401" {
 		t.Fatalf("state=%+v", state.state)
+	}
+}
+
+func TestLiveWorkerSyncDiagnosticUsesKnownCategories(t *testing.T) {
+	private := errors.New("private fixture detail")
+	for _, tc := range []struct {
+		name string
+		err  error
+		code string
+	}{
+		{"empty success", nil, ""},
+		{"stopped", connectorsync.ErrPaused, ""},
+		{"deadline", context.DeadlineExceeded, "feed_activation:deadline"},
+		{"transport", &HTTPSourceError{Category: HTTPErrorCategoryTransport, cause: private}, "feed_activation:unavailable"},
+		{"rate limited", &HTTPSourceError{Category: HTTPErrorCategoryStatus, StatusCode: 429, cause: private}, "feed_activation:unavailable"},
+		{"contract", NewLiveWorkerError("activation_contract_invalid", false, 0, private), "feed_activation:contract"},
+		{"local store", NewLiveWorkerError("state_activation_failed", true, 0, private), "feed_activation:local_store"},
+		{"unknown", private, "feed_activation:unknown"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := syncDiagnostic("feed_activation", tc.err)
+			if tc.code == "" {
+				if got != tc.err {
+					t.Fatalf("result changed: %v", got)
+				}
+			} else if got.Error() != tc.code || !errors.Is(got, tc.err) {
+				t.Fatalf("unexpected sync diagnostic: %v", got)
+			}
+		})
 	}
 }
 

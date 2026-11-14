@@ -3203,6 +3203,8 @@
   "syncStageInspect": "checking connection state",
   "syncStageActivation": "activating the connection",
   "syncStageReceiver": "checking the existing receiver",
+  "syncStageFeedActivation": "starting the completed-execution feed",
+  "syncStageFeedPoll": "reading the completed-execution feed",
   "syncStageDescriptor": "qualifying source identity",
   "syncStageMachine": "preparing delegated access",
   "syncStagePolicy": "reading policy scope",

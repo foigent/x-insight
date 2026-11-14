@@ -89,7 +89,7 @@ def check(source: str) -> None:
             'prepare-ci-fpv17-predecessor.sh' in fpv21,
             'actual installed FPV21/schema47 predecessor lane is missing')
     delta = step(fresh, 'Verify the delta and install its exact published predecessor')
-    for predecessor in ('fpv22', 'fpv23'):
+    for predecessor in ('fpv22', 'fpv23', 'fpv24'):
         require(f"matrix.lifecycle == '{predecessor}_upgrade'" in delta and
                 f'{predecessor}_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR={predecessor}' in delta,
                 'missing exact delta predecessor route: ' + predecessor)
@@ -101,7 +101,7 @@ def check(source: str) -> None:
             '"$delta_dir/reconstructed.tar.gz" "$candidate"' in delta and
             delta.index('qualify-ci-fpv22-delta.py') < delta.index('sudo install'),
             'published delta lanes must use the reconstructed target')
-    require('if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ]; then' in
+    require('if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ] && [ "$LIFECYCLE" != fpv24_upgrade ]; then' in
             step(fresh, 'Verify and extract exact signed candidate'),
             'delta lanes must not stage the reference full target before reconstruction')
     historical = step(signed, "Rebuild and verify frozen rc13 signed candidate")
@@ -178,7 +178,7 @@ def check(source: str) -> None:
             'installed UR fixture checkout lacks exact commit readback')
     require('qualify-ubuntu22-installed-joint.sh' in step(fresh, 'Qualify installed controller and consumer lifecycle'),
             'fresh install does not run the installed business lifecycle')
-    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade]' in fresh and 'fail-fast: false' in fresh,
+    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade]' in fresh and 'fail-fast: false' in fresh,
             'new installation, restored predecessor and FPV17 upgrade need independent VMs')
     predecessor = step(fresh, 'Reproduce and install exact FPV14 predecessor on clean VM')
     require("if: matrix.lifecycle == 'adopt_existing'" in predecessor and
@@ -229,7 +229,7 @@ def check(source: str) -> None:
             'failed installed lifecycle loses safe stage receipts')
     require('xinsight-account-upgrade-qualification/qualification-failure.json' in upload,
             'FPV17 upgrade failure loses fixed stage and exit code')
-    for predecessor in ('fpv22', 'fpv23'):
+    for predecessor in ('fpv22', 'fpv23', 'fpv24'):
         require(f'{predecessor}-delta-qualification/qualification-result.json' in upload and
                 f'{predecessor}-delta-qualification/*' not in upload, 'delta lane must upload only its result receipt')
     require('xinsight-account-upgrade-qualification/qualification-result.json' in upload,
@@ -1133,8 +1133,8 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     }
     old = {'product_version': {45:'0.2.0-dev.fpv17',46:'0.2.0-dev.fpv20',47:'0.2.0-dev.fpv21'}[old_schema], 'database_schema': str(old_schema),
            'commit': {45:'164582cab0e7f169c265c2494d04920c61af833d',46:'08435e0949dfae0ae65497d2e12ca356f6d820f0',47:'6463d980958fae86d975eecde239b9534ec831a5'}[old_schema], 'release_dir': '/synthetic/fpv'+str({45:17,46:20,47:21}[old_schema])}
-    new = {'product_version': '0.2.0-dev.fpv24', 'database_schema': '47',
-           'commit': 'b'*40, 'release_dir': '/synthetic/fpv24'}
+    new = {'product_version': '0.2.0-dev.fpv25', 'database_schema': '47',
+           'commit': 'b'*40, 'release_dir': '/synthetic/fpv25'}
     stable = ('workbench_access_grants', 'work_event_collections', 'work_event_documents',
               'connector_installation_source_bindings', 'installation_identity', 'role_boundary',
               'source_fact_streams', 'source_content_collections', 'adapter_import_states')
@@ -1498,8 +1498,10 @@ def check_prepared_account_fixture_policy() -> None:
     require(evaluate('fpv17_upgrade_prestate',fpv22,True)=='reuse','same FPV22 imported identities must be reused')
     fpv23={'old_commit':'82ca877d023058e48c93975c50171f606f8924f2','old_product':'0.2.0-dev.fpv23','old_schema':'47'}
     require(evaluate('fpv17_upgrade_prestate',fpv23,True)=='reuse','same FPV23 imported identities must be reused')
+    fpv24={'old_commit':'fa1e64e1d1259c3b7d631baa7794952b0ae72d93','old_product':'0.2.0-dev.fpv24','old_schema':'47'}
+    require(evaluate('fpv17_upgrade_prestate',fpv24,True)=='reuse','same FPV24 imported identities must be reused')
     for predecessor in legacy:require(evaluate('fpv17_upgrade_prestate',predecessor,False)=='create','original legacy fixture creation changed')
-    invalid=[('new_install',None,False),('adopt_existing',None,True),('fpv17_upgrade_prestate',fpv21,False),('fpv17_upgrade_prestate',fpv23,False),('fpv17_upgrade_prestate',None,False),('unknown',fpv21,True)]
+    invalid=[('new_install',None,False),('adopt_existing',None,True),('fpv17_upgrade_prestate',fpv21,False),('fpv17_upgrade_prestate',fpv23,False),('fpv17_upgrade_prestate',fpv24,False),('fpv17_upgrade_prestate',None,False),('unknown',fpv21,True)]
     invalid += [('fpv17_upgrade_prestate',x,True) for x in legacy]
     for field in ('old_commit','old_product','old_schema'):
         wrong=dict(fpv21);wrong[field]='other';invalid.append(('fpv17_upgrade_prestate',wrong,True))
@@ -1657,7 +1659,7 @@ if __name__ == "__main__":
     expect_rejected(source, 'npm install --global "$(node -p "require(\'./package.json\').packageManager")"', 'npm --version')
     expect_rejected(source, 'bash scripts/verify-protected-runtime.sh', 'true')
     expect_rejected(source, "XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'", "XINSIGHT_REQUIRE_POSTGRES_TESTS: '0'")
-    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade]', 'lifecycle: [new_install, adopt_existing]')
+    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade]', 'lifecycle: [new_install, adopt_existing]')
     expect_rejected(source, 'database_profile: native', 'database_profile: container')
     expect_rejected(source, 'os: ubuntu-24.04', 'os: ubuntu-22.04')
     expect_rejected(source, "permissions:\n  contents: read", "permissions:\n  contents: write")

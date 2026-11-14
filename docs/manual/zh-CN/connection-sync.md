@@ -1,4 +1,4 @@
-# 连接同步（FPV20 / schema46）
+# 连接同步
 
 在“连接器”中，每条 UR 连接都有持久化的自动同步偏好和本地状态。新连接默认手动；升级保留既有连接的自动行为及配置间隔。安静测试时，需要核对准确连接并显式关闭，不会因升级而暂停所有连接。
 
@@ -16,4 +16,4 @@
 
 本地管理员可用 `xinsightctl connector-sync status|auto-off|auto-on|once --installation-id ID --actor SUBJECT`。必须使用准确 ID 和已有、获准的本地账户 subject；变更另带状态回读的 `--expected-revision` 和固定 UUID `--request-id`，开启时可指定 `--cadence-seconds`。重试沿用原 ID／正文，未确认前不另建任务。
 
-FPV20 使用新的 schema 和制品身份。本地通过不代替 CI、签名分发、安装及 Target 验收；冻结的 FPV19 制品和签包材料保持原身份。
+FPV25 的本地状态面板可以显示已完成执行 Feed 的启动或轮询失败，以及可安全呈现的原因。展开**安全诊断代码**可记录准确代码。若阶段或原因尚未确定，请刷新本地状态并保留诊断记录。刷新不会启动远端同步。

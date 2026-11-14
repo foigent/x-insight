@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="xinsight-product-version" content="0.2.0-dev.fpv24">
-  <meta name="xinsight-manual-version" content="0.2.0-dev.fpv24/manual-r1">
-  <meta name="xinsight-manual-source-sha256" content="sha256:47d4cae8c4b201cbd494758cae2a61c9c44117eb0efd39339cd876c07f616745">
-  <title>X-Insight 0.2.0-dev.fpv24 简体中文产品手册</title>
+  <meta name="xinsight-product-version" content="0.2.0-dev.fpv25">
+  <meta name="xinsight-manual-version" content="0.2.0-dev.fpv25/manual-r1">
+  <meta name="xinsight-manual-source-sha256" content="sha256:4fb12bf77352bb9bd5566d32ca9cef2bfc4e369862fc7a62f1a465f5c4abee74">
+  <title>X-Insight 0.2.0-dev.fpv25 简体中文产品手册</title>
   <link rel="icon" href="manual-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="manual.css">
 </head>
@@ -15,7 +15,7 @@
   <header class="manual-header">
     <p class="eyebrow">X-Insight · 对应版本的离线手册</p>
     <h1>简体中文产品手册</h1>
-    <p>产品版本 <strong>0.2.0-dev.fpv24</strong> · 手册版本 <strong>0.2.0-dev.fpv24/manual-r1</strong></p>
+    <p>产品版本 <strong>0.2.0-dev.fpv25</strong> · 手册版本 <strong>0.2.0-dev.fpv25/manual-r1</strong></p>
     <p class="boundary">内部单部署租户 · loopback-only · 正文读取默认关闭 · 按当前授权显式读取并核验 · 尚非 Production verified</p>
     <a class="product-link" href="/executions">返回产品 · 执行调查</a>
   </header>
@@ -36,7 +36,7 @@
       <a href="#accounts-2">日常账号操作</a>
       <a href="#accounts-3">owner 阅读须明确授权</a>
       <a href="#accounts-4">备份与恢复</a>
-      <a href="#connection-sync">连接同步（FPV20 / schema46）</a>
+      <a href="#connection-sync">连接同步</a>
     </nav>
     <main id="manual-content">
       <section class="chapter" aria-labelledby="current-manual">
@@ -44,11 +44,11 @@
 <p>本手册覆盖完整开发候选的访问、来源采集、执行调查、费用、运行证据和复核。Apache-2.0 开源不取消认证、来源同意、字段权限、签名与审计要求，没有独立付费功能版本。</p>
 <p>X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、调查与复核。UniRouter（UR）独立执行和路由获授权模型请求、应用执行策略、记录用量与经济事实。组合使用时，XI 异步接收获授权的 UR 事实用于分析和审阅，不进入同步请求关键路径。共享协议与 Integration Control 支撑这条连接，不是用户还须另行选择的产品。</p>
 <h3 id="current-manual-1">版本与支持边界</h3>
-<p>产品 <code>0.2.0-dev.fpv24</code>，手册 <code>0.2.0-dev.fpv24/manual-r1</code>。</p>
-<div class="table-scroll"><table><thead><tr><th>项目</th><th>当前合同</th></tr></thead><tbody><tr><td>数据库 schema</td><td>47</td></tr><tr><td>数据库</td><td>PostgreSQL 16，同机 loopback 专用数据库</td></tr><tr><td>应用</td><td>Linux amd64；受管安装使用 systemd</td></tr><tr><td>安装器运行主机前置</td><td>Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证</td></tr><tr><td>原文记载的隔离验证配置</td><td>Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV24 Target 已验</td></tr><tr><td>待取得的原生主机制品资格</td><td>Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；FPV24 新装待验，FPV22 和 FPV23 增量还原与升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证</td></tr><tr><td>配置</td><td><code>xinsight.config.v1</code></td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>, <code>xinsight.accounts.v1</code></td></tr><tr><td>默认语言</td><td>English；语言控件可切换简体中文</td></tr></tbody></table></div>
+<p>产品 <code>0.2.0-dev.fpv25</code>，手册 <code>0.2.0-dev.fpv25/manual-r1</code>。</p>
+<div class="table-scroll"><table><thead><tr><th>项目</th><th>当前合同</th></tr></thead><tbody><tr><td>数据库 schema</td><td>47</td></tr><tr><td>数据库</td><td>PostgreSQL 16，同机 loopback 专用数据库</td></tr><tr><td>应用</td><td>Linux amd64；受管安装使用 systemd</td></tr><tr><td>安装器运行主机前置</td><td>Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证</td></tr><tr><td>原文记载的隔离验证配置</td><td>Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV25 Target 已验</td></tr><tr><td>待取得的原生主机制品资格</td><td>Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；FPV25 新装待验，FPV22、FPV23 和 FPV24 增量还原与升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证</td></tr><tr><td>配置</td><td><code>xinsight.config.v1</code></td></tr><tr><td>API</td><td><code>xinsight.investigation.v1</code>、<code>xinsight.access.v1</code>, <code>xinsight.accounts.v1</code></td></tr><tr><td>默认语言</td><td>English；语言控件可切换简体中文</td></tr></tbody></table></div>
 <p>这是开发候选，不表示公共稳定发行或 Production 验收。仓库还保留 Ubuntu 22.04 CI 安装路径和冻结 rc.13 profile，其制品与结果分别管理。安装必须匹配精确 profile、已验签制品、信任权威及主机资格，不能照搬历史说明。</p>
-<p>安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV24 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22 和 FPV23 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。</p>
-<p>配置声明的升级来源为 <code>0.2.0-dev.b2</code>、<code>0.2.0-dev.d1</code>、<code>0.2.0-dev.d2</code>、<code>0.2.0-dev.fpv1</code>、<code>0.2.0-dev.fpv2</code>、<code>0.2.0-dev.fpv3</code>、<code>0.2.0-dev.fpv4</code>、<code>0.2.0-dev.fpv5</code>、<code>0.2.0-dev.fpv11</code>、<code>0.2.0-dev.fpv12</code>、<code>0.2.0-dev.fpv13</code>、<code>0.2.0-dev.fpv14</code>、<code>0.2.0-dev.fpv15</code>、<code>0.2.0-dev.fpv16</code>、<code>0.2.0-dev.fpv17</code>、<code>0.2.0-dev.fpv18</code>、<code>0.2.0-dev.fpv19</code>、<code>0.2.0-dev.fpv20</code>、<code>0.2.0-dev.fpv21</code>、<code>0.2.0-dev.fpv22</code>、<code>0.2.0-dev.fpv23</code>。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。</p>
+<p>安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV25 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22、FPV23 和 FPV24 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。</p>
+<p>配置声明的升级来源为 <code>0.2.0-dev.b2</code>、<code>0.2.0-dev.d1</code>、<code>0.2.0-dev.d2</code>、<code>0.2.0-dev.fpv1</code>、<code>0.2.0-dev.fpv2</code>、<code>0.2.0-dev.fpv3</code>、<code>0.2.0-dev.fpv4</code>、<code>0.2.0-dev.fpv5</code>、<code>0.2.0-dev.fpv11</code>、<code>0.2.0-dev.fpv12</code>、<code>0.2.0-dev.fpv13</code>、<code>0.2.0-dev.fpv14</code>、<code>0.2.0-dev.fpv15</code>、<code>0.2.0-dev.fpv16</code>、<code>0.2.0-dev.fpv17</code>、<code>0.2.0-dev.fpv18</code>、<code>0.2.0-dev.fpv19</code>、<code>0.2.0-dev.fpv20</code>、<code>0.2.0-dev.fpv21</code>、<code>0.2.0-dev.fpv22</code>、<code>0.2.0-dev.fpv23</code>、<code>0.2.0-dev.fpv24</code>。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。</p>
 <h3 id="current-manual-2">构建与本地试用</h3>
 <p>使用 Go 1.25.12、Node 22.23.1、npm 10.9.8、Python 3 和 PostgreSQL 16。在仓库根目录执行：</p>
 <pre><code>go mod download
@@ -66,8 +66,8 @@ bash scripts/build-signed-release.sh /absolute/new-prepared --profile=developmen
 <h3 id="current-manual-3">安装与账户</h3>
 <p>受管安装需要明确选定且通过资格验证的主机、空的 PostgreSQL16 专用数据库、独立 admin/reader/workspace/importer 角色、批准的服务账户和可信签名制品。目前没有公共稳定安装器或默认生产账户。制品、bootstrap verifier 和公开 trust store 必须通过批准的发布流程取得；不可信下载内附带的 trust store 本身不能建立信任。</p>
 <p>独立核对 bootstrap verifier 与信任权威后，验签并解入全新目录：</p>
-<pre><code>xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv24
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv24
+<pre><code>xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
 sudo /approved/staging/candidate/bin/xinsightctl version --json</code></pre>
 <p>使用已验签 payload 的部署模板。在 <code>/etc/x-insight/database/current/</code> 保留四个独立受保护 DSN 文件：<code>postgres-admin.dsn</code>、<code>postgres-reader.dsn</code>、<code>postgres-workspace.dsn</code>、<code>postgres-importer.dsn</code>，指向同一个 loopback 专用数据库和不同角色。不得通过命令参数或服务环境值传递密码。主机工具、owner/mode、数据库身份、监听范围和 profile 均须通过控制器检查。</p>
 <p>新安装不需要账号文件，也不设默认密码。安装后按[账号与项目阅读](#accounts)创建首个 owner 的私有激活交付。升级只导入一次合法 v1/v2/v3 旧账号文件，之后以数据库为权威；日常邀请、恢复、停用／启用在网页完成。</p>
@@ -75,7 +75,7 @@ sudo /approved/staging/candidate/bin/xinsightctl version --json</code></pre>
 sudo /approved/staging/candidate/bin/xinsightctl install --artifact /approved/candidate.tar.gz
 sudo /opt/x-insight/current/bin/xinsightctl status</code></pre>
 <p>只在预检通过且部署已获授权后运行实际安装。安装创建受管部署身份，不得复制或编辑；首次安装不会自动接入 UniRouter 或启动未配置 worker。应用和数据库保持 loopback；浏览器登录前配置批准的 HTTPS origin 与可信本地 TLS terminator。未登录产品请求跳转登录，API 返回401；cookie 保持 Secure/HttpOnly/SameSite。浏览器在普通 HTTP 上拒绝提交密码。</p>
-<p>已有 FPV23 安装时，使用受管升级流程。若按发布权威选择增量传输，先用已核实的独立 <code>xinsight-release</code> 和本机缓存的准确 FPV23 签名包还原目标完整包。验签并解出目标后，用目标目录的 <code>xinsightctl upgrade --check</code> 核对当前安装、数据库和备份条件。按维护窗口保留原安装与数据。</p>
+<p>已有 FPV24 安装时，使用受管升级流程。若按发布权威选择增量传输，先用已核实的独立 <code>xinsight-release</code> 和本机缓存的准确 FPV24 签名包还原目标完整包。验签并解出目标后，用目标目录的 <code>xinsightctl upgrade --check</code> 核对当前安装、数据库和备份条件。按维护窗口保留原安装与数据。</p>
 <h3 id="current-manual-4">首次来源接入</h3>
 <p>管理员从连接与接入开始设置，核对 XI 部署、UniRouter 安装、来源项目、采集能力及留存选择；通过邀请进入 UR 并在 UR 完成同意。历史同意不能覆盖当前来源策略。邀请秘密仅临时使用，不写入 issue 或持久浏览器存储。</p>
 <p>设置页区分等待同意、准备连接、等待数据和当前问题。配置已保存不等于进程已加载，已加载不等于实际收到数据。核对来源状态与一条来源身份一致的执行记录。XI 异步接收事实，不是 UR 调用准入的同步依赖。</p>
@@ -125,7 +125,7 @@ xinsightctl restore --recovery-bundle /absolute/private-backup.tar --recovery-bu
 </section>
       <section class="chapter" aria-labelledby="accounts">
 <h2 id="accounts">账号与项目阅读</h2>
-<p>本章描述 FPV24/schema47 源码候选。本地通过不等于制品发布或真实安装验收。</p>
+<p>本章描述 FPV25/schema47 源码候选。本地通过不等于制品发布或真实安装验收。</p>
 <h3 id="accounts-1">首个 owner 与已有安装</h3>
 <p>原生安装器只初始化一次数据库账号权威。升级时，合法的 v1/v2/v3 旧账号文件原子导入，保留稳定 subject、用户名、角色、停用状态和密码摘要。保留私有原件供历史恢复。初始化后，运行产品仅使用数据库；修改或恢复旧文件不能重置当前密码或身份。数据库不可用时拒绝认证。</p>
 <p>没有导入账号的新安装不设默认密码。完成安装与批准的 HTTPS 配置后，获授权的主机管理员使用已验证控制器生成首个 owner 的私有激活交付。先在选定位置建立0700私有目录，输出须为该目录中尚不存在的精确文件。</p>
@@ -146,7 +146,7 @@ sudo /opt/x-insight/current/bin/xinsightctl access bootstrap-owner --username ow
 <p>对于早于账号权威的业务备份，原生恢复将当前已初始化的数据库账号保留到空的前向迁移目标中，不从过时主机文件恢复当前凭据；业务 grant 和事实仍取所选备份。真正早于 schema47 的安装仅从合法旧文件初始化一次。执行前区分这些前态，原库与新库按现有批准的退役流程保留。</p>
 </section>
       <section class="chapter" aria-labelledby="connection-sync">
-<h2 id="connection-sync">连接同步（FPV20 / schema46）</h2>
+<h2 id="connection-sync">连接同步</h2>
 <p>在“连接器”中，每条 UR 连接都有持久化的自动同步偏好和本地状态。新连接默认手动；升级保留既有连接的自动行为及配置间隔。安静测试时，需要核对准确连接并显式关闭，不会因升级而暂停所有连接。</p>
 <p>开关覆盖 XI 发出的 Feed、来源事实／事件、当前运行状态、正文、预算和 enrollment／capabilities 维护请求。保存间隔接受 5 至 3600 秒的整数，新开启时默认为 60 秒；这是最小轮询间隔，原有退避和维护周期可能更长。未保存新间隔时继续使用既有配置。打开或刷新状态页面不触发 UR 采集；本地保留期、到期清理、审计和历史阅读继续运行。</p>
 <p>“同步一次”要求关闭自动同步。各适用类别轮转推进，到达本次可观察边界后停止该类别；整次任务最多 60 秒、32 个数据／控制页、64 次应用级 HTTP 尝试，capabilities 与失败尝试也计数。单次任务不会开启自动同步，不会在重启后自动重放。空结果、完成、部分完成、错误、取消、到期和中断分别记录；部分完成不代表覆盖完整。响应丢失后保留原请求 ID 和正文，先确认同一请求或刷新本地状态，再开始新任务。</p>
@@ -155,14 +155,14 @@ sudo /opt/x-insight/current/bin/xinsightctl access bootstrap-owner --username ow
 <p>暂停不会撤销授权、清除需要处理的错误或重置游标。源端保留期到期后，缺口仍然保留，继续使用既有显式恢复流程。“最近出站检查”和“最近数据提交”分别显示，不能据此推定已覆盖全部来源数据。</p>
 <p>显式保存 UR 委托策略时，使用原人类账户和不可变操作标识，单独获得最多 60 秒／32 页／64 次尝试的控制通信授权；Auto 仍关闭，采集 worker 不获准运行。未确认的结果只能使用原任务剩余预算回读，重放不续期；终态结果直接在本地读取。预算到期后，显式启动“同步一次”进行远端恢复，保留原策略操作标识。实时策略发现／读取页面也需要 Auto 或“同步一次”，打开页面本身不产生控制任务。凭据恢复继续使用原有人类确认票据及入站协议。有限回执最多保留 32 份；策略预检失败的标识在原生持久操作记录能够防止重建之前不会被淘汰，无法保持上界时拒绝新增任务。</p>
 <p>本地管理员可用 <code>xinsightctl connector-sync status|auto-off|auto-on|once --installation-id ID --actor SUBJECT</code>。必须使用准确 ID 和已有、获准的本地账户 subject；变更另带状态回读的 <code>--expected-revision</code> 和固定 UUID <code>--request-id</code>，开启时可指定 <code>--cadence-seconds</code>。重试沿用原 ID／正文，未确认前不另建任务。</p>
-<p>FPV20 使用新的 schema 和制品身份。本地通过不代替 CI、签名分发、安装及 Target 验收；冻结的 FPV19 制品和签包材料保持原身份。</p>
+<p>FPV25 的本地状态面板可以显示已完成执行 Feed 的启动或轮询失败，以及可安全呈现的原因。展开<strong>安全诊断代码</strong>可记录准确代码。若阶段或原因尚未确定，请刷新本地状态并保留诊断记录。刷新不会启动远端同步。</p>
 </section>
     </main>
   </div>
   <footer>
-    <span>X-Insight 0.2.0-dev.fpv24</span>
-    <span>0.2.0-dev.fpv24/manual-r1</span>
-    <span>生成源 sha256:47d4cae8c4b201cbd494758cae2a61c9c44117eb0efd39339cd876c07f616745</span>
+    <span>X-Insight 0.2.0-dev.fpv25</span>
+    <span>0.2.0-dev.fpv25/manual-r1</span>
+    <span>生成源 sha256:4fb12bf77352bb9bd5566d32ca9cef2bfc4e369862fc7a62f1a465f5c4abee74</span>
   </footer>
 </body>
 </html>

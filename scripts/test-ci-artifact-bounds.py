@@ -247,12 +247,15 @@ class ArtifactBoundsTest(unittest.TestCase):
         self.assertIn('retention-days: ${{ steps.admit.outputs.retention-days }}', action)
         self.assertNotIn('continue-on-error:', action)
         ci = (ROOT / '.github/workflows/ci.yml').read_text()
-        self.assertIn('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade]', ci)
-        self.assertEqual(ci.count('database_profile: native'), 2)
-        groups = {'signed': 2, 'coverage': 1, 'installed': 18, 'p3': 2}
+        lifecycles = 'new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade'
+        self.assertIn(f'lifecycle: [{lifecycles}]', ci)
+        native_lanes = ci.count('database_profile: native')
+        self.assertEqual(native_lanes, 2)
+        installed_archives = 2 * (len(lifecycles.split(', ')) + native_lanes)
+        groups = {'signed': 2, 'coverage': 1, 'installed': installed_archives, 'p3': 2}
         total = sum(admission.LIMITS[kind][0] * count for kind, count in groups.items())
-        self.assertEqual(sum(groups.values()), 23)
-        self.assertEqual(total, 207912960)
+        self.assertEqual(sum(groups.values()), 25)
+        self.assertEqual(total, 208175104)
         self.assertEqual(admission.LIMITS['protocol'][0] * 2, 262144)
 
 

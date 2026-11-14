@@ -1,4 +1,4 @@
-# Connection synchronization (FPV20 / schema46)
+# Connection synchronization
 
 On **Connectors**, each UR installation has an Auto sync preference and a local status view. New connections start in manual mode. Upgrade preserves existing Auto preferences and existing worker intervals. To quiet a test connection, identify that exact installation and explicitly switch its Auto sync off; upgrading does not pause every connection.
 
@@ -16,4 +16,4 @@ An explicit delegated policy save uses its existing human account and immutable 
 
 The local administrator can use `xinsightctl connector-sync status|auto-off|auto-on|once --installation-id ID --actor SUBJECT`. Use the exact ID and an existing authorized local account subject. Changes require the observed `--expected-revision` and a stable UUID `--request-id`; Auto-on may specify `--cadence-seconds`. A retry reuses the original body and UUID. Do not start another task while the previous outcome is unconfirmed.
 
-This candidate has a new schema and artifact identity. Local tests do not establish CI, signed distribution, installation or Target acceptance. Frozen FPV19 artifacts and signing inputs retain their original identities.
+In FPV25, a completed-execution feed failure can identify the activation or polling stage and a safe reason in the local status panel. Expand **Safe diagnostic code** to record the exact code. If the stage or reason cannot be determined, refresh local status and retain the diagnostic record. Refreshing does not start a remote synchronization.

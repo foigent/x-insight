@@ -1,3 +1,13 @@
+# FPV25 source candidate
+
+The completed-execution feed records the failing stage and a safe reason after acquiring its synchronization permit. The connection page shows when feed activation or polling failed and can disclose the permitted diagnostic code. Authorization, retry, and cursor handling follow the existing flow.
+
+The English and Simplified Chinese public entry pages now point to the published FPV24 package and its immutable trust record. This source candidate declares product `0.2.0-dev.fpv25` and manual `0.2.0-dev.fpv25/manual-r1`. Database schema 47 and `xinsight.config.v1` stay the same.
+
+The upgrade list adds the exact published FPV24 package. The existing Linux qualification path is wired to verify that predecessor, reconstruct the candidate and check a native upgrade with accounts, grants and history preserved. Signed FPV25 bytes, native Linux qualification and installed acceptance are pending. The published FPV24 package and its release record keep their original identity.
+
+## Historical release notes
+
 # FPV24 source candidate
 
 Runtime accepts a project number such as `2` as the exact reference `project-2`. The source selection and grant checks still apply. Overview and cost filters accept source project references, and body access uses its separate grant. The database remains on schema 47.

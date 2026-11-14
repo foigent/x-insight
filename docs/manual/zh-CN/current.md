@@ -6,7 +6,7 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 
 ## 版本与支持边界
 
-产品 `0.2.0-dev.fpv24`，手册 `0.2.0-dev.fpv24/manual-r1`。
+产品 `0.2.0-dev.fpv25`，手册 `0.2.0-dev.fpv25/manual-r1`。
 
 | 项目 | 当前合同 |
 | --- | --- |
@@ -14,17 +14,17 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 | 数据库 | PostgreSQL 16，同机 loopback 专用数据库 |
 | 应用 | Linux amd64；受管安装使用 systemd |
 | 安装器运行主机前置 | Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证 |
-| 原文记载的隔离验证配置 | Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV24 Target 已验 |
-| 待取得的原生主机制品资格 | Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；FPV24 新装待验，FPV22 和 FPV23 增量还原与升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证 |
+| 原文记载的隔离验证配置 | Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 FPV25 Target 已验 |
+| 待取得的原生主机制品资格 | Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；FPV25 新装待验，FPV22、FPV23 和 FPV24 增量还原与升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证 |
 | 配置 | `xinsight.config.v1` |
 | API | `xinsight.investigation.v1`、`xinsight.access.v1`, `xinsight.accounts.v1` |
 | 默认语言 | English；语言控件可切换简体中文 |
 
 这是开发候选，不表示公共稳定发行或 Production 验收。仓库还保留 Ubuntu 22.04 CI 安装路径和冻结 rc.13 profile，其制品与结果分别管理。安装必须匹配精确 profile、已验签制品、信任权威及主机资格，不能照搬历史说明。
 
-安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV24 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22 和 FPV23 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。
+安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。FPV25 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22、FPV23 和 FPV24 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。
 
-配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`、`0.2.0-dev.fpv22`、`0.2.0-dev.fpv23`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
+配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`、`0.2.0-dev.fpv22`、`0.2.0-dev.fpv23`、`0.2.0-dev.fpv24`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
 
 ## 构建与本地试用
 
@@ -58,8 +58,8 @@ dry-run 只读检查身份与工具链；prepare-only 构建二进制和 payload
 独立核对 bootstrap verifier 与信任权威后，验签并解入全新目录：
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv24
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv24
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
@@ -75,7 +75,7 @@ sudo /opt/x-insight/current/bin/xinsightctl status
 
 只在预检通过且部署已获授权后运行实际安装。安装创建受管部署身份，不得复制或编辑；首次安装不会自动接入 UniRouter 或启动未配置 worker。应用和数据库保持 loopback；浏览器登录前配置批准的 HTTPS origin 与可信本地 TLS terminator。未登录产品请求跳转登录，API 返回401；cookie 保持 Secure/HttpOnly/SameSite。浏览器在普通 HTTP 上拒绝提交密码。
 
-已有 FPV23 安装时，使用受管升级流程。若按发布权威选择增量传输，先用已核实的独立 `xinsight-release` 和本机缓存的准确 FPV23 签名包还原目标完整包。验签并解出目标后，用目标目录的 `xinsightctl upgrade --check` 核对当前安装、数据库和备份条件。按维护窗口保留原安装与数据。
+已有 FPV24 安装时，使用受管升级流程。若按发布权威选择增量传输，先用已核实的独立 `xinsight-release` 和本机缓存的准确 FPV24 签名包还原目标完整包。验签并解出目标后，用目标目录的 `xinsightctl upgrade --check` 核对当前安装、数据库和备份条件。按维护窗口保留原安装与数据。
 
 ## 首次来源接入
 

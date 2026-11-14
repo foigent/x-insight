@@ -1,6 +1,6 @@
 # Develop and qualify X-Insight
 
-This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md); Go, Node.js, synthetic fixtures, historical source reproduction and P3 qualification are not customer onboarding steps. The published preview is FPV21/schema 47. This source prepares an unqualified FPV22/schema 47 candidate; its local results do not establish a signed package or installed upgrade. Historical scenarios below retain their original revisions and evidence scope.
+This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md). The published preview is [FPV24 / schema 47](releases/v0.2.0-dev.fpv24.md). The commands below cover source builds and qualification. Historical scenarios keep their original revisions and evidence scope.
 
 ## Prerequisites
 
