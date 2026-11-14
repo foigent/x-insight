@@ -1,13 +1,14 @@
 # Public release and acceptance status
 
-As of **2026-11-14**, X-Insight source is public under Apache-2.0. [FPV24 / schema 47](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv24) is published and owner-signed. Evidence below binds qualified artifacts, host results and integration checks to their respective versions.
+As of **2026-11-15**, X-Insight source is public under Apache-2.0. [FPV25 / schema 47](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) is published and owner-signed. Use the [immutable FPV25 authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) to authenticate the download.
 
 Start with [install → choose your password → sign in → connect UR → confirm access and the first fact](getting-started.md). Source-building and historical qualification recipes are a separate [contributor entry](development.md).
 
 | Surface | Verified state | Boundary |
 | --- | --- | --- |
 | Public source | Canonical `foigent/x-insight` is public; Apache-2.0 covers project-owned product source | Dependency licenses, authentication, grants and tenant boundaries still apply |
-| Signed FPV25 candidate | [FPV25 release record](releases/v0.2.0-dev.fpv25.md), product source `b77fa1d7cff40a9adafe495d1c4951632819a4d3`. [Exact main CI](https://github.com/foigent/x-insight/actions/runs/43592588455), [protocol](https://github.com/foigent/x-insight/actions/runs/43592588498), ten Linux scenarios, owner signature and reconstruction from the exact FPV24 package passed | See the [canonical publication record](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) for availability and the immutable authority reference. Original-host and installed-pair acceptance have separate evidence |
+| Signed FPV25 | [FPV25 release record](releases/v0.2.0-dev.fpv25.md), product source `b77fa1d7cff40a9adafe495d1c4951632819a4d3`. Exact product CI and protocol, ten Linux qualification lanes, owner signature, and anonymous signed reconstruction and extraction from the exact FPV24 package passed | [Public release and 12 assets](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) and [immutable release authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) |
+| FPV25 installed host | Native preserving FPV24→FPV25 upgrade with a private backup and verified isolated restore. Schema 47, original deployment, existing account and grant digests, and service readiness verified | Original Ubuntu 22.04 amd64/container-PG16 host. Current owner/reader browser and installed UR 1.15.7→XI FPV25 joint acceptance are tracked separately and remain pending at this checkpoint |
 | Signed FPV24 | [FPV24 release record](releases/v0.2.0-dev.fpv24.md), product source `fa1e64e1d1259c3b7d631baa7794952b0ae72d93`. Exact main CI/protocol, nine Linux lanes, owner signature and byte-identical reconstruction verified | Consumer trust is pinned to the [immutable authority record](https://github.com/foigent/x-insight/blob/9c83fba272b165edcf88134eece5a533f5ab389f/docs/community/release-authority.json) |
 | FPV24 installed host | Native preserving FPV23→FPV24 upgrade with backup and isolated restore on Ubuntu 22.04 amd64 with pinned container PostgreSQL 16 | Original host and topology. Earlier native empty-database installation was FPV20 |
 | UR 1.15.6 → XI FPV24 | Original connection recovered and completed a bounded sync. Owner and ordinary reader read the granted project in Runtime. Automatic credential rotation and communication after rotation passed | That sync returned zero new items. Real first-fact arrival was separately observed on the earlier preview |
@@ -59,6 +60,6 @@ Linux or installed UR/XI evidence. See the [cold-build scope](development.md).
 
 Public dependency access uses exact pinned public repositories with read-only job credentials. Release-relevant PRs retain current signed-artifact/fresh-install gates and negative authorization checks. Documentation routing is determined by the existing CI classifier; this document does not change it. `Backend Tests` remains the protected aggregate check.
 
-The [signed-distribution guide](signed-distribution.md) covers the current FPV24 preview and retains the maintainer procedure separately. The frozen rc13 and earlier preview records retain their original scope.
+The [signed-distribution guide](signed-distribution.md) covers the current FPV25 preview and retains the maintainer procedure separately. The frozen rc13 and earlier preview records retain their original scope.
 
 Private build paths, credentials, raw customer content and internal operations evidence do not belong in the public repository.
