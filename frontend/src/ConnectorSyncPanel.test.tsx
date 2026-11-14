@@ -90,6 +90,13 @@ it.each(["en-US","zh-CN"] as const)("explains safe failure and partial results i
  expect(screen.getByText(locale==="en-US"?/partial result retained/:/部分结果已保留/)).toBeTruthy();
  expect(screen.getByText("enrollment_list:authorization").closest("details")).toBeTruthy();expect(once).not.toHaveBeenCalled();
 });
+it.each(["en-US","zh-CN"] as const)("identifies a completed-execution feed authorization failure in %s",async locale=>{
+ setLocale(locale);
+ vi.spyOn(connectorSyncAPI,"status").mockResolvedValue(state(id,{last_error:"feed_poll:authorization"}));
+ render(<ConnectorSyncPanel installationID={id} csrfToken="csrf" canManage/>);
+ await screen.findByText(locale==="en-US"?/reading the completed-execution feed.*source refused access/:/读取已完成执行的数据源.*来源拒绝访问/);
+ expect(screen.getByText("feed_poll:authorization").closest("details")).toBeTruthy();
+});
 it.each(["unknown:unknown","machine_request:unconfirmed","multiple:failures","private token=secret","inspect:unknown::private-tail"])("does not invent a root cause for %s",async code=>{
  vi.spyOn(connectorSyncAPI,"status").mockResolvedValue(state(id,{last_error:code}));render(<ConnectorSyncPanel installationID={id} csrfToken="csrf" canManage/>);
  await screen.findByText(code==="multiple:failures"?/More than one synchronization step failed/:code==="machine_request:unconfirmed"?/outcome is unconfirmed/:/stage or cause is not established/);

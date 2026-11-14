@@ -3203,6 +3203,8 @@
   "syncStageInspect": "核对连接状态",
   "syncStageActivation": "激活连接",
   "syncStageReceiver": "核对现有接收器",
+  "syncStageFeedActivation": "启动已完成执行的数据源",
+  "syncStageFeedPoll": "读取已完成执行的数据源",
   "syncStageDescriptor": "核实来源身份",
   "syncStageMachine": "准备委托访问",
   "syncStagePolicy": "读取策略范围",

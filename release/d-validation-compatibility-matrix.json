@@ -1,7 +1,7 @@
 {
   "schema_version": "xinsight.compatibility-matrix.v1",
-  "product_version": "0.2.0-dev.fpv24",
-  "manual_version": "0.2.0-dev.fpv24/manual-r1",
+  "product_version": "0.2.0-dev.fpv25",
+  "manual_version": "0.2.0-dev.fpv25/manual-r1",
   "release_channel": "release_candidate",
   "database_schema": "47",
   "config_schema": "xinsight.config.v1",
@@ -45,7 +45,8 @@
     "0.2.0-dev.fpv20",
     "0.2.0-dev.fpv21",
     "0.2.0-dev.fpv22",
-    "0.2.0-dev.fpv23"
+    "0.2.0-dev.fpv23",
+    "0.2.0-dev.fpv24"
   ],
   "supported_legacy_sources": [],
   "supported_host": {
@@ -65,7 +66,7 @@
     "first_tool": "xinsight-release",
     "scope": "Retained isolated-validation fields do not establish formal release authority; formal distribution uses the owner-attested public authority and pinned public trust record."
   },
-  "field_qualification": "FPV24 keeps schema47 and accepts the displayed numeric Runtime project ID. The exact published FPV23 is a declared predecessor. CI, signed artifact, Linux and installed qualification remain pending for FPV24.",
+  "field_qualification": "FPV25 keeps schema 47 and adds safe completed-execution feed failure diagnostics. The exact published FPV24 is a declared upgrade predecessor. Candidate CI, signed artifact, Linux and installed qualification are pending.",
   "qualification_environments": {
     "previously_documented_isolated_profile": {
       "os": "Ubuntu 24.04 isolated XI validation guest",
@@ -73,13 +74,13 @@
       "service_manager": "systemd",
       "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
     },
-    "previous_profile_boundary": "This records an earlier Ubuntu24.04/native-PG validation environment. FPV24 has its own native qualification and Target acceptance.",
+    "previous_profile_boundary": "This records an earlier Ubuntu 24.04/native PostgreSQL validation environment. FPV25 requires its own native artifact and installed qualification.",
     "planned_current_profile": {
       "os": "Ubuntu22.04",
       "architecture": "amd64",
       "service_manager": "systemd",
       "database_topology": "dedicated PostgreSQL16 container using the distributed pinned Compose profile",
-      "acceptance": "FPV24 fresh install and delta-based upgrades from the exact published FPV22 and FPV23 predecessors require current qualification on Ubuntu22.04/container PG16."
+      "acceptance": "FPV25 fresh install and delta-based upgrades from the exact published FPV22, FPV23 and FPV24 predecessors require current qualification on Ubuntu 22.04 with container PostgreSQL 16."
     }
   },
   "formal_release_authority": {

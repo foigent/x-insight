@@ -6,7 +6,7 @@ X-Insight (XI) can be used independently for supported imports, reported work ac
 
 ## Version and support
 
-Product `0.2.0-dev.fpv24`; manual `0.2.0-dev.fpv24/manual-r1`.
+Product `0.2.0-dev.fpv25`; manual `0.2.0-dev.fpv25/manual-r1`.
 
 | Item | Current contract |
 | --- | --- |
@@ -14,17 +14,17 @@ Product `0.2.0-dev.fpv24`; manual `0.2.0-dev.fpv24/manual-r1`.
 | Database | Dedicated PostgreSQL 16, loopback only |
 | Application | Linux amd64; systemd for managed installations |
 | Installer runtime host prerequisite | Ubuntu 22.04 or 24.04 amd64 with systemd; exact artifact/topology qualification is separate |
-| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV24 Target acceptance |
-| Pending native-host artifact qualification | Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container, and Ubuntu 24.04 with native PostgreSQL 16; FPV24 fresh install pending on both profiles, with FPV22 and FPV23 delta reconstruction and upgrade pending on Ubuntu 22.04 with container PostgreSQL 16 |
+| Previously documented isolated validation profile | Ubuntu 24.04 guest with native PostgreSQL; not current FPV25 Target acceptance |
+| Pending native-host artifact qualification | Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container, and Ubuntu 24.04 with native PostgreSQL 16; FPV25 fresh install pending on both profiles, with FPV22, FPV23, and FPV24 delta reconstruction and upgrade pending on Ubuntu 22.04 with container PostgreSQL 16 |
 | Configuration | `xinsight.config.v1` |
 | APIs | `xinsight.investigation.v1`, `xinsight.access.v1`, `xinsight.accounts.v1` |
 | Default language | English; Simplified Chinese is available in the language control |
 
 This is a development candidate, not a public stable release or a production acceptance claim. The repository also retains an Ubuntu 22.04 CI installation lane and a frozen rc.13 profile. Their results and artifacts are distinct. Use the exact profile, signed artifact, trust authority, and host qualification for the intended installation; do not apply historical instructions to another profile.
 
-Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. FPV24 fresh-install qualification is pending on Ubuntu 22.04 with container PostgreSQL 16 and Ubuntu 24.04 with native PostgreSQL 16. Delta reconstruction and upgrade from the published FPV22 and FPV23 require their own qualification on Ubuntu 22.04 with container PostgreSQL 16.
+Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. FPV25 fresh-install qualification is pending on Ubuntu 22.04 with container PostgreSQL 16 and Ubuntu 24.04 with native PostgreSQL 16. Delta reconstruction and upgrade from the published FPV22, FPV23, and FPV24 require their own qualification on Ubuntu 22.04 with container PostgreSQL 16.
 
-The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`, `0.2.0-dev.fpv21`, `0.2.0-dev.fpv22`, `0.2.0-dev.fpv23`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.
+The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`, `0.2.0-dev.fpv21`, `0.2.0-dev.fpv22`, `0.2.0-dev.fpv23`, `0.2.0-dev.fpv24`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.
 
 ## Build and try locally
 
@@ -58,8 +58,8 @@ Managed installation needs an explicitly selected, qualified host, a dedicated e
 After independently checking the bootstrap verifier and trust authority, verify and extract into a new directory:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv24
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv24
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
@@ -75,7 +75,7 @@ sudo /opt/x-insight/current/bin/xinsightctl status
 
 Only run the mutating install after its preflight passes and the deployment is authorized. Installation creates the managed deployment identity; do not copy or edit it. A first install does not automatically connect to UniRouter or start an unconfigured source worker. Keep application/database listeners on loopback and configure the approved HTTPS origin and trusted local TLS terminator before browser login. Unauthenticated product navigation redirects to login; unauthenticated API calls return401. Session cookies remain Secure/HttpOnly/SameSite. The browser refuses password submission over plain HTTP.
 
-For an existing FPV23 installation, follow the managed upgrade procedure. If the release authority admits delta transfer, use the independently verified `xinsight-release` and the exact cached signed FPV23 bundle to reconstruct the complete target. Verify and extract it, then use the target payload’s `xinsightctl upgrade --check` to check the current installation, database and backup requirements. Preserve the installation and its data during the approved maintenance window.
+For an existing FPV24 installation, follow the managed upgrade procedure. If the release authority admits delta transfer, use the independently verified `xinsight-release` and the exact cached signed FPV24 bundle to reconstruct the complete target. Verify and extract it, then use the target payload’s `xinsightctl upgrade --check` to check the current installation, database and backup requirements. Preserve the installation and its data during the approved maintenance window.
 
 ## Connect the first source
 

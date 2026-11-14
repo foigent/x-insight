@@ -1,10 +1,10 @@
 # Signed preview: verify and install
 
-The [FPV21 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv21) is published with seven attachments: version `0.2.0-dev.fpv21`, schema 47, manual `0.2.0-dev.fpv21/manual-r1`, channel `release_candidate`. The exact owner-signed package passed Linux qualification and original-host anonymous download/verification. The existing Ubuntu 22.04/container-PG16 host completed a native preserving upgrade, private backup and actual isolated restore. One real completed UR request's metadata was ingested and read by an explicitly granted owner and an ordinary reader; native reader recovery/login and foreign-project denial are verified. Overview denial handling, current-account identification and complete content-refusal acceptance remain open. The bounded sync retained partial control-step failures. See the [dated status matrix](release-readiness.md). Stable and Production acceptance are not claimed.
+The [FPV24 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv24) is the published owner-signed Linux amd64 release, with schema 47 and manual `0.2.0-dev.fpv24/manual-r1`. See the [status matrix](release-readiness.md) for installation, recovery and integration evidence.
 
-Package users start with the [five-step installation route](getting-started.md) and [exact FPV21 record](releases/v0.2.0-dev.fpv21.md). They do not build the source, select a new signing authority, create a release key or run historical qualification fixtures. This page keeps the existing low-level commands and separate maintainer procedure.
+Package users start with the [five-step installation route](getting-started.md) and [exact FPV24 record](releases/v0.2.0-dev.fpv24.md). They do not build the source, select a new signing authority, create a release key or run historical qualification fixtures. This page keeps the existing low-level commands and separate maintainer procedure.
 
-Authenticate [authority commit `e61a59fae14d1cfe323fa379329a80db25645de4`](https://github.com/foigent/x-insight/blob/e61a59fae14d1cfe323fa379329a80db25645de4/docs/community/release-authority.json) and exact package/verifier/trust hashes. Product source `6463d980958fae86d975eecde239b9534ec831a5` is a separate identity. Subsequent status documentation does not replace that pin. Signed bytes, tags, attachments and historical identities are unchanged; the [FPV20 record/erratum](releases/v0.2.0-dev.fpv20.md) retains its original scope.
+Authenticate [the immutable FPV24 authority](https://github.com/foigent/x-insight/blob/9c83fba272b165edcf88134eece5a533f5ab389f/docs/community/release-authority.json) and match the package, verifier, and trust hashes. The product source commit is `fa1e64e1d1259c3b7d631baa7794952b0ae72d93`. The [FPV21 record](releases/v0.2.0-dev.fpv21.md) and [FPV20 record and erratum](releases/v0.2.0-dev.fpv20.md) retain their historical scope.
 
 ## Consumer: verify, extract, check, then install
 
@@ -16,8 +16,8 @@ not need the source checkout, Go, Node.js or npm to perform these steps.
 Use the actual approved release commit in place of `APPROVED_40_HEX_COMMIT`:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv21
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv21
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv24
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit APPROVED_40_HEX_COMMIT --expected-version 0.2.0-dev.fpv24
 sudo /approved/new-staging/bin/xinsightctl version --json
 ```
 
@@ -25,13 +25,13 @@ Verification rejects invalid/untrusted or revoked keys, a manifest timestamp
 outside the key's declared validity, and wrong commit/version/target. Extraction verifies again and creates a new
 absolute destination. Preserve the returned version/commit/manual identities.
 
-Follow the release-matched [installation and access manual](../manual/en-US/index.md#install-and-establish-access)
-([中文](../manual/zh-CN/current.md#安装与账户)). The managed controller supports
+Follow the release-matched [installation and access manual](https://github.com/foigent/x-insight/blob/fa1e64e1d1259c3b7d631baa7794952b0ae72d93/docs/manual/en-US/index.md#install-and-establish-access)
+([中文](https://github.com/foigent/x-insight/blob/fa1e64e1d1259c3b7d631baa7794952b0ae72d93/docs/manual/zh-CN/current.md#安装与账户)). The managed controller supports
 Ubuntu 22.04/24.04 amd64 with systemd and a dedicated loopback PostgreSQL 16
 database. Its checks require four distinct database roles, protected DSN files,
-an approved service account, local TLS and the exact trust file. A new FPV21
+an approved service account, local TLS and the exact trust file. A new FPV24
 install needs no account file or default password; first-owner activation follows
-installation through the [native private handoff](../manual/en-US/accounts.md#first-owner-and-existing-installations).
+installation through the [native private handoff](https://github.com/foigent/x-insight/blob/fa1e64e1d1259c3b7d631baa7794952b0ae72d93/docs/manual/en-US/accounts.md#first-owner-and-existing-installations).
 The current Ubuntu 24.04 native PostgreSQL profile still requires Docker Compose
 and inspection of the pinned PostgreSQL image; native database provisioning
 does not remove those checks. The disk check requires the manifest's compressed payload artifact size
@@ -49,8 +49,8 @@ dedicated loopback PostgreSQL 16 database. The distributed Compose profile uses
 a pinned PostgreSQL container; it does not replace native systemd application
 installation. The matrix separates runtime prerequisites from the previously
 documented Ubuntu 24.04/native-PG validation environment. Code acceptance is
-not a passing artifact or Target result. Exact FPV21 Linux qualification and
-one existing Ubuntu 22.04/container-PG16 host's preserving FPV20→FPV21 upgrade
+not a passing artifact or Target result. Exact FPV24 Linux qualification and
+one existing Ubuntu 22.04/container-PG16 host's preserving FPV23→FPV24 upgrade
 have been accepted; the earlier FPV20 empty-database installation is a separate
 historical result. None of these results qualifies every declared topology.
 
@@ -73,13 +73,17 @@ preserved, and the database then becomes authoritative.
 
 Use UniRouter's own [installation entry](https://github.com/foigent/unirouter/blob/main/docs/community/getting-started.md) and [published release](https://github.com/foigent/unirouter/releases), matching its exact artifact and instructions. Old source observations that signed downloads were pending do not describe the current public channel. Neither XI's compiled CI fixture nor the P3 producer is a substitute for installing UR.
 
-Follow the [normal administrator and first-fact route](getting-started.md#connect-unirouter-and-verify-the-pair), [first-source manual](../manual/en-US/index.md#connect-the-first-source) and [ordinary-reader grants](../manual/en-US/index.md#grant-ordinary-users-the-right-scope). Prepare current administrator sessions and UR source/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field scope; keep Auto off for the initial explicit bounded synchronization.
+Follow the [normal administrator and first-fact route](getting-started.md#connect-unirouter-and-verify-the-pair), [first-source manual](https://github.com/foigent/x-insight/blob/fa1e64e1d1259c3b7d631baa7794952b0ae72d93/docs/manual/en-US/index.md#connect-the-first-source) and [ordinary-reader grants](https://github.com/foigent/x-insight/blob/fa1e64e1d1259c3b7d631baa7794952b0ae72d93/docs/manual/en-US/index.md#grant-ordinary-users-the-right-scope). Prepare current administrator sessions and UR source/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field scope; keep Auto off for the initial explicit bounded synchronization.
 
-For one authorized completed request, retain matching source/request identity and the applicable usage/currency/cost basis. Have an ordinary authorized XI user find those exact facts; check foreign-scope denial and revocation within the acceptance scope. Configuration or an empty list does not satisfy this result. Connection/runtime/enrollment and eight-profile empty synchronization were accepted on 2026-10-27. Matching real-request metadata, explicit owner and reader Runtime readings, native reader recovery/login and foreign-project denial have since been verified. The overview can mishandle legitimate permission denials, and current-account identification and the complete content-refusal boundary remain unaccepted. The later bounded sync retained partial control-step failures, independently of successful metadata ingestion and hosted component qualification.
+For one authorized completed request, retain matching source/request identity and the applicable usage, currency, and cost basis. Have an ordinary authorized XI user find those exact facts. Check foreign-scope denial and revocation within the acceptance scope. Confirm first-fact arrival from a matching record.
+
+On the original UR 1.15.6 and XI FPV24 installations, the connection recovered and a bounded sync completed with zero new items. The owner and ordinary reader each found 25 existing request records for the granted project in Runtime. The reader was denied access to an ungranted project and to the wrong source. Automatic control credential rotation and the communication that followed were verified. Access to captured bodies requires a separate grant. Direct denial of a byte fetch for a captured body remains unverified. See the [current acceptance status](release-readiness.md) and [FPV24 release record](releases/v0.2.0-dev.fpv24.md).
+
+In the earlier qualification on 2026-10-27, connection, Runtime, enrollment, and an empty sync across eight profiles passed. In later FPV21 validation, a bounded run ingested matching metadata for one real request and recorded partial control-step failures. The FPV21 overview also mishandled some legitimate permission denials, and current-account identification on that version was still unaccepted. See the [historical FPV21 findings](release-readiness.md).
 
 ## Maintainers: preparing a future release
 
-The following procedure remains available to contributors and release operators. It is not a list of unresolved choices for a user consuming the existing FPV21 preview.
+The following procedure remains available to contributors and release operators. It is not a list of unresolved choices for a user consuming the published FPV24 preview.
 
 ### Select authority and qualify the exact source
 
@@ -117,7 +121,7 @@ The owner-approved public key and XI issuance window are recorded in
 The XI window is 2026-10-18T10:42:42.832Z through 2026-11-17T10:42:42.832Z;
 it asserts no earlier UR activation or original key-generation date. The real
 source timestamp of the formal candidate must fall in this window. The
-FPV21 artifact is now issued and qualified within the [dated accepted scope](release-readiness.md);
+FPV24 artifact is issued and qualified within the [dated accepted scope](release-readiness.md);
 key custody and future issuance retain their separate requirements.
 A new owner-only private representation records its actual creation time and
 reuses the same material; never backfill the unknown original material birthday.
@@ -127,7 +131,7 @@ source plus the owner's direct fingerprint attestation. Consumers pin the real
 source and authority-record commits, and check the public trust/bootstrap hashes
 before execution, or build a verifier from that authenticated exact source.
 For a future release, add its real package/bootstrap hashes only after
-production and independent review; the current FPV21 record already contains them. A record cannot embed its own unknown commit.
+production and independent review; the FPV24 record contains them. A record cannot embed its own unknown commit.
 Source and Release still share an owner account: this model does not claim an
 independent administrative domain or protection from complete account compromise.
 It does not require a new domain or service by default.
@@ -143,9 +147,9 @@ bash scripts/build-signed-release.sh /approved/new-build --profile=development-d
 ```
 
 `--dry-run` checks preconditions without inspecting a signing key. The signed
-build creates `xinsight-v0.2.0-dev.fpv21-linux-amd64-COMMIT.tar.gz`, the separate
+build creates `xinsight-vPRODUCT_VERSION-linux-amd64-COMMIT.tar.gz`, the separate
 `bootstrap/xinsight-release-linux-amd64-COMMIT`, and `build-result.json`.
-`COMMIT` means the actual 40-character release commit, never a branch alias.
+`PRODUCT_VERSION` comes from the selected release config. `COMMIT` is the 40-character release commit.
 `--prepare-only` stops at an unsigned, non-installable payload. CI and native
 qualification artifacts signed with temporary test trust remain qualification
 artifacts and must not be relabelled as formal public distributions.
@@ -218,7 +222,7 @@ added to the existing delivery inventory or run directly.
 ### Publish a portable record after approval
 
 For a future publication, the owner must bind the canonical release/download
-channel and authority-record location. The current FPV21 uses the existing
+channel and authority-record location. FPV24 uses the existing
 canonical GitHub release and original authority commit recorded above.
 Before any immutable release, bind its exact repository, source commit/tree,
 profile, version/channel, artifact name/size/SHA-256, manifest/payload hashes,

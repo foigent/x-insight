@@ -41,7 +41,7 @@ func WithFailure(stage, category string, err error, unit ...string) error {
 	if errors.As(err, &known) {
 		return err
 	}
-	f := &Failure{stage: word(stage, "unknown inspect original_activation receiver_proof source_descriptor descriptor_commit receiver_binding receiver_state activation_request machine_prepare machine_request machine_enqueue machine_config machine_runtime policy_scopes enrollment_client enrollment_list project_read project_revoke project_qualify project_configure enrollment_save project_publish configuration_encode activation_epoch feed_stage feed_credential feed_register feed_promote feed_activate activation_claim activation_commit"), category: word(category, "unknown authorization unavailable contract conflict not_found unconfirmed canceled deadline local_permission local_store host_busy"), cause: err}
+	f := &Failure{stage: word(stage, "unknown inspect original_activation receiver_proof source_descriptor descriptor_commit receiver_binding receiver_state activation_request machine_prepare machine_request machine_enqueue machine_config machine_runtime policy_scopes enrollment_client enrollment_list project_read project_revoke project_qualify project_configure enrollment_save project_publish configuration_encode activation_epoch feed_stage feed_credential feed_register feed_promote feed_activate activation_claim activation_commit feed_activation feed_poll"), category: word(category, "unknown authorization unavailable contract conflict not_found unconfirmed canceled deadline local_permission local_store host_busy"), cause: err}
 	if len(unit) > 0 {
 		f.unit = unit[0]
 	}

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/foigent/x-insight/internal/connectorsync"
+	"net/http"
 	"time"
+
+	"github.com/foigent/x-insight/internal/connectorsync"
 )
 
 const AcceptedLiveContractRef = "unirouter.completed-execution.v1@sha256:4ae2897d4f8470c38624dfe21c54d72eaf6d995d2c9578c4420c94d244424fb2"
@@ -262,7 +264,7 @@ func (w *LiveWorker) PollOnce(ctx context.Context) (out LivePollReport, resultEr
 		if err != nil {
 			return LivePollReport{}, err
 		}
-		defer func() { finish(resultErr) }()
+		defer func() { finish(syncDiagnostic("feed_poll", resultErr)) }()
 	}
 	startedAt := w.config.Now().UTC()
 	if err := w.state.MarkPollStarted(ctx, state.Cursor, startedAt); err != nil {
@@ -365,7 +367,7 @@ func (w *LiveWorker) ensureActivation(ctx context.Context) (out PostgresWorkerSt
 		if err != nil {
 			return PostgresWorkerState{}, err
 		}
-		defer func() { finish(resultErr) }()
+		defer func() { finish(syncDiagnostic("feed_activation", resultErr)) }()
 	}
 	payload, err := w.source.Fetch(ctx, "", MaxPageItems)
 	if err != nil {
@@ -392,6 +394,47 @@ func (w *LiveWorker) ensureActivation(ctx context.Context) (out PostgresWorkerSt
 		"contract": LiveSnapshotSchemaVersion,
 	})
 	return state, nil
+}
+
+// A pull-feed error already carries an internal status code. Project only
+// closed categories to the shared sync receipt.
+func syncDiagnostic(stage string, err error) error {
+	if err == nil || connectorsync.IsControlStop(err) {
+		return err
+	}
+	category := "unknown"
+	var source *HTTPSourceError
+	var worker *LiveWorkerError
+	switch {
+	case errors.Is(err, context.Canceled):
+		category = "canceled"
+	case errors.Is(err, context.DeadlineExceeded):
+		category = "deadline"
+	case errors.As(err, &source):
+		switch {
+		case source.Code == PausedConnectionErrorCode:
+			category = "conflict"
+		case source.Category == HTTPErrorCategoryStatus &&
+			(source.StatusCode == http.StatusUnauthorized || source.StatusCode == http.StatusForbidden):
+			category = "authorization"
+		case source.Category == HTTPErrorCategoryStatus &&
+			(source.StatusCode == http.StatusTooManyRequests || source.StatusCode >= 500 && source.StatusCode <= 599):
+			category = "unavailable"
+		case source.Category == HTTPErrorCategoryTransport:
+			category = "unavailable"
+		case source.Category == HTTPErrorCategoryBody:
+			category = "contract"
+		}
+	case errors.As(err, &worker):
+		switch worker.Code {
+		case "contract_page_invalid", "source_instance_mismatch", "empty_page_cursor_advance", "cursor_no_progress",
+			"activation_contract_invalid", "activation_not_forward_only":
+			category = "contract"
+		case "state_poll_start_failed", "state_failure_record_failed", "state_page_commit_failed", "state_activation_failed":
+			category = "local_store"
+		}
+	}
+	return connectorsync.WithFailure(stage, category, err)
 }
 
 func (w *LiveWorker) retryDelay(failures int, retryAfter time.Duration) time.Duration {

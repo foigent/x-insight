@@ -776,7 +776,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade]
+        lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade]
         database_profile: [container]
         include:
           - lifecycle: new_install
@@ -847,7 +847,7 @@ jobs:
           /usr/lib/postgresql/16/bin/createdb --version
 
       - name: Install the standard delta producer on the published delta lanes
-        if: matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
+        if: matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade' || matrix.lifecycle == 'fpv24_upgrade'
         run: sudo apt-get install -y zstd
 
       - name: Download exact non-publishable signed candidate
@@ -882,13 +882,13 @@ jobs:
           sudo test ! -e /opt/xinsight-ci-artifacts
           sudo test ! -L /opt/xinsight-ci-artifacts
           sudo install -d -o root -g root -m 0755 /opt/xinsight-ci-artifacts
-          if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ]; then
+          if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ] && [ "$LIFECYCLE" != fpv24_upgrade ]; then
             sudo install -o root -g root -m 0444 "$artifact" /opt/xinsight-ci-artifacts/candidate.tar.gz
             test "$(sha256sum "$artifact" | cut -d ' ' -f1)" = "$(sha256sum /opt/xinsight-ci-artifacts/candidate.tar.gz | cut -d ' ' -f1)"
           fi
 
       - name: Prepare synthetic accounts before native durable initialization
-        if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
+        if: matrix.lifecycle == 'new_install' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade' || matrix.lifecycle == 'fpv24_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
         run: |
@@ -968,7 +968,7 @@ jobs:
           PY_FPV21
 
       - name: Verify the delta and install its exact published predecessor
-        if: matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
+        if: matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade' || matrix.lifecycle == 'fpv24_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
           LIFECYCLE: ${{ matrix.lifecycle }}
@@ -977,6 +977,7 @@ jobs:
           case "$LIFECYCLE" in
             fpv22_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR=fpv22 ;;
             fpv23_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR=fpv23 ;;
+            fpv24_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR=fpv24 ;;
             *) exit 2 ;;
           esac
           download_root="${RUNNER_TEMP}/signed-release-artifact"
@@ -1004,7 +1005,7 @@ jobs:
         run: bash scripts/qualify-ubuntu22-installed-joint.sh "${GITHUB_WORKSPACE}/dist/ci-installed-ur" "${{ matrix.lifecycle }}"
 
       - name: Qualify exact predecessor to current candidate installed upgrade and source continuation
-        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade'
+        if: matrix.lifecycle == 'fpv17_upgrade' || matrix.lifecycle == 'fpv20_upgrade' || matrix.lifecycle == 'fpv21_upgrade' || matrix.lifecycle == 'fpv22_upgrade' || matrix.lifecycle == 'fpv23_upgrade' || matrix.lifecycle == 'fpv24_upgrade'
         env:
           XINSIGHT_CI_EPHEMERAL_HOST: "1"
           XINSIGHT_CI_UPGRADE_PRESTATE: "1"
@@ -1047,6 +1048,7 @@ jobs:
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-result.json
             ${{ runner.temp }}/fpv22-delta-qualification/qualification-result.json
             ${{ runner.temp }}/fpv23-delta-qualification/qualification-result.json
+            ${{ runner.temp }}/fpv24-delta-qualification/qualification-result.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/account-prestate-result.json
             ${{ runner.temp }}/xinsight-account-upgrade-qualification/qualification-failure.json
             release/ci-non-publishable.txt
