@@ -1183,11 +1183,25 @@ describe("PRD2 investigation UI", () => {
   });
 
   it("keeps source-filter failure degraded while showing an honest empty result", async () => {
-    installAPI({ sourceFailure: true, emptySearch: true });
+    let resolveSources!: (response: Response) => void;
+    const pendingSources = new Promise<Response>((resolve) => {
+      resolveSources = resolve;
+    });
+    installAPI({
+      responseFor: (url) => url.startsWith("/api/v1/sources") ? pendingSources : undefined,
+      emptySearch: true,
+    });
     render(<App />);
 
-    expect(await screen.findByText("当前条件下没有 execution")).toBeTruthy();
-    expect(screen.getByText(/来源选项暂时不可用/)).toBeTruthy();
+    const emptyResult = "当前条件下没有 execution";
+    const sourceWarning = /来源选项暂时不可用/;
+    expect(await screen.findByText(emptyResult)).toBeTruthy();
+    expect(screen.queryByText(sourceWarning)).toBeNull();
+
+    resolveSources(problemResponse(503, "database_unavailable", "corr-source-503"));
+
+    expect(await screen.findByText(sourceWarning)).toBeTruthy();
+    expect(screen.getByText(emptyResult)).toBeTruthy();
     expect(screen.getByText(/空结果不等于来源完整/)).toBeTruthy();
   });
 
@@ -1470,7 +1484,6 @@ describe("PRD2 investigation UI", () => {
 
 interface APIOptions {
   responseFor?: (url: string, init?: RequestInit) => Response | Promise<Response> | undefined;
-  sourceFailure?: boolean;
   emptySearch?: boolean;
   searchProblem?: boolean;
   pendingSearch?: Promise<ExecutionSearchResponse>;
@@ -1752,9 +1765,6 @@ function installAPI(options: APIOptions = {}) {
       });
     }
     if (url.startsWith("/api/v1/sources")) {
-      if (options.sourceFailure) {
-        return problemResponse(503, "database_unavailable", "corr-source-503");
-      }
       return jsonResponse(sourcesResponse);
     }
     if (/^\/api\/v1\/executions\?/.test(url)) {
