@@ -89,7 +89,7 @@ def check(source: str) -> None:
             'prepare-ci-fpv17-predecessor.sh' in fpv21,
             'actual installed FPV21/schema47 predecessor lane is missing')
     delta = step(fresh, 'Verify the delta and install its exact published predecessor')
-    for predecessor in ('fpv22', 'fpv23', 'fpv24'):
+    for predecessor in ('fpv22', 'fpv23', 'fpv24', 'fpv25'):
         require(f"matrix.lifecycle == '{predecessor}_upgrade'" in delta and
                 f'{predecessor}_upgrade) export XINSIGHT_CI_ACCOUNT_PREDECESSOR={predecessor}' in delta,
                 'missing exact delta predecessor route: ' + predecessor)
@@ -101,7 +101,7 @@ def check(source: str) -> None:
             '"$delta_dir/reconstructed.tar.gz" "$candidate"' in delta and
             delta.index('qualify-ci-fpv22-delta.py') < delta.index('sudo install'),
             'published delta lanes must use the reconstructed target')
-    require('if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ] && [ "$LIFECYCLE" != fpv24_upgrade ]; then' in
+    require('if [ "$LIFECYCLE" != fpv22_upgrade ] && [ "$LIFECYCLE" != fpv23_upgrade ] && [ "$LIFECYCLE" != fpv24_upgrade ] && [ "$LIFECYCLE" != fpv25_upgrade ]; then' in
             step(fresh, 'Verify and extract exact signed candidate'),
             'delta lanes must not stage the reference full target before reconstruction')
     historical = step(signed, "Rebuild and verify frozen rc13 signed candidate")
@@ -178,7 +178,7 @@ def check(source: str) -> None:
             'installed UR fixture checkout lacks exact commit readback')
     require('qualify-ubuntu22-installed-joint.sh' in step(fresh, 'Qualify installed controller and consumer lifecycle'),
             'fresh install does not run the installed business lifecycle')
-    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade]' in fresh and 'fail-fast: false' in fresh,
+    require('lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade, fpv25_upgrade]' in fresh and 'fail-fast: false' in fresh,
             'new installation, restored predecessor and FPV17 upgrade need independent VMs')
     predecessor = step(fresh, 'Reproduce and install exact FPV14 predecessor on clean VM')
     require("if: matrix.lifecycle == 'adopt_existing'" in predecessor and
@@ -229,7 +229,7 @@ def check(source: str) -> None:
             'failed installed lifecycle loses safe stage receipts')
     require('xinsight-account-upgrade-qualification/qualification-failure.json' in upload,
             'FPV17 upgrade failure loses fixed stage and exit code')
-    for predecessor in ('fpv22', 'fpv23', 'fpv24'):
+    for predecessor in ('fpv22', 'fpv23', 'fpv24', 'fpv25'):
         require(f'{predecessor}-delta-qualification/qualification-result.json' in upload and
                 f'{predecessor}-delta-qualification/*' not in upload, 'delta lane must upload only its result receipt')
     require('xinsight-account-upgrade-qualification/qualification-result.json' in upload,
@@ -1104,7 +1104,7 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     root = WORKFLOW.parents[2]
     qualifier = root / 'scripts/qualify-ubuntu22-fpv17-upgrade.sh'
     blocks = re.findall(r"<<'PY'\n(.*?)\nPY", qualifier.read_text(), re.S)
-    validators = [code for code in blocks if 'migration47_exact_append_verified' in code]
+    validators = [code for code in blocks if 'exact_migration_append_verified' in code]
     require(len(validators) == 1, 'exact upgrade delta validator missing or duplicated')
     code = validators[0]
     import hashlib
@@ -1133,8 +1133,10 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
     }
     old = {'product_version': {45:'0.2.0-dev.fpv17',46:'0.2.0-dev.fpv20',47:'0.2.0-dev.fpv21'}[old_schema], 'database_schema': str(old_schema),
            'commit': {45:'164582cab0e7f169c265c2494d04920c61af833d',46:'08435e0949dfae0ae65497d2e12ca356f6d820f0',47:'6463d980958fae86d975eecde239b9534ec831a5'}[old_schema], 'release_dir': '/synthetic/fpv'+str({45:17,46:20,47:21}[old_schema])}
-    new = {'product_version': '0.2.0-dev.fpv25', 'database_schema': '47',
-           'commit': 'b'*40, 'release_dir': '/synthetic/fpv25'}
+    config = json.loads((root/'release/d-validation-config.json').read_text())
+    schema = config['database_schema']['current']
+    new = {'product_version': config['product_version'], 'database_schema': schema,
+           'commit': 'b'*40, 'release_dir': '/synthetic/schema49'}
     stable = ('workbench_access_grants', 'work_event_collections', 'work_event_documents',
               'connector_installation_source_bindings', 'installation_identity', 'role_boundary',
               'source_fact_streams', 'source_content_collections', 'adapter_import_states')
@@ -1142,7 +1144,7 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
         'status': {'managed': True, 'install_state': {'current': old, 'database_schema_current': str(old_schema)}},
         'release': old['release_dir'], 'server_invocation': 'a'*32,
         'database': {k: '1:'+'a'*32 for k in stable},
-        'migration_rows': migrations, 'table_acl_rows': {'schema_migrations': 'original-acl'},
+        'migration_rows': migrations, 'table_acl_rows': {'schema_migrations': 'original-acl', 'workbench_reading_members':'legacy-acl'},
         'immutable_rows': {'source_fact_documents': ['original-row']},
         'progress': {'source_fact': [['facts', 'cursor', '10']],
                      'source_content': [['body', 'cursor', '2', '2', 'hwm']],
@@ -1160,13 +1162,13 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
         before['account_state_digests']={t:'d'*64 for t in ('authority','accounts','password_tickets')}
     after = copy.deepcopy(before)
     after.update(status={'managed': True, 'active_journal': None,
-                         'install_state': {'current': new, 'previous': old, 'database_schema_current': '47'}},
+                         'install_state': {'current': new, 'previous': old, 'database_schema_current': schema}},
                  release=new['release_dir'], server_invocation='b'*32,
                  server_exe=new['release_dir']+'/bin/xinsight-server',
                  worker_exes={u: new['release_dir']+'/bin/xinsight-importer'
                               for u in ('xinsight-feed.service', 'xinsight-source-facts.service')},
                  sync_privileges=privileges)
-    after['database']['schema_migrations'] = '47:'+'b'*32
+    after['database']['schema_migrations'] = schema+':'+'b'*32
     after['account_inventory']=copy.deepcopy(before['account_inventory' if old_schema==47 else 'legacy_account_inventory'])
     after['account_boundary']={'initialized':True,'roles_separated':True,'function_owner':'xinsight_admin'}
     after['database']['table_acl'] = 'b'*32
@@ -1177,7 +1179,21 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
         after['migration_rows'].append({'version':'000047_add_local_account_lifecycle',
         'checksum_sha256':'sha256:'+hashlib.sha256((root/'migrations/000047_add_local_account_lifecycle.up.sql').read_bytes()).hexdigest(),
         'dirty':False,'applied_at':'2026-01-02T00:00:00Z'})
+    for name in ('000048_publish_investigation_evidence','000049_replay_workbench_members'):
+        after['migration_rows'].append({'version':name,
+            'checksum_sha256':'sha256:'+hashlib.sha256((root/'migrations'/(name+'.up.sql')).read_bytes()).hexdigest(),
+            'dirty':False,'applied_at':'2026-01-02T00:00:00Z'})
     after['table_acl_rows'].update({t: 'reviewed-new-acl' for t in tables})
+    workbench_relations = ('workbench_reading_members','workbench_legacy_reading_members',
+                           'workbench_replayed_reading_facts','evidence_publications')
+    after['table_acl_rows'].update({t:'schema49-acl' for t in workbench_relations})
+    after['workbench_publication_acl'] = {
+        'owners': {t:'xinsight_admin' for t in workbench_relations},
+        'tables': [[t,r,'SELECT',False] for t in workbench_relations
+                   for r in ('xinsight_reader','xinsight_workspace','xinsight_importer')]
+                  + [['evidence_publications','xinsight_importer','INSERT',False]],
+        'columns': [[c,'xinsight_workspace','UPDATE',False] for c in ('calculated_total_micros','gateway_total_micros')],
+    }
     if database_samples is not None:
         for target, sample in zip((before, after), database_samples):
             target['migration_rows'] = sample['migration_rows']
@@ -1185,7 +1201,8 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
             target['database']['schema_migrations'] = sample['ledger_summary']
         after['sync_privileges'] = {k: database_samples[1]['sync_'+k] for k in privileges}
         after['account_boundary'] = database_samples[1].get('account_boundary', after['account_boundary'])
-    check = {'target': {'commit': new['commit']}}
+        after['workbench_publication_acl'] = database_samples[1]['workbench_publication_acl']
+    check = {'target': {k:new[k] for k in ('commit','product_version','database_schema')}}
     receipt = {'kind': 'upgrade', 'status': 'completed', 'before': {'commit': old['commit']},
                'after': {'commit': new['commit']}, 'checks': [{'name': 'representative_read', 'status': 'pass'}]}
     old_table = next(iter(before['table_acl_rows']))
@@ -1201,6 +1218,8 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
         ('wrong schema count', lambda s: s['database'].update(schema_migrations='45:'+'a'*32)),
         ('changed predecessor ACL', changed_acl), ('missing predecessor ACL', missing_acl),
         ('unreviewed table', lambda s: s['table_acl_rows'].update(unreviewed_table='acl')),
+        ('legacy membership write', lambda s: s['workbench_publication_acl']['tables'].append(['workbench_legacy_reading_members','xinsight_workspace','INSERT',False])),
+        ('frozen scope update', lambda s: s['workbench_publication_acl']['columns'].append(['summary_scopes','xinsight_workspace','UPDATE',False])),
         ('wrong table owner', lambda s: s['sync_privileges']['owners'].update(connector_sync_runs='other_owner')),
         ('PUBLIC table read', lambda s: s['sync_privileges']['tables'].append(['connector_sync_runs', 'PUBLIC', 'SELECT', False])),
         ('importer preference write', lambda s: s['sync_privileges']['columns'].append(['connector_sync_controls', 'auto_sync', 'xinsight_importer', 'UPDATE', False])),
@@ -1232,7 +1251,7 @@ def check_fpv17_upgrade_delta(database_samples=None, old_schema=45) -> dict:
             return subprocess.run([sys.executable, '-c', code, *map(str, paths), str(root)],
                                   capture_output=True, text=True)
         result = evaluate(after)
-        require(result.returncode == 0, 'valid exact predecessor-to47 delta rejected: '+result.stderr)
+        require(result.returncode == 0, 'valid exact predecessor-to49 delta rejected: '+result.stderr)
         for name, mutate in cases:
             candidate = copy.deepcopy(after)
             mutate(candidate)
@@ -1500,16 +1519,19 @@ def check_prepared_account_fixture_policy() -> None:
     require(evaluate('fpv17_upgrade_prestate',fpv23,True)=='reuse','same FPV23 imported identities must be reused')
     fpv24={'old_commit':'fa1e64e1d1259c3b7d631baa7794952b0ae72d93','old_product':'0.2.0-dev.fpv24','old_schema':'47'}
     require(evaluate('fpv17_upgrade_prestate',fpv24,True)=='reuse','same FPV24 imported identities must be reused')
+    fpv25={'old_commit':'b77fa1d7cff40a9adafe495d1c4951632819a4d3','old_product':'0.2.0-dev.fpv25','old_schema':'47'}
+    require(evaluate('fpv17_upgrade_prestate',fpv25,True)=='reuse','same FPV25 imported identities must be reused')
     for predecessor in legacy:require(evaluate('fpv17_upgrade_prestate',predecessor,False)=='create','original legacy fixture creation changed')
     invalid=[('new_install',None,False),('adopt_existing',None,True),('fpv17_upgrade_prestate',fpv21,False),('fpv17_upgrade_prestate',fpv23,False),('fpv17_upgrade_prestate',fpv24,False),('fpv17_upgrade_prestate',None,False),('unknown',fpv21,True)]
     invalid += [('fpv17_upgrade_prestate',x,True) for x in legacy]
+    invalid.append(('fpv17_upgrade_prestate',fpv25,False))
     for field in ('old_commit','old_product','old_schema'):
         wrong=dict(fpv21);wrong[field]='other';invalid.append(('fpv17_upgrade_prestate',wrong,True))
     for args in invalid:
         try:evaluate(*args)
         except ValueError:pass
         else:raise ValueError('mismatched or stale fixture account state accepted')
-    print('prepared account prestate: 6 positive,11 negative; same identities reused, no reset')
+    print('prepared account prestate: FPV25 and earlier identities reused; missing or mismatched state rejected')
 
 
 def check_installed_fixture_shell_preflight() -> None:
@@ -1659,7 +1681,7 @@ if __name__ == "__main__":
     expect_rejected(source, 'npm install --global "$(node -p "require(\'./package.json\').packageManager")"', 'npm --version')
     expect_rejected(source, 'bash scripts/verify-protected-runtime.sh', 'true')
     expect_rejected(source, "XINSIGHT_REQUIRE_POSTGRES_TESTS: '1'", "XINSIGHT_REQUIRE_POSTGRES_TESTS: '0'")
-    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade]', 'lifecycle: [new_install, adopt_existing]')
+    expect_rejected(source, 'lifecycle: [new_install, adopt_existing, fpv17_upgrade, fpv20_upgrade, fpv21_upgrade, fpv22_upgrade, fpv23_upgrade, fpv24_upgrade, fpv25_upgrade]', 'lifecycle: [new_install, adopt_existing]')
     expect_rejected(source, 'database_profile: native', 'database_profile: container')
     expect_rejected(source, 'os: ubuntu-24.04', 'os: ubuntu-22.04')
     expect_rejected(source, "permissions:\n  contents: read", "permissions:\n  contents: write")

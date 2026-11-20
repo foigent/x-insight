@@ -36,7 +36,8 @@ def fixture_account_action(mode, predecessor, prepared):
     if identity in {('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47'),
                     ('bd4503a13a46156f8361e56730abef96cc5628bd','0.2.0-dev.fpv22','47'),
                     ('82ca877d023058e48c93975c50171f606f8924f2','0.2.0-dev.fpv23','47'),
-                    ('fa1e64e1d1259c3b7d631baa7794952b0ae72d93','0.2.0-dev.fpv24','47')}:
+                    ('fa1e64e1d1259c3b7d631baa7794952b0ae72d93','0.2.0-dev.fpv24','47'),
+        ('b77fa1d7cff40a9adafe495d1c4951632819a4d3','0.2.0-dev.fpv25','47')}:
         if prepared: return 'reuse'
         raise ValueError('schema47_prepared_fixture_required')
     legacy={('164582cab0e7f169c265c2494d04920c61af833d','0.2.0-dev.fpv17','45'),
@@ -443,7 +444,8 @@ if json.loads((root/'installed-input.json').read_text())['mode'] == 'new_install
         ('6463d980958fae86d975eecde239b9534ec831a5','0.2.0-dev.fpv21','47'),
         ('bd4503a13a46156f8361e56730abef96cc5628bd','0.2.0-dev.fpv22','47'),
         ('82ca877d023058e48c93975c50171f606f8924f2','0.2.0-dev.fpv23','47'),
-        ('fa1e64e1d1259c3b7d631baa7794952b0ae72d93','0.2.0-dev.fpv24','47')}
+        ('fa1e64e1d1259c3b7d631baa7794952b0ae72d93','0.2.0-dev.fpv24','47'),
+        ('b77fa1d7cff40a9adafe495d1c4951632819a4d3','0.2.0-dev.fpv25','47')}
     request={'schema_version':'xinsight.ci-fpv17-installed-upgrade-request.v1',
              'predecessor_schema':predecessor['old_schema'],
              'script':str(xi/'scripts/qualify-ubuntu22-fpv17-upgrade.sh'),

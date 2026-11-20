@@ -228,7 +228,10 @@ test("customer demo reads recovered fallback as a source-backed trace without ex
   ).toBeVisible();
   await page.locator(".coverage-summary").click();
   await expect(page.locator(".coverage-strip").getByText("有证据", { exact: true })).toHaveCount(7);
-  await expect(page.locator(".completeness-grid").getByText("有证据", { exact: true })).toHaveCount(4);
+  const completeness = page.locator(".completeness-grid");
+  await expect(completeness.getByText("有证据", { exact: true })).toHaveCount(3);
+  const causal = completeness.getByRole("article").filter({ hasText: "因果关系" });
+  await expect(causal.getByText("完整", { exact: true })).toBeVisible();
 
   const trace = page.getByRole("list", { name: "执行证据路径" });
   await expect(trace.locator("li")).toHaveCount(6);

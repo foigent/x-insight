@@ -14,6 +14,7 @@ case "$PREDECESSOR" in
   fpv22) OLD_COMMIT=bd4503a13a46156f8361e56730abef96cc5628bd ;;
   fpv23) OLD_COMMIT=82ca877d023058e48c93975c50171f606f8924f2 ;;
   fpv24) OLD_COMMIT=fa1e64e1d1259c3b7d631baa7794952b0ae72d93 ;;
+  fpv25) OLD_COMMIT=b77fa1d7cff40a9adafe495d1c4951632819a4d3 ;;
   *) exit 2 ;;
 esac
 OLD_SOURCE="${RUNNER_TEMP:?}/installed-${PREDECESSOR}-source"
@@ -76,6 +77,14 @@ else
       gh release download v0.2.0-dev.fpv24 --repo foigent/x-insight --dir "$OLD_SIGNED" \
         --pattern "xinsight-v$OLD_VERSION-linux-amd64-$OLD_COMMIT.tar.gz" \
         --pattern "xinsight-release-linux-amd64-$OLD_COMMIT" --pattern trusted-release-keys.json ;;
+    fpv25)
+      OLD_TREE=b0353fdb32049ca2d1f1591c8dfdb15e6e378e71
+      OLD_VERSION=0.2.0-dev.fpv25
+      OLD_ARTIFACT_HASH=ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081
+      OLD_BOOTSTRAP_HASH=7f6e2a726d6f8535b7d848dfebf3442ad24fbea6e38681efdbf2300a6791647f
+      gh release download v0.2.0-dev.fpv25 --repo foigent/x-insight --dir "$OLD_SIGNED" \
+        --pattern "xinsight-v$OLD_VERSION-linux-amd64-$OLD_COMMIT.tar.gz" \
+        --pattern "xinsight-release-linux-amd64-$OLD_COMMIT" --pattern trusted-release-keys.json ;;
     *) exit 2 ;;
   esac
   test "$(git -C "$ROOT" rev-parse "$OLD_COMMIT^{tree}")" = "$OLD_TREE"
@@ -101,10 +110,11 @@ sudo test ! -L "$STAGED_OLD_ARTIFACT"
 sudo install -o root -g root -m 0444 "$OLD_ARTIFACT" "$STAGED_OLD_ARTIFACT"
 test "$(sha256sum "$OLD_ARTIFACT" | cut -d ' ' -f1)" = "$(sha256sum "$STAGED_OLD_ARTIFACT" | cut -d ' ' -f1)"
 OLD_ARTIFACT="$STAGED_OLD_ARTIFACT"
-python3 - "$1" "$2" "$3" "$OLD_SOURCE" "$OLD_ARTIFACT" "$OLD_PAYLOAD" "$CI_TRUST" "$OLD_COMMIT" <<'PY'
+python3 - "$1" "$2" "$3" "$OLD_SOURCE" "$OLD_ARTIFACT" "$OLD_PAYLOAD" "$CI_TRUST" "$OLD_COMMIT" "$ROOT/release/d-validation-config.json" <<'PY'
 import json,os,pathlib,sys
 artifact,payload,trust,source,old_artifact,old_payload,private=map(pathlib.Path,sys.argv[1:8])
 old_commit=sys.argv[8]
+target=json.loads(pathlib.Path(sys.argv[9]).read_text())
 current=json.loads(trust.read_text()); old=json.loads((private/'old-trust.json').read_text())
 assert current['schema_version']==old['schema_version']=='xinsight.trusted-release-keys.v1'
 keys=current['keys']+old['keys']; assert len({k['key_id'] for k in keys})==len(keys)
@@ -112,8 +122,8 @@ combined=private/'combined-trust.json'
 with combined.open('x') as f: json.dump(dict(schema_version=current['schema_version'],keys=keys),f)
 old_matrix=json.loads((old_payload/'release/compatibility-matrix.json').read_text())
 new_matrix=json.loads((payload/'release/compatibility-matrix.json').read_text())
-assert (old_matrix['product_version'],old_matrix['database_schema']) in {('0.2.0-dev.fpv17','45'),('0.2.0-dev.fpv20','46'),('0.2.0-dev.fpv21','47'),('0.2.0-dev.fpv22','47'),('0.2.0-dev.fpv23','47'),('0.2.0-dev.fpv24','47')}
-assert (new_matrix['product_version'],new_matrix['database_schema'])==('0.2.0-dev.fpv25','47')
+assert (old_matrix['product_version'],old_matrix['database_schema']) in {('0.2.0-dev.fpv17','45'),('0.2.0-dev.fpv20','46'),('0.2.0-dev.fpv21','47'),('0.2.0-dev.fpv22','47'),('0.2.0-dev.fpv23','47'),('0.2.0-dev.fpv24','47'),('0.2.0-dev.fpv25','47')}
+assert (new_matrix['product_version'],new_matrix['database_schema'])==(target['product_version'],target['database_schema']['current'])
 assert old_matrix['product_version'] in new_matrix['supported_upgrade_from_versions']
 record=dict(schema_version='xinsight.ci-account-upgrade-predecessor.v1',old_commit=old_commit,old_product=old_matrix['product_version'],old_schema=old_matrix['database_schema'],old_source=str(source),old_artifact=str(old_artifact),old_payload=str(old_payload),
             combined_trust=str(combined),candidate_ctl=str(payload/'bin/xinsightctl'),candidate_artifact=str(artifact))

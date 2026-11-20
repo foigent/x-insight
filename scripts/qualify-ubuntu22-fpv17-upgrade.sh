@@ -67,7 +67,7 @@ predecessor=json.loads(pathlib.Path(sys.argv[2]).read_text())
 current=before['status']['install_state']['current']
 assert predecessor['schema_version']=='xinsight.ci-account-upgrade-predecessor.v1'
 assert before['status']['managed'] and before['status'].get('active_journal') is None
-assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0'),('0.2.0-dev.fpv21','47','6463d980958fae86d975eecde239b9534ec831a5'),('0.2.0-dev.fpv22','47','bd4503a13a46156f8361e56730abef96cc5628bd'),('0.2.0-dev.fpv23','47','82ca877d023058e48c93975c50171f606f8924f2'),('0.2.0-dev.fpv24','47','fa1e64e1d1259c3b7d631baa7794952b0ae72d93')}
+assert (current['product_version'],current['database_schema'],current['commit']) in {('0.2.0-dev.fpv17','45','164582cab0e7f169c265c2494d04920c61af833d'),('0.2.0-dev.fpv20','46','08435e0949dfae0ae65497d2e12ca356f6d820f0'),('0.2.0-dev.fpv21','47','6463d980958fae86d975eecde239b9534ec831a5'),('0.2.0-dev.fpv22','47','bd4503a13a46156f8361e56730abef96cc5628bd'),('0.2.0-dev.fpv23','47','82ca877d023058e48c93975c50171f606f8924f2'),('0.2.0-dev.fpv24','47','fa1e64e1d1259c3b7d631baa7794952b0ae72d93'),('0.2.0-dev.fpv25','47','b77fa1d7cff40a9adafe495d1c4951632819a4d3')}
 assert (current['product_version'],current['database_schema'],current['commit']) == (predecessor['old_product'],predecessor['old_schema'],predecessor['old_commit'])
 assert before['status']['install_state']['database_schema_current']==current['database_schema']
 assert before['release']==current['release_dir']
@@ -79,14 +79,15 @@ PY
 STAGE=check
 sudo env PATH="$CTL_PATH" "$CTL" upgrade --check --artifact "$CANDIDATE_ARTIFACT" > "$QUAL/upgrade-check-private.json"
 snapshot "$QUAL/after-check-private.json"
-python3 - "$QUAL/before-private.json" "$QUAL/after-check-private.json" "$QUAL/upgrade-check-private.json" <<'PY'
+python3 - "$QUAL/before-private.json" "$QUAL/after-check-private.json" "$QUAL/upgrade-check-private.json" \
+  "$ROOT/release/d-validation-config.json" "$(git -C "$ROOT" rev-parse HEAD)" <<'PY'
 import json, pathlib, sys
-before,after,check=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:]]
+before,after,check,config=[json.loads(pathlib.Path(p).read_text()) for p in sys.argv[1:5]]
 assert before==after, 'upgrade --check changed installed state, database, key, grants, config or process'
 assert check['operation']=='upgrade' and check['supported'] and check['mutating'] is False
 assert check['current']['product_version']==before['status']['install_state']['current']['product_version']
-assert check['target']['product_version']=='0.2.0-dev.fpv25'
-assert check['current']['database_schema']==before['status']['install_state']['current']['database_schema'] and check['target']['database_schema']=='47'
+assert check['target']['product_version']==config['product_version'] and check['target']['commit']==sys.argv[5]
+assert check['current']['database_schema']==before['status']['install_state']['current']['database_schema'] and check['target']['database_schema']==config['database_schema']['current']
 assert any(c['name']=='control_credential_lifecycle' and c['status']=='pass' for c in check['checks'])
 PY
 sudo systemctl start "${units[@]}"
@@ -116,6 +117,7 @@ delta_bases={
     '0.2.0-dev.fpv22': ('fpv22','sha256:c8dcd509eaff17cbe8dcbd4fca40da9f19d2f37501195150c0cb9b01d1478c1d'),
     '0.2.0-dev.fpv23': ('fpv23','sha256:4497590a188a6abb90f7e90c1b71d279b7aff4fdde2ec458b48795a19c4feb2d'),
     '0.2.0-dev.fpv24': ('fpv24','sha256:34aa6dd9e9ecff09015fe45c34d22e204bc6ca43c223413f6329bfba9c4aa92c'),
+    '0.2.0-dev.fpv25': ('fpv25','sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081'),
 }
 if old['product_version'] in delta_bases:
     basis,digest=delta_bases[old['product_version']]
@@ -126,8 +128,8 @@ if old['product_version'] in delta_bases:
     assert any(c['name']=='backup' and c['status']=='pass' and c['detail']==receipt['backup_sha256']
                for c in receipt['checks'])
 assert after['status']['managed'] and after['status'].get('active_journal') is None
-assert new['product_version']=='0.2.0-dev.fpv25' and new['commit']==check['target']['commit']
-assert new['database_schema']==after['status']['install_state']['database_schema_current']=='47'
+assert new['product_version']==check['target']['product_version'] and new['commit']==check['target']['commit']
+assert new['database_schema']==after['status']['install_state']['database_schema_current']==check['target']['database_schema']=='49'
 assert after['status']['install_state']['previous']['commit']==old['commit']
 assert after['release']==new['release_dir']!=before['release']
 assert after['server_invocation']!=before['server_invocation']
@@ -143,15 +145,17 @@ stable=('workbench_access_grants',
 assert all(after['database'][table]==before['database'][table] for table in stable)
 old_migrations,new_migrations=before['migration_rows'],after['migration_rows']
 old_count=int(old['database_schema'])
-assert old_count in (45,46,47) and len(old_migrations)==old_count and len(new_migrations)==47
+target_count=int(new['database_schema'])
+assert old_count in (45,46,47) and len(old_migrations)==old_count and len(new_migrations)==target_count
 assert new_migrations[:old_count]==old_migrations, 'prior ledger rows changed'
-expected_names={46:'000046_add_connector_sync_control',47:'000047_add_local_account_lifecycle'}
+expected_names={46:'000046_add_connector_sync_control',47:'000047_add_local_account_lifecycle',
+                48:'000048_publish_investigation_evidence',49:'000049_replay_workbench_members'}
 for version,added in enumerate(new_migrations[old_count:],old_count+1):
     assert added['version']==expected_names[version] and added['dirty'] is False
     expected='sha256:'+hashlib.sha256((pathlib.Path(sys.argv[5])/'migrations'/(expected_names[version]+'.up.sql')).read_bytes()).hexdigest()
     assert added['checksum_sha256']==expected
 assert before['database']['schema_migrations'].split(':',1)[0]==str(old_count)
-assert after['database']['schema_migrations'].split(':',1)[0]=='47'
+assert after['database']['schema_migrations'].split(':',1)[0]==str(target_count)
 assert after['account_inventory']==before['account_inventory' if old_count==47 else 'legacy_account_inventory'], 'native upgrade changed account identities or password hashes'
 if old_count==47:
     assert before['account_inventory']!=before['legacy_account_inventory'], 'schema47 prestate did not exercise changed live authority'
@@ -160,8 +164,20 @@ if old_count==47:
     assert after['account_state_digests']==before['account_state_digests'], 'existing schema47 authority/accounts/tickets changed'
 assert after['account_boundary']=={'initialized':True,'roles_separated':True,'function_owner':'xinsight_admin'}, 'private account authority ACL differs'
 old_acl,new_acl=before['table_acl_rows'],after['table_acl_rows']
-assert all(name in new_acl and new_acl[name]==acl for name,acl in old_acl.items()), 'prior table ACL changed'
-assert set(new_acl)-set(old_acl)==({'connector_sync_controls','connector_sync_slots','connector_sync_runs'} if old_count==45 else set())
+replaced_members='workbench_reading_members'
+assert all(name in new_acl and (name==replaced_members or new_acl[name]==acl) for name,acl in old_acl.items()), 'prior table ACL changed'
+new_workbench_relations={'evidence_publications','workbench_legacy_reading_members','workbench_replayed_reading_facts'}
+new_sync_relations={'connector_sync_controls','connector_sync_slots','connector_sync_runs'} if old_count==45 else set()
+assert set(new_acl)-set(old_acl)==new_sync_relations|new_workbench_relations
+workbench_acl=after['workbench_publication_acl']
+workbench_relations=new_workbench_relations|{replaced_members}
+assert workbench_acl['owners']=={name:'xinsight_admin' for name in workbench_relations}
+workbench_grants=[[table,role,'SELECT',False] for table in workbench_relations
+                  for role in ('xinsight_reader','xinsight_workspace','xinsight_importer')]
+workbench_grants.append(['evidence_publications','xinsight_importer','INSERT',False])
+assert sorted(workbench_acl['tables'])==sorted(workbench_grants)
+assert sorted(workbench_acl['columns'])==[[col,'xinsight_workspace','UPDATE',False] for col in
+                                         ('calculated_total_micros','gateway_total_micros')]
 privileges=after['sync_privileges']
 tables=('connector_sync_controls','connector_sync_slots','connector_sync_runs')
 assert privileges['owners']=={name:'xinsight_admin' for name in tables}
@@ -204,9 +220,12 @@ assert after['files']==before['files'], 'original review-body key or host config
 assert any(c['name']=='representative_read' and c['status']=='pass' for c in receipt['checks'])
 print(json.dumps({'schema_version':'xinsight.ci-account-upgrade.v1',
                   'classification':'ci_synthetic_not_target','state':'base_checks_verified',
-                  'predecessor':old['product_version'],'target':'0.2.0-dev.fpv25',
-                  'database_schema':'47','check_no_side_effects':True,
-                  'migration47_exact_append_verified':old_count<47,'schema47_ledger_unchanged':old_count==47,'accounts_import_preserved':old_count<47,'existing_managed_accounts_preserved':old_count==47,'private_account_acl_verified':True,'prior_table_acls_preserved':True,
+                  'predecessor':old['product_version'],'target':new['product_version'],
+                  'database_schema':new['database_schema'],'check_no_side_effects':True,
+                  'exact_migration_append_verified':True,'predecessor_ledger_prefix_preserved':True,
+                  'accounts_import_preserved':old_count<47,'existing_managed_accounts_preserved':old_count==47,
+                  'private_account_acl_verified':True,'prior_table_acls_preserved':True,
+                  'versioned_workbench_acls_verified':True,
                   'history_cursors_ciphertext_grants_preserved':True,
                   'review_body_key_preserved':True,'new_server_invocation_verified':True,
                   'active_workers_restored_by_upgrade':True,

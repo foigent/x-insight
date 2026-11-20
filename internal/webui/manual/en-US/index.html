@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="xinsight-product-version" content="0.2.0-dev.fpv25">
-  <meta name="xinsight-manual-version" content="0.2.0-dev.fpv25/manual-r1">
-  <meta name="xinsight-manual-source-sha256" content="sha256:b2a012906652bba42c06954ce4acd1bd608a7f80fc016484149bc47dc33058dd">
-  <title>X-Insight 0.2.0-dev.fpv25 Product manual</title>
+  <meta name="xinsight-product-version" content="0.2.0-dev.schema49-ci.1">
+  <meta name="xinsight-manual-version" content="0.2.0-dev.schema49-ci.1/manual-r1">
+  <meta name="xinsight-manual-source-sha256" content="sha256:8b690f99826e3e934a4eb665e7251e499c8bae2de2dfe32c1bcca4977dc8c789">
+  <title>X-Insight 0.2.0-dev.schema49-ci.1 Product manual</title>
   <link rel="icon" href="manual-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="manual.css">
 </head>
@@ -15,7 +15,7 @@
   <header class="manual-header">
     <p class="eyebrow">X-Insight · Version-matched offline manual</p>
     <h1>Product manual</h1>
-    <p>Product version <strong>0.2.0-dev.fpv25</strong> · Manual version <strong>0.2.0-dev.fpv25/manual-r1</strong></p>
+    <p>Product version <strong>0.2.0-dev.schema49-ci.1</strong> · Manual version <strong>0.2.0-dev.schema49-ci.1/manual-r1</strong></p>
     <p class="boundary">Single deployment tenant · loopback only · explicit content consent · development candidate</p>
     <a class="product-link" href="/executions">Return to execution investigation</a>
   </header>
@@ -44,10 +44,10 @@
 <p>This manual describes the complete development candidate, including access, source collection, investigations, costs, runtime evidence, and review. Apache-2.0 licensing does not remove authentication, source consent, field permissions, signatures, or audit requirements. There is no separate paid feature edition.</p>
 <p>X-Insight (XI) can be used independently for supported imports, reported work activity, investigation, and review. UniRouter (UR) independently executes and routes authorized model requests, applies execution policy, and records usage and economic facts. When connected, XI receives authorized UR facts asynchronously for analysis and review; it does not enter the synchronous request path. The shared protocols and Integration Control support that connection rather than introduce more products to select.</p>
 <h3 id="current-manual-1">Version and support</h3>
-<p>Product <code>0.2.0-dev.fpv25</code>; manual <code>0.2.0-dev.fpv25/manual-r1</code>.</p>
-<div class="table-scroll"><table><thead><tr><th>Item</th><th>Current contract</th></tr></thead><tbody><tr><td>Database schema</td><td>47</td></tr><tr><td>Database</td><td>Dedicated PostgreSQL 16, loopback only</td></tr><tr><td>Application</td><td>Linux amd64; systemd for managed installations</td></tr><tr><td>Installer runtime host prerequisite</td><td>Ubuntu 22.04 or 24.04 amd64 with systemd; exact artifact/topology qualification is separate</td></tr><tr><td>Previously documented isolated validation profile</td><td>Ubuntu 24.04 guest with native PostgreSQL; not current FPV25 Target acceptance</td></tr><tr><td>Pending native-host artifact qualification</td><td>Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container, and Ubuntu 24.04 with native PostgreSQL 16; FPV25 fresh install pending on both profiles, with FPV22, FPV23, and FPV24 delta reconstruction and upgrade pending on Ubuntu 22.04 with container PostgreSQL 16</td></tr><tr><td>Configuration</td><td><code>xinsight.config.v1</code></td></tr><tr><td>APIs</td><td><code>xinsight.investigation.v1</code>, <code>xinsight.access.v1</code>, <code>xinsight.accounts.v1</code></td></tr><tr><td>Default language</td><td>English; Simplified Chinese is available in the language control</td></tr></tbody></table></div>
+<p>Product <code>0.2.0-dev.schema49-ci.1</code>; manual <code>0.2.0-dev.schema49-ci.1/manual-r1</code>.</p>
+<div class="table-scroll"><table><thead><tr><th>Item</th><th>Current contract</th></tr></thead><tbody><tr><td>Database schema</td><td>49</td></tr><tr><td>Database</td><td>Dedicated PostgreSQL 16, loopback only</td></tr><tr><td>Application</td><td>Linux amd64; systemd for managed installations</td></tr><tr><td>Installer runtime host prerequisite</td><td>Ubuntu 22.04 or 24.04 amd64 with systemd; exact artifact/topology qualification is separate</td></tr><tr><td>Previously documented isolated validation profile</td><td>Ubuntu 24.04 guest with native PostgreSQL; not current schema 49 Target acceptance</td></tr><tr><td>Pending native-host artifact qualification</td><td>Ubuntu 22.04 with a dedicated pinned PostgreSQL 16 container, and Ubuntu 24.04 with native PostgreSQL 16; schema 49 fresh install pending on both profiles, with FPV22, FPV23, and FPV24 delta reconstruction and upgrade pending on Ubuntu 22.04 with container PostgreSQL 16</td></tr><tr><td>Configuration</td><td><code>xinsight.config.v1</code></td></tr><tr><td>APIs</td><td><code>xinsight.investigation.v1</code>, <code>xinsight.access.v1</code>, <code>xinsight.accounts.v1</code></td></tr><tr><td>Default language</td><td>English; Simplified Chinese is available in the language control</td></tr></tbody></table></div>
 <p>This is a development candidate, not a public stable release or a production acceptance claim. The repository also retains an Ubuntu 22.04 CI installation lane and a frozen rc.13 profile. Their results and artifacts are distinct. Use the exact profile, signed artifact, trust authority, and host qualification for the intended installation; do not apply historical instructions to another profile.</p>
-<p>Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. FPV25 fresh-install qualification is pending on Ubuntu 22.04 with container PostgreSQL 16 and Ubuntu 24.04 with native PostgreSQL 16. Delta reconstruction and upgrade from the published FPV22, FPV23, and FPV24 require their own qualification on Ubuntu 22.04 with container PostgreSQL 16.</p>
+<p>Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. schema 49 fresh-install qualification is pending on Ubuntu 22.04 with container PostgreSQL 16 and Ubuntu 24.04 with native PostgreSQL 16. Delta reconstruction and upgrade from the published FPV22, FPV23, and FPV24 require their own qualification on Ubuntu 22.04 with container PostgreSQL 16.</p>
 <p>The configured upgrade-source list is <code>0.2.0-dev.b2</code>, <code>0.2.0-dev.d1</code>, <code>0.2.0-dev.d2</code>, <code>0.2.0-dev.fpv1</code>, <code>0.2.0-dev.fpv2</code>, <code>0.2.0-dev.fpv3</code>, <code>0.2.0-dev.fpv4</code>, <code>0.2.0-dev.fpv5</code>, <code>0.2.0-dev.fpv11</code>, <code>0.2.0-dev.fpv12</code>, <code>0.2.0-dev.fpv13</code>, <code>0.2.0-dev.fpv14</code>, <code>0.2.0-dev.fpv15</code>, <code>0.2.0-dev.fpv16</code>, <code>0.2.0-dev.fpv17</code>, <code>0.2.0-dev.fpv18</code>, <code>0.2.0-dev.fpv19</code>, <code>0.2.0-dev.fpv20</code>, <code>0.2.0-dev.fpv21</code>, <code>0.2.0-dev.fpv22</code>, <code>0.2.0-dev.fpv23</code>, <code>0.2.0-dev.fpv24</code>. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.</p>
 <h3 id="current-manual-2">Build and try locally</h3>
 <p>Use Go 1.25.12, Node 22.23.1, npm 10.9.8, Python 3, and PostgreSQL 16. From the repository root:</p>
@@ -66,8 +66,8 @@ bash scripts/build-signed-release.sh /absolute/new-prepared --profile=developmen
 <h3 id="current-manual-3">Install and establish access</h3>
 <p>Managed installation needs an explicitly selected, qualified host, a dedicated empty PostgreSQL16 database, separate admin/reader/workspace/importer roles, an approved service account, and a trusted signed artifact. There is no public stable installer or default production login. Obtain the artifact, bootstrap verifier, and public trust store through the operator's approved release process. A trust store bundled with an untrusted download does not establish trust by itself.</p>
 <p>After independently checking the bootstrap verifier and trust authority, verify and extract into a new directory:</p>
-<pre><code>xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv25
+<pre><code>xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.schema49-ci.1
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.schema49-ci.1
 sudo /approved/staging/candidate/bin/xinsightctl version --json</code></pre>
 <p>Use the verified payload's deploy templates. Preserve the four independent protected DSN files under <code>/etc/x-insight/database/current/</code>: <code>postgres-admin.dsn</code>, <code>postgres-reader.dsn</code>, <code>postgres-workspace.dsn</code>, and <code>postgres-importer.dsn</code>. They refer to one dedicated loopback database and distinct roles; do not pass their secrets as arguments or service environment values. Host tools, file ownership, database identity, listener scope, and profile must pass the controller's checks.</p>
 <p>A fresh install needs no account file or default password. After installation, use the private first-owner activation handoff described in [Accounts and project reading](#accounts). An upgrade imports the validated existing v1/v2/v3 account file exactly once; after that the database is authoritative. Daily invitations, recovery and disable/enable are completed on the Accounts page.</p>
@@ -160,9 +160,9 @@ sudo /opt/x-insight/current/bin/xinsightctl access bootstrap-owner --username ow
     </main>
   </div>
   <footer>
-    <span>X-Insight 0.2.0-dev.fpv25</span>
-    <span>0.2.0-dev.fpv25/manual-r1</span>
-    <span>Source digest sha256:b2a012906652bba42c06954ce4acd1bd608a7f80fc016484149bc47dc33058dd</span>
+    <span>X-Insight 0.2.0-dev.schema49-ci.1</span>
+    <span>0.2.0-dev.schema49-ci.1/manual-r1</span>
+    <span>Source digest sha256:8b690f99826e3e934a4eb665e7251e499c8bae2de2dfe32c1bcca4977dc8c789</span>
   </footer>
 </body>
 </html>
