@@ -23,7 +23,7 @@ func TestVersionAndUsageAreAvailableWithoutHostMutation(t *testing.T) {
 	if err := run(context.Background(), []string{"version", "--json"}, &output); err != nil {
 		t.Fatalf("version: %v", err)
 	}
-	if !strings.Contains(output.String(), `"product_name": "x-insight"`) || !strings.Contains(output.String(), `"database_schema_min": "48"`) || !strings.Contains(output.String(), `"database_schema_max": "48"`) {
+	if !strings.Contains(output.String(), `"product_name": "x-insight"`) || !strings.Contains(output.String(), `"database_schema_min": "49"`) || !strings.Contains(output.String(), `"database_schema_max": "49"`) {
 		t.Fatalf("version output=%s", output.String())
 	}
 	if err := run(context.Background(), []string{"unknown"}, &bytes.Buffer{}); err == nil {

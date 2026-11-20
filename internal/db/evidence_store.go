@@ -433,6 +433,7 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 		return PersistenceReport{}, err
 	}
 	hasNewProvenance := false
+	hasNewEconomicFact := false
 	report := PersistenceReport{EventsTotal: len(events)}
 	var provenanceID string
 	linkLegacyProvenance := false
@@ -458,9 +459,11 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 			return report, err
 		}
 		if result.Outcome == "inserted" || result.Outcome == "duplicate_noop" {
-			if err := projectWorkbenchEconomicFact(ctx, tx, event, persistedEventID); err != nil {
+			projected, err := projectWorkbenchEconomicFact(ctx, tx, event, persistedEventID)
+			if err != nil {
 				return report, err
 			}
+			hasNewEconomicFact = hasNewEconomicFact || projected
 		}
 		if provenanceID != "" && associateProvenance {
 			added, err := persistImportProvenanceEvent(ctx, tx, provenanceID, persistedEventID, event)
@@ -492,7 +495,7 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 			report.Rejected++
 		}
 	}
-	if publicationID != "" && (report.Inserted > 0 || hasNewProvenance) {
+	if publicationID != "" && (report.Inserted > 0 || hasNewProvenance || hasNewEconomicFact) {
 		if err := publishEvidenceTransaction(ctx, tx, publicationID); err != nil {
 			return report, err
 		}

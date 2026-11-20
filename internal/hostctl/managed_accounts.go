@@ -53,7 +53,7 @@ func targetUsesDurableAccounts(t verifiedTarget) bool {
 	return containsString(t.Bundle.Manifest.APIVersions, buildinfo.AccountsAPIVersion)
 }
 func schemaSupportsDurableAccounts(schema string) bool {
-	return schema == "47" || schema == buildinfo.DatabaseSchemaMax
+	return schema == "47" || schema == "48" || schema == buildinfo.DatabaseSchemaMax
 }
 
 func (e *Engine) prepareAccountAuthority(ctx context.Context, j *Journal, c DatabaseCredentials, identity ReleaseIdentity) error {

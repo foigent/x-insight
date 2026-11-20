@@ -64,7 +64,7 @@ func a0CreateProbePreflight(t *testing.T, ctx context.Context, admin *sql.DB, st
 	a0HotspotLog(t, "create_preseed_support", map[string]any{"pg_version_num": version, "log_triggers": triggers, "log_timing_supported": timing, "backend": raw, "scope": "session only"})
 }
 
-// Reuse the existing exact SQL/PID/NOTICE binder for the one member INSERT.
+// Reuse the exact SQL/PID/NOTICE binder for membership creation or replay.
 // BEGIN/COMMIT and other utility commands correctly have no execution plan.
 func a0CreateMemberPlans(entries []map[string]any, rows []a0HotspotNotice, pid uint32) ([]map[string]any, error) {
 	var memberEntries []map[string]any
@@ -72,13 +72,15 @@ func a0CreateMemberPlans(entries []map[string]any, rows []a0HotspotNotice, pid u
 		if e["pid"] != pid {
 			return nil, fmt.Errorf("creation trace changed backend PID")
 		}
-		if e["sql"] == workbenchMemberInsertSQL {
+		statement, _ := e["sql"].(string)
+		if statement == workbenchMemberInsertSQL || strings.Contains(statement, "FROM workbench_replayed_reading_facts f WHERE reading_id=$2") {
 			memberEntries = append(memberEntries, e)
 		}
 	}
 	if len(memberEntries) != 1 {
-		return nil, fmt.Errorf("expected exactly one actual member INSERT, got %d", len(memberEntries))
+		return nil, fmt.Errorf("expected exactly one membership creation or replay statement, got %d", len(memberEntries))
 	}
+	statement := memberEntries[0]["sql"].(string)
 	var memberRows []a0HotspotNotice
 	for _, n := range rows {
 		if n.PID != pid || n.Stage != "create" {
@@ -92,13 +94,16 @@ func a0CreateMemberPlans(entries []map[string]any, rows []a0HotspotNotice, pid u
 		if err := json.Unmarshal([]byte(n.Message[at+len("plan:\n"):]), &doc); err != nil {
 			return nil, err
 		}
-		if doc["Query Text"] == workbenchMemberInsertSQL {
+		if doc["Query Text"] == statement {
 			memberRows = append(memberRows, n)
 		}
 	}
 	plans, err := a0HotspotBindPlans(memberEntries, memberRows, "create", pid)
 	if err != nil {
 		return plans, err
+	}
+	if statement != workbenchMemberInsertSQL {
+		return plans, nil
 	}
 	doc := plans[0]["document"].(map[string]any)
 	triggers, _ := doc["Triggers"].([]any)

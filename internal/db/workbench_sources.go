@@ -204,7 +204,7 @@ func workbenchDimensionSQL(dimension string) string {
 		return ""
 	}
 	return fmt.Sprintf(`(SELECT CASE WHEN sm.chain_state='complete' THEN d.source_json#>>'%s' END FROM workbench_source_members sm JOIN source_fact_documents d USING(source_system_id,event_id)
- WHERE sm.reading_id=m.reading_id AND sm.economic_fact_id=f.id AND d.profile='%s'
+ WHERE sm.reading_id=f.reading_id AND sm.economic_fact_id=f.id AND d.profile='%s'
  ORDER BY CASE d.stage WHEN 'terminal' THEN 4 WHEN 'dispatch' THEN 3 WHEN 'admission' THEN 2 ELSE 1 END DESC,d.recorded_at DESC,d.source_fact_id LIMIT 1)`, path, profile)
 }
 

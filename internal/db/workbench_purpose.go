@@ -361,7 +361,7 @@ func purposeScopeSuffix(auth workbench.Authorization) string {
 }
 
 func purposeDimensionSQL() string {
-	return `(SELECT CASE WHEN p.status='adopted' THEN p.category ELSE p.status END FROM workbench_purpose_members p WHERE p.reading_id=m.reading_id AND p.economic_fact_id=f.id)`
+	return `(SELECT CASE WHEN p.status='adopted' THEN p.category ELSE p.status END FROM workbench_purpose_members p WHERE p.reading_id=f.reading_id AND p.economic_fact_id=f.id)`
 }
 
 func purposeStateDigest(state workbench.PurposeState) string {

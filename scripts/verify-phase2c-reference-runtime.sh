@@ -201,7 +201,7 @@ b685f2a729b48cd29b77a5b0d7b006485377025cffa901116e7c7ce23efb48ff internal/db/age
 b232e80cbe68667b7ce18a2667b54654c320f88d71656018b49c31524b634f75 internal/db/analysis_extension_store.go
 79153b36b059fc4461a842f9d028c27f5bbc7fc3e359da4a7d5dc7eb20463110 internal/db/connector_trust_store.go
 34961627ef923eea45c57ce4832150cce7897e06dc5cd24b08ecf8d1e67dbd26 internal/db/discovery_store.go
-e6a0b23c7322f02f4b56b40ffafbce97ef452218f27bab63bfd6cffc3d6b329f internal/db/evidence_store.go
+29f0ce3e5724267425fcfb2f53da287ccdd3bd12da0ea4c1ea0839b09dcac82b internal/db/evidence_store.go
 f65c76e66c24baa41672e026f343337722991965ca15696bb765412681056188 internal/db/evidence_publications.go
 eb937c4e827a4cc912091bb05f9c9244fe4965e05617c1f0d6c769abb06b8fda internal/db/investigation_store.go
 cc089e24b61918d5783595b049701de2a849fb864031ae5e5d2969644d35e9fc internal/db/investigation_projection.go
@@ -211,7 +211,7 @@ c1050e58f6a5c90194769972777b05dcaa91f1b25509e514356193cdef13f94a internal/db/pos
 98a3c2e2aed842f872feb5987a28627bab40e8eb191e80dd3409eca56b88d2c9 internal/db/session_store.go
 08467895c51093a116382b08ddab8b27eb74d9fd429dfb15c0c55e993f9ffe3e internal/db/workspace_store.go
 a961198cf1d13c2d940520bbfdf657c6629a8ad88561141e25c75b473ab807e8 internal/discovery/engine.go
-8fd841a8c11aee70a7c8f088efcd8d8f70dd4b7ab28682b8acc9df8123f4121c internal/hostctl/database.go
+c18291fe5e91d748bb0f2132a1a86f27c35d39ed8fdb302a5c772f6aa892d42d internal/hostctl/database.go
 fccad7130b2a155ff170accd20b16835fa9f820c9a1c0a36cbe5f3615491bb8c internal/hostctl/checkpoint_epoch.go
 f84f1e42a6afbb9afdda7690dffda7f7a3f06abd4bf3cd76efecca832499292d internal/investigation/compare.go
 815c82c81dd0d3cccb67484fc3561b247685af7330db93100eb318b9c4e26c31 internal/investigation/model.go
@@ -245,7 +245,7 @@ migration_digest="$(
     sha256sum |
     awk '{print $1}'
 )"
-if [[ "${migration_digest}" != "83d39e44b4f3cd1f262b0f88732821b0d8e9faa45c5d54517f67ea466292aaa1" ]]; then
+if [[ "${migration_digest}" != "7f62ed567e2f5175bd2b0b7817fc403554aa12e287a2e75170fd5d89c81f54e4" ]]; then
   echo "Phase 2C runtime gate: migration tree changed (${migration_digest})" >&2
   exit 1
 fi

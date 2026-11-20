@@ -67,19 +67,19 @@ func (s *WorkspaceStore) GetWorkbenchRecentRequests(ctx context.Context, subject
 	pageBoundary := ""
 	queryArgs := []any{id, subject, limit + 1}
 	if after > 0 {
-		pageBoundary = " AND m.ordinal<$4"
+		pageBoundary = " AND f.ordinal<$4"
 		queryArgs = append(queryArgs, after)
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT m.ordinal,f.id::text,f.request_id,f.execution_id,f.evidence_event_id::text,f.source_system_id::text,
+	rows, err := s.db.QueryContext(ctx, `SELECT f.ordinal,f.id::text,f.request_id,f.execution_id,f.evidence_event_id::text,f.source_system_id::text,
 	 COALESCE(f.model_ref,''),COALESCE(f.source_project_ref,''),COALESCE(f.cost_project_ref,''),f.occurred_at,
 	 f.gateway_charged_micros::text,f.calculated_reference_micros::text,`+purposeState+`,COALESCE(p.category,'')
-	 FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id
-	 LEFT JOIN workbench_purpose_members p ON p.reading_id=m.reading_id AND p.economic_fact_id=f.id
-	 WHERE m.reading_id=$1`+pageBoundary+`
+	 FROM `+workbenchMemberFacts(reading.replayMembers, true)+`
+	 LEFT JOIN workbench_purpose_members p ON p.reading_id=f.reading_id AND p.economic_fact_id=f.id
+	 WHERE f.reading_id=$1`+pageBoundary+`
 	 AND EXISTS(SELECT 1 FROM workbench_access_grants g WHERE g.subject_id=$2 AND g.active AND g.allow_details
 	 AND g.source_system_id=f.source_system_id AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref)
 	 AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref))
-	 ORDER BY m.ordinal DESC LIMIT $3`, queryArgs...)
+	 ORDER BY f.ordinal DESC LIMIT $3`, queryArgs...)
 	if err != nil {
 		return result, err
 	}

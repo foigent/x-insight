@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/foigent/x-insight/internal/adapters/unirouter"
+	"github.com/foigent/x-insight/internal/testpostgres"
 	"github.com/foigent/x-insight/internal/workbench"
 	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -145,7 +146,7 @@ SELECT gen_random_uuid(),'m0.1',$1::uuid,$2::uuid,'unirouter','unirouter.complet
 FROM generate_series(1,500000) g`, performanceSourceID, unirouter.DefaultCompletedExecutionAdapterManifestID, cutoff); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := admin.ExecContext(ctx, `
+	if _, err := testpostgres.ExecWithSyntheticEvidencePublication(ctx, admin, `
 INSERT INTO workbench_economic_facts(
  source_system_id,source_version,source_ref,source_event_hash,evidence_event_id,
  request_id,execution_id,model_ref,source_project_ref,cost_project_ref,
@@ -221,10 +222,10 @@ VALUES($1,$2::uuid,true,true,true,true)`, subject, performanceSourceID); err != 
 	reading30Qualified := p95(reading30Durations) <= 5*time.Second
 	t.Logf("A0 phase=reading_300k duration=%+v first_phases=%+v qualified=%t", durationReport(reading30Durations), durationMapReport(reading30Phases), reading30Qualified)
 	explainStarted := time.Now()
-	memberInsertExplain := explainMemberInsert(t, ctx, admin, firstReading30ID, subject, request30)
-	a0HotspotLog(t, "member_insert_explain", memberInsertExplain)
+	membershipReplayExplain := explainJSON(t, ctx, admin, `SELECT * FROM workbench_reading_members WHERE reading_id=$1`, firstReading30ID)
+	a0HotspotLog(t, "membership_replay_explain", membershipReplayExplain)
 
-	t.Logf("A0 phase=member_insert_explain elapsed_ms=%d", time.Since(explainStarted).Milliseconds())
+	t.Logf("A0 phase=membership_replay_explain elapsed_ms=%d", time.Since(explainStarted).Milliseconds())
 	request7 := explicitPerformanceRequest(cutoff.Add(-7*24*time.Hour), cutoff, []string{performanceSourceID}, []string{"project-300k"})
 	reading7, err := store.CreateWorkbenchReading(ctx, subject, request7, cutoff)
 	if err != nil {
@@ -296,7 +297,7 @@ VALUES($1,$2::uuid,true)`, readerSubject, performanceSourceID); err != nil {
 	if err := admin.QueryRowContext(ctx, `SELECT count(*) FROM workbench_reading_members WHERE reading_id=$1`, reading500.ID).Scan(&members500); err != nil || members500 != 500000 {
 		t.Fatalf("500k members=%d err=%v", members500, err)
 	}
-	if _, err := admin.ExecContext(ctx, `
+	if _, err := testpostgres.ExecWithSyntheticEvidencePublication(ctx, admin, `
 WITH inserted AS (
  INSERT INTO evidence_events(
   id,schema_version,source_system_id,adapter_manifest_id,source_type,source_version,
@@ -331,6 +332,10 @@ SELECT source_system_id,source_version,source_ref,source_event_hash,id,request_i
 	if err := admin.QueryRowContext(ctx, `SELECT count(*) FROM workbench_readings`).Scan(&readingsAfter); err != nil || readingsAfter != readingsBefore {
 		t.Fatalf("oversize left partial reading before=%d after=%d err=%v", readingsBefore, readingsAfter, err)
 	}
+	var legacyMembers int64
+	if err := admin.QueryRowContext(ctx, `SELECT count(*) FROM workbench_legacy_reading_members`).Scan(&legacyMembers); err != nil || legacyMembers != 0 {
+		t.Fatalf("new readings persisted legacy member rows=%d err=%v", legacyMembers, err)
+	}
 
 	countExplain := explainJSON(t, ctx, admin, `
 SELECT count(*) FROM workbench_economic_facts f
@@ -343,7 +348,7 @@ WHERE f.occurred_at >= $2 AND f.occurred_at < $3 AND f.currency='CNY'
     AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref))`, subject, cutoff.Add(-30*24*time.Hour), cutoff, []string{performanceSourceID}, []string{"project-300k"})
 	groupExplain := explainJSON(t, ctx, admin, `
 SELECT model_ref,count(*),sum(gateway_charged_micros)
-FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1 AND model_ref IS NOT NULL AND model_ref<>''
+FROM workbench_replayed_reading_facts WHERE reading_id=$1 AND model_ref IS NOT NULL AND model_ref<>''
 GROUP BY model_ref ORDER BY sum(gateway_charged_micros) DESC,model_ref LIMIT 10`, reading7.ID)
 
 	report := map[string]any{
@@ -362,9 +367,10 @@ GROUP BY model_ref ORDER BY sum(gateway_charged_micros) DESC,model_ref LIMIT 10`
 		"reading_500k":                      map[string]any{"members": members500, "duration_ms": duration500.Milliseconds()},
 		"reading_500001":                    map[string]any{"status": "rejected_too_large", "partial_state": false},
 		"storage_bytes":                     workbenchStorage(t, ctx, admin),
+		"physical_legacy_member_rows":       legacyMembers,
 		"postgres":                          postgresPerformanceIdentity(t, ctx, admin),
 		"process":                           map[string]any{"goos": runtime.GOOS, "goarch": runtime.GOARCH, "logical_cpus": runtime.NumCPU(), "gomaxprocs": runtime.GOMAXPROCS(0)},
-		"explain":                           map[string]any{"eligible_count": countExplain, "member_insert": memberInsertExplain, "top_n": groupExplain},
+		"explain":                           map[string]any{"eligible_count": countExplain, "membership_replay": membershipReplayExplain, "top_n": groupExplain},
 	}
 	payload, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
@@ -391,7 +397,7 @@ GROUP BY model_ref ORDER BY sum(gateway_charged_micros) DESC,model_ref LIMIT 10`
 func workbenchStorage(t *testing.T, ctx context.Context, database *sql.DB) map[string]any {
 	t.Helper()
 	result := make(map[string]any)
-	for _, relation := range []string{"workbench_economic_facts", "workbench_readings", "workbench_reading_members"} {
+	for _, relation := range []string{"workbench_economic_facts", "workbench_readings", "workbench_legacy_reading_members"} {
 		var table, indexes, total int64
 		if err := database.QueryRowContext(ctx, `
 SELECT pg_relation_size($1::regclass),pg_indexes_size($1::regclass),pg_total_relation_size($1::regclass)`, relation).

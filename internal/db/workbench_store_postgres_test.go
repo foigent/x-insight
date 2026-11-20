@@ -20,6 +20,7 @@ import (
 	"github.com/foigent/x-insight/internal/adapters/unirouter"
 	"github.com/foigent/x-insight/internal/db"
 	"github.com/foigent/x-insight/internal/executionid"
+	"github.com/foigent/x-insight/internal/testpostgres"
 	"github.com/foigent/x-insight/internal/workbench"
 )
 
@@ -365,7 +366,7 @@ INSERT INTO workbench_access_grants(
 		}
 		for _, statement := range []string{
 			`UPDATE evidence_events SET event_hash='sha256:'||repeat('d',64) WHERE id IN (SELECT evidence_event_id FROM workbench_economic_facts)`,
-			`DELETE FROM workbench_reading_members WHERE ordinal=1`,
+			`UPDATE workbench_readings SET summary_scopes=jsonb_build_array(jsonb_build_object('source_system_id', gen_random_uuid())) WHERE projection_publication_id IS NOT NULL`,
 		} {
 			tx, err := restoredAdmin.BeginTx(ctx, nil)
 			if err != nil {
@@ -445,7 +446,7 @@ func TestWorkbenchProjectionConflictRollsBackEvidenceTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 	secondSourceRef := second.Events[0]["source_ref"]
-	if _, err := admin.ExecContext(ctx, `INSERT INTO workbench_economic_facts SELECT (jsonb_populate_record(NULL::workbench_economic_facts,to_jsonb(f)||jsonb_build_object('id',gen_random_uuid(),'source_ref',$2::text))).* FROM workbench_economic_facts f WHERE source_system_id=$1::uuid`, sourceSystemID, secondSourceRef); err != nil {
+	if _, err := testpostgres.ExecWithSyntheticEvidencePublication(ctx, admin, `INSERT INTO workbench_economic_facts SELECT (jsonb_populate_record(NULL::workbench_economic_facts,to_jsonb(f)||jsonb_build_object('id',gen_random_uuid(),'publication_id',current_setting('xinsight.evidence_publication_id'),'source_ref',$2::text))).* FROM workbench_economic_facts f WHERE source_system_id=$1::uuid`, sourceSystemID, secondSourceRef); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.PersistEvents(ctx, second.Events); err == nil || !strings.Contains(err.Error(), "identity conflicts with immutable source content") {

@@ -73,6 +73,43 @@ func ValidateWorkbenchRestore(ctx context.Context, database workspaceQueryer) er
 	if !valid {
 		return fmt.Errorf("restored workbench identities, interpretation, membership or immutable guard are invalid")
 	}
+	var versioned bool
+	if err := database.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version='000049_replay_workbench_members' AND NOT dirty)`).Scan(&versioned); err != nil {
+		return err
+	}
+	if versioned {
+		if err := database.QueryRowContext(ctx, `
+SELECT EXISTS (
+  SELECT 1 FROM pg_trigger
+  WHERE tgrelid='public.workbench_economic_facts'::regclass AND tgname='workbench_projection_publication' AND tgenabled='A'
+) AND EXISTS (
+  SELECT 1 FROM pg_trigger
+  WHERE tgrelid='public.evidence_publications'::regclass AND tgname='evidence_publications_immutable' AND tgenabled='A'
+) AND EXISTS (
+  SELECT 1 FROM pg_trigger
+  WHERE tgrelid='public.workbench_readings'::regclass AND tgname='workbench_reading_totals_immutable' AND tgenabled='A'
+) AND (
+  SELECT COALESCE(min(revision)=0 AND count(*)-1=max(revision),false) FROM evidence_publications
+) AND NOT EXISTS (
+  SELECT 1 FROM workbench_legacy_reading_members m JOIN workbench_readings r ON r.id=m.reading_id
+  WHERE r.projection_publication_id IS NOT NULL
+) AND NOT EXISTS (
+  SELECT 1 FROM workbench_readings r
+  CROSS JOIN LATERAL (
+    SELECT COALESCE(sum(gateway_charged_micros),0)::text gateway_total,
+           COALESCE(sum(calculated_reference_micros),0)::text calculated_total
+    FROM workbench_replayed_reading_facts f WHERE f.reading_id=r.id
+  ) totals
+  WHERE r.projection_publication_id IS NOT NULL AND
+    ROW(r.gateway_total_micros,r.calculated_total_micros) IS DISTINCT FROM
+    ROW(totals.gateway_total,totals.calculated_total)
+)`).Scan(&valid); err != nil {
+			return fmt.Errorf("validate restored Workbench publication boundaries: %w", err)
+		}
+		if !valid {
+			return fmt.Errorf("restored Workbench publications, membership boundary or frozen totals are invalid")
+		}
+	}
 	if sourceSchema {
 		if err := validateSourceFactsRestore(ctx, database); err != nil {
 			return err

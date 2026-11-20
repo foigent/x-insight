@@ -130,10 +130,10 @@ var cleanBaselineTables = []string{
 	"work_event_ur_targets",
 	"workbench_access_grants",
 	"workbench_economic_facts",
+	"workbench_legacy_reading_members",
 	"workbench_purpose_manifests",
 	"workbench_purpose_members",
 	"workbench_purpose_revisions",
-	"workbench_reading_members",
 	"workbench_readings",
 	"workbench_saved_filter_operations",
 	"workbench_saved_filters",
@@ -969,7 +969,12 @@ WITH objects AS (
         AND dependency.deptype = 'e'
     )
   UNION ALL
-  SELECT 'R', class.relnamespace::regnamespace::text, '', class.relname, class.relkind::text, ''
+  SELECT 'R', class.relnamespace::regnamespace::text, '', class.relname,
+         CASE WHEN class.relkind IN ('v','m') THEN
+           jsonb_build_object('kind',class.relkind,
+             'definition',pg_get_viewdef(class.oid),
+             'options',ARRAY(SELECT option FROM unnest(class.reloptions) AS option ORDER BY option))::text
+         ELSE class.relkind::text END, ''
   FROM pg_class AS class
   WHERE class.relnamespace = ANY(ARRAY['public'::regnamespace::oid,to_regnamespace('xinsight_accounts')::oid])
     AND class.relkind NOT IN ('r', 'i')

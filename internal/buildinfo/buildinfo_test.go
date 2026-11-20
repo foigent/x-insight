@@ -37,7 +37,7 @@ func TestVersionOutputContainsCompatibilityIdentity(t *testing.T) {
 		t.Fatalf("decode JSON: %v", err)
 	}
 	if info.ProductName != "x-insight" ||
-		info.DatabaseSchemaMin != "48" || info.DatabaseSchemaMax != "48" ||
+		info.DatabaseSchemaMin != "49" || info.DatabaseSchemaMax != "49" ||
 		info.AccessAPIVersion != "xinsight.access.v1" ||
 		info.ManualVersion == "" {
 		t.Fatalf("info=%+v", info)
