@@ -189,9 +189,9 @@ func verifiedCampaignReleaseBundle(t *testing.T, development bool, mutate func(*
 		t.Fatal(err)
 	}
 	if development {
-		// The checked-in D validation inputs are frozen at schema 40. Build a
-		// synthetic current candidate only in this test directory; the source
-		// release sample is never rewritten or treated as schema 41 authority.
+		// The D validation inputs describe the published profile. Build the
+		// synthetic bundle with the current development contract in this
+		// test directory.
 		contractBytes, err := os.ReadFile(filepath.Join(repositoryRoot, "internal/hostctl/development_schema_contract.json"))
 		if err != nil {
 			t.Fatal(err)
@@ -344,16 +344,19 @@ func TestHistoricalProductSchemaStructurePreservesAuthorityBinding(t *testing.T)
 }
 
 func TestCompiledCampaignReleaseAuthority(t *testing.T) {
-	currentBytes, err := os.ReadFile("../../release/d-validation-config.json")
+	contractBytes, err := os.ReadFile("../../internal/hostctl/development_schema_contract.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var current releasebundle.ReleaseConfig
-	if err := json.Unmarshal(currentBytes, &current); err != nil {
+	var contract struct {
+		DatabaseSchema string `json:"database_schema"`
+		releasebundle.SchemaContractIdentity
+	}
+	if err := json.Unmarshal(contractBytes, &contract); err != nil {
 		t.Fatal(err)
 	}
-	if current.DatabaseSchema.Current != buildinfo.DatabaseSchemaMax || buildinfo.DatabaseSchemaMin != buildinfo.DatabaseSchemaMax {
-		t.Fatalf("current D config and compiled database generations diverge: config=%s compiled=%s..%s", current.DatabaseSchema.Current, buildinfo.DatabaseSchemaMin, buildinfo.DatabaseSchemaMax)
+	if contract.DatabaseSchema != buildinfo.DatabaseSchemaMax || buildinfo.DatabaseSchemaMin != buildinfo.DatabaseSchemaMax {
+		t.Fatalf("development contract and compiled database generations diverge: contract=%s compiled=%s..%s", contract.DatabaseSchema, buildinfo.DatabaseSchemaMin, buildinfo.DatabaseSchemaMax)
 	}
 	verified := verifiedCampaignReleaseBundle(t, true, nil)
 	authority, err := NewReleaseAuthorityFromVerifiedBundle(verified)
@@ -363,7 +366,7 @@ func TestCompiledCampaignReleaseAuthority(t *testing.T) {
 	if err := authority.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	if authority.ProductRelease.DatabaseSchema != buildinfo.DatabaseSchemaMin || buildinfo.DatabaseSchemaMin != buildinfo.DatabaseSchemaMax ||
+	if authority.ProductRelease.DatabaseSchema != contract.DatabaseSchema || verified.Manifest.SchemaContract != contract.SchemaContractIdentity ||
 		authority.ProductRelease.ProductVersion != verified.Manifest.ProductVersion || authority.ProductRelease.ManualVersion != verified.Manifest.Manual.Version {
 		t.Fatalf("compiled and signed development identities diverge: %+v", authority.ProductRelease)
 	}
