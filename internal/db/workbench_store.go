@@ -452,7 +452,8 @@ WITH groups AS MATERIALIZED (
         COALESCE(sum(request_count) FILTER (WHERE label IS NULL),0)::bigint AS unassigned_requests
  FROM groups
 ), page AS (
- SELECT * FROM groups WHERE label IS NOT NULL
+ SELECT label,request_count,selected_amount,gateway_amount,calculated_amount,drilldown_allowed
+ FROM groups WHERE label IS NOT NULL
  ORDER BY %[3]s DESC, label LIMIT $2 OFFSET $3
 )
 SELECT denominator, unassigned, group_count, denominator_requests, unassigned_requests,

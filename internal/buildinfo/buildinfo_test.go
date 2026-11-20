@@ -16,7 +16,7 @@ func TestVersionOutputContainsCompatibilityIdentity(t *testing.T) {
 	}
 	for _, expected := range []string{
 		"x-insight 0.2.0-dev",
-		"db_schema=48..48",
+		"db_schema=49..49",
 		"postgres=16..16",
 		"config=xinsight.config.v1",
 		"api=xinsight.investigation.v1",

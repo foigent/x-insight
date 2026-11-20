@@ -46,7 +46,7 @@ func TestCleanBaselineTableContractIsExactAndSorted(t *testing.T) {
 		"workbench_source_manifests": true, "workbench_source_members": true,
 		"case_finding_actions": true, "case_finding_followups": true,
 		"case_finding_assessments": true, "case_finding_assessment_actions": true, "finding_review_creations": true,
-		"workbench_access_grants": true, "workbench_economic_facts": true, "workbench_reading_members": true, "workbench_readings": true, "workbench_saved_filter_operations": true, "workbench_saved_filters": true,
+		"workbench_access_grants": true, "workbench_economic_facts": true, "workbench_legacy_reading_members": true, "workbench_readings": true, "workbench_saved_filter_operations": true, "workbench_saved_filters": true,
 		"schema_migrations":                       true,
 		"source_systems":                          true,
 		"adapter_manifests":                       true,
