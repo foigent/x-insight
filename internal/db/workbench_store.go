@@ -406,50 +406,69 @@ func (s *WorkspaceStore) GetWorkbenchContributionsOrdered(ctx context.Context, s
 	if reading.MoneyBasis == workbench.MoneyCalculatedReference {
 		selected = "calculated_reference_micros"
 	}
-	ordering := "sum(" + selected + ")"
+	ordering := "selected_amount"
 	if orderBy == "requests" {
-		ordering = "count(*)"
+		ordering = "request_count"
 	}
-	var denominatorRequests, unassignedRequests int64
-	var denominatorText, unassignedText string
-	var groupCount int
-	totalQuery := fmt.Sprintf(`SELECT COALESCE(sum(%[1]s),0)::text,
- COALESCE(sum(%[1]s) FILTER(WHERE %[2]s IS NULL OR %[2]s=''),0)::text,
- count(DISTINCT %[2]s) FILTER(WHERE %[2]s IS NOT NULL AND %[2]s<>''),
- count(*), count(*) FILTER(WHERE %[2]s IS NULL OR %[2]s='')
- FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1`, selected, column)
-	if err := s.db.QueryRowContext(ctx, totalQuery, id).Scan(&denominatorText, &unassignedText, &groupCount, &denominatorRequests, &unassignedRequests); err != nil {
-		return workbench.Contributions{}, err
-	}
+	// Group once for the page and its reading-wide totals. The outer join also
+	// returns those totals when there are no assigned or remaining groups.
 	query := fmt.Sprintf(`
-SELECT %[1]s, count(*), COALESCE(sum(%[2]s),0)::text,
-       COALESCE(sum(gateway_charged_micros),0)::text,
-       COALESCE(sum(calculated_reference_micros),0)::text,
-       bool_and(CASE WHEN EXISTS (
-         SELECT 1 FROM workbench_access_grants detail_grant
-         WHERE detail_grant.subject_id=$4 AND detail_grant.active AND detail_grant.allow_details
-       ) THEN EXISTS (
-         SELECT 1 FROM workbench_access_grants g
-         WHERE g.subject_id=$4 AND g.active AND g.allow_details
-           AND g.source_system_id=f.source_system_id
-           AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref)
-           AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref)
-       ) ELSE false END)
-FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1 AND %[1]s IS NOT NULL AND %[1]s<>''
-GROUP BY %[1]s ORDER BY %[3]s DESC, %[1]s LIMIT $2 OFFSET $3`, column, selected, ordering)
+WITH groups AS MATERIALIZED (
+ SELECT NULLIF(%[1]s,'') AS label, count(*) AS request_count,
+        COALESCE(sum(%[2]s),0) AS selected_amount,
+        COALESCE(sum(gateway_charged_micros),0) AS gateway_amount,
+        COALESCE(sum(calculated_reference_micros),0) AS calculated_amount,
+        bool_and(CASE WHEN EXISTS (
+          SELECT 1 FROM workbench_access_grants detail_grant
+          WHERE detail_grant.subject_id=$4 AND detail_grant.active AND detail_grant.allow_details
+        ) THEN EXISTS (
+          SELECT 1 FROM workbench_access_grants g
+          WHERE g.subject_id=$4 AND g.active AND g.allow_details
+            AND g.source_system_id=f.source_system_id
+            AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref)
+            AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref)
+        ) ELSE false END) AS drilldown_allowed
+ FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id
+ WHERE m.reading_id=$1
+ GROUP BY 1
+), totals AS (
+ SELECT COALESCE(sum(selected_amount),0)::text AS denominator,
+        COALESCE(sum(selected_amount) FILTER (WHERE label IS NULL),0)::text AS unassigned,
+        count(label) AS group_count, COALESCE(sum(request_count),0)::bigint AS denominator_requests,
+        COALESCE(sum(request_count) FILTER (WHERE label IS NULL),0)::bigint AS unassigned_requests
+ FROM groups
+), page AS (
+ SELECT * FROM groups WHERE label IS NOT NULL
+ ORDER BY %[3]s DESC, label LIMIT $2 OFFSET $3
+)
+SELECT denominator, unassigned, group_count, denominator_requests, unassigned_requests,
+       page.label, COALESCE(page.request_count,0), COALESCE(page.selected_amount,0)::text,
+       COALESCE(page.gateway_amount,0)::text, COALESCE(page.calculated_amount,0)::text,
+       COALESCE(page.drilldown_allowed,false)
+FROM totals LEFT JOIN page ON true
+ORDER BY page.%[3]s DESC, page.label`, column, selected, ordering)
 	rows, err := s.db.QueryContext(ctx, query, id, pageSize, offset, subject)
 	if err != nil {
 		return workbench.Contributions{}, err
 	}
 	defer rows.Close()
+	var denominatorRequests, unassignedRequests int64
+	var denominatorText, unassignedText string
+	var groupCount int
 	visible := make([]workbench.Contribution, 0)
 	var pageRequests int64
 	pageSum := new(big.Int)
 	for rows.Next() {
 		var row workbench.Contribution
-		if err := rows.Scan(&row.Label, &row.RequestCount, &row.SelectedAmountMicros, &row.GatewayChargedMicros, &row.CalculatedReferenceMicros, &row.DrilldownAllowed); err != nil {
+		var label sql.NullString
+		if err := rows.Scan(&denominatorText, &unassignedText, &groupCount, &denominatorRequests, &unassignedRequests,
+			&label, &row.RequestCount, &row.SelectedAmountMicros, &row.GatewayChargedMicros, &row.CalculatedReferenceMicros, &row.DrilldownAllowed); err != nil {
 			return workbench.Contributions{}, err
 		}
+		if !label.Valid {
+			continue
+		}
+		row.Label = label.String
 		value, err := parseMicros(row.SelectedAmountMicros)
 		if err != nil {
 			return workbench.Contributions{}, err
