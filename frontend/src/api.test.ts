@@ -28,6 +28,20 @@ describe("API response boundary", () => {
     await expect(investigationAPI.listSources()).rejects.toThrow("expected a JSON object body");
   });
 
+  it("does not infer proof or causal completeness from missing response fields", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      summary_claims: [{}],
+      nodes: [{ event_id: "event-a", citation: {} }],
+      integrity: { truncated: false },
+    }), { status: 200, headers: { "Content-Type": "application/json" } })));
+
+    const projection = await investigationAPI.getInvestigation("execution-a", "2026-11-20T12:00:00Z");
+    expect(projection.nodes[0].proof_basis).toBe("unknown");
+    expect(projection.summary_claims[0].derivation_basis).toBe("unknown");
+    expect(projection.integrity.causal_complete).toBeUndefined();
+    expect(projection.integrity.unresolved_parent_count).toBeUndefined();
+  });
+
   it("accepts the explicitly empty logout response", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
 

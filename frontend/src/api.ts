@@ -653,8 +653,8 @@ export interface InvestigationIntegrity {
   total_event_count: number;
   resolved_parent_count: number;
   parent_eligible_count: number;
-  unresolved_parent_count: number;
-  causal_complete: boolean;
+  unresolved_parent_count?: number;
+  causal_complete?: boolean;
   truncated: boolean;
 }
 
@@ -1640,11 +1640,11 @@ export const investigationAPI = {
       gaps: projection.gaps ?? [],
       summary_claims: projection.summary_claims.map((claim) => ({
         ...claim,
-        derivation_basis: claim.derivation_basis ?? "deterministic_projection",
+        derivation_basis: claim.derivation_basis ?? "unknown",
       })),
       nodes: projection.nodes.map((node) => ({
         ...node,
-        proof_basis: node.proof_basis ?? "direct",
+        proof_basis: node.proof_basis ?? "unknown",
         citation: {
           ...node.citation,
           deep_link:
@@ -1654,13 +1654,6 @@ export const investigationAPI = {
       })),
       completeness: projection.completeness ?? [],
       unprovable_actions: projection.unprovable_actions ?? [],
-      integrity: {
-        ...projection.integrity,
-        unresolved_parent_count: projection.integrity.unresolved_parent_count ?? 0,
-        causal_complete:
-          projection.integrity.causal_complete ??
-          ((projection.integrity.unresolved_parent_count ?? 0) === 0 && !projection.integrity.truncated),
-      },
     }));
   },
 

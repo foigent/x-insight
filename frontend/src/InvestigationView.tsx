@@ -1082,6 +1082,8 @@ function longestDeclaredPath(nodes: InvestigationNode[], edges: InvestigationPro
 
 function completenessAxes(projection: InvestigationProjection) {
   if (projection.completeness?.length) return projection.completeness;
+  const causalComplete = projection.integrity.causal_complete;
+  const unresolvedParentCount = projection.integrity.unresolved_parent_count;
   return [
     {
       axis: "source",
@@ -1100,8 +1102,10 @@ function completenessAxes(projection: InvestigationProjection) {
     },
     {
       axis: "causal",
-      status: projection.integrity.causal_complete ? "present" : "gap",
-      basis: projection.integrity.causal_complete ? "all declared parents resolved" : `${projection.integrity.unresolved_parent_count} declared parents unresolved`,
+      status: causalComplete === undefined ? "not_available" : causalComplete ? "complete" : "incomplete",
+      basis: causalComplete === undefined || (causalComplete === false && unresolvedParentCount === undefined)
+        ? t("m1099")
+        : causalComplete ? "all declared parents resolved" : `${unresolvedParentCount} declared parents unresolved`,
     },
   ];
 }

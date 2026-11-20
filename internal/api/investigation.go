@@ -207,46 +207,12 @@ func (s *Server) handleInvestigationProjection(
 		writeRequestFailure(w, failure)
 		return
 	}
-	detail, err := store.GetExecution(r.Context(), executionID, asOf)
+	projection, err := store.GetInvestigationProjection(r.Context(), executionID, asOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
 	}
-	timeline, timelineTotal, err := store.ListTimeline(r.Context(), investigation.TimelineQuery{
-		ExecutionID: executionID,
-		AsOf:        asOf,
-		Limit:       201,
-	})
-	if err != nil {
-		writeStoreFailure(w, err)
-		return
-	}
-	events, eventTotal, err := store.ListExecutionEvents(r.Context(), executionID, asOf, 201)
-	if err != nil {
-		writeStoreFailure(w, err)
-		return
-	}
-	if timelineTotal != eventTotal {
-		writeStoreFailure(w, errors.New("investigation event views are inconsistent"))
-		return
-	}
-	gaps, gapTotal, err := store.ListExecutionGaps(r.Context(), investigation.GapQuery{
-		ExecutionID: executionID,
-		AsOf:        asOf,
-		Limit:       101,
-	})
-	if err != nil {
-		writeStoreFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, investigation.BuildProjection(investigation.ProjectionInput{
-		Detail:          detail,
-		Timeline:        timeline,
-		Events:          events,
-		TotalEventCount: timelineTotal,
-		Gaps:            gaps,
-		TotalGapCount:   gapTotal,
-	}))
+	writeJSON(w, http.StatusOK, projection)
 }
 
 func (s *Server) handleTimeline(w http.ResponseWriter, r *http.Request, store InvestigationStore, executionID string) {
@@ -585,12 +551,12 @@ func (s *Server) handleExecutionCompare(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	left, err := loadProjection(r.Context(), store, leftID, leftAsOf)
+	left, err := store.GetInvestigationProjection(r.Context(), leftID, leftAsOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
 	}
-	right, err := loadProjection(r.Context(), store, rightID, rightAsOf)
+	right, err := store.GetInvestigationProjection(r.Context(), rightID, rightAsOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -773,41 +739,6 @@ func (s *Server) handleHypothesisCollection(w http.ResponseWriter, r *http.Reque
 		"items":    items,
 		"boundary": "hypotheses are reviewable and abstaining; they are not M0 facts or automatic enforcement",
 	})
-}
-
-func loadProjection(
-	ctx context.Context,
-	store InvestigationStore,
-	executionID string,
-	asOf time.Time,
-) (investigation.InvestigationProjection, error) {
-	detail, err := store.GetExecution(ctx, executionID, asOf)
-	if err != nil {
-		return investigation.InvestigationProjection{}, err
-	}
-	timeline, timelineTotal, err := store.ListTimeline(ctx, investigation.TimelineQuery{
-		ExecutionID: executionID, AsOf: asOf, Limit: 201,
-	})
-	if err != nil {
-		return investigation.InvestigationProjection{}, err
-	}
-	events, eventTotal, err := store.ListExecutionEvents(ctx, executionID, asOf, 201)
-	if err != nil {
-		return investigation.InvestigationProjection{}, err
-	}
-	if timelineTotal != eventTotal {
-		return investigation.InvestigationProjection{}, errors.New("investigation event views are inconsistent")
-	}
-	gaps, gapTotal, err := store.ListExecutionGaps(ctx, investigation.GapQuery{
-		ExecutionID: executionID, AsOf: asOf, Limit: 101,
-	})
-	if err != nil {
-		return investigation.InvestigationProjection{}, err
-	}
-	return investigation.BuildProjection(investigation.ProjectionInput{
-		Detail: detail, Timeline: timeline, Events: events, TotalEventCount: timelineTotal,
-		Gaps: gaps, TotalGapCount: gapTotal,
-	}), nil
 }
 
 type searchFilterFingerprint struct {

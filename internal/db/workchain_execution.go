@@ -62,10 +62,14 @@ func (s *EvidenceStore) AuthorizeScopedExecution(ctx context.Context, executionI
 }
 
 func (s *EvidenceStore) checkScopedExecution(ctx context.Context, executionID string) error {
+	return checkScopedExecution(ctx, s.db, executionID)
+}
+
+func checkScopedExecution(ctx context.Context, q workspaceQueryer, executionID string) error {
 	if workchain.FromContext(ctx) == nil {
 		return nil
 	}
-	_, err := s.AuthorizeScopedExecution(ctx, executionID)
+	_, err := scopedExecutionRequirement(ctx, q, executionID)
 	if errors.Is(err, workchain.ErrDenied) {
 		return ErrExecutionNotFound
 	}
