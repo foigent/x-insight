@@ -15,16 +15,16 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 | 应用 | Linux amd64；受管安装使用 systemd |
 | 安装器运行主机前置 | Ubuntu 22.04 或 24.04 amd64、systemd；精确制品／拓扑资格另行验证 |
 | 原文记载的隔离验证配置 | Ubuntu 24.04 guest、原生 PostgreSQL；不代表当前 schema 49 Target 已验 |
-| 待取得的原生主机制品资格 | Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；schema 49 新装待验，FPV22、FPV23 和 FPV24 增量还原与升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证 |
+| 待取得的原生主机制品资格 | Ubuntu 22.04／固定镜像 PostgreSQL16 容器，以及 Ubuntu 24.04／原生 PostgreSQL16；schema 49 新装待验，FPV22 至 FPV25 增量还原与升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证 |
 | 配置 | `xinsight.config.v1` |
 | API | `xinsight.investigation.v1`、`xinsight.access.v1`, `xinsight.accounts.v1` |
 | 默认语言 | English；语言控件可切换简体中文 |
 
 这是开发候选，不表示公共稳定发行或 Production 验收。仓库还保留 Ubuntu 22.04 CI 安装路径和冻结 rc.13 profile，其制品与结果分别管理。安装必须匹配精确 profile、已验签制品、信任权威及主机资格，不能照搬历史说明。
 
-安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。schema 49 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22、FPV23 和 FPV24 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。
+安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。schema 49 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22 至 FPV25 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。
 
-配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`、`0.2.0-dev.fpv22`、`0.2.0-dev.fpv23`、`0.2.0-dev.fpv24`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
+配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`、`0.2.0-dev.fpv22`、`0.2.0-dev.fpv23`、`0.2.0-dev.fpv24`、`0.2.0-dev.fpv25`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
 
 ## 构建与本地试用
 
