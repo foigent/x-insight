@@ -71,11 +71,12 @@ type Case struct {
 }
 
 type CaseExecution struct {
-	CaseID         string    `json:"case_id"`
-	ExecutionID    string    `json:"execution_id"`
-	AsOf           time.Time `json:"as_of"`
-	AddedBySubject string    `json:"added_by_subject"`
-	AddedAt        time.Time `json:"added_at"`
+	CaseID           string    `json:"case_id"`
+	ExecutionID      string    `json:"execution_id"`
+	AsOf             time.Time `json:"as_of"`
+	EvidenceRevision string    `json:"evidence_revision,omitempty"`
+	AddedBySubject   string    `json:"added_by_subject"`
+	AddedAt          time.Time `json:"added_at"`
 }
 
 type Finding struct {
@@ -179,8 +180,12 @@ type CreateCaseInput struct {
 }
 
 type AddExecutionInput struct {
-	ExecutionID string    `json:"execution_id"`
-	AsOf        time.Time `json:"as_of"`
+	ExecutionID      string    `json:"execution_id"`
+	AsOf             time.Time `json:"as_of"`
+	EvidenceRevision string    `json:"evidence_revision,omitempty"`
+	// Legacy callers identify the reference by timestamp. Preserve its first
+	// adoption even when a retry arrives after a later import.
+	ReuseTimestampReference bool `json:"-"`
 }
 
 type CreateFindingInput struct {
@@ -250,7 +255,8 @@ func ValidateCreateCase(input CreateCaseInput) error {
 func ValidateAddExecution(input AddExecutionInput) error {
 	if !executionIDPattern.MatchString(input.ExecutionID) ||
 		input.AsOf.IsZero() ||
-		input.AsOf.Location() != time.UTC {
+		input.AsOf.Location() != time.UTC ||
+		(input.EvidenceRevision != "" && !uuidPattern.MatchString(input.EvidenceRevision)) {
 		return ErrInvalid
 	}
 	return nil

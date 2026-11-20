@@ -88,7 +88,8 @@ func (s investigationReader) GetExecution(ctx context.Context, executionID strin
 			traceIDs = nil
 		}
 	}
-	return investigation.ExecutionDetail{Summary: summaries[0], AsOf: asOf.UTC(), TraceIDs: traceIDs}, nil
+	revision, _ := investigation.EvidenceRevisionFromContext(ctx)
+	return investigation.ExecutionDetail{Summary: summaries[0], AsOf: asOf.UTC(), TraceIDs: traceIDs, EvidenceRevision: revision.ID}, nil
 }
 
 func (s investigationReader) queryExecutions(ctx context.Context, query investigation.SearchQuery, executionID string) ([]investigation.ExecutionSummary, error) {
@@ -127,8 +128,18 @@ func (s investigationReader) queryExecutions(ctx context.Context, query investig
 	if executionID != "" {
 		candidateConditions = append(candidateConditions, "e.execution_id = "+bind(executionID))
 	}
+	candidateQuery := `
+  SELECT DISTINCT e.source_system_id, e.request_id, e.execution_id
+  FROM evidence_events e
+  WHERE ` + strings.Join(candidateConditions, "\n    AND ")
+	candidateCTE := "candidate_executions AS (" + candidateQuery + ")"
 	if access := workchain.FromContext(ctx); access != nil {
-		candidateConditions = append(candidateConditions, scopedExecutionSQL("e.execution_id", bind(access.Subject)))
+		// Check eligibility once per candidate execution. All rollups still
+		// consume only authorized keys.
+		candidateCTE = "candidate_keys AS MATERIALIZED (" + candidateQuery + `),
+candidate_executions AS (
+  SELECT candidate.* FROM candidate_keys candidate
+  WHERE ` + scopedExecutionSQL("candidate.execution_id", bind(access.Subject)) + ")"
 	}
 	finalConditions := []string{
 		"last_effective_at >= " + fromParameter,
@@ -148,11 +159,7 @@ func (s investigationReader) queryExecutions(ctx context.Context, query investig
 	limitParameter := bind(query.Limit)
 
 	statement := fmt.Sprintf(`
-WITH candidate_executions AS (
-  SELECT DISTINCT e.source_system_id, e.request_id, e.execution_id
-  FROM evidence_events e
-  WHERE %s
-), event_rollup AS (
+WITH %s, event_rollup AS (
   SELECT
     e.source_system_id,
     e.request_id,
@@ -307,7 +314,7 @@ FROM executions
 WHERE %s
 ORDER BY last_effective_at DESC, execution_id DESC
 LIMIT %s`,
-		strings.Join(candidateConditions, "\n    AND "),
+		candidateCTE,
 		asOfParameter,
 		asOfParameter,
 		asOfParameter,
@@ -323,7 +330,7 @@ LIMIT %s`,
 		limitParameter,
 	)
 
-	rows, err := s.db.QueryContext(ctx, statement, args...)
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -342,13 +349,21 @@ LIMIT %s`,
 	if err != nil {
 		return nil, err
 	}
-	if workchain.FromContext(ctx) != nil {
-		for i := range summaries {
-			req, e := s.AuthorizeScopedExecution(ctx, summaries[i].ExecutionID)
-			if e != nil {
-				return nil, e
+	if workchain.FromContext(ctx) != nil && len(summaries) > 0 {
+		ids := make([]string, len(summaries))
+		for i, summary := range summaries {
+			ids[i] = summary.ExecutionID
+		}
+		requirements, err := scopedExecutionRequirements(ctx, s.db, ids)
+		if err != nil {
+			return nil, err
+		}
+		for i, summary := range summaries {
+			req, allowed := requirements[summary.ExecutionID]
+			if !allowed {
+				return nil, workchain.ErrDenied
 			}
-			summaries[i] = workchain.ProjectSummary(summaries[i], req.Fields)
+			summaries[i] = workchain.ProjectSummary(summary, req.Fields)
 		}
 	}
 	return summaries, nil
@@ -489,7 +504,7 @@ WHERE e.request_id IS NOT NULL
   AND e.execution_id = $1
 ORDER BY trace_id
 LIMIT $3`
-	rows, err := s.db.QueryContext(ctx, statement, executionID, asOf.UTC(), limit)
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement, executionID, asOf.UTC(), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -530,7 +545,7 @@ e.request_id IS NOT NULL
   AND e.created_at <= $2
   AND e.execution_id = $1`
 	var total int
-	if err := s.db.QueryRowContext(ctx, "SELECT count(*) FROM evidence_events e WHERE "+executionPredicate, query.ExecutionID, query.AsOf.UTC()).Scan(&total); err != nil {
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, "SELECT count(*) FROM evidence_events e WHERE "+executionPredicate, query.ExecutionID, query.AsOf.UTC()).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	if total == 0 {
@@ -573,7 +588,7 @@ WHERE %s
   ) > ($4, $5, $6::uuid))
 ORDER BY COALESCE(e.occurred_at, e.observed_at, e.ingested_at), e.ingested_at, e.id
 LIMIT $7`, executionPredicate)
-	rows, err := s.db.QueryContext(ctx, statement,
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement,
 		query.ExecutionID,
 		query.AsOf.UTC(),
 		afterSet,
@@ -681,7 +696,7 @@ e.request_id IS NOT NULL
   AND e.created_at <= $2
   AND e.execution_id = $1`
 	var total int
-	if err := s.db.QueryRowContext(
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(
 		ctx,
 		"SELECT count(*) FROM evidence_events e WHERE "+predicate,
 		executionID,
@@ -692,7 +707,7 @@ e.request_id IS NOT NULL
 	if total == 0 {
 		return nil, 0, ErrExecutionNotFound
 	}
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, `
 SELECT`+evidenceEventDetailColumns+`
 FROM evidence_events e
 JOIN adapter_manifests am ON am.id = e.adapter_manifest_id
@@ -741,7 +756,7 @@ WHERE e.id = $2::uuid
   AND e.ingested_at <= $3
   AND e.created_at <= $3
   AND e.execution_id = $1`
-	row := s.db.QueryRowContext(ctx, statement, executionID, eventID, asOf.UTC())
+	row := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, statement, executionID, eventID, asOf.UTC())
 	detail, err := scanEvidenceEventDetail(row, executionID)
 	if errors.Is(err, sql.ErrNoRows) {
 		if exists, existsErr := s.executionExists(ctx, executionID, asOf); existsErr != nil {
@@ -853,7 +868,7 @@ func (s investigationReader) ListExecutionGaps(ctx context.Context, query invest
 		return nil, 0, err
 	}
 	var total int
-	if err := s.db.QueryRowContext(ctx, `
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, `
 SELECT count(*)
 FROM capture_gaps
 WHERE source_system_id = $1::uuid
@@ -882,7 +897,7 @@ WHERE g.source_system_id = $1::uuid
   AND (NOT $4 OR (g.created_at, g.id) > ($5, $6::uuid))
 ORDER BY g.created_at, g.id
 LIMIT $7`
-	rows, err := s.db.QueryContext(ctx, statement,
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement,
 		sourceSystemID,
 		requestID,
 		query.AsOf.UTC(),
@@ -941,7 +956,7 @@ LIMIT $7`
 
 func (s investigationReader) resolveExecutionScope(ctx context.Context, executionID string, asOf time.Time) (string, string, error) {
 	var sourceSystemID, requestID string
-	err := s.db.QueryRowContext(ctx, `
+	err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, `
 SELECT source_system_id::text, request_id
 FROM evidence_events
 WHERE execution_id = $1
@@ -1009,7 +1024,7 @@ SELECT EXISTS (
     AND e.execution_id = $1
 )`
 	var exists bool
-	if err := s.db.QueryRowContext(ctx, statement, executionID, asOf.UTC()).Scan(&exists); err != nil {
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, statement, executionID, asOf.UTC()).Scan(&exists); err != nil {
 		return false, err
 	}
 	return exists, nil

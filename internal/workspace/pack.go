@@ -150,6 +150,9 @@ func sortPack(pack *EvidencePack) {
 	}
 	sort.Slice(pack.Executions, func(left, right int) bool {
 		if pack.Executions[left].ExecutionID == pack.Executions[right].ExecutionID {
+			if pack.Executions[left].AsOf.Equal(pack.Executions[right].AsOf) {
+				return pack.Executions[left].EvidenceRevision < pack.Executions[right].EvidenceRevision
+			}
 			return pack.Executions[left].AsOf.Before(pack.Executions[right].AsOf)
 		}
 		return pack.Executions[left].ExecutionID < pack.Executions[right].ExecutionID

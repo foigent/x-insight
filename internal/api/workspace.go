@@ -164,11 +164,17 @@ func (s *Server) handleCaseExecution(w http.ResponseWriter, r *http.Request, cas
 		writeProblem(w, http.StatusServiceUnavailable, "database_unavailable", "Database is unavailable", true)
 		return
 	}
-	if _, err := store.GetExecution(r.Context(), input.ExecutionID, input.AsOf); err != nil {
+	input.ReuseTimestampReference = input.EvidenceRevision == ""
+	ctx, revision, ok := s.resolveEvidenceRead(w, r.Context(), input.EvidenceRevision)
+	if !ok {
+		return
+	}
+	input.EvidenceRevision = revision
+	if _, err := store.GetExecution(ctx, input.ExecutionID, input.AsOf); err != nil {
 		writeStoreFailure(w, err)
 		return
 	}
-	item, err := s.workspaceStore.AddCaseExecution(r.Context(), caseID, actor, input, s.now().UTC())
+	item, err := s.workspaceStore.AddCaseExecution(ctx, caseID, actor, input, s.now().UTC())
 	if err != nil {
 		writeWorkspaceFailure(w, err)
 		return

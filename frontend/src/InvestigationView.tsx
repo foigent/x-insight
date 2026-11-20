@@ -142,7 +142,7 @@ export function InvestigationView({
     if (!selectedNode || !selectedCaseID) return;
     setCaseState("saving");
     try {
-      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token);
+      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token, undefined, projection.evidence_revision);
       await workspaceAPI.addEvidence(selectedCaseID, selectedNode.citation, session.csrf_token);
       for (const gap of selectedGaps) {
         await workspaceAPI.addGap(selectedCaseID, gap, session.csrf_token);
@@ -157,7 +157,7 @@ export function InvestigationView({
     if (!selectedCaseID || projection.gaps.length === 0) return;
     setGapCaseState("saving");
     try {
-      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token);
+      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token, undefined, projection.evidence_revision);
       for (const gap of projection.gaps) {
         await workspaceAPI.addGap(selectedCaseID, gap, session.csrf_token);
       }
@@ -497,6 +497,7 @@ function TraceJourneyPanel({
       return;
     }
     const params = new URLSearchParams({ as_of: asOf, evidence: node.event_id });
+    if (journey?.evidence_revision) params.set("evidence_revision", journey.evidence_revision);
     navigate(`/executions/${encodeURIComponent(node.execution_id)}?${params.toString()}`);
   }
 

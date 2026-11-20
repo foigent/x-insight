@@ -164,7 +164,7 @@ func insertReviewExecution(ctx context.Context, tx *sql.Tx, caseID string, actor
 		return nil
 	}
 	c := b.ResolvedExecutionContext.Context
-	_, err := tx.ExecContext(ctx, `INSERT INTO case_executions(case_id,execution_id,as_of,added_by_subject,added_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(case_id,execution_id,as_of) DO NOTHING`, caseID, c.ExecutionID, c.ExecutionAsOf, actor.Ref, now)
+	_, err := tx.ExecContext(ctx, `INSERT INTO case_executions(case_id,execution_id,as_of,added_by_subject,added_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`, caseID, c.ExecutionID, c.ExecutionAsOf, actor.Ref, now)
 	return err
 }
 

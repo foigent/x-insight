@@ -52,8 +52,12 @@ func (m PostgresManager) InitializeAccountAuthority(ctx context.Context, c Datab
 func targetUsesDurableAccounts(t verifiedTarget) bool {
 	return containsString(t.Bundle.Manifest.APIVersions, buildinfo.AccountsAPIVersion)
 }
+func schemaSupportsDurableAccounts(schema string) bool {
+	return schema == "47" || schema == buildinfo.DatabaseSchemaMax
+}
+
 func (e *Engine) prepareAccountAuthority(ctx context.Context, j *Journal, c DatabaseCredentials, identity ReleaseIdentity) error {
-	if identity.DatabaseSchema != "47" {
+	if !schemaSupportsDurableAccounts(identity.DatabaseSchema) {
 		return nil
 	}
 	manager, ok := e.Database.(accountAuthorityDatabase)
@@ -68,7 +72,7 @@ func (e *Engine) prepareAccountAuthority(ctx context.Context, j *Journal, c Data
 		if initialized {
 			return nil
 		}
-		if j.Kind == "restore" && j.Before != nil && j.Before.DatabaseSchema == "47" {
+		if j.Kind == "restore" && j.Before != nil && schemaSupportsDurableAccounts(j.Before.DatabaseSchema) {
 			return fmt.Errorf("legacy backup lacks current durable account authority; refusing stale-file credential restoration")
 		}
 		config := access.AccountConfig{SchemaVersion: access.AccountConfigSchemaV3}

@@ -61,7 +61,7 @@ var workspaceUpdateTables = []string{
 var importerInsertTables = []string{
 	"connector_sync_slots",
 	"adapter_import_states", "source_systems", "adapter_manifests",
-	"import_provenance", "import_provenance_events", "evidence_events", "capture_gaps",
+	"import_provenance", "import_provenance_events", "evidence_events", "capture_gaps", "evidence_publications",
 	"connector_import_operation_bindings", "connector_operational_receipts",
 	"workbench_economic_facts",
 	"source_fact_documents",

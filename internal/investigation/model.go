@@ -113,9 +113,10 @@ type ExecutionSummary struct {
 }
 
 type ExecutionDetail struct {
-	Summary  ExecutionSummary `json:"summary"`
-	AsOf     time.Time        `json:"as_of"`
-	TraceIDs []string         `json:"trace_ids,omitempty"`
+	Summary          ExecutionSummary `json:"summary"`
+	AsOf             time.Time        `json:"as_of"`
+	EvidenceRevision string           `json:"evidence_revision,omitempty"`
+	TraceIDs         []string         `json:"trace_ids,omitempty"`
 }
 
 // TraceJourney is a read-model projection over source-declared trace/span
@@ -130,6 +131,7 @@ type TraceJourney struct {
 	SourceSystemID    string                `json:"source_system_id,omitempty"`
 	TraceID           string                `json:"trace_id,omitempty"`
 	AsOf              time.Time             `json:"as_of"`
+	EvidenceRevision  string                `json:"evidence_revision,omitempty"`
 	Nodes             []TraceJourneyNode    `json:"nodes"`
 	Edges             []TraceJourneyEdge    `json:"edges"`
 	Integrity         TraceJourneyIntegrity `json:"integrity"`
@@ -422,6 +424,7 @@ type InvestigationProjection struct {
 	SchemaVersion     string                 `json:"schema_version"`
 	Execution         ExecutionSummary       `json:"execution"`
 	AsOf              time.Time              `json:"as_of"`
+	EvidenceRevision  string                 `json:"evidence_revision,omitempty"`
 	PresentationMode  string                 `json:"presentation_mode"`
 	SummaryClaims     []InvestigationClaim   `json:"summary_claims"`
 	StageCoverage     []StageCoverage        `json:"stage_coverage"`

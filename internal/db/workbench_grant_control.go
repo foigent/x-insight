@@ -124,7 +124,7 @@ func workbenchGrantSchemaSupported(schema string, content bool) bool {
 	switch schema {
 	case "000036_add_source_budgets", "000037_add_synthetic_resource_authorization", "000038_add_case_resource_links":
 		return !content
-	case "000039_add_content_readings", "000040_add_resource_action_profile", "000041_add_work_events", "000042_add_review_body_custody", "000043_add_work_event_install_invites", "000044_add_managed_connector_adoption", "000045_add_connector_credential_lifecycle", "000046_add_connector_sync_control", "000047_add_local_account_lifecycle":
+	case "000039_add_content_readings", "000040_add_resource_action_profile", "000041_add_work_events", "000042_add_review_body_custody", "000043_add_work_event_install_invites", "000044_add_managed_connector_adoption", "000045_add_connector_credential_lifecycle", "000046_add_connector_sync_control", "000047_add_local_account_lifecycle", "000048_publish_investigation_evidence":
 		return true
 	default:
 		return false
@@ -161,10 +161,10 @@ func (s *SourceFactsStore) changeWorkbenchGrant(ctx context.Context, r Workbench
 		return result, err
 	}
 	if !workbenchGrantSchemaSupported(schema, false) || dirty {
-		return result, fmt.Errorf("workbench grant control requires clean schema36 through schema47")
+		return result, fmt.Errorf("workbench grant control requires clean schema36 through schema48")
 	}
 	if r.SchemaVersion == "xinsight.workbench-grant-change.v2" && !workbenchGrantSchemaSupported(schema, true) {
-		return result, fmt.Errorf("content grant command v2 requires clean schema39 through schema47")
+		return result, fmt.Errorf("content grant command v2 requires clean schema39 through schema48")
 	}
 	mode, lock := "ROW EXCLUSIVE", "pg_advisory_xact_lock"
 	if check {

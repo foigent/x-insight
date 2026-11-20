@@ -97,6 +97,7 @@ func BuildProjection(input ProjectionInput) InvestigationProjection {
 			event,
 			input.Detail.Summary.ExecutionID,
 			input.Detail.AsOf,
+			input.Detail.EvidenceRevision,
 		)
 		nodes = append(nodes, node)
 		if timelineNode.DeclaredParentResolved != nil {
@@ -136,6 +137,7 @@ func BuildProjection(input ProjectionInput) InvestigationProjection {
 		SchemaVersion:    InvestigationProjectionSchema,
 		Execution:        input.Detail.Summary,
 		AsOf:             input.Detail.AsOf.UTC(),
+		EvidenceRevision: input.Detail.EvidenceRevision,
 		PresentationMode: presentationMode,
 		SummaryClaims:    buildClaims(nodes, projectionComplete && sourceComplete && importComplete),
 		StageCoverage:    buildCoverage(nodes, gaps, sourceComplete, projectionComplete),
@@ -178,6 +180,7 @@ func projectionNode(
 	event EvidenceEventDetail,
 	executionID string,
 	asOf time.Time,
+	evidenceRevision string,
 ) InvestigationNode {
 	return InvestigationNode{
 		EventID:               timeline.EventID,
@@ -208,14 +211,20 @@ func projectionNode(
 			EvidenceEventID: timeline.EventID,
 			SourceRef:       event.Source.SourceRef,
 			EventHash:       event.Source.EventHash,
-			DeepLink: fmt.Sprintf(
-				"/executions/%s?as_of=%s&evidence=%s",
-				url.PathEscape(executionID),
-				url.QueryEscape(asOf.UTC().Format(time.RFC3339Nano)),
-				url.QueryEscape(timeline.EventID),
-			),
+			DeepLink:        executionEvidenceLink(executionID, asOf, evidenceRevision, timeline.EventID),
 		},
 	}
+}
+
+func executionEvidenceLink(executionID string, asOf time.Time, evidenceRevision, eventID string) string {
+	values := url.Values{
+		"as_of":    {asOf.UTC().Format(time.RFC3339Nano)},
+		"evidence": {eventID},
+	}
+	if evidenceRevision != "" {
+		values.Set("evidence_revision", evidenceRevision)
+	}
+	return fmt.Sprintf("/executions/%s?%s", url.PathEscape(executionID), values.Encode())
 }
 
 func isCaptureGapEvent(timeline TimelineNode, event EvidenceEventDetail) bool {

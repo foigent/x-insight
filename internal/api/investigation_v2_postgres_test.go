@@ -513,6 +513,49 @@ func TestExecutionEvidenceV2BundlePersistsAndProjectsThroughAPI(t *testing.T) {
 		!strings.Contains(response.Body.String(), "\"total_tokens\":11") {
 		t.Fatalf("unsafe or incomplete investigation projection: %s", response.Body.String())
 	}
+
+	handler := newAuthenticatedHandler(t, store)
+	read := func(path string, status int) *httptest.ResponseRecorder {
+		t.Helper()
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+		if recorder.Code != status {
+			t.Fatalf("%s => %d, want %d: %s", path, recorder.Code, status, recorder.Body.String())
+		}
+		return recorder
+	}
+	base := "/api/v1/executions/" + executionID
+	var detail investigation.ExecutionDetail
+	decodePostgresResponse(t, read(base, http.StatusOK), &detail)
+	if detail.EvidenceRevision == "" || projection.EvidenceRevision != "" {
+		t.Fatal("new detail must pin its evidence revision; the old time-only projection remains legacy")
+	}
+	parameters := url.Values{"as_of": {detail.AsOf.Format(time.RFC3339Nano)}, "evidence_revision": {detail.EvidenceRevision}}
+	decodePostgresResponse(t, read(base+"/investigation?"+parameters.Encode(), http.StatusOK), &projection)
+	if !strings.Contains(projection.Nodes[0].Citation.DeepLink, "evidence_revision="+detail.EvidenceRevision) {
+		t.Fatal("citation must preserve the versioned deep link")
+	}
+	parameters.Set("limit", "2")
+	paging := struct {
+		Items []investigation.TimelineNode
+		Page  struct {
+			EvidenceRevision string `json:"evidence_revision"`
+			NextCursor       string `json:"next_cursor"`
+		}
+	}{}
+	decodePostgresResponse(t, read(base+"/timeline?"+parameters.Encode(), http.StatusOK), &paging)
+	if paging.Page.NextCursor == "" || paging.Page.EvidenceRevision != detail.EvidenceRevision || len(paging.Items) != 2 {
+		t.Fatalf("unexpected first page: %+v", paging)
+	}
+	cursorOnly := url.Values{"cursor": {paging.Page.NextCursor}, "limit": {"2"}}
+	decodePostgresResponse(t, read(base+"/timeline?"+cursorOnly.Encode(), http.StatusOK), &paging)
+	if paging.Page.EvidenceRevision != detail.EvidenceRevision || len(paging.Items) != 2 {
+		t.Fatalf("unexpected next page: %+v", paging)
+	}
+	cursorOnly.Set("evidence_revision", "00000000-0000-4000-8000-000000000001")
+	read(base+"/timeline?"+cursorOnly.Encode(), http.StatusConflict)
+	read(base+"?evidence_revision=00000000-0000-4000-8000-000000000001", http.StatusGone)
+
 }
 
 func syntheticProvenance(sourceSystemID string, adapterManifestID string, revision string, artifactHash string) investigation.ImportProvenance {

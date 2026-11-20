@@ -428,6 +428,11 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 		return PersistenceReport{}, fmt.Errorf("evidence writer is busy")
 	}
 
+	publicationID, err := beginEvidencePublication(ctx, tx)
+	if err != nil {
+		return PersistenceReport{}, err
+	}
+	hasNewProvenance := false
 	report := PersistenceReport{EventsTotal: len(events)}
 	var provenanceID string
 	linkLegacyProvenance := false
@@ -436,7 +441,7 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 		if err := ensureDependencies(ctx, tx, events[0]); err != nil {
 			return report, err
 		}
-		provenanceID, err = persistImportProvenance(ctx, tx, events, *provenance)
+		provenanceID, hasNewProvenance, err = persistImportProvenance(ctx, tx, events, *provenance)
 		if err != nil {
 			return report, err
 		}
@@ -458,9 +463,11 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 			}
 		}
 		if provenanceID != "" && associateProvenance {
-			if err := persistImportProvenanceEvent(ctx, tx, provenanceID, persistedEventID, event); err != nil {
+			added, err := persistImportProvenanceEvent(ctx, tx, provenanceID, persistedEventID, event)
+			if err != nil {
 				return report, err
 			}
+			hasNewProvenance = hasNewProvenance || added
 		}
 		report.Results = append(report.Results, result)
 		switch result.Outcome {
@@ -485,13 +492,18 @@ func (s *EvidenceStore) persistEvents(ctx context.Context, events []map[string]a
 			report.Rejected++
 		}
 	}
+	if publicationID != "" && (report.Inserted > 0 || hasNewProvenance) {
+		if err := publishEvidenceTransaction(ctx, tx, publicationID); err != nil {
+			return report, err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return report, err
 	}
 	return report, nil
 }
 
-func persistImportProvenance(ctx context.Context, tx *sql.Tx, events []map[string]any, provenance investigation.ImportProvenance) (string, error) {
+func persistImportProvenance(ctx context.Context, tx *sql.Tx, events []map[string]any, provenance investigation.ImportProvenance) (string, bool, error) {
 	first := events[0]
 	sourceSystemID := requiredString(first, "source_system_id")
 	adapterManifestID := requiredString(first, "adapter_manifest_id")
@@ -502,21 +514,21 @@ func persistImportProvenance(ctx context.Context, tx *sql.Tx, events []map[strin
 		provenance.AdapterManifestID = adapterManifestID
 	}
 	if provenance.SourceSystemID != sourceSystemID || provenance.AdapterManifestID != adapterManifestID {
-		return "", fmt.Errorf("import provenance source or adapter does not match evidence events")
+		return "", false, fmt.Errorf("import provenance source or adapter does not match evidence events")
 	}
 	for _, event := range events[1:] {
 		if requiredString(event, "source_system_id") != sourceSystemID || requiredString(event, "adapter_manifest_id") != adapterManifestID {
-			return "", fmt.Errorf("one import provenance record cannot span sources or adapters")
+			return "", false, fmt.Errorf("one import provenance record cannot span sources or adapters")
 		}
 	}
 	if err := validateImportProvenance(provenance); err != nil {
-		return "", err
+		return "", false, err
 	}
 	if provenance.ID == "" {
 		provenance.ID = deterministicImportProvenanceID(provenance)
 	}
 
-	_, err := tx.ExecContext(ctx, `
+	result, err := tx.ExecContext(ctx, `
 INSERT INTO import_provenance (
   id, source_system_id, adapter_manifest_id, integration_mode, proof_class,
   assurance_mode, source_artifact_sha256, source_payload_sha256,
@@ -550,7 +562,7 @@ ON CONFLICT (id) DO NOTHING`,
 		provenance.TimelineComplete,
 	)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	var matches bool
 	err = tx.QueryRowContext(ctx, `
@@ -594,12 +606,13 @@ SELECT EXISTS (
 		provenance.TimelineComplete,
 	).Scan(&matches)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	if !matches {
-		return "", fmt.Errorf("import provenance id conflicts with an existing immutable record")
+		return "", false, fmt.Errorf("import provenance id conflicts with an existing immutable record")
 	}
-	return provenance.ID, nil
+	count, err := result.RowsAffected()
+	return provenance.ID, count > 0, err
 }
 
 func deterministicImportProvenanceID(provenance investigation.ImportProvenance) string {
@@ -1082,17 +1095,17 @@ WHERE source_system_id = $2
 	return result, "", false, nil
 }
 
-func persistImportProvenanceEvent(ctx context.Context, tx *sql.Tx, provenanceID string, eventID string, event map[string]any) error {
+func persistImportProvenanceEvent(ctx context.Context, tx *sql.Tx, provenanceID string, eventID string, event map[string]any) (bool, error) {
 	executionID := ""
 	requestID := stringField(event, "request_id")
 	if requestID != "" {
 		var err error
 		executionID, err = executionid.New(requiredString(event, "source_system_id"), requestID)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
-	_, err := tx.ExecContext(ctx, `
+	result, err := tx.ExecContext(ctx, `
 INSERT INTO import_provenance_events (
   import_provenance_id, evidence_event_id, execution_id
 ) VALUES ($1, $2, $3)
@@ -1101,7 +1114,11 @@ ON CONFLICT (import_provenance_id, evidence_event_id) DO NOTHING`,
 		eventID,
 		nullString(executionID),
 	)
-	return err
+	if err != nil {
+		return false, err
+	}
+	count, err := result.RowsAffected()
+	return count > 0, err
 }
 
 func timeValue(value *time.Time) string {

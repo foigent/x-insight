@@ -28,10 +28,11 @@ var uuidPattern = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]
 var authoritativeSessionIDPattern = regexp.MustCompile(`^xss_[a-f0-9]{64}$`)
 
 type page struct {
-	AsOf       time.Time `json:"as_of"`
-	Count      int       `json:"count"`
-	HasMore    bool      `json:"has_more"`
-	NextCursor string    `json:"next_cursor,omitempty"`
+	AsOf             time.Time `json:"as_of"`
+	EvidenceRevision string    `json:"evidence_revision,omitempty"`
+	Count            int       `json:"count"`
+	HasMore          bool      `json:"has_more"`
+	NextCursor       string    `json:"next_cursor,omitempty"`
 }
 
 type executionSearchResponse struct {
@@ -72,7 +73,7 @@ func (s *Server) handleExecutionCollection(w http.ResponseWriter, r *http.Reques
 		methodNotAllowed(w)
 		return
 	}
-	query, filterHash, requestedLimit, failure := s.parseExecutionSearch(r)
+	query, after, filterHash, requestedLimit, failure := s.parseExecutionSearch(r)
 	if failure != nil {
 		writeRequestFailure(w, failure)
 		return
@@ -81,8 +82,12 @@ func (s *Server) handleExecutionCollection(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
+	ctx, revision, ok := s.evidenceReadContext(w, r, "evidence_revision", after)
+	if !ok {
+		return
+	}
 	query.Limit = requestedLimit + 1
-	items, err := store.SearchExecutions(r.Context(), query)
+	items, err := store.SearchExecutions(ctx, query)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -94,10 +99,10 @@ func (s *Server) handleExecutionCollection(w http.ResponseWriter, r *http.Reques
 	if items == nil {
 		items = make([]investigation.ExecutionSummary, 0)
 	}
-	responsePage := page{AsOf: query.AsOf.UTC(), Count: len(items), HasMore: hasMore}
+	responsePage := page{AsOf: query.AsOf.UTC(), EvidenceRevision: revision, Count: len(items), HasMore: hasMore}
 	if hasMore {
 		last := items[len(items)-1]
-		cursor, err := pagination.Encode(pagination.Cursor{
+		cursor, err := s.encodeEvidenceCursor(pagination.Cursor{
 			Version:    pagination.Version,
 			Kind:       pagination.KindExecutionSearch,
 			AsOf:       query.AsOf.UTC(),
@@ -106,7 +111,7 @@ func (s *Server) handleExecutionCollection(w http.ResponseWriter, r *http.Reques
 				last.LastEffectiveAt.UTC().Format(time.RFC3339Nano),
 				last.ExecutionID,
 			},
-		})
+		}, revision)
 		if err != nil {
 			writeStoreFailure(w, err)
 			return
@@ -150,21 +155,19 @@ func (s *Server) handleTraceJourney(
 	store InvestigationStore,
 	executionID string,
 ) {
-	if failure := validateQueryKeys(r, "as_of"); failure != nil {
+	if failure := validateQueryKeys(r, "as_of", "evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
-	_, asOfPresent := r.URL.Query()["as_of"]
-	asOf, failure := s.parseAsOf(r.URL.Query().Get("as_of"), asOfPresent)
-	if failure != nil {
-		writeRequestFailure(w, failure)
+	ctx, asOf, ok := s.executionEvidenceRead(w, r)
+	if !ok {
 		return
 	}
-	if _, err := store.GetExecution(r.Context(), executionID, asOf); err != nil {
+	if _, err := store.GetExecution(ctx, executionID, asOf); err != nil {
 		writeStoreFailure(w, err)
 		return
 	}
-	journey, err := store.GetTraceJourney(r.Context(), executionID, asOf, 200)
+	journey, err := store.GetTraceJourney(ctx, executionID, asOf, 200)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -173,17 +176,15 @@ func (s *Server) handleTraceJourney(
 }
 
 func (s *Server) handleExecutionDetail(w http.ResponseWriter, r *http.Request, store InvestigationStore, executionID string) {
-	if failure := validateQueryKeys(r, "as_of"); failure != nil {
+	if failure := validateQueryKeys(r, "as_of", "evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
-	_, asOfPresent := r.URL.Query()["as_of"]
-	asOf, failure := s.parseAsOf(r.URL.Query().Get("as_of"), asOfPresent)
-	if failure != nil {
-		writeRequestFailure(w, failure)
+	ctx, asOf, ok := s.executionEvidenceRead(w, r)
+	if !ok {
 		return
 	}
-	detail, err := store.GetExecution(r.Context(), executionID, asOf)
+	detail, err := store.GetExecution(ctx, executionID, asOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -197,17 +198,15 @@ func (s *Server) handleInvestigationProjection(
 	store InvestigationStore,
 	executionID string,
 ) {
-	if failure := validateQueryKeys(r, "as_of"); failure != nil {
+	if failure := validateQueryKeys(r, "as_of", "evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
-	_, asOfPresent := r.URL.Query()["as_of"]
-	asOf, failure := s.parseAsOf(r.URL.Query().Get("as_of"), asOfPresent)
-	if failure != nil {
-		writeRequestFailure(w, failure)
+	ctx, asOf, ok := s.executionEvidenceRead(w, r)
+	if !ok {
 		return
 	}
-	projection, err := store.GetInvestigationProjection(r.Context(), executionID, asOf)
+	projection, err := store.GetInvestigationProjection(ctx, executionID, asOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -216,7 +215,7 @@ func (s *Server) handleInvestigationProjection(
 }
 
 func (s *Server) handleTimeline(w http.ResponseWriter, r *http.Request, store InvestigationStore, executionID string) {
-	if failure := validateQueryKeys(r, "as_of", "limit", "cursor"); failure != nil {
+	if failure := validateQueryKeys(r, "as_of", "limit", "cursor", "evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
@@ -230,7 +229,11 @@ func (s *Server) handleTimeline(w http.ResponseWriter, r *http.Request, store In
 		writeRequestFailure(w, failure)
 		return
 	}
-	detail, err := store.GetExecution(r.Context(), executionID, asOf)
+	ctx, revision, ok := s.evidenceReadContext(w, r, "evidence_revision", after)
+	if !ok {
+		return
+	}
+	detail, err := store.GetExecution(ctx, executionID, asOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -245,7 +248,7 @@ func (s *Server) handleTimeline(w http.ResponseWriter, r *http.Request, store In
 		}
 		query.After = &investigation.TimelineKey{EffectiveAt: effectiveAt.UTC(), IngestedAt: ingestedAt.UTC(), EventID: strings.ToLower(after.Keys[2])}
 	}
-	items, total, err := store.ListTimeline(r.Context(), query)
+	items, total, err := store.ListTimeline(ctx, query)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -257,10 +260,10 @@ func (s *Server) handleTimeline(w http.ResponseWriter, r *http.Request, store In
 	if items == nil {
 		items = make([]investigation.TimelineNode, 0)
 	}
-	responsePage := page{AsOf: asOf.UTC(), Count: len(items), HasMore: hasMore}
+	responsePage := page{AsOf: asOf.UTC(), EvidenceRevision: revision, Count: len(items), HasMore: hasMore}
 	if hasMore {
 		last := items[len(items)-1]
-		responsePage.NextCursor, err = pagination.Encode(pagination.Cursor{
+		responsePage.NextCursor, err = s.encodeEvidenceCursor(pagination.Cursor{
 			Version:     pagination.Version,
 			Kind:        pagination.KindTimeline,
 			AsOf:        asOf.UTC(),
@@ -271,7 +274,7 @@ func (s *Server) handleTimeline(w http.ResponseWriter, r *http.Request, store In
 				last.IngestedAt.UTC().Format(time.RFC3339Nano),
 				last.EventID,
 			},
-		})
+		}, revision)
 		if err != nil {
 			writeStoreFailure(w, err)
 			return
@@ -291,17 +294,15 @@ func (s *Server) handleEventDetail(w http.ResponseWriter, r *http.Request, store
 		writeRequestFailure(w, invalidField("event_id", "must_be_a_uuid"))
 		return
 	}
-	if failure := validateQueryKeys(r, "as_of"); failure != nil {
+	if failure := validateQueryKeys(r, "as_of", "evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
-	_, asOfPresent := r.URL.Query()["as_of"]
-	asOf, failure := s.parseAsOf(r.URL.Query().Get("as_of"), asOfPresent)
-	if failure != nil {
-		writeRequestFailure(w, failure)
+	ctx, asOf, ok := s.executionEvidenceRead(w, r)
+	if !ok {
 		return
 	}
-	detail, err := store.GetExecutionEvent(r.Context(), executionID, strings.ToLower(eventID), asOf)
+	detail, err := store.GetExecutionEvent(ctx, executionID, strings.ToLower(eventID), asOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -310,7 +311,7 @@ func (s *Server) handleEventDetail(w http.ResponseWriter, r *http.Request, store
 }
 
 func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request, store InvestigationStore, executionID string) {
-	if failure := validateQueryKeys(r, "as_of", "limit", "cursor"); failure != nil {
+	if failure := validateQueryKeys(r, "as_of", "limit", "cursor", "evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
@@ -324,7 +325,11 @@ func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request, store Invest
 		writeRequestFailure(w, failure)
 		return
 	}
-	detail, err := store.GetExecution(r.Context(), executionID, asOf)
+	ctx, revision, ok := s.evidenceReadContext(w, r, "evidence_revision", after)
+	if !ok {
+		return
+	}
+	detail, err := store.GetExecution(ctx, executionID, asOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -338,7 +343,7 @@ func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request, store Invest
 		}
 		query.After = &investigation.GapKey{CreatedAt: createdAt.UTC(), GapID: strings.ToLower(after.Keys[1])}
 	}
-	items, total, err := store.ListExecutionGaps(r.Context(), query)
+	items, total, err := store.ListExecutionGaps(ctx, query)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -350,10 +355,10 @@ func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request, store Invest
 	if items == nil {
 		items = make([]investigation.CaptureGap, 0)
 	}
-	responsePage := page{AsOf: asOf.UTC(), Count: len(items), HasMore: hasMore}
+	responsePage := page{AsOf: asOf.UTC(), EvidenceRevision: revision, Count: len(items), HasMore: hasMore}
 	if hasMore {
 		last := items[len(items)-1]
-		responsePage.NextCursor, err = pagination.Encode(pagination.Cursor{
+		responsePage.NextCursor, err = s.encodeEvidenceCursor(pagination.Cursor{
 			Version:     pagination.Version,
 			Kind:        pagination.KindGaps,
 			AsOf:        asOf.UTC(),
@@ -363,7 +368,7 @@ func (s *Server) handleGaps(w http.ResponseWriter, r *http.Request, store Invest
 				last.CreatedAt.UTC().Format(time.RFC3339Nano),
 				last.GapID,
 			},
-		})
+		}, revision)
 		if err != nil {
 			writeStoreFailure(w, err)
 			return
@@ -522,7 +527,7 @@ func (s *Server) handleExecutionCompare(w http.ResponseWriter, r *http.Request) 
 		methodNotAllowedFor(w, http.MethodGet)
 		return
 	}
-	if failure := validateQueryKeys(r, "left", "left_as_of", "right", "right_as_of"); failure != nil {
+	if failure := validateQueryKeys(r, "left", "left_as_of", "right", "right_as_of", "left_evidence_revision", "right_evidence_revision"); failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
@@ -537,12 +542,12 @@ func (s *Server) handleExecutionCompare(w http.ResponseWriter, r *http.Request) 
 		writeProblem(w, http.StatusBadRequest, "invalid_argument", "Invalid comparison argument", false)
 		return
 	}
-	leftAsOf, failure := s.parseAsOf(leftAsOfRaw[0], true)
+	leftAsOf, failure := s.parseInvestigationAsOf(leftAsOfRaw[0], true, values.Has("left_evidence_revision"))
 	if failure != nil {
 		writeRequestFailure(w, failure)
 		return
 	}
-	rightAsOf, failure := s.parseAsOf(rightAsOfRaw[0], true)
+	rightAsOf, failure := s.parseInvestigationAsOf(rightAsOfRaw[0], true, values.Has("right_evidence_revision"))
 	if failure != nil {
 		writeRequestFailure(w, failure)
 		return
@@ -551,12 +556,20 @@ func (s *Server) handleExecutionCompare(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	left, err := store.GetInvestigationProjection(r.Context(), leftID, leftAsOf)
+	leftCtx, _, ok := s.evidenceReadContext(w, r, "left_evidence_revision", nil)
+	if !ok {
+		return
+	}
+	left, err := store.GetInvestigationProjection(leftCtx, leftID, leftAsOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
 	}
-	right, err := store.GetInvestigationProjection(r.Context(), rightID, rightAsOf)
+	rightCtx, _, ok := s.evidenceReadContext(w, r, "right_evidence_revision", nil)
+	if !ok {
+		return
+	}
+	right, err := store.GetInvestigationProjection(rightCtx, rightID, rightAsOf)
 	if err != nil {
 		writeStoreFailure(w, err)
 		return
@@ -752,37 +765,37 @@ type searchFilterFingerprint struct {
 	Sort           string `json:"sort"`
 }
 
-func (s *Server) parseExecutionSearch(r *http.Request) (investigation.SearchQuery, string, int, *requestFailure) {
-	if failure := validateQueryKeys(r, "request_id", "request_id_prefix", "source_system_id", "outcome", "has_gaps", "from", "to", "as_of", "limit", "cursor"); failure != nil {
-		return investigation.SearchQuery{}, "", 0, failure
+func (s *Server) parseExecutionSearch(r *http.Request) (investigation.SearchQuery, *pagination.Cursor, string, int, *requestFailure) {
+	if failure := validateQueryKeys(r, "request_id", "request_id_prefix", "source_system_id", "outcome", "has_gaps", "from", "to", "as_of", "limit", "cursor", "evidence_revision"); failure != nil {
+		return investigation.SearchQuery{}, nil, "", 0, failure
 	}
 	values := r.URL.Query()
 	requestID := values.Get("request_id")
 	requestPrefix := values.Get("request_id_prefix")
 	if requestID != "" && requestPrefix != "" {
-		return investigation.SearchQuery{}, "", 0, invalidField("request_id", "mutually_exclusive_with_request_id_prefix")
+		return investigation.SearchQuery{}, nil, "", 0, invalidField("request_id", "mutually_exclusive_with_request_id_prefix")
 	}
 	if _, exists := values["request_id"]; exists {
 		if err := executionid.ValidateRequestID(requestID); err != nil {
-			return investigation.SearchQuery{}, "", 0, invalidField("request_id", "invalid_utf8_or_length")
+			return investigation.SearchQuery{}, nil, "", 0, invalidField("request_id", "invalid_utf8_or_length")
 		}
 	}
 	if _, exists := values["request_id_prefix"]; exists {
 		if err := executionid.ValidateRequestIDPrefix(requestPrefix); err != nil {
-			return investigation.SearchQuery{}, "", 0, invalidField("request_id_prefix", "invalid_utf8_or_length")
+			return investigation.SearchQuery{}, nil, "", 0, invalidField("request_id_prefix", "invalid_utf8_or_length")
 		}
 	}
 	sourceSystemID := values.Get("source_system_id")
 	if _, exists := values["source_system_id"]; exists {
 		canonical, err := executionid.CanonicalSourceSystemID(sourceSystemID)
 		if err != nil {
-			return investigation.SearchQuery{}, "", 0, invalidField("source_system_id", "must_be_a_uuid")
+			return investigation.SearchQuery{}, nil, "", 0, invalidField("source_system_id", "must_be_a_uuid")
 		}
 		sourceSystemID = canonical
 	}
 	outcome := values.Get("outcome")
 	if _, exists := values["outcome"]; exists && !validOutcome(outcome) {
-		return investigation.SearchQuery{}, "", 0, invalidField("outcome", "unsupported_value")
+		return investigation.SearchQuery{}, nil, "", 0, invalidField("outcome", "unsupported_value")
 	}
 	var hasGaps *bool
 	if _, exists := values["has_gaps"]; exists {
@@ -794,35 +807,35 @@ func (s *Server) parseExecutionSearch(r *http.Request) (investigation.SearchQuer
 			value := false
 			hasGaps = &value
 		default:
-			return investigation.SearchQuery{}, "", 0, invalidField("has_gaps", "must_be_true_or_false")
+			return investigation.SearchQuery{}, nil, "", 0, invalidField("has_gaps", "must_be_true_or_false")
 		}
 	}
 	limit, failure := parseBoundedLimit(r, 50, 100)
 	if failure != nil {
-		return investigation.SearchQuery{}, "", 0, failure
+		return investigation.SearchQuery{}, nil, "", 0, failure
 	}
 
 	now := s.now().UTC()
 	asOf := now
 	_, asOfPresent := values["as_of"]
 	if asOfPresent {
-		parsedAsOf, failure := s.parseAsOf(values.Get("as_of"), true)
+		parsedAsOf, failure := s.parseInvestigationAsOf(values.Get("as_of"), true, values.Has("evidence_revision") || values.Has("cursor"))
 		if failure != nil {
-			return investigation.SearchQuery{}, "", 0, failure
+			return investigation.SearchQuery{}, nil, "", 0, failure
 		}
 		asOf = parsedAsOf
 	}
 	var decodedCursor *pagination.Cursor
 	if rawCursor, cursorPresent := values["cursor"]; cursorPresent {
 		if rawCursor[0] == "" {
-			return investigation.SearchQuery{}, "", 0, invalidCursorFailure()
+			return investigation.SearchQuery{}, nil, "", 0, invalidCursorFailure()
 		}
 		cursor, err := pagination.Decode(rawCursor[0], now)
 		if err != nil {
-			return investigation.SearchQuery{}, "", 0, cursorFailure(err)
+			return investigation.SearchQuery{}, nil, "", 0, cursorFailure(err)
 		}
 		if asOfPresent && !asOf.Equal(cursor.AsOf) {
-			return investigation.SearchQuery{}, "", 0, cursorFailure(pagination.ErrMismatch)
+			return investigation.SearchQuery{}, nil, "", 0, cursorFailure(pagination.ErrMismatch)
 		}
 		decodedCursor = &cursor
 		asOf = cursor.AsOf.UTC()
@@ -832,25 +845,25 @@ func (s *Server) parseExecutionSearch(r *http.Request) (investigation.SearchQuer
 	if _, exists := values["from"]; exists {
 		parsed, failure := parseUTCField("from", values.Get("from"))
 		if failure != nil {
-			return investigation.SearchQuery{}, "", 0, failure
+			return investigation.SearchQuery{}, nil, "", 0, failure
 		}
 		from = parsed
 	}
 	if _, exists := values["to"]; exists {
 		parsed, failure := parseUTCField("to", values.Get("to"))
 		if failure != nil {
-			return investigation.SearchQuery{}, "", 0, failure
+			return investigation.SearchQuery{}, nil, "", 0, failure
 		}
 		to = parsed
 	}
 	if !from.Before(to) {
-		return investigation.SearchQuery{}, "", 0, invalidField("from", "must_be_before_to")
+		return investigation.SearchQuery{}, nil, "", 0, invalidField("from", "must_be_before_to")
 	}
 	if to.Sub(from) > 31*24*time.Hour {
-		return investigation.SearchQuery{}, "", 0, invalidField("from", "range_must_not_exceed_31_days")
+		return investigation.SearchQuery{}, nil, "", 0, invalidField("from", "range_must_not_exceed_31_days")
 	}
 	if to.After(asOf) {
-		return investigation.SearchQuery{}, "", 0, invalidField("to", "must_not_be_after_as_of")
+		return investigation.SearchQuery{}, nil, "", 0, invalidField("to", "must_not_be_after_as_of")
 	}
 	fingerprint := searchFilterFingerprint{
 		RequestID:      requestID,
@@ -864,7 +877,7 @@ func (s *Server) parseExecutionSearch(r *http.Request) (investigation.SearchQuer
 	}
 	filterHash, err := pagination.HashCanonicalFilters(fingerprint)
 	if err != nil {
-		return investigation.SearchQuery{}, "", 0, &requestFailure{status: http.StatusInternalServerError, code: "internal_error", title: "Internal server error"}
+		return investigation.SearchQuery{}, nil, "", 0, &requestFailure{status: http.StatusInternalServerError, code: "internal_error", title: "Internal server error"}
 	}
 	if a := workchain.FromContext(r.Context()); a != nil {
 		filterHash, _ = pagination.HashCanonicalFilters([]string{filterHash, a.Revision})
@@ -881,18 +894,18 @@ func (s *Server) parseExecutionSearch(r *http.Request) (investigation.SearchQuer
 	}
 	if decodedCursor != nil {
 		if err := pagination.ValidateBinding(*decodedCursor, pagination.KindExecutionSearch, filterHash, ""); err != nil {
-			return investigation.SearchQuery{}, "", 0, cursorFailure(err)
+			return investigation.SearchQuery{}, nil, "", 0, cursorFailure(err)
 		}
 		if len(decodedCursor.Keys) != 2 || !executionid.Valid(decodedCursor.Keys[1]) {
-			return investigation.SearchQuery{}, "", 0, invalidCursorFailure()
+			return investigation.SearchQuery{}, nil, "", 0, invalidCursorFailure()
 		}
 		lastEffectiveAt, err := time.Parse(time.RFC3339Nano, decodedCursor.Keys[0])
 		if err != nil {
-			return investigation.SearchQuery{}, "", 0, invalidCursorFailure()
+			return investigation.SearchQuery{}, nil, "", 0, invalidCursorFailure()
 		}
 		query.After = &investigation.SearchKey{LastEffectiveAt: lastEffectiveAt.UTC(), ExecutionID: decodedCursor.Keys[1]}
 	}
-	return query, filterHash, limit, nil
+	return query, decodedCursor, filterHash, limit, nil
 }
 
 func (s *Server) parseExecutionPageCursor(r *http.Request, kind pagination.Kind, executionID string) (time.Time, *pagination.Cursor, string, *requestFailure) {
@@ -902,7 +915,7 @@ func (s *Server) parseExecutionPageCursor(r *http.Request, kind pagination.Kind,
 	if asOfPresent {
 		rawAsOf = explicitAsOf[0]
 	}
-	asOf, failure := s.parseAsOf(rawAsOf, asOfPresent)
+	asOf, failure := s.parseInvestigationAsOf(rawAsOf, asOfPresent, r.URL.Query().Has("evidence_revision") || r.URL.Query().Has("cursor"))
 	if failure != nil {
 		return time.Time{}, nil, "", failure
 	}
@@ -943,6 +956,10 @@ func (s *Server) parseExecutionPageCursor(r *http.Request, kind pagination.Kind,
 }
 
 func (s *Server) parseAsOf(raw string, present bool) (time.Time, *requestFailure) {
+	return s.parseInvestigationAsOf(raw, present, false)
+}
+
+func (s *Server) parseInvestigationAsOf(raw string, present bool, versioned bool) (time.Time, *requestFailure) {
 	now := s.now().UTC()
 	if !present {
 		return now, nil
@@ -957,7 +974,7 @@ func (s *Server) parseAsOf(raw string, present bool) (time.Time, *requestFailure
 	if parsed.After(now.Add(time.Minute)) {
 		return time.Time{}, invalidField("as_of", "must_not_be_more_than_one_minute_in_future")
 	}
-	if now.After(parsed.Add(pagination.MaxCursorAge)) {
+	if !versioned && now.After(parsed.Add(pagination.MaxCursorAge)) {
 		return time.Time{}, &requestFailure{status: http.StatusGone, code: "cursor_expired", title: "Cursor has expired"}
 	}
 	return parsed, nil

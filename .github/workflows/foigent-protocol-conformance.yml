@@ -77,7 +77,9 @@ on:
       - internal/db/connector_trust_store.go
       - internal/db/discovery_store.go
       - internal/db/evidence_store.go
+      - internal/db/evidence_publications.go
       - internal/db/investigation_store.go
+      - internal/db/investigation_projection.go
       - internal/db/posture_store.go
       - internal/db/trace_journey_store.go
       - internal/db/migrate.go
@@ -90,6 +92,7 @@ on:
       - schemas/integration/connector-checkpoint-epoch-prepare-v1.schema.json
       - internal/api/access.go
       - internal/api/investigation.go
+      - internal/api/evidence_snapshot.go
       - internal/api/problem.go
       - internal/api/posture.go
       - internal/api/server.go
@@ -100,6 +103,7 @@ on:
       - internal/hostctl/database.go
       - internal/investigation/compare.go
       - internal/investigation/model.go
+      - internal/investigation/snapshot.go
       - internal/investigation/posture.go
       - internal/investigation/projection.go
       - internal/integration/pullfeed/evidence_committer.go
@@ -207,7 +211,9 @@ on:
       - internal/db/connector_trust_store.go
       - internal/db/discovery_store.go
       - internal/db/evidence_store.go
+      - internal/db/evidence_publications.go
       - internal/db/investigation_store.go
+      - internal/db/investigation_projection.go
       - internal/db/posture_store.go
       - internal/db/trace_journey_store.go
       - internal/db/migrate.go
@@ -220,6 +226,7 @@ on:
       - schemas/integration/connector-checkpoint-epoch-prepare-v1.schema.json
       - internal/api/access.go
       - internal/api/investigation.go
+      - internal/api/evidence_snapshot.go
       - internal/api/problem.go
       - internal/api/posture.go
       - internal/api/server.go
@@ -230,6 +237,7 @@ on:
       - internal/hostctl/database.go
       - internal/investigation/compare.go
       - internal/investigation/model.go
+      - internal/investigation/snapshot.go
       - internal/investigation/posture.go
       - internal/investigation/projection.go
       - internal/integration/pullfeed/evidence_committer.go

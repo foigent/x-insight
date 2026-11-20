@@ -190,15 +190,19 @@ func (s *WorkspaceStore) AddCaseExecution(
 		return workspace.CaseExecution{}, err
 	}
 	item := workspace.CaseExecution{
-		CaseID: caseID, ExecutionID: input.ExecutionID, AsOf: input.AsOf.UTC(),
+		CaseID: caseID, ExecutionID: input.ExecutionID, AsOf: input.AsOf.UTC(), EvidenceRevision: input.EvidenceRevision,
 		AddedBySubject: actor.Ref, AddedAt: now,
 	}
 	result, err := tx.ExecContext(ctx, `
 INSERT INTO case_executions (
-  case_id, execution_id, as_of, added_by_subject, added_at
-) VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (case_id, execution_id, as_of) DO NOTHING`,
-		item.CaseID, item.ExecutionID, item.AsOf, item.AddedBySubject, item.AddedAt)
+  case_id, execution_id, as_of, added_by_subject, added_at, evidence_revision
+)
+SELECT $1::text, $2::text, $3::timestamptz, $4::text, $5::timestamptz, NULLIF($6, '')::uuid
+WHERE NOT $7 OR NOT EXISTS (
+  SELECT 1 FROM case_executions WHERE case_id = $1 AND execution_id = $2 AND as_of = $3
+)
+ON CONFLICT ON CONSTRAINT case_executions_reference_key DO NOTHING`,
+		item.CaseID, item.ExecutionID, item.AsOf, item.AddedBySubject, item.AddedAt, item.EvidenceRevision, input.ReuseTimestampReference)
 	if err != nil {
 		return workspace.CaseExecution{}, err
 	}
@@ -210,13 +214,15 @@ ON CONFLICT (case_id, execution_id, as_of) DO NOTHING`,
 		}
 	}
 	if err := tx.QueryRowContext(ctx, `
-SELECT case_id, execution_id, as_of, added_by_subject, added_at
+SELECT case_id, execution_id, as_of, added_by_subject, added_at, COALESCE(evidence_revision::text, '')
 FROM case_executions
-WHERE case_id = $1 AND execution_id = $2 AND as_of = $3`,
-		item.CaseID, item.ExecutionID, item.AsOf,
+WHERE case_id = $1 AND execution_id = $2 AND as_of = $3
+  AND ($5 OR evidence_revision IS NOT DISTINCT FROM NULLIF($4, '')::uuid)
+ORDER BY added_at, evidence_revision NULLS FIRST LIMIT 1`,
+		item.CaseID, item.ExecutionID, item.AsOf, item.EvidenceRevision, input.ReuseTimestampReference,
 	).Scan(
 		&item.CaseID, &item.ExecutionID, &item.AsOf,
-		&item.AddedBySubject, &item.AddedAt,
+		&item.AddedBySubject, &item.AddedAt, &item.EvidenceRevision,
 	); err != nil {
 		return workspace.CaseExecution{}, err
 	}
@@ -926,17 +932,20 @@ WHERE id = $1`, caseID))
 	if err != nil {
 		return record, err
 	}
+	// A restore check can inspect sealed cases before upgrading their schema.
+	// Old rows have no evidence_revision key.
 	rows, err := queryer.QueryContext(ctx, `
-SELECT case_id, execution_id, as_of, added_by_subject, added_at
-FROM case_executions
-WHERE case_id = $1
-ORDER BY execution_id, as_of`, caseID)
+SELECT ce.case_id, ce.execution_id, ce.as_of, ce.added_by_subject, ce.added_at,
+       COALESCE(to_jsonb(ce)->>'evidence_revision', '') AS evidence_revision
+FROM case_executions ce
+WHERE ce.case_id = $1
+ORDER BY ce.execution_id, ce.as_of, evidence_revision`, caseID)
 	if err != nil {
 		return workspace.CaseRecord{}, err
 	}
 	for rows.Next() {
 		var current workspace.CaseExecution
-		if err := rows.Scan(&current.CaseID, &current.ExecutionID, &current.AsOf, &current.AddedBySubject, &current.AddedAt); err != nil {
+		if err := rows.Scan(&current.CaseID, &current.ExecutionID, &current.AsOf, &current.AddedBySubject, &current.AddedAt, &current.EvidenceRevision); err != nil {
 			rows.Close()
 			return workspace.CaseRecord{}, err
 		}

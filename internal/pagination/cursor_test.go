@@ -74,3 +74,27 @@ func TestCursorRejectsDuplicateUnknownExpiredAndWrongScope(t *testing.T) {
 		t.Fatalf("expired error=%v", err)
 	}
 }
+
+func TestVersionedCursorLifetimeStartsAtIssue(t *testing.T) {
+	issued := time.Date(2026, 11, 20, 6, 0, 0, 0, time.UTC)
+	cursor := pagination.Cursor{
+		Version:          pagination.SnapshotVersion,
+		Kind:             pagination.KindExecutionSearch,
+		AsOf:             issued.Add(-7 * 24 * time.Hour),
+		IssuedAt:         &issued,
+		EvidenceRevision: "11111111-1111-4111-8111-111111111111",
+		FilterHash:       "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Keys:             []string{"test"},
+	}
+	encoded, err := pagination.Encode(cursor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current, err := pagination.Decode(encoded, issued.Add(time.Hour))
+	if err != nil || current.EvidenceRevision != cursor.EvidenceRevision || !current.AsOf.Equal(cursor.AsOf) {
+		t.Fatalf("versioned cursor did not preserve the historical query: %+v %v", current, err)
+	}
+	if _, err := pagination.Decode(encoded, issued.Add(pagination.MaxCursorAge+time.Second)); !errors.Is(err, pagination.ErrExpired) {
+		t.Fatalf("versioned cursor expiry=%v", err)
+	}
+}

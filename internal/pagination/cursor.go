@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	Version        = "xinsight.cursor.v1"
-	MaxCursorBytes = 2048
-	MaxCursorAge   = 24 * time.Hour
+	Version         = "xinsight.cursor.v1"
+	SnapshotVersion = "xinsight.cursor.v2"
+	MaxCursorBytes  = 2048
+	MaxCursorAge    = 24 * time.Hour
 )
 
 type Kind string
@@ -33,15 +34,18 @@ var (
 	ErrExpired         = errors.New("cursor expired")
 	hashPattern        = regexp.MustCompile(`^sha256:[a-f0-9]{64}$`)
 	executionIDPattern = regexp.MustCompile(`^xe1_[a-f0-9]{64}$`)
+	revisionPattern    = regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
 )
 
 type Cursor struct {
-	Version     string    `json:"v"`
-	Kind        Kind      `json:"kind"`
-	AsOf        time.Time `json:"as_of"`
-	FilterHash  string    `json:"filter_hash"`
-	ExecutionID string    `json:"execution_id,omitempty"`
-	Keys        []string  `json:"keys"`
+	Version          string     `json:"v"`
+	Kind             Kind       `json:"kind"`
+	AsOf             time.Time  `json:"as_of"`
+	EvidenceRevision string     `json:"evidence_revision,omitempty"`
+	IssuedAt         *time.Time `json:"issued_at,omitempty"`
+	FilterHash       string     `json:"filter_hash"`
+	ExecutionID      string     `json:"execution_id,omitempty"`
+	Keys             []string   `json:"keys"`
 }
 
 func Encode(cursor Cursor) (string, error) {
@@ -88,7 +92,14 @@ func Decode(value string, now time.Time) (Cursor, error) {
 	if cursor.AsOf.After(now.Add(time.Minute)) {
 		return Cursor{}, fmt.Errorf("%w: as_of is in the future", ErrInvalid)
 	}
-	if now.After(cursor.AsOf.Add(MaxCursorAge)) {
+	lifetimeStart := cursor.AsOf
+	if cursor.IssuedAt != nil {
+		lifetimeStart = *cursor.IssuedAt
+		if lifetimeStart.After(now.Add(time.Minute)) {
+			return Cursor{}, fmt.Errorf("%w: issued_at is in the future", ErrInvalid)
+		}
+	}
+	if now.After(lifetimeStart.Add(MaxCursorAge)) {
 		return Cursor{}, ErrExpired
 	}
 	return cursor, nil
@@ -111,7 +122,16 @@ func HashCanonicalFilters(value any) (string, error) {
 }
 
 func validateShape(cursor Cursor) error {
-	if cursor.Version != Version {
+	switch cursor.Version {
+	case Version:
+		if cursor.EvidenceRevision != "" || cursor.IssuedAt != nil {
+			return fmt.Errorf("%w: unexpected revision", ErrInvalid)
+		}
+	case SnapshotVersion:
+		if !revisionPattern.MatchString(cursor.EvidenceRevision) || cursor.IssuedAt == nil || cursor.IssuedAt.IsZero() {
+			return fmt.Errorf("%w: missing revision or issue time", ErrInvalid)
+		}
+	default:
 		return fmt.Errorf("%w: version", ErrInvalid)
 	}
 	switch cursor.Kind {
