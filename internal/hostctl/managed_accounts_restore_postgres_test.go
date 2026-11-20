@@ -53,7 +53,7 @@ func TestManagedAccountsNativePrivateBackupRestoreCommitGapResumePostgres(t *tes
 	}
 	config := access.AccountConfig{SchemaVersion: access.AccountConfigSchemaV3, Accounts: []access.AccountConfigEntry{{SubjectID: owner, Username: "owner", Role: access.RolePlatformAdmin, PasswordHash: hash}, {SubjectID: reader, Username: "reader", Role: access.RoleScopedReader, PasswordHash: hash}}}
 	writeHostJSON(t, f.paths.AccessAccountsFile, config, 0600)
-	artifact := digestSyntheticArtifact(t, f, "0.2.0-dev.fpv21", 47, nil, nil)
+	artifact := digestSyntheticArtifact(t, f, "0.2.0-dev.fpv21", ExpectedCleanBaselineSchemaContract().MigrationCount, nil, nil)
 	target, err := f.engine.verifyTarget(artifact)
 	if err != nil {
 		t.Fatal(err)
@@ -286,7 +286,7 @@ func TestManagedAccountsNativeSchema46UpgradeAndLegacyBackupForwardRestorePostgr
 		t.Fatal("historical v1 backup shape changed")
 	}
 	b.Clear()
-	artifact := digestSyntheticArtifact(t, f, "0.2.0-dev.fpv21", 47, []string{"0.2.0-dev.fpv20"}, nil)
+	artifact := digestSyntheticArtifact(t, f, "0.2.0-dev.fpv21", ExpectedCleanBaselineSchemaContract().MigrationCount, []string{"0.2.0-dev.fpv20"}, nil)
 	runtime(artifact)
 	if _, err = f.engine.Upgrade(ctx, artifact); err != nil {
 		t.Fatal("actual schema46/v3 forward upgrade", err)
@@ -328,7 +328,7 @@ func TestManagedAccountsNativeSchema46UpgradeAndLegacyBackupForwardRestorePostgr
 		}
 	})
 	if _, err = f.engine.RestoreBundle(ctx, backupPath, backup.BackupSHA256, name, "field_validation"); err != nil {
-		t.Fatal("schema46/v1 backup forward restore on schema47", err)
+		t.Fatal("schema46/v1 backup forward restore on the development schema", err)
 	}
 	restored, err := LoadDatabaseCredentials(f.paths)
 	if err != nil {

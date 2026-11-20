@@ -19,11 +19,37 @@ var (
 )
 
 func (s *EvidenceStore) SearchExecutions(ctx context.Context, query investigation.SearchQuery) ([]investigation.ExecutionSummary, error) {
-	return s.investigationReader().queryExecutions(ctx, query, "")
+	revision, versioned := investigation.EvidenceRevisionFromContext(ctx)
+	if !versioned || workchain.FromContext(ctx) != nil || s == nil || s.db == nil {
+		return s.investigationReader().queryExecutions(ctx, query, "")
+	}
+	// The latest revision needs no row-level publication filter when the
+	// head check and the query see the same committed transactions.
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	reader := investigationReader{db: tx}
+	if err := tx.QueryRowContext(ctx, `
+SELECT NOT EXISTS (SELECT 1 FROM evidence_publications WHERE revision > $1)`,
+		revision.Order,
+	).Scan(&reader.evidenceRevisionIsLatest); err != nil {
+		return nil, err
+	}
+	items, err := reader.queryExecutions(ctx, query, "")
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 type investigationReader struct {
-	db workspaceQueryer
+	db                       workspaceQueryer
+	evidenceRevisionIsLatest bool
 }
 
 func (s *EvidenceStore) investigationReader() investigationReader {
@@ -330,7 +356,10 @@ LIMIT %s`,
 		limitParameter,
 	)
 
-	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement, args...)
+	if !s.evidenceRevisionIsLatest {
+		statement, args = bindEvidenceSnapshot(ctx, statement, args)
+	}
+	rows, err := s.db.QueryContext(ctx, statement, args...)
 	if err != nil {
 		return nil, err
 	}
