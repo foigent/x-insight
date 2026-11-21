@@ -3247,5 +3247,7 @@
   "syncCredentialBoundary": "Sync once uses the existing permissions of each channel. Auto sync does not renew or restore connection credentials.",
   "syncCredentialExpired": "The control identity or its current credential has expired. Activation and project updates need administrator recovery; other already authorized channels may still run. Recovery is a separate action in connection status.",
   "syncCredentialUnchecked": "Connection credential status has not been confirmed. Check connection status before starting sync.",
-  "syncConnectionStatus": "View connection status and recovery"
+  "syncConnectionStatus": "View connection status and recovery",
+  "investigationLegacyCutoff": "This older link applies time filters. Evidence committed later may appear.",
+  "investigationEvidenceRevision": "Evidence revision"
 }

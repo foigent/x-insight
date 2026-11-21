@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/foigent/x-insight/internal/db"
 	"net/url"
 	"os"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/foigent/x-insight/internal/db"
 	"github.com/foigent/x-insight/internal/investigation"
 	"github.com/foigent/x-insight/internal/workspace"
 )
@@ -163,7 +163,16 @@ func TestScopedProductionAccountsReadReviewRevokeAndRoutes(t *testing.T) {
 		t.Fatalf("scope search: %+v %v", list, err)
 	}
 	detailPath := "/api/v1/executions/" + execution
-	must(reviewer, "GET", detailPath, nil, 200)
+	var detail investigation.ExecutionDetail
+	if err := json.Unmarshal(must(reviewer, "GET", detailPath, nil, 200), &detail); err != nil || detail.EvidenceRevision == "" {
+		t.Fatalf("scoped execution revision: %v", err)
+	}
+	versioned := detailPath + "?" + (url.Values{
+		"as_of":             {detail.AsOf.Format(time.RFC3339Nano)},
+		"evidence_revision": {detail.EvidenceRevision},
+	}).Encode()
+	must(reader, "GET", versioned, nil, 200)
+	must(other, "GET", versioned, nil, 404)
 	for _, suffix := range []string{"/timeline", "/investigation", "/gaps", "/trace-journey", "/events/" + event} {
 		must(reviewer, "GET", detailPath+suffix, nil, 200)
 	}
@@ -220,6 +229,8 @@ func TestScopedProductionAccountsReadReviewRevokeAndRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	must(reviewer, "GET", casePath, nil, 403)
+	must(reviewer, "GET", versioned, nil, 403)
+	must(reader, "GET", versioned, nil, 200)
 	must(reviewer, "POST", "/api/v1/security/reviews", command, 403)
 	must(reader, "GET", casePath, nil, 200)
 	if _, err := admin.Exec(`UPDATE workbench_access_grants SET active=true WHERE subject_id='xs_8899aabbccddeeff'`); err != nil {

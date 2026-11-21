@@ -66,6 +66,7 @@ var cleanBaselineTables = []string{
 	"discovery_hypotheses",
 	"evaluation_feedback",
 	"evidence_events",
+	"evidence_publications",
 	"evidence_refs",
 	"execution_version_dimensions",
 	"finding_review_creations",
@@ -129,10 +130,10 @@ var cleanBaselineTables = []string{
 	"work_event_ur_targets",
 	"workbench_access_grants",
 	"workbench_economic_facts",
+	"workbench_legacy_reading_members",
 	"workbench_purpose_manifests",
 	"workbench_purpose_members",
 	"workbench_purpose_revisions",
-	"workbench_reading_members",
 	"workbench_readings",
 	"workbench_saved_filter_operations",
 	"workbench_saved_filters",
@@ -269,6 +270,11 @@ func (manager PostgresManager) PreviewCleanBaseline(
 		switch table {
 		case "schema_migrations":
 			protected = rowCount
+			disposition = "release_rebuilt"
+		case "evidence_publications":
+			if err := database.QueryRowContext(ctx, "SELECT count(*) FROM evidence_publications WHERE revision = 0").Scan(&protected); err != nil || protected != 1 {
+				return CleanBaselineDatabasePreview{}, fmt.Errorf("investigation evidence baseline is invalid")
+			}
 			disposition = "release_rebuilt"
 		case "source_systems":
 			protected = sourceRows
@@ -665,6 +671,10 @@ func (manager PostgresManager) VerifyCleanBaselineDatabase(
 		adapterRows != 2 || adapterDigest != cleanBaselineAdapterCatalogSHA256 || runtimeRows != 0 {
 		return CleanBaselineDatabaseProof{}, fmt.Errorf("clean-baseline target release catalog is invalid")
 	}
+	var evidenceBaselineRows int64
+	if err := database.QueryRowContext(ctx, "SELECT count(*) FROM evidence_publications WHERE revision = 0").Scan(&evidenceBaselineRows); err != nil || evidenceBaselineRows != 1 {
+		return CleanBaselineDatabaseProof{}, fmt.Errorf("clean-baseline target has an invalid investigation evidence baseline")
+	}
 	var historicalRows int64
 	for _, table := range cleanBaselineTables {
 		if table == "schema_migrations" || table == "source_systems" ||
@@ -672,7 +682,11 @@ func (manager PostgresManager) VerifyCleanBaselineDatabase(
 			continue
 		}
 		var count int64
-		if err := database.QueryRowContext(ctx, `SELECT count(*) FROM "`+table+`"`).Scan(&count); err != nil {
+		query := `SELECT count(*) FROM "` + table + `"`
+		if table == "evidence_publications" {
+			query += " WHERE revision <> 0"
+		}
+		if err := database.QueryRowContext(ctx, query).Scan(&count); err != nil {
 			return CleanBaselineDatabaseProof{}, fmt.Errorf("clean-baseline target count failed: %s", table)
 		}
 		historicalRows += count
@@ -955,7 +969,12 @@ WITH objects AS (
         AND dependency.deptype = 'e'
     )
   UNION ALL
-  SELECT 'R', class.relnamespace::regnamespace::text, '', class.relname, class.relkind::text, ''
+  SELECT 'R', class.relnamespace::regnamespace::text, '', class.relname,
+         CASE WHEN class.relkind IN ('v','m') THEN
+           jsonb_build_object('kind',class.relkind,
+             'definition',pg_get_viewdef(class.oid),
+             'options',ARRAY(SELECT option FROM unnest(class.reloptions) AS option ORDER BY option))::text
+         ELSE class.relkind::text END, ''
   FROM pg_class AS class
   WHERE class.relnamespace = ANY(ARRAY['public'::regnamespace::oid,to_regnamespace('xinsight_accounts')::oid])
     AND class.relkind NOT IN ('r', 'i')

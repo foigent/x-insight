@@ -166,10 +166,10 @@ func TestWorkbenchGrantContentDomainsCheckAndLegacyReplacement(t *testing.T) {
 	for _, fence := range []struct {
 		name, version string
 		dirty         bool
-	}{{"dirty_current", "000047_add_local_account_lifecycle", true}, {"future", "000048_unpublished", false}} {
+	}{{"dirty_current", "000049_replay_workbench_members", true}, {"future", "000050_unpublished", false}} {
 		t.Run(fence.name, func(t *testing.T) {
-			f.exec(`UPDATE schema_migrations SET version=$1,dirty=$2 WHERE version='000047_add_local_account_lifecycle'`, fence.version, fence.dirty)
-			defer f.exec(`UPDATE schema_migrations SET version='000047_add_local_account_lifecycle',dirty=false WHERE version=$1`, fence.version)
+			f.exec(`UPDATE schema_migrations SET version=$1,dirty=$2 WHERE version='000049_replay_workbench_members'`, fence.version, fence.dirty)
+			defer f.exec(`UPDATE schema_migrations SET version='000049_replay_workbench_members',dirty=false WHERE version=$1`, fence.version)
 			check(r, true)
 			before := snapshot()
 			if _, err := f.consumerStore.ChangeWorkbenchGrant(f.ctx, r, false); err == nil {

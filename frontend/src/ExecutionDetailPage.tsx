@@ -63,7 +63,7 @@ export function ExecutionDetailPage({
   useLocale();
   const location = useExecutionLocation();
   const reading = readExecutionDetail(location);
-  const asOf = reading.asOf;
+  const { asOf, evidenceRevision } = reading;
   const activeView = reading.view;
   const [runtimeContext, setRuntimeContext] = useState<RuntimeDetailContext | null>(() => runtimeSnapshot?.reading ? { reading: runtimeSnapshot.reading, deadline: runtimeSnapshot.deadline, identity: runtimeSnapshot.identity } : null);
   const loadedReading = useRef("");
@@ -88,7 +88,7 @@ export function ExecutionDetailPage({
   const [selectedEvent, setSelectedEvent] = useState<EvidenceEventDetail>();
   const [eventLoading, setEventLoading] = useState(false);
   const [eventError, setEventError] = useState<unknown>();
-  const contextProjectionReady = Boolean(projection && detail && Date.parse(projection.as_of) === Date.parse(detail.as_of));
+  const contextProjectionReady = Boolean(projection && detail && Date.parse(projection.as_of) === Date.parse(detail.as_of) && projection.evidence_revision === detail.evidence_revision);
   const contextNodes = contextProjectionReady ? projection!.nodes.filter(node => node.kind !== "capture_gap") : [];
   const recordedActor = contextNodes.find(node => node.actor_ref || node.actor_type);
   const recordedModel = contextNodes.find(node => node.model);
@@ -102,10 +102,10 @@ export function ExecutionDetailPage({
     const controller = new AbortController(); pagingController.current = controller;
     setTimelineLoadingMore(false); setGapsLoadingMore(false);
     return () => controller.abort();
-  }, [executionID, asOf, revision]);
+  }, [executionID, asOf, evidenceRevision, revision]);
 
   useEffect(() => {
-    if (loadedReading.current === `${executionID}|${asOf ?? ""}|${revision}` && detail) return;
+    if (loadedReading.current === `${executionID}|${asOf ?? ""}|${evidenceRevision ?? ""}|${revision}` && detail) return;
     const controller = new AbortController();
     setCoreLoading(true);
     setCoreError(undefined);
@@ -127,19 +127,21 @@ export function ExecutionDetailPage({
           executionID,
           asOf,
           controller.signal,
+          evidenceRevision,
         );
         if (controller.signal.aborted) {
           return;
         }
         if (asOf && Date.parse(asOf) !== Date.parse(nextDetail.as_of)) throw new Error("Requested reading cutoff was not returned");
+        if (evidenceRevision && evidenceRevision !== nextDetail.evidence_revision) throw new Error("Requested evidence revision was not returned");
         setDetail(nextDetail);
         const requestedEvidence = readExecutionDetail().evidence;
 
         const [projectionResult, traceJourneyResult, timelineResult, gapResult] = await Promise.allSettled([
-          investigationAPI.getInvestigation(executionID, nextDetail.as_of, controller.signal),
-          investigationAPI.getTraceJourney(executionID, nextDetail.as_of, controller.signal),
-          investigationAPI.listTimeline(executionID, nextDetail.as_of, undefined, controller.signal),
-          investigationAPI.listGaps(executionID, nextDetail.as_of, undefined, controller.signal),
+          investigationAPI.getInvestigation(executionID, nextDetail.as_of, controller.signal, nextDetail.evidence_revision),
+          investigationAPI.getTraceJourney(executionID, nextDetail.as_of, controller.signal, nextDetail.evidence_revision),
+          investigationAPI.listTimeline(executionID, nextDetail.as_of, undefined, controller.signal, nextDetail.evidence_revision),
+          investigationAPI.listGaps(executionID, nextDetail.as_of, undefined, controller.signal, nextDetail.evidence_revision),
         ]);
         if (controller.signal.aborted) {
           return;
@@ -171,8 +173,8 @@ export function ExecutionDetailPage({
         } else {
           setGapsError(gapResult.reason);
         }
-        loadedReading.current = `${executionID}|${nextDetail.as_of}|${revision}`;
-        writeExecutionDetail(executionID, { ...readExecutionDetail(), asOf: nextDetail.as_of }, true);
+        loadedReading.current = `${executionID}|${nextDetail.as_of}|${nextDetail.evidence_revision ?? ""}|${revision}`;
+        writeExecutionDetail(executionID, { ...readExecutionDetail(), asOf: nextDetail.as_of, evidenceRevision: nextDetail.evidence_revision }, true);
         setCoreLoading(false);
       } catch (caught: unknown) {
         if (!controller.signal.aborted) {
@@ -187,7 +189,7 @@ export function ExecutionDetailPage({
 
     void load();
     return () => controller.abort();
-  }, [executionID, asOf, revision]);
+  }, [executionID, asOf, evidenceRevision, revision]);
 
   useEffect(() => {
     if (!selectedEventID || !detail) {
@@ -198,7 +200,7 @@ export function ExecutionDetailPage({
     setEventError(undefined);
     setSelectedEvent(undefined);
     investigationAPI
-      .getEvent(executionID, selectedEventID, detail.as_of, controller.signal)
+      .getEvent(executionID, selectedEventID, detail.as_of, controller.signal, detail.evidence_revision)
       .then((event) => { if (!controller.signal.aborted) setSelectedEvent(event); })
       .catch((caught: unknown) => {
         if (!controller.signal.aborted) {
@@ -230,7 +232,7 @@ export function ExecutionDetailPage({
     setTimelineLoadingMore(true);
     setTimelineError(undefined);
     try {
-      const next = await investigationAPI.listTimeline(executionID, detail.as_of, cursor, controller.signal);
+      const next = await investigationAPI.listTimeline(executionID, detail.as_of, cursor, controller.signal, detail.evidence_revision);
       if (controller.signal.aborted) return;
       setTimeline((current) =>
         current
@@ -253,7 +255,7 @@ export function ExecutionDetailPage({
     setGapsLoadingMore(true);
     setGapsError(undefined);
     try {
-      const next = await investigationAPI.listGaps(executionID, detail.as_of, cursor, controller.signal);
+      const next = await investigationAPI.listGaps(executionID, detail.as_of, cursor, controller.signal, detail.evidence_revision);
       if (controller.signal.aborted) return;
       setGaps((current) =>
         current ? { ...next, items: mergeByID(current.items, next.items, (item) => item.gap_id) } : next,
@@ -274,10 +276,10 @@ export function ExecutionDetailPage({
   }
 
   function selectEvent(eventID: string) {
-    if (detail) writeExecutionDetail(executionID, { ...reading, asOf: detail.as_of, evidence: eventID });
+    if (detail) writeExecutionDetail(executionID, { ...reading, asOf: detail.as_of, evidenceRevision: detail.evidence_revision, evidence: eventID });
   }
   function selectView(view: ExecutionView) {
-    writeExecutionDetail(executionID, { ...reading, asOf: detail?.as_of ?? asOf, evidence: selectedEventID, view });
+    writeExecutionDetail(executionID, { ...reading, asOf: detail?.as_of ?? asOf, evidenceRevision: detail?.evidence_revision ?? evidenceRevision, evidence: selectedEventID, view });
   }
   function navigateRelated(path: string) {
     if (path.startsWith("/executions/")) {
@@ -355,6 +357,9 @@ export function ExecutionDetailPage({
                 <dt>{tx("m0488")}</dt>
                 <dd>{formatDateTime(detail.as_of)}</dd>
                 <small><code>{formatCanonicalTime(detail.as_of)}</code></small>
+                {detail.evidence_revision
+                  ? <details className="technical-reference"><summary>{tx("investigationEvidenceRevision")}</summary><code>{detail.evidence_revision}</code></details>
+                  : <small>{tx("investigationLegacyCutoff")}</small>}
               </div>
             </dl>
           </section>

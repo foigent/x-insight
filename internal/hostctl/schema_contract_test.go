@@ -74,8 +74,8 @@ func TestSchemaContractComparisonRejectsDuplicateObjectIdentity(t *testing.T) {
 func TestGeneratedSchemaContractIsSortedAndSelfConsistent(t *testing.T) {
 	manifest := ExpectedCleanBaselineSchemaContract()
 	if manifest.SchemaVersion != CleanBaselineSchemaContractVersion ||
-		manifest.DatabaseSchema != "47" || manifest.PostgresMajor != 16 ||
-		manifest.MigrationCount != 47 || manifest.SemanticSHA256 != expectedCleanBaselineSchemaContract.SemanticSHA256 ||
+		manifest.DatabaseSchema != "49" || manifest.PostgresMajor != 16 ||
+		manifest.MigrationCount != 49 || manifest.SemanticSHA256 != expectedCleanBaselineSchemaContract.SemanticSHA256 ||
 		manifest.Objects.Tables != len(cleanBaselineTables)+3 || len(manifest.Entries) == 0 {
 		t.Fatalf("generated contract identity: version=%s schema=%s postgres=%d migrations=%d tables=%d entries=%d semantic=%s", manifest.SchemaVersion, manifest.DatabaseSchema, manifest.PostgresMajor, manifest.MigrationCount, manifest.Objects.Tables, len(manifest.Entries), manifest.SemanticSHA256)
 	}
@@ -102,8 +102,8 @@ func TestHistoricalRC13SchemaContractRemainsSchema23(t *testing.T) {
 	if historical.DatabaseSchema != "23" || historical.MigrationCount != 23 {
 		t.Fatalf("historical rc.13 contract identity changed: schema=%s migrations=%d", historical.DatabaseSchema, historical.MigrationCount)
 	}
-	if expectedCleanBaselineSchemaContract.DatabaseSchema != "47" ||
-		expectedCleanBaselineSchemaContract.MigrationCount != 47 {
+	if expectedCleanBaselineSchemaContract.DatabaseSchema != "49" ||
+		expectedCleanBaselineSchemaContract.MigrationCount != 49 {
 		t.Fatalf("development contract identity: schema=%s migrations=%d", expectedCleanBaselineSchemaContract.DatabaseSchema, expectedCleanBaselineSchemaContract.MigrationCount)
 	}
 }

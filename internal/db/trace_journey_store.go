@@ -27,10 +27,12 @@ func (s *EvidenceStore) getTraceJourney(
 	asOf time.Time,
 	limit int,
 ) (investigation.TraceJourney, error) {
+	revision, _ := investigation.EvidenceRevisionFromContext(ctx)
 	journey := investigation.TraceJourney{
 		SchemaVersion:     investigation.TraceJourneySchema,
 		AnchorExecutionID: executionID,
 		AsOf:              asOf.UTC(),
+		EvidenceRevision:  revision.ID,
 		Nodes:             []investigation.TraceJourneyNode{},
 		Edges:             []investigation.TraceJourneyEdge{},
 		EvidenceBoundary:  traceJourneyEvidenceBoundary,
@@ -42,7 +44,7 @@ func (s *EvidenceStore) getTraceJourney(
 		return journey, fmt.Errorf("trace journey limit must be between 1 and 200")
 	}
 
-	anchorRows, err := s.db.QueryContext(ctx, `
+	anchorRows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, `
 SELECT DISTINCT
   e.source_system_id::text,
   e.trace_id,
@@ -90,7 +92,7 @@ LIMIT 2`, executionID, asOf.UTC())
 	journey.SourceSystemID = anchor.sourceSystemID
 	journey.TraceID = anchor.traceID
 
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, `
 SELECT
   e.execution_id,
   e.id::text,

@@ -17,6 +17,7 @@ import (
 type readingUTCDriver struct {
 	at      time.Time
 	revoked bool
+	replay  bool
 }
 type readingUTCConn struct{ state readingUTCDriver }
 
@@ -35,11 +36,15 @@ func (c *readingUTCConn) QueryContext(_ context.Context, q string, args []driver
 	auth := workbenchAuthorizationFromGrants([]workbench.Grant{grant})
 	at := c.state.at
 	switch {
-	case strings.Contains(q, "FROM workbench_readings WHERE"):
+	case strings.Contains(q, "FROM workbench_readings r WHERE"):
 		if args[1].Value != "subject" {
-			return &receiptTestRows{values: make([]driver.Value, 15), done: true}, nil
+			return &receiptTestRows{values: make([]driver.Value, 18), done: true}, nil
 		}
-		return row(args[0].Value, workbench.ContractVersion, workbench.MetricVersion, at.Add(-time.Hour), at, "Asia/Shanghai", at, at.Add(workbench.ReadingTTL), string(workbench.MoneyGatewayCharged), "CNY", "membership", digestText(workbenchInterpretationA0), auth.Revision, []byte(`{}`), []byte(`{}`))
+		var gatewayTotal, referenceTotal driver.Value
+		if c.state.replay {
+			gatewayTotal, referenceTotal = "17", "19"
+		}
+		return row(args[0].Value, workbench.ContractVersion, workbench.MetricVersion, at.Add(-time.Hour), at, "Asia/Shanghai", at, at.Add(workbench.ReadingTTL), string(workbench.MoneyGatewayCharged), "CNY", "membership", digestText(workbenchInterpretationA0), auth.Revision, []byte(`{}`), []byte(`{}`), c.state.replay, gatewayTotal, referenceTotal)
 	case strings.Contains(q, "FROM runtime_readings WHERE"):
 		if args[1].Value != "subject" {
 			return &receiptTestRows{values: make([]driver.Value, 16), done: true}, nil
@@ -60,12 +65,12 @@ func (c *readingUTCConn) QueryContext(_ context.Context, q string, args []driver
 }
 func TestReadingReadbackUTCWithOffsetDriver(t *testing.T) {
 	for _, offset := range []int{8 * 3600, -7 * 3600} {
-		for _, kind := range []string{"cost", "runtime"} {
+		for _, kind := range []string{"cost", "replayed_cost", "runtime"} {
 			for _, scenario := range []string{"valid", "wrong_owner", "expired", "revoked"} {
 				t.Run(fmt.Sprintf("%s/%d/%s", kind, offset, scenario), func(t *testing.T) {
 					at := time.Date(2026, 9, 21, 19, 23, 54, 410194000, time.UTC).In(time.FixedZone("driver-offset", offset))
 					name := fmt.Sprintf("reading-utc-%d", receiptDriverCounter.Add(1))
-					sql.Register(name, readingUTCDriver{at: at, revoked: scenario == "revoked"})
+					sql.Register(name, readingUTCDriver{at: at, revoked: scenario == "revoked", replay: kind == "replayed_cost"})
 					pool, err := sql.Open(name, "")
 					if err != nil {
 						t.Fatal(err)
@@ -86,7 +91,7 @@ func TestReadingReadbackUTCWithOffsetDriver(t *testing.T) {
 						want = workbench.ErrAccessChanged
 					}
 					var wire []byte
-					if kind == "cost" {
+					if kind != "runtime" {
 						r, e := store.GetWorkbenchReading(context.Background(), subject, "xwr_"+strings.Repeat("a", 22), now)
 						err = e
 						if err == nil {

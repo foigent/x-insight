@@ -61,7 +61,7 @@ var workspaceUpdateTables = []string{
 var importerInsertTables = []string{
 	"connector_sync_slots",
 	"adapter_import_states", "source_systems", "adapter_manifests",
-	"import_provenance", "import_provenance_events", "evidence_events", "capture_gaps",
+	"import_provenance", "import_provenance_events", "evidence_events", "capture_gaps", "evidence_publications",
 	"connector_import_operation_bindings", "connector_operational_receipts",
 	"workbench_economic_facts",
 	"source_fact_documents",
@@ -130,7 +130,7 @@ var workspaceUpdateColumnGrants = []tableColumnGrant{
 	{table: "source_systems", columns: []string{"status"}},
 	{table: "budget_readings", columns: []string{"membership_sha256", "budget_count", "sealed"}},
 	{table: "investigation_case_scope_labels", columns: []string{"schema_version", "case_version", "requirements", "content_digest", "labeled_at"}},
-	{table: "workbench_readings", columns: []string{"membership_sha256", "coverage"}},
+	{table: "workbench_readings", columns: []string{"membership_sha256", "coverage", "gateway_total_micros", "calculated_total_micros"}},
 	{table: "runtime_readings", columns: []string{"membership_sha256", "coverage", "known_entry_requests", "unknown_entry_requests", "observation_count", "interpretation_revision", "content_authorization_revision"}},
 	{table: "workbench_saved_filters", columns: []string{
 		"name", "config", "content_sha256", "revision", "updated_at",

@@ -19,10 +19,71 @@ var (
 )
 
 func (s *EvidenceStore) SearchExecutions(ctx context.Context, query investigation.SearchQuery) ([]investigation.ExecutionSummary, error) {
-	return s.queryExecutions(ctx, query, "")
+	revision, versioned := investigation.EvidenceRevisionFromContext(ctx)
+	if !versioned || workchain.FromContext(ctx) != nil || s == nil || s.db == nil {
+		return s.investigationReader().queryExecutions(ctx, query, "")
+	}
+	// The latest revision needs no row-level publication filter when the
+	// head check and the query see the same committed transactions.
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	reader := investigationReader{db: tx}
+	if err := tx.QueryRowContext(ctx, `
+SELECT NOT EXISTS (SELECT 1 FROM evidence_publications WHERE revision > $1)`,
+		revision.Order,
+	).Scan(&reader.evidenceRevisionIsLatest); err != nil {
+		return nil, err
+	}
+	items, err := reader.queryExecutions(ctx, query, "")
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+type investigationReader struct {
+	db                       workspaceQueryer
+	evidenceRevisionIsLatest bool
+}
+
+func (s *EvidenceStore) investigationReader() investigationReader {
+	if s == nil || s.db == nil {
+		return investigationReader{}
+	}
+	return investigationReader{db: s.db}
+}
+
+func (s investigationReader) AuthorizeScopedExecution(ctx context.Context, executionID string) (workchain.Requirement, error) {
+	return scopedExecutionRequirement(ctx, s.db, executionID)
+}
+
+func (s investigationReader) checkScopedExecution(ctx context.Context, executionID string) error {
+	return checkScopedExecution(ctx, s.db, executionID)
 }
 
 func (s *EvidenceStore) GetExecution(ctx context.Context, executionID string, asOf time.Time) (investigation.ExecutionDetail, error) {
+	return s.investigationReader().GetExecution(ctx, executionID, asOf)
+}
+
+func (s *EvidenceStore) ListTimeline(ctx context.Context, query investigation.TimelineQuery) ([]investigation.TimelineNode, int, error) {
+	return s.investigationReader().ListTimeline(ctx, query)
+}
+
+func (s *EvidenceStore) ListExecutionEvents(ctx context.Context, executionID string, asOf time.Time, limit int) ([]investigation.EvidenceEventDetail, int, error) {
+	return s.investigationReader().ListExecutionEvents(ctx, executionID, asOf, limit)
+}
+
+func (s *EvidenceStore) ListExecutionGaps(ctx context.Context, query investigation.GapQuery) ([]investigation.CaptureGap, int, error) {
+	return s.investigationReader().ListExecutionGaps(ctx, query)
+}
+
+func (s investigationReader) GetExecution(ctx context.Context, executionID string, asOf time.Time) (investigation.ExecutionDetail, error) {
 	if err := s.checkScopedExecution(ctx, executionID); err != nil {
 		return investigation.ExecutionDetail{}, err
 	}
@@ -53,11 +114,12 @@ func (s *EvidenceStore) GetExecution(ctx context.Context, executionID string, as
 			traceIDs = nil
 		}
 	}
-	return investigation.ExecutionDetail{Summary: summaries[0], AsOf: asOf.UTC(), TraceIDs: traceIDs}, nil
+	revision, _ := investigation.EvidenceRevisionFromContext(ctx)
+	return investigation.ExecutionDetail{Summary: summaries[0], AsOf: asOf.UTC(), TraceIDs: traceIDs, EvidenceRevision: revision.ID}, nil
 }
 
-func (s *EvidenceStore) queryExecutions(ctx context.Context, query investigation.SearchQuery, executionID string) ([]investigation.ExecutionSummary, error) {
-	if s == nil || s.db == nil {
+func (s investigationReader) queryExecutions(ctx context.Context, query investigation.SearchQuery, executionID string) ([]investigation.ExecutionSummary, error) {
+	if s.db == nil {
 		return nil, fmt.Errorf("evidence store is not initialized")
 	}
 	if query.Limit < 1 {
@@ -92,8 +154,18 @@ func (s *EvidenceStore) queryExecutions(ctx context.Context, query investigation
 	if executionID != "" {
 		candidateConditions = append(candidateConditions, "e.execution_id = "+bind(executionID))
 	}
+	candidateQuery := `
+  SELECT DISTINCT e.source_system_id, e.request_id, e.execution_id
+  FROM evidence_events e
+  WHERE ` + strings.Join(candidateConditions, "\n    AND ")
+	candidateCTE := "candidate_executions AS (" + candidateQuery + ")"
 	if access := workchain.FromContext(ctx); access != nil {
-		candidateConditions = append(candidateConditions, scopedExecutionSQL("e.execution_id", bind(access.Subject)))
+		// Check eligibility once per candidate execution. All rollups still
+		// consume only authorized keys.
+		candidateCTE = "candidate_keys AS MATERIALIZED (" + candidateQuery + `),
+candidate_executions AS (
+  SELECT candidate.* FROM candidate_keys candidate
+  WHERE ` + scopedExecutionSQL("candidate.execution_id", bind(access.Subject)) + ")"
 	}
 	finalConditions := []string{
 		"last_effective_at >= " + fromParameter,
@@ -113,11 +185,7 @@ func (s *EvidenceStore) queryExecutions(ctx context.Context, query investigation
 	limitParameter := bind(query.Limit)
 
 	statement := fmt.Sprintf(`
-WITH candidate_executions AS (
-  SELECT DISTINCT e.source_system_id, e.request_id, e.execution_id
-  FROM evidence_events e
-  WHERE %s
-), event_rollup AS (
+WITH %s, event_rollup AS (
   SELECT
     e.source_system_id,
     e.request_id,
@@ -272,7 +340,7 @@ FROM executions
 WHERE %s
 ORDER BY last_effective_at DESC, execution_id DESC
 LIMIT %s`,
-		strings.Join(candidateConditions, "\n    AND "),
+		candidateCTE,
 		asOfParameter,
 		asOfParameter,
 		asOfParameter,
@@ -288,6 +356,9 @@ LIMIT %s`,
 		limitParameter,
 	)
 
+	if !s.evidenceRevisionIsLatest {
+		statement, args = bindEvidenceSnapshot(ctx, statement, args)
+	}
 	rows, err := s.db.QueryContext(ctx, statement, args...)
 	if err != nil {
 		return nil, err
@@ -307,13 +378,21 @@ LIMIT %s`,
 	if err != nil {
 		return nil, err
 	}
-	if workchain.FromContext(ctx) != nil {
-		for i := range summaries {
-			req, e := s.AuthorizeScopedExecution(ctx, summaries[i].ExecutionID)
-			if e != nil {
-				return nil, e
+	if workchain.FromContext(ctx) != nil && len(summaries) > 0 {
+		ids := make([]string, len(summaries))
+		for i, summary := range summaries {
+			ids[i] = summary.ExecutionID
+		}
+		requirements, err := scopedExecutionRequirements(ctx, s.db, ids)
+		if err != nil {
+			return nil, err
+		}
+		for i, summary := range summaries {
+			req, allowed := requirements[summary.ExecutionID]
+			if !allowed {
+				return nil, workchain.ErrDenied
 			}
-			summaries[i] = workchain.ProjectSummary(summaries[i], req.Fields)
+			summaries[i] = workchain.ProjectSummary(summary, req.Fields)
 		}
 	}
 	return summaries, nil
@@ -442,7 +521,7 @@ func buildFreshness(
 	return freshness
 }
 
-func (s *EvidenceStore) listExecutionTraceIDs(ctx context.Context, executionID string, asOf time.Time, limit int) ([]string, error) {
+func (s investigationReader) listExecutionTraceIDs(ctx context.Context, executionID string, asOf time.Time, limit int) ([]string, error) {
 	statement := `
 SELECT DISTINCT trace_id
 FROM evidence_events e
@@ -454,7 +533,7 @@ WHERE e.request_id IS NOT NULL
   AND e.execution_id = $1
 ORDER BY trace_id
 LIMIT $3`
-	rows, err := s.db.QueryContext(ctx, statement, executionID, asOf.UTC(), limit)
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement, executionID, asOf.UTC(), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +549,7 @@ LIMIT $3`
 	return traceIDs, rows.Err()
 }
 
-func (s *EvidenceStore) ListTimeline(ctx context.Context, query investigation.TimelineQuery) ([]investigation.TimelineNode, int, error) {
+func (s investigationReader) ListTimeline(ctx context.Context, query investigation.TimelineQuery) ([]investigation.TimelineNode, int, error) {
 	if err := s.checkScopedExecution(ctx, query.ExecutionID); err != nil {
 		return nil, 0, err
 	}
@@ -483,7 +562,7 @@ func (s *EvidenceStore) ListTimeline(ctx context.Context, query investigation.Ti
 		scopedFields = requirement.Fields
 	}
 
-	if s == nil || s.db == nil {
+	if s.db == nil {
 		return nil, 0, fmt.Errorf("evidence store is not initialized")
 	}
 	if query.Limit < 1 {
@@ -495,7 +574,7 @@ e.request_id IS NOT NULL
   AND e.created_at <= $2
   AND e.execution_id = $1`
 	var total int
-	if err := s.db.QueryRowContext(ctx, "SELECT count(*) FROM evidence_events e WHERE "+executionPredicate, query.ExecutionID, query.AsOf.UTC()).Scan(&total); err != nil {
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, "SELECT count(*) FROM evidence_events e WHERE "+executionPredicate, query.ExecutionID, query.AsOf.UTC()).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	if total == 0 {
@@ -538,7 +617,7 @@ WHERE %s
   ) > ($4, $5, $6::uuid))
 ORDER BY COALESCE(e.occurred_at, e.observed_at, e.ingested_at), e.ingested_at, e.id
 LIMIT $7`, executionPredicate)
-	rows, err := s.db.QueryContext(ctx, statement,
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement,
 		query.ExecutionID,
 		query.AsOf.UTC(),
 		afterSet,
@@ -616,7 +695,7 @@ const evidenceEventDetailColumns = `
   e.source_type, e.source_version, e.source_event_id, e.source_event_type,
   e.source_ref, e.event_hash, e.source_event_hash, am.fidelity_level`
 
-func (s *EvidenceStore) ListExecutionEvents(
+func (s investigationReader) ListExecutionEvents(
 	ctx context.Context,
 	executionID string,
 	asOf time.Time,
@@ -634,7 +713,7 @@ func (s *EvidenceStore) ListExecutionEvents(
 		scopedFields = requirement.Fields
 	}
 
-	if s == nil || s.db == nil {
+	if s.db == nil {
 		return nil, 0, fmt.Errorf("evidence store is not initialized")
 	}
 	if limit < 1 {
@@ -646,7 +725,7 @@ e.request_id IS NOT NULL
   AND e.created_at <= $2
   AND e.execution_id = $1`
 	var total int
-	if err := s.db.QueryRowContext(
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(
 		ctx,
 		"SELECT count(*) FROM evidence_events e WHERE "+predicate,
 		executionID,
@@ -657,7 +736,7 @@ e.request_id IS NOT NULL
 	if total == 0 {
 		return nil, 0, ErrExecutionNotFound
 	}
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, `
 SELECT`+evidenceEventDetailColumns+`
 FROM evidence_events e
 JOIN adapter_manifests am ON am.id = e.adapter_manifest_id
@@ -706,7 +785,7 @@ WHERE e.id = $2::uuid
   AND e.ingested_at <= $3
   AND e.created_at <= $3
   AND e.execution_id = $1`
-	row := s.db.QueryRowContext(ctx, statement, executionID, eventID, asOf.UTC())
+	row := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, statement, executionID, eventID, asOf.UTC())
 	detail, err := scanEvidenceEventDetail(row, executionID)
 	if errors.Is(err, sql.ErrNoRows) {
 		if exists, existsErr := s.executionExists(ctx, executionID, asOf); existsErr != nil {
@@ -794,7 +873,7 @@ func scanEvidenceEventDetail(row rowScanner, executionID string) (investigation.
 	return detail, nil
 }
 
-func (s *EvidenceStore) ListExecutionGaps(ctx context.Context, query investigation.GapQuery) ([]investigation.CaptureGap, int, error) {
+func (s investigationReader) ListExecutionGaps(ctx context.Context, query investigation.GapQuery) ([]investigation.CaptureGap, int, error) {
 	if err := s.checkScopedExecution(ctx, query.ExecutionID); err != nil {
 		return nil, 0, err
 	}
@@ -807,7 +886,7 @@ func (s *EvidenceStore) ListExecutionGaps(ctx context.Context, query investigati
 		scopedFields = requirement.Fields
 	}
 
-	if s == nil || s.db == nil {
+	if s.db == nil {
 		return nil, 0, fmt.Errorf("evidence store is not initialized")
 	}
 	if query.Limit < 1 {
@@ -818,7 +897,7 @@ func (s *EvidenceStore) ListExecutionGaps(ctx context.Context, query investigati
 		return nil, 0, err
 	}
 	var total int
-	if err := s.db.QueryRowContext(ctx, `
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, `
 SELECT count(*)
 FROM capture_gaps
 WHERE source_system_id = $1::uuid
@@ -847,7 +926,7 @@ WHERE g.source_system_id = $1::uuid
   AND (NOT $4 OR (g.created_at, g.id) > ($5, $6::uuid))
 ORDER BY g.created_at, g.id
 LIMIT $7`
-	rows, err := s.db.QueryContext(ctx, statement,
+	rows, err := (evidenceSnapshotQueryer{s.db}).QueryContext(ctx, statement,
 		sourceSystemID,
 		requestID,
 		query.AsOf.UTC(),
@@ -904,9 +983,9 @@ LIMIT $7`
 	return gaps, total, nil
 }
 
-func (s *EvidenceStore) resolveExecutionScope(ctx context.Context, executionID string, asOf time.Time) (string, string, error) {
+func (s investigationReader) resolveExecutionScope(ctx context.Context, executionID string, asOf time.Time) (string, string, error) {
 	var sourceSystemID, requestID string
-	err := s.db.QueryRowContext(ctx, `
+	err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, `
 SELECT source_system_id::text, request_id
 FROM evidence_events
 WHERE execution_id = $1
@@ -974,7 +1053,7 @@ SELECT EXISTS (
     AND e.execution_id = $1
 )`
 	var exists bool
-	if err := s.db.QueryRowContext(ctx, statement, executionID, asOf.UTC()).Scan(&exists); err != nil {
+	if err := (evidenceSnapshotQueryer{s.db}).QueryRowContext(ctx, statement, executionID, asOf.UTC()).Scan(&exists); err != nil {
 		return false, err
 	}
 	return exists, nil

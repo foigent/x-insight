@@ -343,6 +343,7 @@ export interface AccessSessionListResponse {
 
 export interface Page {
   as_of: string;
+  evidence_revision?: string;
   count: number;
   has_more: boolean;
   next_cursor?: string;
@@ -397,6 +398,7 @@ export interface ExecutionSearchResponse {
 export interface ExecutionDetail {
   summary: ExecutionSummary;
   as_of: string;
+  evidence_revision?: string;
   trace_ids?: string[];
 }
 
@@ -653,8 +655,8 @@ export interface InvestigationIntegrity {
   total_event_count: number;
   resolved_parent_count: number;
   parent_eligible_count: number;
-  unresolved_parent_count: number;
-  causal_complete: boolean;
+  unresolved_parent_count?: number;
+  causal_complete?: boolean;
   truncated: boolean;
 }
 
@@ -674,6 +676,7 @@ export interface InvestigationProjection {
   schema_version: "xinsight.investigation-projection.v1" | string;
   execution: ExecutionSummary;
   as_of: string;
+  evidence_revision?: string;
   presentation_mode: PresentationMode;
   summary_claims: InvestigationClaim[];
   stage_coverage: StageCoverage[];
@@ -722,6 +725,7 @@ export interface TraceJourney {
   source_system_id?: string;
   trace_id?: string;
   as_of: string;
+  evidence_revision?: string;
   nodes: TraceJourneyNode[];
   edges: TraceJourneyEdge[];
   integrity: {
@@ -752,6 +756,7 @@ export interface SourceListResponse {
 }
 
 export interface SearchFilters {
+  evidenceRevision?: string;
   asOf?: string;
   requestID?: string;
   requestIDPrefix?: string;
@@ -876,6 +881,7 @@ export interface CaseExecution {
   case_id: string;
   execution_id: string;
   as_of: string;
+  evidence_revision?: string;
   added_by_subject: string;
   added_at: string;
 }
@@ -1606,6 +1612,7 @@ export const investigationAPI = {
     const params = new URLSearchParams();
     setIfPresent(params, "request_id", filters.requestID);
     setIfPresent(params, "as_of", filters.asOf);
+    setIfPresent(params, "evidence_revision", filters.evidenceRevision);
     setIfPresent(params, "request_id_prefix", filters.requestIDPrefix);
     setIfPresent(params, "source_system_id", filters.sourceSystemID);
     setIfPresent(params, "outcome", filters.outcome);
@@ -1623,15 +1630,17 @@ export const investigationAPI = {
     return requestJSON<SourceListResponse>("/api/v1/sources?limit=100", signal);
   },
 
-  getExecution(executionID: string, asOf?: string, signal?: AbortSignal) {
+  getExecution(executionID: string, asOf?: string, signal?: AbortSignal, evidenceRevision?: string) {
     const params = new URLSearchParams();
     setIfPresent(params, "as_of", asOf);
+    setIfPresent(params, "evidence_revision", evidenceRevision);
     const query = params.size > 0 ? `?${params.toString()}` : "";
     return requestJSON<ExecutionDetail>(`/api/v1/executions/${encodeURIComponent(executionID)}${query}`, signal);
   },
 
-  getInvestigation(executionID: string, asOf: string, signal?: AbortSignal) {
+  getInvestigation(executionID: string, asOf: string, signal?: AbortSignal, evidenceRevision?: string) {
     const params = new URLSearchParams({ as_of: asOf });
+    setIfPresent(params, "evidence_revision", evidenceRevision);
     return requestJSON<Omit<InvestigationProjection, "gaps"> & { gaps: CaptureGap[] | null }>(
       `/api/v1/executions/${encodeURIComponent(executionID)}/investigation?${params.toString()}`,
       signal,
@@ -1640,40 +1649,35 @@ export const investigationAPI = {
       gaps: projection.gaps ?? [],
       summary_claims: projection.summary_claims.map((claim) => ({
         ...claim,
-        derivation_basis: claim.derivation_basis ?? "deterministic_projection",
+        derivation_basis: claim.derivation_basis ?? "unknown",
       })),
       nodes: projection.nodes.map((node) => ({
         ...node,
-        proof_basis: node.proof_basis ?? "direct",
+        proof_basis: node.proof_basis ?? "unknown",
         citation: {
           ...node.citation,
           deep_link:
             node.citation.deep_link ??
-            `/executions/${encodeURIComponent(executionID)}?as_of=${encodeURIComponent(asOf)}&evidence=${encodeURIComponent(node.event_id)}`,
+            `/executions/${encodeURIComponent(executionID)}?as_of=${encodeURIComponent(asOf)}&evidence=${encodeURIComponent(node.event_id)}${evidenceRevision ? `&evidence_revision=${encodeURIComponent(evidenceRevision)}` : ""}`,
         },
       })),
       completeness: projection.completeness ?? [],
       unprovable_actions: projection.unprovable_actions ?? [],
-      integrity: {
-        ...projection.integrity,
-        unresolved_parent_count: projection.integrity.unresolved_parent_count ?? 0,
-        causal_complete:
-          projection.integrity.causal_complete ??
-          ((projection.integrity.unresolved_parent_count ?? 0) === 0 && !projection.integrity.truncated),
-      },
     }));
   },
 
-  getTraceJourney(executionID: string, asOf: string, signal?: AbortSignal) {
+  getTraceJourney(executionID: string, asOf: string, signal?: AbortSignal, evidenceRevision?: string) {
     const params = new URLSearchParams({ as_of: asOf });
+    setIfPresent(params, "evidence_revision", evidenceRevision);
     return requestJSON<TraceJourney>(
       `/api/v1/executions/${encodeURIComponent(executionID)}/trace-journey?${params.toString()}`,
       signal,
     );
   },
 
-  listTimeline(executionID: string, asOf: string, cursor?: string, signal?: AbortSignal) {
+  listTimeline(executionID: string, asOf: string, cursor?: string, signal?: AbortSignal, evidenceRevision?: string) {
     const params = new URLSearchParams({ as_of: asOf, limit: "100" });
+    setIfPresent(params, "evidence_revision", evidenceRevision);
     setIfPresent(params, "cursor", cursor);
     return requestJSON<TimelineResponse>(
       `/api/v1/executions/${encodeURIComponent(executionID)}/timeline?${params.toString()}`,
@@ -1681,16 +1685,18 @@ export const investigationAPI = {
     );
   },
 
-  getEvent(executionID: string, eventID: string, asOf: string, signal?: AbortSignal) {
+  getEvent(executionID: string, eventID: string, asOf: string, signal?: AbortSignal, evidenceRevision?: string) {
     const params = new URLSearchParams({ as_of: asOf });
+    setIfPresent(params, "evidence_revision", evidenceRevision);
     return requestJSON<EvidenceEventDetail>(
       `/api/v1/executions/${encodeURIComponent(executionID)}/events/${encodeURIComponent(eventID)}?${params.toString()}`,
       signal,
     );
   },
 
-  listGaps(executionID: string, asOf: string, cursor?: string, signal?: AbortSignal) {
+  listGaps(executionID: string, asOf: string, cursor?: string, signal?: AbortSignal, evidenceRevision?: string) {
     const params = new URLSearchParams({ as_of: asOf, limit: "50" });
+    setIfPresent(params, "evidence_revision", evidenceRevision);
     setIfPresent(params, "cursor", cursor);
     return requestJSON<GapResponse>(
       `/api/v1/executions/${encodeURIComponent(executionID)}/gaps?${params.toString()}`,
@@ -1834,13 +1840,13 @@ export const workspaceAPI = {
     });
   },
 
-  addExecution(caseID: string, executionID: string, asOf: string, csrfToken: string, signal?: AbortSignal) {
+  addExecution(caseID: string, executionID: string, asOf: string, csrfToken: string, signal?: AbortSignal, evidenceRevision?: string) {
     return requestAccessJSON<CaseExecution>(
       `/api/v1/cases/${encodeURIComponent(caseID)}/executions`,
       {
         method: "POST",
         csrfToken,
-        body: { execution_id: executionID, as_of: asOf },
+        body: { execution_id: executionID, as_of: asOf, evidence_revision: evidenceRevision },
         signal,
       },
     );

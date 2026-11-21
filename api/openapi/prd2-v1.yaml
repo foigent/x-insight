@@ -805,6 +805,7 @@ paths:
         - $ref: '#/components/parameters/From'
         - $ref: '#/components/parameters/To'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
         - $ref: '#/components/parameters/SearchLimit'
         - $ref: '#/components/parameters/Cursor'
       responses:
@@ -823,7 +824,7 @@ paths:
         '409':
           $ref: '#/components/responses/CursorMismatch'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -841,6 +842,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ExecutionId'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
       responses:
         '200':
           description: Execution detail with exact counts at as_of
@@ -857,7 +859,7 @@ paths:
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -879,6 +881,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ExecutionId'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
       responses:
         '200':
           description: Deterministic investigation projection at a fixed as_of boundary
@@ -895,7 +898,7 @@ paths:
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -919,6 +922,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ExecutionId'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
       responses:
         '200':
           description: Bounded cross-execution trace journey at a fixed as_of boundary
@@ -935,7 +939,7 @@ paths:
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -953,6 +957,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ExecutionId'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
         - $ref: '#/components/parameters/TimelineLimit'
         - $ref: '#/components/parameters/Cursor'
       responses:
@@ -973,7 +978,7 @@ paths:
         '409':
           $ref: '#/components/responses/CursorMismatch'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -992,6 +997,7 @@ paths:
         - $ref: '#/components/parameters/ExecutionId'
         - $ref: '#/components/parameters/EventId'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
       responses:
         '200':
           description: Safe event detail; raw_source_excerpt is never exposed
@@ -1008,7 +1014,7 @@ paths:
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -1026,6 +1032,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ExecutionId'
         - $ref: '#/components/parameters/AsOf'
+        - $ref: '#/components/parameters/EvidenceRevision'
         - $ref: '#/components/parameters/GapLimit'
         - $ref: '#/components/parameters/Cursor'
       responses:
@@ -1046,7 +1053,7 @@ paths:
         '409':
           $ref: '#/components/responses/CursorMismatch'
         '410':
-          $ref: '#/components/responses/CursorExpired'
+          $ref: '#/components/responses/InvestigationReadingGone'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -1539,6 +1546,8 @@ paths:
         - {name: left_as_of, in: query, required: true, schema: {type: string, format: date-time}}
         - {name: right, in: query, required: true, schema: {$ref: '#/components/schemas/ExecutionId'}}
         - {name: right_as_of, in: query, required: true, schema: {type: string, format: date-time}}
+        - {name: left_evidence_revision, in: query, required: false, schema: {type: string, format: uuid}}
+        - {name: right_evidence_revision, in: query, required: false, schema: {type: string, format: uuid}}
       responses:
         '200':
           description: Deterministic field-state comparison
@@ -1554,6 +1563,8 @@ paths:
           $ref: '#/components/responses/ExecutionNotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '410':
+          $ref: '#/components/responses/InvestigationReadingGone'
   /api/v1/executions/{execution_id}/feedback:
     get:
       tags: [Executions]
@@ -1765,6 +1776,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/WorkspaceConflict'
+        '410':
+          $ref: '#/components/responses/InvestigationReadingGone'
   /api/v1/cases/{case_id}/findings:
     post:
       tags: [Workspace]
@@ -3742,12 +3755,24 @@ components:
       in: query
       required: false
       description: >-
-        Shared UTC investigation snapshot for search/detail/timeline/event/gap
-        reads; defaults to server current time, fences both declared ingestion
-        and database visibility, and is supported for 24 hours.
+        UTC time filter for investigation search, detail, timeline, event and
+        gap reads. Omit it for a fresh reading. A timestamp-only link lasts
+        24 hours and does not identify a fixed set of committed evidence.
+        Supply evidence_revision alongside as_of to replay a versioned link.
       schema:
         type: string
         format: date-time
+    EvidenceRevision:
+      name: evidence_revision
+      in: query
+      required: false
+      description: >-
+        Opaque UUID identifying committed investigation evidence. Replay with
+        the original as_of. The server checks current access on each request.
+        A timestamp-only link applies time filters and can include later commits.
+      schema:
+        type: string
+        format: uuid
     RequiredAsOf:
       name: as_of
       in: query
@@ -3897,6 +3922,12 @@ components:
             $ref: '#/components/schemas/Problem'
     CursorExpired:
       description: Cursor is older than the supported 24-hour window
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InvestigationReadingGone:
+      description: The cursor or timestamp-only reading expired, or the evidence revision is unavailable
       content:
         application/problem+json:
           schema:
@@ -4622,6 +4653,7 @@ components:
       additionalProperties: false
       required: [as_of, count, has_more]
       properties:
+        evidence_revision: {type: string, format: uuid}
         as_of:
           type: string
           format: date-time
@@ -4867,6 +4899,7 @@ components:
       additionalProperties: false
       required: [summary, as_of]
       properties:
+        evidence_revision: {type: string, format: uuid}
         summary:
           $ref: '#/components/schemas/ExecutionSummary'
         as_of:
@@ -5064,6 +5097,7 @@ components:
         - completeness
         - unprovable_actions
       properties:
+        evidence_revision: {type: string, format: uuid}
         schema_version:
           type: string
           const: xinsight.investigation-projection.v1
@@ -5197,6 +5231,7 @@ components:
         - integrity
         - evidence_boundary
       properties:
+        evidence_revision: {type: string, format: uuid}
         schema_version:
           type: string
           const: xinsight.trace-journey.v1
@@ -6977,6 +7012,7 @@ components:
       additionalProperties: false
       required: [case_id, execution_id, as_of, added_by_subject, added_at]
       properties:
+        evidence_revision: {type: string, format: uuid}
         case_id: {$ref: '#/components/schemas/CaseId'}
         execution_id: {$ref: '#/components/schemas/ExecutionId'}
         as_of: {type: string, format: date-time}
@@ -7070,6 +7106,7 @@ components:
       additionalProperties: false
       required: [execution_id, as_of]
       properties:
+        evidence_revision: {type: string, format: uuid}
         execution_id: {$ref: '#/components/schemas/ExecutionId'}
         as_of: {type: string, format: date-time}
     CreateFindingRequest:

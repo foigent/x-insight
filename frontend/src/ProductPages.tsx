@@ -1,3 +1,4 @@
+import { executionDetailPath } from "./executionReading";
 import { getLocale, t, tx, useLocale } from "./i18n";
 import { Fragment, FormEvent, type ReactNode, useEffect, useState } from "react";
 
@@ -286,7 +287,7 @@ export function CaseDetailPage({
                 <PanelHeading eyebrow={t("m1537")} title={t("m1416")} id="case-executions-title" />
                 <div className="compact-list">
                   {record.executions.map((link, index) => (
-                    <Fragment key={`${link.execution_id}:${link.as_of}`}><button onClick={() => navigate(`/executions/${link.execution_id}?as_of=${encodeURIComponent(link.as_of)}`)}>
+                    <Fragment key={`${link.execution_id}:${link.as_of}:${link.evidence_revision ?? ""}`}><button onClick={() => navigate(executionDetailPath(link.execution_id, { asOf: link.as_of, evidenceRevision: link.evidence_revision }))}>
                       <span><strong>{tx("m1538", { value0: index + 1 })}</strong><small>{tx("m1539", { value0: formatDateTime(link.as_of) })}</small></span>
                     </button><TechnicalReference label={t("m0462")} value={link.execution_id} /></Fragment>
                   ))}

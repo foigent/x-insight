@@ -23,7 +23,8 @@ migration_digest="$(
 # Previous FPV16/schema45 baseline is preserved in Git history.
 # FPV21 adds reviewed migration47 for local accounts; Reference shares this tree;
 # released migrations1-46 and all LiteLLM protocol bindings stay unchanged.
-if [[ "${migration_digest}" != "3c0b68b15bb2695f6592a45c886dfb20539de205c497e3d8edb5e3bc4bea1024" ]]; then
+# Schema 48 adds the investigation publication and Case reference migration.
+if [[ "${migration_digest}" != "7f62ed567e2f5175bd2b0b7817fc403554aa12e287a2e75170fd5d89c81f54e4" ]]; then
   fail "migration tree changed (${migration_digest})"
 fi
 

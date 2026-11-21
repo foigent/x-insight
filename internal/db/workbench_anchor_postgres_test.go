@@ -45,7 +45,7 @@ func TestWorkbenchFactKeepsSelectedEvidenceAcrossProjectionReplay(t *testing.T) 
 		if conflict {
 			mapped.Events[0]["usage"].(map[string]any)["cost_micros"] = "18"
 		}
-		err = projectWorkbenchEconomicFact(ctx, tx, mapped.Events[0], id)
+		_, err = projectWorkbenchEconomicFact(ctx, tx, mapped.Events[0], id)
 		if conflict {
 			if err == nil || !strings.Contains(err.Error(), "identity conflicts") {
 				t.Fatalf("changed money accepted: %v", err)

@@ -22,8 +22,10 @@ PUBLISHED_BASES = {
                        'sha256:4497590a188a6abb90f7e90c1b71d279b7aff4fdde2ec458b48795a19c4feb2d'),
     '0.2.0-dev.fpv24': ('fa1e64e1d1259c3b7d631baa7794952b0ae72d93', 22409208,
                        'sha256:34aa6dd9e9ecff09015fe45c34d22e204bc6ca43c223413f6329bfba9c4aa92c'),
+    '0.2.0-dev.fpv25': ('b77fa1d7cff40a9adafe495d1c4951632819a4d3', 22412159,
+                       'sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081'),
 }
-TARGET_VERSION = '0.2.0-dev.fpv25'
+DEVELOPMENT_CONFIG = Path(__file__).resolve().parents[1] / 'release/d-validation-config.json'
 
 
 def require(condition, message):
@@ -88,6 +90,7 @@ def verify(tool, artifact, trust, commit, version):
 
 
 def qualify(signed_dir, output, runner, target_commit):
+    target_version = json.loads(DEVELOPMENT_CONFIG.read_text())['product_version']
     prestate = json.loads((runner / 'account-upgrade-ci-predecessor.json').read_text())
     basis_version = prestate['old_product']
     basis_commit, basis_size, basis_sha = PUBLISHED_BASES[basis_version]
@@ -97,8 +100,8 @@ def qualify(signed_dir, output, runner, target_commit):
     trust = Path(prestate['combined_trust'])
     require(basis == Path(f'/opt/xinsight-ci-artifacts/{basis_release}.tar.gz'), 'published basis is outside managed fixture staging')
     result = json.loads((signed_dir / 'build-result.json').read_text())
-    require((result['commit'], result['product_version']) == (target_commit, TARGET_VERSION), 'candidate run identity mismatch')
-    target = signed_dir / f'xinsight-v{TARGET_VERSION}-linux-amd64-{target_commit}.tar.gz'
+    require((result['commit'], result['product_version']) == (target_commit, target_version), 'candidate run identity mismatch')
+    target = signed_dir / f'xinsight-v{target_version}-linux-amd64-{target_commit}.tar.gz'
     tool = signed_dir / 'bootstrap' / f'xinsight-release-linux-amd64-{target_commit}'
     basis_identity = identity(basis)
     target_identity = identity(target)
@@ -106,7 +109,7 @@ def qualify(signed_dir, output, runner, target_commit):
     require(0 < target_identity['bytes'] <= MAX_RAW and target_identity['sha256'] == result['bundle_sha256'],
             'candidate bundle differs from CI build result')
     verified_basis = verify(tool, basis, trust, basis_commit, basis_version)
-    verified_target = verify(tool, target, trust, target_commit, TARGET_VERSION)
+    verified_target = verify(tool, target, trust, target_commit, target_version)
     require(verified_basis['bundle_sha256'] == basis_sha and
             all(verified_target[key] == result[key] for key in ('bundle_sha256', 'manifest_sha256', 'payload_sha256')),
             'verified artifact identity mismatch')
@@ -114,7 +117,7 @@ def qualify(signed_dir, output, runner, target_commit):
     output.mkdir(mode=0o700)
     basis_raw, target_raw = output / 'basis.tar', output / 'target.tar'
     unpack_inputs(basis, basis_version, basis_raw)
-    unpack_inputs(target, TARGET_VERSION, target_raw, output)
+    unpack_inputs(target, target_version, target_raw, output)
     manifest, signature = output / 'release-manifest.json', output / 'release-manifest.sig'
     patch, plan = output / 'payload.zst', output / 'delta.json'
     subprocess.run(['zstd', '-3', '--no-progress', f'--patch-from={basis_raw}', target_raw, '-o', patch],
@@ -124,7 +127,7 @@ def qualify(signed_dir, output, runner, target_commit):
         'schema_version': 'xinsight.release-delta.v1', 'codec': 'zstd-raw-tar-v1',
         'target_os': 'linux', 'target_arch': 'amd64',
         'basis': {'commit': basis_commit, 'version': basis_version, 'bundle': basis_identity, 'raw_tar': identity(basis_raw)},
-        'target': {'commit': target_commit, 'version': TARGET_VERSION, 'bundle': target_identity, 'raw_tar': identity(target_raw)},
+        'target': {'commit': target_commit, 'version': target_version, 'bundle': target_identity, 'raw_tar': identity(target_raw)},
         'patch': identity(patch), 'manifest': identity(manifest), 'signature': identity(signature),
     })
 
@@ -148,7 +151,7 @@ def qualify(signed_dir, output, runner, target_commit):
     ], check=True, timeout=120)
     elapsed = round(time.monotonic() - start, 3)
     subprocess.run(['cmp', target, rebuilt], check=True, timeout=60)
-    require(verify(bootstrap, rebuilt, trust, target_commit, TARGET_VERSION) == verified_target,
+    require(verify(bootstrap, rebuilt, trust, target_commit, target_version) == verified_target,
             'reconstructed artifact did not pass ordinary verification')
     write_json(output / 'qualification-result.json', {
         'schema_version': f'xinsight.ci-{basis_release}-delta-result.v1', 'classification': 'ci_synthetic_not_target',

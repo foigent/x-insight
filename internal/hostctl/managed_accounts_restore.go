@@ -58,7 +58,7 @@ func (e *Engine) recordRestoreAccountSource(ctx context.Context, j *Journal, c D
 	return nil
 }
 func (e *Engine) prepareRestoredAccounts(ctx context.Context, j *Journal, plan restorePlan, restored DatabaseCredentials, backup BackupResult) error {
-	if plan.Current.Identity.DatabaseSchema != "47" {
+	if !schemaSupportsDurableAccounts(plan.Current.Identity.DatabaseSchema) {
 		return nil
 	}
 	manager, ok := e.Database.(accountRestoreDatabase)

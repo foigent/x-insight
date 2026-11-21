@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/foigent/x-insight/internal/testpostgres"
 	"github.com/foigent/x-insight/internal/workbench"
 )
 
@@ -163,9 +164,9 @@ func TestWorkbenchRealHTTPPeakAndOversize(t *testing.T) {
 	request30 := httpReadingRequest(source)
 	request30.Period.RelativeHours = 720
 	// Existing fixture rows supply valid FK references, with distinct business IDs.
-	if _, err := admin.Exec(`INSERT INTO workbench_economic_facts
+	if _, err := testpostgres.ExecWithSyntheticEvidencePublication(t.Context(), admin, `INSERT INTO workbench_economic_facts
  SELECT (jsonb_populate_record(NULL::workbench_economic_facts,to_jsonb(f)||jsonb_build_object(
- 'id',gen_random_uuid(),'source_ref','http-capacity:'||i,'request_id','http-capacity:'||i,
+ 'id',gen_random_uuid(),'publication_id',current_setting('xinsight.evidence_publication_id'),'source_ref','http-capacity:'||i,'request_id','http-capacity:'||i,
  'occurred_at',now()-((i%604700)+1)*interval '1 second','gateway_charged_micros',1,'calculated_reference_micros',2))).*
  FROM (SELECT * FROM workbench_economic_facts LIMIT 1) f CROSS JOIN generate_series(1,69988) i`); err != nil {
 		t.Fatal(err)
@@ -289,9 +290,9 @@ func TestWorkbenchRealHTTPPeakAndOversize(t *testing.T) {
 		createMeasurements = append(createMeasurements, row)
 	}
 	for _, stage := range []struct{ start, end, size, samples int }{{69989, 299988, 300000, 20}, {299989, 499988, 500000, 1}} {
-		if _, err := admin.Exec(`INSERT INTO workbench_economic_facts
+		if _, err := testpostgres.ExecWithSyntheticEvidencePublication(t.Context(), admin, `INSERT INTO workbench_economic_facts
  SELECT (jsonb_populate_record(NULL::workbench_economic_facts,to_jsonb(f)||jsonb_build_object(
- 'id',gen_random_uuid(),'source_ref','http-capacity:'||i,'request_id','http-capacity:'||i,
+ 'id',gen_random_uuid(),'publication_id',current_setting('xinsight.evidence_publication_id'),'source_ref','http-capacity:'||i,'request_id','http-capacity:'||i,
  'occurred_at',now()-interval '8 days'-((i-69989)%1814400)*interval '1 second','gateway_charged_micros',1,'calculated_reference_micros',2))).*
  FROM (SELECT * FROM workbench_economic_facts LIMIT 1) f CROSS JOIN generate_series($1::int,$2::int) i`, stage.start, stage.end); err != nil {
 			t.Fatal(err)
@@ -303,16 +304,24 @@ func TestWorkbenchRealHTTPPeakAndOversize(t *testing.T) {
 			measureCreate(stage.size)
 		}
 	}
-	if _, err := admin.Exec(`INSERT INTO workbench_economic_facts
+	if _, err := testpostgres.ExecWithSyntheticEvidencePublication(t.Context(), admin, `INSERT INTO workbench_economic_facts
  SELECT (jsonb_populate_record(NULL::workbench_economic_facts,to_jsonb(f)||jsonb_build_object(
- 'id',gen_random_uuid(),'source_ref','http-capacity:'||i,'request_id','http-capacity:'||i,
+ 'id',gen_random_uuid(),'publication_id',current_setting('xinsight.evidence_publication_id'),'source_ref','http-capacity:'||i,'request_id','http-capacity:'||i,
  'occurred_at',now()-interval '8 days'-((i-69989)%1814400)*interval '1 second','gateway_charged_micros',1,'calculated_reference_micros',2))).*
  FROM (SELECT * FROM workbench_economic_facts LIMIT 1) f CROSS JOIN generate_series(499989,499989) i`); err != nil {
 		t.Fatal(err)
 	}
 	snapshot := func() string {
 		var s string
-		if err := admin.QueryRow(`SELECT jsonb_build_array((SELECT count(*) FROM workbench_readings),(SELECT count(*) FROM workbench_reading_members),(SELECT count(*) FROM workbench_saved_filters),(SELECT count(*) FROM workbench_saved_filter_operations),(SELECT count(*) FROM workbench_economic_facts),(SELECT count(*) FROM evidence_events))::text`).Scan(&s); err != nil {
+		if err := admin.QueryRow(`SELECT jsonb_build_array(
+  (SELECT count(*) FROM workbench_readings),
+  (SELECT count(*) FROM workbench_legacy_reading_members),
+  (SELECT count(*) FROM workbench_saved_filters),
+  (SELECT count(*) FROM workbench_saved_filter_operations),
+  (SELECT count(*) FROM workbench_economic_facts),
+  (SELECT count(*) FROM evidence_events),
+  (SELECT count(*) FROM evidence_publications)
+)::text`).Scan(&s); err != nil {
 			t.Fatal(err)
 		}
 		return s
@@ -326,7 +335,11 @@ func TestWorkbenchRealHTTPPeakAndOversize(t *testing.T) {
 	if !strings.Contains(string(raw), `"code":"workbench_reading_too_large"`) || snapshot() != before {
 		t.Fatalf("oversize residual or Problem: %s", raw)
 	}
-	report := map[string]any{"boundary": "Local TLS HTTP production handler + isolated PG16; synthetic capacity data", "reading_preparation": "production HTTP; actual runtime DB roles when XINSIGHT_A0_RUNTIME_ROLES=1", "creation_measurements": createMeasurements, "runtime_roles": os.Getenv("XINSIGHT_A0_RUNTIME_ROLES") == "1", "peak_reading_hours": 168, "creation_reading_hours": 720, "calls": 600, "readers": 10, "readings": 10, "errors": 0, "achieved_rps": 600 / elapsed.Seconds(), "request_p95_ms": durations[569], "end_to_end_p95_ms": endToEnd[569], "oversize_http": 422, "oversize_store": "ErrTooLarge", "zero_residual": true, "table_counts_before_after": before}
+	var physicalMembers int64
+	if err := admin.QueryRow(`SELECT count(*) FROM workbench_legacy_reading_members`).Scan(&physicalMembers); err != nil || physicalMembers != 0 {
+		t.Fatalf("new readings persisted legacy member rows=%d err=%v", physicalMembers, err)
+	}
+	report := map[string]any{"boundary": "Local TLS HTTP production handler + isolated PG16; synthetic capacity data", "reading_preparation": "production HTTP; actual runtime DB roles when XINSIGHT_A0_RUNTIME_ROLES=1", "creation_measurements": createMeasurements, "runtime_roles": os.Getenv("XINSIGHT_A0_RUNTIME_ROLES") == "1", "peak_reading_hours": 168, "creation_reading_hours": 720, "calls": 600, "readers": 10, "readings": 10, "errors": 0, "achieved_rps": 600 / elapsed.Seconds(), "request_p95_ms": durations[569], "end_to_end_p95_ms": endToEnd[569], "oversize_http": 422, "oversize_store": "ErrTooLarge", "zero_residual": true, "table_counts_before_after": before, "physical_legacy_member_rows": physicalMembers}
 	payload, _ := json.MarshalIndent(report, "", "  ")
 	t.Log(string(payload))
 	if output := os.Getenv("XINSIGHT_A0_HTTP_OUTPUT"); output != "" {
@@ -365,7 +378,7 @@ func TestWorkbenchHTTPClientCancellationRollsBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer lock.Rollback()
-	if _, err = lock.Exec(`LOCK workbench_reading_members IN ACCESS EXCLUSIVE MODE`); err != nil {
+	if _, err = lock.Exec(`LOCK workbench_economic_facts IN ACCESS EXCLUSIVE MODE`); err != nil {
 		t.Fatal(err)
 	}
 	raw, _ := json.Marshal(httpReadingRequest(source))
@@ -386,18 +399,18 @@ func TestWorkbenchHTTPClientCancellationRollsBack(t *testing.T) {
 		}
 		finished <- err
 	}()
-	// Prove the handler reached the locked INSERT before cancelling its client.
+	// The size preflight reads facts after inserting the uncommitted header.
 	deadline := time.Now().Add(2 * time.Second)
 	for {
 		var waiting bool
-		if err := admin.QueryRow(`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%INSERT INTO workbench_reading_members%')`).Scan(&waiting); err != nil {
+		if err := admin.QueryRow(`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%SELECT count(*) FROM workbench_economic_facts f%')`).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatal("request did not reach member INSERT")
+			t.Fatal("request did not reach the locked size preflight")
 		}
 		time.Sleep(10 * time.Millisecond)
 	}

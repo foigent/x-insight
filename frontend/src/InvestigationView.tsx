@@ -142,7 +142,7 @@ export function InvestigationView({
     if (!selectedNode || !selectedCaseID) return;
     setCaseState("saving");
     try {
-      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token);
+      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token, undefined, projection.evidence_revision);
       await workspaceAPI.addEvidence(selectedCaseID, selectedNode.citation, session.csrf_token);
       for (const gap of selectedGaps) {
         await workspaceAPI.addGap(selectedCaseID, gap, session.csrf_token);
@@ -157,7 +157,7 @@ export function InvestigationView({
     if (!selectedCaseID || projection.gaps.length === 0) return;
     setGapCaseState("saving");
     try {
-      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token);
+      await workspaceAPI.addExecution(selectedCaseID, executionID, asOf, session.csrf_token, undefined, projection.evidence_revision);
       for (const gap of projection.gaps) {
         await workspaceAPI.addGap(selectedCaseID, gap, session.csrf_token);
       }
@@ -497,6 +497,7 @@ function TraceJourneyPanel({
       return;
     }
     const params = new URLSearchParams({ as_of: asOf, evidence: node.event_id });
+    if (journey?.evidence_revision) params.set("evidence_revision", journey.evidence_revision);
     navigate(`/executions/${encodeURIComponent(node.execution_id)}?${params.toString()}`);
   }
 
@@ -1082,6 +1083,8 @@ function longestDeclaredPath(nodes: InvestigationNode[], edges: InvestigationPro
 
 function completenessAxes(projection: InvestigationProjection) {
   if (projection.completeness?.length) return projection.completeness;
+  const causalComplete = projection.integrity.causal_complete;
+  const unresolvedParentCount = projection.integrity.unresolved_parent_count;
   return [
     {
       axis: "source",
@@ -1100,8 +1103,10 @@ function completenessAxes(projection: InvestigationProjection) {
     },
     {
       axis: "causal",
-      status: projection.integrity.causal_complete ? "present" : "gap",
-      basis: projection.integrity.causal_complete ? "all declared parents resolved" : `${projection.integrity.unresolved_parent_count} declared parents unresolved`,
+      status: causalComplete === undefined ? "not_available" : causalComplete ? "complete" : "incomplete",
+      basis: causalComplete === undefined || (causalComplete === false && unresolvedParentCount === undefined)
+        ? t("m1099")
+        : causalComplete ? "all declared parents resolved" : `${unresolvedParentCount} declared parents unresolved`,
     },
   ];
 }

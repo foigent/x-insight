@@ -1,9 +1,9 @@
 {
   "schema_version": "xinsight.compatibility-matrix.v1",
-  "product_version": "0.2.0-dev.fpv25",
-  "manual_version": "0.2.0-dev.fpv25/manual-r1",
+  "product_version": "0.2.0-dev.fpv26",
+  "manual_version": "0.2.0-dev.fpv26/manual-r1",
   "release_channel": "release_candidate",
-  "database_schema": "47",
+  "database_schema": "49",
   "config_schema": "xinsight.config.v1",
   "api_versions": [
     "xinsight.investigation.v1",
@@ -21,8 +21,8 @@
   ],
   "schema_contract": {
     "schema_version": "xinsight.schema-contract.v2",
-    "semantic_sha256": "sha256:9268dea43bcc2d359c305593ca0b9cb9b06562b875cf5b313c3cfe07da15dca6",
-    "migration_set_sha256": "sha256:46d0c887c324b7bd1c5fc8cd0b6bc39bd8ac5d73a53dab8b936c714cca78e696"
+    "semantic_sha256": "sha256:775610249b2cb3d285e955137ff6b8844b3cfff9bed6288674fc63184962dca5",
+    "migration_set_sha256": "sha256:d1826aacf907727ed95a8b8145ac3116e4904570baa1e2f28296652a405cd490"
   },
   "supported_upgrade_from_versions": [
     "0.2.0-dev.b2",
@@ -46,7 +46,8 @@
     "0.2.0-dev.fpv21",
     "0.2.0-dev.fpv22",
     "0.2.0-dev.fpv23",
-    "0.2.0-dev.fpv24"
+    "0.2.0-dev.fpv24",
+    "0.2.0-dev.fpv25"
   ],
   "supported_legacy_sources": [],
   "supported_host": {
@@ -66,7 +67,7 @@
     "first_tool": "xinsight-release",
     "scope": "Retained isolated-validation fields do not establish formal release authority; formal distribution uses the owner-attested public authority and pinned public trust record."
   },
-  "field_qualification": "FPV25 keeps schema 47 and adds safe completed-execution feed failure diagnostics. The exact published FPV24 is a declared upgrade predecessor. Candidate CI, signed artifact, Linux and installed qualification are pending.",
+  "field_qualification": "Schema 49 Workbench replay and exact evidence revisions. The CI profile uses temporary qualification trust. Owner signing and target acceptance are pending.",
   "qualification_environments": {
     "previously_documented_isolated_profile": {
       "os": "Ubuntu 24.04 isolated XI validation guest",
@@ -74,18 +75,18 @@
       "service_manager": "systemd",
       "database_topology": "dedicated native PostgreSQL 16 on the same guest, loopback only"
     },
-    "previous_profile_boundary": "This records an earlier Ubuntu 24.04/native PostgreSQL validation environment. FPV25 requires its own native artifact and installed qualification.",
+    "previous_profile_boundary": "This describes an earlier environment. Schema 49 requires its own native artifact and installed qualification.",
     "planned_current_profile": {
       "os": "Ubuntu22.04",
       "architecture": "amd64",
       "service_manager": "systemd",
       "database_topology": "dedicated PostgreSQL16 container using the distributed pinned Compose profile",
-      "acceptance": "FPV25 fresh install and delta-based upgrades from the exact published FPV22, FPV23 and FPV24 predecessors require current qualification on Ubuntu 22.04 with container PostgreSQL 16."
+      "acceptance": "Qualify schema 49 installs and the admitted predecessor upgrades using the existing native Linux CI lanes."
     }
   },
   "formal_release_authority": {
     "record": "docs/community/release-authority.json",
     "public_trust": "docs/community/trusted-release-keys.json",
-    "artifact_status": "not yet produced or qualified"
+    "artifact_status": "CI qualification profile. No owner-signed schema 49 release has been issued."
   }
 }

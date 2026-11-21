@@ -12,7 +12,7 @@ import {
   type SearchFilters,
   type SourceOption,
 } from "./api";
-import { executionFilterQuery, readExecutionList, useExecutionLocation, writeExecutionList } from "./executionReading";
+import { executionDetailPath, executionFilterQuery, readExecutionList, useExecutionLocation, writeExecutionList } from "./executionReading";
 import { EmptyState, ErrorState, LoadingBlock } from "./Feedback";
 import { formatCanonicalTime, formatDateTime, localInputToUTC } from "./format";
 import { FreshnessBadge, OutcomeBadge, ProofBadge, SemanticLegend } from "./status";
@@ -51,7 +51,7 @@ export function ExecutionSearchPage({
   const reading = readExecutionList(location);
   const activeFilters = reading.filters;
   const filterKey = executionFilterQuery(activeFilters);
-  const draftKey = executionFilterQuery({ ...activeFilters, asOf: undefined });
+  const draftKey = executionFilterQuery({ ...activeFilters, asOf: undefined, evidenceRevision: undefined });
   const [draft, setDraft] = useState(() => draftFromFilters(activeFilters));
   const resolvedQuery = useRef("");
   const [preview, setPreview] = useState<ExecutionDetail>();
@@ -69,7 +69,7 @@ export function ExecutionSearchPage({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const currentCursor = reading.cursor;
-  const cursorFailure = error instanceof ApiRequestError && ["cursor_expired", "cursor_mismatch", "invalid_cursor"].includes(error.problem?.code ?? "");
+  const cursorFailure = error instanceof ApiRequestError && ["cursor_expired", "cursor_mismatch", "invalid_cursor", "evidence_revision_unavailable"].includes(error.problem?.code ?? "");
   const requestKey = `${filterKey}|${currentCursor ?? ""}|${refreshRevision}`;
   const accessStatus = window.location.protocol === "https:"
     ? t("m0597")
@@ -99,7 +99,8 @@ export function ExecutionSearchPage({
     investigationAPI.search(activeFilters, currentCursor, controller.signal).then(response => {
       if (controller.signal.aborted) return;
       if (activeFilters.asOf && Date.parse(activeFilters.asOf) !== Date.parse(response.page.as_of)) throw new Error("Requested reading cutoff was not returned");
-      const canonicalFilters = { ...activeFilters, asOf: response.page.as_of };
+      if (activeFilters.evidenceRevision && activeFilters.evidenceRevision !== response.page.evidence_revision) throw new Error("Requested evidence revision was not returned");
+      const canonicalFilters = { ...activeFilters, asOf: response.page.as_of, evidenceRevision: response.page.evidence_revision };
       resolvedQuery.current = `${executionFilterQuery(canonicalFilters)}|${currentCursor ?? ""}|${refreshRevision}`;
       setResult(response); setLoading(false);
       writeExecutionList({ ...readExecutionList(), filters: canonicalFilters }, true);
@@ -111,24 +112,29 @@ export function ExecutionSearchPage({
     setPreview(undefined); setPreviewError(undefined); setPreviewLoading(false);
     if (!reading.selected || !activeFilters.asOf || loading || error) return;
     const controller = new AbortController(); setPreviewLoading(true);
-    investigationAPI.getExecution(reading.selected, activeFilters.asOf, controller.signal).then(value => {
+    investigationAPI.getExecution(reading.selected, activeFilters.asOf, controller.signal, activeFilters.evidenceRevision).then(value => {
       if (controller.signal.aborted) return;
       if (Date.parse(value.as_of) !== Date.parse(activeFilters.asOf!)) throw new Error("Requested preview cutoff was not returned");
+      if (activeFilters.evidenceRevision && value.evidence_revision !== activeFilters.evidenceRevision) throw new Error("Requested evidence revision was not returned");
       setPreview(value);
     }).catch(caught => { if (!controller.signal.aborted) setPreviewError(caught); })
       .finally(() => { if (!controller.signal.aborted) setPreviewLoading(false); });
     return () => controller.abort();
-  }, [reading.selected, activeFilters.asOf, loading, error]);
+  }, [reading.selected, activeFilters.asOf, activeFilters.evidenceRevision, loading, error]);
 
   function restart(latest = false) {
-    const filters = { ...activeFilters }; if (latest) delete filters.asOf;
+    const filters = { ...activeFilters };
+    if (latest) {
+      delete filters.asOf;
+      delete filters.evidenceRevision;
+    }
     resolvedQuery.current = "";
     writeExecutionList({ filters, cursors: [""], index: 0 });
     setRefreshRevision(value => value + 1);
   }
 
   const filterCount = useMemo(
-    () => Object.values(activeFilters).filter((value) => value !== undefined && value !== "").length,
+    () => Object.entries(activeFilters).filter(([key, value]) => key !== "asOf" && key !== "evidenceRevision" && value !== undefined && value !== "").length,
     [activeFilters],
   );
 
@@ -166,6 +172,7 @@ export function ExecutionSearchPage({
     try {
       const persistedFilters = { ...activeFilters };
       delete persistedFilters.asOf;
+      delete persistedFilters.evidenceRevision;
       await workspaceAPI.createSavedView(
         name,
         persistedFilters,
@@ -451,10 +458,12 @@ export function ExecutionSearchPage({
             <div><dt>{tx("m0669")}</dt><dd>{preview.summary.event_count} / {preview.summary.gap_count}</dd></div>
             <div><dt>{tx("m0670")}</dt><dd><FreshnessBadge state={preview.summary.freshness.sync_state}/></dd></div></dl>
             <p>{tx("m0671")}</p>
-            <button className="button button-primary" onClick={() => navigate(`/executions/${encodeURIComponent(preview.summary.execution_id)}?as_of=${encodeURIComponent(preview.as_of)}`)}>{tx("m0672")}</button>
+            <button className="button button-primary" onClick={() => navigate(executionDetailPath(preview.summary.execution_id, { asOf: preview.as_of, evidenceRevision: preview.evidence_revision }))}>{tx("m0672")}</button>
           </>}
         </aside>}
         </div>
+
+        {result && !result.page.evidence_revision && <p className="reading-recovery">{tx("investigationLegacyCutoff")}</p>}
 
         {result && !error && (
           <footer className="pagination-bar">

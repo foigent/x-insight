@@ -338,7 +338,7 @@ func TestReviewExecutionContextFailuresLeaveNoPartialRows(t *testing.T) {
 			case "runtime_expired":
 				x.f.exec(`UPDATE runtime_readings SET expires_at=clock_timestamp() WHERE id=$1`, x.runtime.ID)
 			case "cost_nonmember":
-				x.f.exec(`DELETE FROM workbench_reading_members WHERE reading_id=$1`, x.cost.ID)
+				x.f.exec(`UPDATE workbench_readings SET summary_scopes=jsonb_build_array(jsonb_build_object('source_system_id',gen_random_uuid())) WHERE id=$1`, x.cost.ID)
 			case "wrong_execution":
 				v.ExecutionID = "xe1_" + strings.Repeat("f", 64)
 			case "wrong_asof":

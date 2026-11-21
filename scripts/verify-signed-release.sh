@@ -262,7 +262,7 @@ matrix = json.loads(committed_matrix)
 if matrix["product_version"] != expected_version or matrix["manual_version"] != expected_manual:
     raise SystemExit("compatibility matrix version mismatch")
 expected_api_versions = ["xinsight.investigation.v1", "xinsight.access.v1"]
-durable_accounts = str(schema_contract["database_schema"]) == "47"
+durable_accounts = str(schema_contract["database_schema"]) in {"47", "48", "49"}
 if durable_accounts:
     expected_api_versions.append("xinsight.accounts.v1")
 if matrix.get("api_versions") != expected_api_versions:

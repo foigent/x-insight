@@ -40,6 +40,39 @@ The projection never includes raw prompt, raw response, raw upstream error,
 raw IP, authorization headers, API keys, credentials, or
 `raw_source_excerpt`.
 
+## Evidence revisions
+
+In the schema 48 development candidate, a fresh investigation returns an
+opaque `evidence_revision` alongside its UTC `as_of`. Use both values to
+reopen the same committed evidence. Search, timeline, and gap cursors carry
+the revision together with their existing filter and ordering bindings.
+Citations and Case execution references include the revision when present.
+
+The version bounds evidence events, recorded gaps, import provenance and
+the links between provenance and events. Connector health, gap resolution,
+reader grants and access to original bodies retain their own current
+authorization and lifecycle. Workbench and Runtime readings retain their
+own membership and cutoff. A revision remains usable after a logical
+restore that retains it, and an unknown revision returns
+`evidence_revision_unavailable` with HTTP 410.
+
+A link containing only `as_of` retains its existing 24-hour time-filter
+behavior. A later commit can still appear under the timestamp. Timestamp-only
+Case references already stored in the database stay timestamp-only. A new
+Case execution request without a version pins the evidence visible at
+submission and reuses the first adoption when the same request is retried.
+The scoped Review flow continues to store the exact selected evidence and gap
+identities. Its paired Workbench and Runtime references keep their own rules.
+
+The migration adds a baseline revision for predecessor rows without rewriting
+evidence. Each subsequent import publishes its UUID and order in the same
+transaction as its new data. Order is allocated under a transaction-scoped
+lock after the import writes. UUIDs and publication order survive
+`pg_dump` / `pg_restore` independently of database transaction IDs.
+Keep the published FPV25 schema 47 profile and release authority intact.
+For development qualification, compare the existing `/readyz` schema and
+migration-set digest against the generated schema 48 contract.
+
 ## Presentation modes
 
 - `causal_trace`: at least one parent edge resolves from a source-declared

@@ -151,9 +151,13 @@ func TestWorkbenchSchema25PreservesAndRejectsWideSnapshots(t *testing.T) {
 	if _, err := db.RunMigrations(ctx, dsn, "../../migrations"); err != nil {
 		t.Fatal(err)
 	}
-	joined := `SELECT jsonb_agg(to_jsonb(f)-'id'-'source_ref'-'amount_scale'-'projected_at'||to_jsonb(m) ORDER BY ordinal)::text FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id`
+	joined := `SELECT jsonb_agg(to_jsonb(f)-'id'-'source_ref'-'amount_scale'-'projected_at'-'publication_id'||to_jsonb(m) ORDER BY ordinal)::text FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id`
 	if err := admin.QueryRowContext(ctx, joined).Scan(&after); err != nil || before != after {
 		t.Fatalf("all-field conversion changed: %v\nbefore=%s\nafter=%s", err, before, after)
+	}
+	var publishedLegacyFacts int
+	if err := admin.QueryRowContext(ctx, `SELECT count(*) FROM workbench_economic_facts WHERE publication_id IS NOT NULL`).Scan(&publishedLegacyFacts); err != nil || publishedLegacyFacts != 0 {
+		t.Fatalf("legacy facts acquired new publication IDs: count=%d err=%v", publishedLegacyFacts, err)
 	}
 	assertWorkbenchFactGuards(t, ctx, admin)
 	// Current-role live authorization is still checked before version dispatch;

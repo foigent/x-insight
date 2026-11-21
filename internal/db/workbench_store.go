@@ -95,12 +95,28 @@ func (s *WorkspaceStore) createWorkbenchReadingWithPlan(
 		interpretationRevision = digestText(workbenchInterpretationA1)
 	}
 	placeholder := digestText("")
-	if _, err := tx.ExecContext(ctx, `
+	var replayMembers bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(
+ SELECT 1 FROM schema_migrations WHERE version='000049_replay_workbench_members' AND NOT dirty
+)`).Scan(&replayMembers); err != nil {
+		return workbench.Reading{}, err
+	}
+	insertReading := `
 INSERT INTO workbench_readings (
   id, owner_subject, contract_version, metric_version, period_start, period_end,
   display_timezone, cutoff, expires_at, money_basis, currency, filters,
-  authorization_revision, interpretation_revision, membership_sha256, coverage, created_at
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16::jsonb,$8)`,
+  authorization_revision, interpretation_revision, membership_sha256, coverage, created_at`
+	values := `) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16::jsonb,$8`
+	if replayMembers {
+		insertReading += `, projection_publication_id, summary_scopes`
+		values += `,
+ (SELECT snapshot_id FROM evidence_publications ORDER BY revision DESC LIMIT 1),
+ (SELECT jsonb_agg(jsonb_build_object(
+   'source_system_id',source_system_id,'source_project_ref',source_project_ref,'cost_project_ref',cost_project_ref
+ ) ORDER BY source_system_id,source_project_ref,cost_project_ref)
+ FROM workbench_access_grants WHERE subject_id=$2 AND active AND allow_summary)`
+	}
+	if _, err := tx.ExecContext(ctx, insertReading+values+`)`,
 		readingID, subject, workbench.ContractVersion, workbench.MetricVersion,
 		period.StartInclusive, period.EndExclusive, period.Timezone, now, now.Add(workbench.ReadingTTL),
 		request.MoneyBasis, request.Currency, string(filtersJSON), authorization.Revision,
@@ -120,24 +136,26 @@ INSERT INTO workbench_readings (
 		return workbench.Reading{}, workbench.ErrTooLarge
 	}
 	observeWorkbenchReadingPhase(observer, "eligible_count", phaseStarted)
-	phaseStarted = time.Now()
-	memberResult, err := tx.ExecContext(ctx, workbenchMemberInsertSQL,
-		readingID, subject, period.StartInclusive, period.EndExclusive,
-		pgTextArray(request.Filters.SourceIDs), pgTextArray(request.Filters.SourceProjects), pgTextArray(request.Filters.CostProjects),
-	)
-	if err != nil {
-		return workbench.Reading{}, err
+	if !replayMembers {
+		phaseStarted = time.Now()
+		memberResult, err := tx.ExecContext(ctx, workbenchMemberInsertSQL,
+			readingID, subject, period.StartInclusive, period.EndExclusive,
+			pgTextArray(request.Filters.SourceIDs), pgTextArray(request.Filters.SourceProjects), pgTextArray(request.Filters.CostProjects),
+		)
+		if err != nil {
+			return workbench.Reading{}, err
+		}
+		insertedMembers, err := memberResult.RowsAffected()
+		if err != nil {
+			return workbench.Reading{}, err
+		}
+		if insertedMembers != eligible {
+			return workbench.Reading{}, fmt.Errorf("workbench reading membership changed during repeatable-read transaction")
+		}
+		observeWorkbenchReadingPhase(observer, "member_insert", phaseStarted)
 	}
-	insertedMembers, err := memberResult.RowsAffected()
-	if err != nil {
-		return workbench.Reading{}, err
-	}
-	if insertedMembers != eligible {
-		return workbench.Reading{}, fmt.Errorf("workbench reading membership changed during repeatable-read transaction")
-	}
-	observeWorkbenchReadingPhase(observer, "member_insert", phaseStarted)
 	var restorePlan func() error
-	if genericPlan != nil && genericPlan(insertedMembers) {
+	if genericPlan != nil && genericPlan(eligible) {
 		phaseStarted = time.Now()
 		restorePlan, err = useWorkbenchGenericPlan(ctx, tx)
 		if err != nil {
@@ -145,22 +163,12 @@ INSERT INTO workbench_readings (
 		}
 		observeWorkbenchReadingPhase(observer, "reading_plan_mode", phaseStarted)
 	}
-	var membership sql.NullString
 	phaseStarted = time.Now()
-	if err := tx.QueryRowContext(ctx, `
-SELECT 'sha256:' || encode(pg_catalog.sha256(convert_to(COALESCE(string_agg(
-  economic_fact_id::text || ':' || source_event_hash || ':' || event_hash,
-  E'\n' ORDER BY ordinal), ''), 'UTF8')), 'hex')
-FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1`, readingID).Scan(&membership); err != nil {
-		return workbench.Reading{}, err
-	}
-	observeWorkbenchReadingPhase(observer, "membership_digest", phaseStarted)
-	phaseStarted = time.Now()
-	coverage, err = loadWorkbenchCoverage(ctx, tx, subject, readingID, request.Filters, eligible, period.StartInclusive)
+	coverage, membership, err := summarizeWorkbenchMembership(ctx, tx, subject, readingID, request.Filters, eligible, period.StartInclusive, replayMembers)
 	if err != nil {
 		return workbench.Reading{}, err
 	}
-	observeWorkbenchReadingPhase(observer, "coverage", phaseStarted)
+	observeWorkbenchReadingPhase(observer, "membership_digest_and_coverage", phaseStarted)
 	sourceManifest, sourceCoverage, err := freezeWorkbenchSources(ctx, tx, readingID, subject, authorization, request.Filters, period, now)
 	if err != nil {
 		return workbench.Reading{}, err
@@ -178,9 +186,13 @@ FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.econo
 	}
 	coverageJSON, _ = json.Marshal(coverage)
 	phaseStarted = time.Now()
-	if _, err := tx.ExecContext(ctx, `
-UPDATE workbench_readings SET membership_sha256=$2, coverage=$3::jsonb WHERE id=$1`,
-		readingID, membership.String, string(coverageJSON)); err != nil {
+	finalize := `UPDATE workbench_readings SET membership_sha256=$2, coverage=$3::jsonb`
+	finalizeArgs := []any{readingID, membership.ref, string(coverageJSON)}
+	if replayMembers {
+		finalize += `, gateway_total_micros=$4, calculated_total_micros=$5`
+		finalizeArgs = append(finalizeArgs, membership.gatewayMicros, membership.calculatedMicros)
+	}
+	if _, err := tx.ExecContext(ctx, finalize+` WHERE id=$1`, finalizeArgs...); err != nil {
 		return workbench.Reading{}, err
 	}
 	observeWorkbenchReadingPhase(observer, "finalize_header", phaseStarted)
@@ -193,7 +205,7 @@ UPDATE workbench_readings SET membership_sha256=$2, coverage=$3::jsonb WHERE id=
 		ID: readingID, ContractVersion: workbench.ContractVersion, MetricVersion: workbench.MetricVersion,
 		Period: period, Cutoff: now, ExpiresAt: now.Add(workbench.ReadingTTL), MoneyBasis: request.MoneyBasis,
 		MoneyTitle: workbench.MoneyTitle(request.MoneyBasis), Currency: request.Currency,
-		MembershipRef: membership.String, InterpretationRevision: interpretationRevision,
+		MembershipRef: membership.ref, InterpretationRevision: interpretationRevision,
 		AuthorizationRevision: authorization.Revision, Dimensions: []string{"model", "source_project", "cost_project"}, Coverage: coverage,
 		SourceManifestRef: sourceManifest, SourceCoverage: sourceCoverage, Purpose: purposeReading,
 	}
@@ -275,7 +287,8 @@ WHERE f.occurred_at >= $3 AND f.occurred_at < $4 AND f.currency='CNY'
 ORDER BY f.ctid`
 
 func (s *WorkspaceStore) GetWorkbenchReading(ctx context.Context, subject, id string, now time.Time) (workbench.Reading, error) {
-	return s.loadValidWorkbenchReading(ctx, subject, id, now)
+	reading, err := s.loadValidWorkbenchReading(ctx, subject, id, now)
+	return reading.Reading, err
 }
 
 func (s *WorkspaceStore) GetWorkbenchSummary(ctx context.Context, subject, id string, now time.Time) (workbench.Summary, error) {
@@ -284,12 +297,15 @@ func (s *WorkspaceStore) GetWorkbenchSummary(ctx context.Context, subject, id st
 		return workbench.Summary{}, err
 	}
 	var summary workbench.Summary
-	err = s.db.QueryRowContext(ctx, `
+	if reading.replayMembers {
+		summary.RequestCount = reading.Coverage.KnownItems
+		summary.GatewayChargedMicros = reading.gatewayTotalMicros.String
+		summary.CalculatedReferenceMicros = reading.calculatedTotalMicros.String
+	} else if err = s.db.QueryRowContext(ctx, `
 SELECT count(*), COALESCE(sum(gateway_charged_micros),0)::text,
        COALESCE(sum(calculated_reference_micros),0)::text
-FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1`, id).Scan(
-		&summary.RequestCount, &summary.GatewayChargedMicros, &summary.CalculatedReferenceMicros)
-	if err != nil {
+FROM `+workbenchMemberFacts(false, false)+` WHERE f.reading_id=$1`, id).Scan(
+		&summary.RequestCount, &summary.GatewayChargedMicros, &summary.CalculatedReferenceMicros); err != nil {
 		return workbench.Summary{}, err
 	}
 	if reading.Purpose != nil && reading.Purpose.Status == "available" {
@@ -337,12 +353,11 @@ func (s *WorkspaceStore) GetWorkbenchSeries(ctx context.Context, subject, id, me
 	query := fmt.Sprintf(`
 WITH values_by_bucket AS (
  SELECT floor(extract(epoch FROM (f.occurred_at-$2::timestamptz))/$4)::bigint bucket, %s value
- FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id
- WHERE m.reading_id=$1 GROUP BY bucket
+ FROM %s WHERE f.reading_id=$1 GROUP BY bucket
 )
 SELECT bucket_start,bucket_start+($4::bigint*interval '1 second'),COALESCE(v.value,0)::text
 FROM generate_series($2::timestamptz,$3::timestamptz-interval '1 microsecond',$4::bigint*interval '1 second') WITH ORDINALITY AS b(bucket_start,ordinal)
-LEFT JOIN values_by_bucket v ON v.bucket=b.ordinal-1 ORDER BY bucket_start`, valueExpression)
+LEFT JOIN values_by_bucket v ON v.bucket=b.ordinal-1 ORDER BY bucket_start`, valueExpression, workbenchMemberFacts(reading.replayMembers, false))
 	rows, err := s.db.QueryContext(ctx, query, id, reading.Period.StartInclusive, reading.Period.EndExclusive, bucketSeconds)
 	if err != nil {
 		return workbench.Series{}, err
@@ -382,7 +397,7 @@ func (s *WorkspaceStore) GetWorkbenchContributionsOrdered(ctx context.Context, s
 		((topN < 1 || topN > 50) && (limit < 1 || limit > 50)) || (topN > 0 && limit > 0) || (topN > 0 && cursor != "") {
 		return workbench.Contributions{}, workbench.ErrInvalid
 	}
-	if (dimension == "application" || dimension == "account" || dimension == "purpose") && !workbenchHasDimension(reading, dimension) {
+	if (dimension == "application" || dimension == "account" || dimension == "purpose") && !workbenchHasDimension(reading.Reading, dimension) {
 		return workbench.Contributions{}, workbench.ErrScopeForbidden
 	}
 	pageSize := topN
@@ -406,50 +421,69 @@ func (s *WorkspaceStore) GetWorkbenchContributionsOrdered(ctx context.Context, s
 	if reading.MoneyBasis == workbench.MoneyCalculatedReference {
 		selected = "calculated_reference_micros"
 	}
-	ordering := "sum(" + selected + ")"
+	ordering := "selected_amount"
 	if orderBy == "requests" {
-		ordering = "count(*)"
+		ordering = "request_count"
 	}
-	var denominatorRequests, unassignedRequests int64
-	var denominatorText, unassignedText string
-	var groupCount int
-	totalQuery := fmt.Sprintf(`SELECT COALESCE(sum(%[1]s),0)::text,
- COALESCE(sum(%[1]s) FILTER(WHERE %[2]s IS NULL OR %[2]s=''),0)::text,
- count(DISTINCT %[2]s) FILTER(WHERE %[2]s IS NOT NULL AND %[2]s<>''),
- count(*), count(*) FILTER(WHERE %[2]s IS NULL OR %[2]s='')
- FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1`, selected, column)
-	if err := s.db.QueryRowContext(ctx, totalQuery, id).Scan(&denominatorText, &unassignedText, &groupCount, &denominatorRequests, &unassignedRequests); err != nil {
-		return workbench.Contributions{}, err
-	}
+	// Group once for the page and its reading-wide totals. The outer join also
+	// returns those totals when there are no assigned or remaining groups.
 	query := fmt.Sprintf(`
-SELECT %[1]s, count(*), COALESCE(sum(%[2]s),0)::text,
-       COALESCE(sum(gateway_charged_micros),0)::text,
-       COALESCE(sum(calculated_reference_micros),0)::text,
-       bool_and(CASE WHEN EXISTS (
-         SELECT 1 FROM workbench_access_grants detail_grant
-         WHERE detail_grant.subject_id=$4 AND detail_grant.active AND detail_grant.allow_details
-       ) THEN EXISTS (
-         SELECT 1 FROM workbench_access_grants g
-         WHERE g.subject_id=$4 AND g.active AND g.allow_details
-           AND g.source_system_id=f.source_system_id
-           AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref)
-           AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref)
-       ) ELSE false END)
-FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1 AND %[1]s IS NOT NULL AND %[1]s<>''
-GROUP BY %[1]s ORDER BY %[3]s DESC, %[1]s LIMIT $2 OFFSET $3`, column, selected, ordering)
+WITH groups AS MATERIALIZED (
+ SELECT NULLIF(%[1]s,'') AS label, count(*) AS request_count,
+        COALESCE(sum(%[2]s),0) AS selected_amount,
+        COALESCE(sum(gateway_charged_micros),0) AS gateway_amount,
+        COALESCE(sum(calculated_reference_micros),0) AS calculated_amount,
+        bool_and(CASE WHEN EXISTS (
+          SELECT 1 FROM workbench_access_grants detail_grant
+          WHERE detail_grant.subject_id=$4 AND detail_grant.active AND detail_grant.allow_details
+        ) THEN EXISTS (
+          SELECT 1 FROM workbench_access_grants g
+          WHERE g.subject_id=$4 AND g.active AND g.allow_details
+            AND g.source_system_id=f.source_system_id
+            AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref)
+            AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref)
+        ) ELSE false END) AS drilldown_allowed
+ FROM %[4]s WHERE f.reading_id=$1
+ GROUP BY 1
+), totals AS (
+ SELECT COALESCE(sum(selected_amount),0)::text AS denominator,
+        COALESCE(sum(selected_amount) FILTER (WHERE label IS NULL),0)::text AS unassigned,
+        count(label) AS group_count, COALESCE(sum(request_count),0)::bigint AS denominator_requests,
+        COALESCE(sum(request_count) FILTER (WHERE label IS NULL),0)::bigint AS unassigned_requests
+ FROM groups
+), page AS (
+ SELECT label,request_count,selected_amount,gateway_amount,calculated_amount,drilldown_allowed
+ FROM groups WHERE label IS NOT NULL
+ ORDER BY %[3]s DESC, label LIMIT $2 OFFSET $3
+)
+SELECT denominator, unassigned, group_count, denominator_requests, unassigned_requests,
+       page.label, COALESCE(page.request_count,0), COALESCE(page.selected_amount,0)::text,
+       COALESCE(page.gateway_amount,0)::text, COALESCE(page.calculated_amount,0)::text,
+       COALESCE(page.drilldown_allowed,false)
+FROM totals LEFT JOIN page ON true
+ORDER BY page.%[3]s DESC, page.label`, column, selected, ordering, workbenchMemberFacts(reading.replayMembers, false))
 	rows, err := s.db.QueryContext(ctx, query, id, pageSize, offset, subject)
 	if err != nil {
 		return workbench.Contributions{}, err
 	}
 	defer rows.Close()
+	var denominatorRequests, unassignedRequests int64
+	var denominatorText, unassignedText string
+	var groupCount int
 	visible := make([]workbench.Contribution, 0)
 	var pageRequests int64
 	pageSum := new(big.Int)
 	for rows.Next() {
 		var row workbench.Contribution
-		if err := rows.Scan(&row.Label, &row.RequestCount, &row.SelectedAmountMicros, &row.GatewayChargedMicros, &row.CalculatedReferenceMicros, &row.DrilldownAllowed); err != nil {
+		var label sql.NullString
+		if err := rows.Scan(&denominatorText, &unassignedText, &groupCount, &denominatorRequests, &unassignedRequests,
+			&label, &row.RequestCount, &row.SelectedAmountMicros, &row.GatewayChargedMicros, &row.CalculatedReferenceMicros, &row.DrilldownAllowed); err != nil {
 			return workbench.Contributions{}, err
 		}
+		if !label.Valid {
+			continue
+		}
+		row.Label = label.String
 		value, err := parseMicros(row.SelectedAmountMicros)
 		if err != nil {
 			return workbench.Contributions{}, err
@@ -498,7 +532,7 @@ func (s *WorkspaceStore) GetWorkbenchDetails(ctx context.Context, subject, id, r
 	if column == "" {
 		return workbench.Details{}, workbench.ErrInvalid
 	}
-	if (dimension == "application" || dimension == "account" || dimension == "purpose") && !workbenchHasDimension(reading, dimension) {
+	if (dimension == "application" || dimension == "account" || dimension == "purpose") && !workbenchHasDimension(reading.Reading, dimension) {
 		return workbench.Details{}, workbench.ErrScopeForbidden
 	}
 	after := int64(0)
@@ -509,7 +543,7 @@ func (s *WorkspaceStore) GetWorkbenchDetails(ctx context.Context, subject, id, r
 			return workbench.Details{}, workbench.ErrInvalid
 		}
 	}
-	allowed, err := s.workbenchGroupDetailsAllowed(ctx, subject, id, column, label)
+	allowed, err := s.workbenchGroupDetailsAllowed(ctx, subject, id, column, label, reading.replayMembers)
 	if err != nil {
 		return workbench.Details{}, err
 	}
@@ -524,7 +558,7 @@ func (s *WorkspaceStore) GetWorkbenchDetails(ctx context.Context, subject, id, r
 	if reading.Purpose != nil {
 		purposeState = "'unavailable'"
 		if reading.Purpose.Status == "available" {
-			purposeState = "(SELECT p.status FROM workbench_purpose_members p WHERE p.reading_id=m.reading_id AND p.economic_fact_id=f.id)"
+			purposeState = "(SELECT p.status FROM workbench_purpose_members p WHERE p.reading_id=f.reading_id AND p.economic_fact_id=f.id)"
 		}
 	}
 	query := fmt.Sprintf(`
@@ -532,12 +566,12 @@ SELECT request_id,execution_id,evidence_event_id::text,event_hash,source_system_
        source_version,COALESCE(model_ref,''),COALESCE(source_project_ref,''),COALESCE(cost_project_ref,''),
        terminal_status,occurred_at,gateway_charged_micros::text,
        calculated_reference_micros::text,ordinal,f.id::text,%[3]s
-FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1 AND %[1]s %[2]s NULLIF($2,'')
+FROM %[4]s WHERE f.reading_id=$1 AND %[1]s %[2]s NULLIF($2,'')
   AND EXISTS (SELECT 1 FROM workbench_access_grants g WHERE g.subject_id=$3
     AND g.active AND g.allow_details AND g.source_system_id=f.source_system_id
     AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref)
     AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref))
-  AND ordinal>$4 ORDER BY ordinal LIMIT $5`, column, operator, purposeState)
+  AND ordinal>$4 ORDER BY ordinal LIMIT $5`, column, operator, purposeState, workbenchMemberFacts(reading.replayMembers, true))
 	rows, err := s.db.QueryContext(ctx, query, id, label, subject, after, limit+1)
 	if err != nil {
 		return workbench.Details{}, err
@@ -836,23 +870,47 @@ func (s *WorkspaceStore) ListWorkbenchSavedFilters(ctx context.Context, subject 
 	return workbench.SavedFilterList{Items: items}, rows.Err()
 }
 
-func (s *WorkspaceStore) loadValidWorkbenchReading(ctx context.Context, subject, id string, now time.Time) (workbench.Reading, error) {
+type workbenchReadingSnapshot struct {
+	workbench.Reading
+	replayMembers         bool
+	gatewayTotalMicros    sql.NullString
+	calculatedTotalMicros sql.NullString
+}
+
+func workbenchMemberFacts(replayMembers, ordered bool) string {
+	if !replayMembers {
+		return "(SELECT m.reading_id,m.ordinal,e.* FROM workbench_reading_members m JOIN workbench_economic_facts e ON e.id=m.economic_fact_id) f"
+	}
+	if ordered {
+		return "(SELECT r.*,row_number() OVER (PARTITION BY reading_id ORDER BY occurred_at,id) AS ordinal FROM workbench_replayed_reading_facts r) f"
+	}
+	return "workbench_replayed_reading_facts f"
+}
+
+func (s *WorkspaceStore) loadValidWorkbenchReading(ctx context.Context, subject, id string, now time.Time) (workbenchReadingSnapshot, error) {
 	return loadValidWorkbenchReading(ctx, s.db, subject, id, now)
 }
 
-func loadValidWorkbenchReading(ctx context.Context, q workspaceQueryer, subject, id string, now time.Time) (workbench.Reading, error) {
+func loadValidWorkbenchReading(ctx context.Context, q workspaceQueryer, subject, id string, now time.Time) (workbenchReadingSnapshot, error) {
 	if !workbench.ValidReadingID(id) {
-		return workbench.Reading{}, workbench.ErrNotFound
+		return workbenchReadingSnapshot{}, workbench.ErrNotFound
 	}
-	var item workbench.Reading
+	var item workbenchReadingSnapshot
 	var filtersRaw, coverageRaw []byte
 	var timezone string
-	err := q.QueryRowContext(ctx, `SELECT id,contract_version,metric_version,period_start,period_end,display_timezone,cutoff,expires_at,money_basis,currency,membership_sha256,interpretation_revision,authorization_revision,filters,coverage FROM workbench_readings WHERE id=$1 AND owner_subject=$2`, id, subject).Scan(&item.ID, &item.ContractVersion, &item.MetricVersion, &item.Period.StartInclusive, &item.Period.EndExclusive, &timezone, &item.Cutoff, &item.ExpiresAt, &item.MoneyBasis, &item.Currency, &item.MembershipRef, &item.InterpretationRevision, &item.AuthorizationRevision, &filtersRaw, &coverageRaw)
+	err := q.QueryRowContext(ctx, `SELECT id,contract_version,metric_version,period_start,period_end,display_timezone,cutoff,expires_at,money_basis,currency,
+ membership_sha256,interpretation_revision,authorization_revision,filters,coverage,
+ to_jsonb(r)->>'projection_publication_id' IS NOT NULL,to_jsonb(r)->>'gateway_total_micros',to_jsonb(r)->>'calculated_total_micros'
+ FROM workbench_readings r WHERE id=$1 AND owner_subject=$2`, id, subject).Scan(
+		&item.ID, &item.ContractVersion, &item.MetricVersion, &item.Period.StartInclusive, &item.Period.EndExclusive,
+		&timezone, &item.Cutoff, &item.ExpiresAt, &item.MoneyBasis, &item.Currency, &item.MembershipRef,
+		&item.InterpretationRevision, &item.AuthorizationRevision, &filtersRaw, &coverageRaw,
+		&item.replayMembers, &item.gatewayTotalMicros, &item.calculatedTotalMicros)
 	if errors.Is(err, sql.ErrNoRows) {
-		return workbench.Reading{}, workbench.ErrNotFound
+		return workbenchReadingSnapshot{}, workbench.ErrNotFound
 	}
 	if err != nil {
-		return workbench.Reading{}, err
+		return workbenchReadingSnapshot{}, err
 	}
 	// Database drivers may scan timestamptz in the process/session location.
 	// Public reading instants use UTC, preserving their full stored precision.
@@ -861,14 +919,17 @@ func loadValidWorkbenchReading(ctx context.Context, q workspaceQueryer, subject,
 	item.Cutoff = item.Cutoff.UTC()
 	item.ExpiresAt = item.ExpiresAt.UTC()
 	if !now.UTC().Before(item.ExpiresAt) {
-		return workbench.Reading{}, workbench.ErrExpired
+		return workbenchReadingSnapshot{}, workbench.ErrExpired
 	}
 	auth, err := loadWorkbenchAuthorization(ctx, q, subject)
 	if err != nil {
-		return workbench.Reading{}, err
+		return workbenchReadingSnapshot{}, err
 	}
 	if auth.Revision != item.AuthorizationRevision {
-		return workbench.Reading{}, workbench.ErrAccessChanged
+		return workbenchReadingSnapshot{}, workbench.ErrAccessChanged
+	}
+	if item.replayMembers && (!item.gatewayTotalMicros.Valid || !item.calculatedTotalMicros.Valid) {
+		return workbenchReadingSnapshot{}, fmt.Errorf("workbench versioned reading is missing its frozen membership totals")
 	}
 	// A0 binds these stored F0 fields and unknown/unavailable dimensions. Future
 	// revisions must dispatch explicitly; never reinterpret an old reading.
@@ -876,19 +937,19 @@ func loadValidWorkbenchReading(ctx context.Context, q workspaceQueryer, subject,
 	switch item.InterpretationRevision {
 	case digestText(workbenchInterpretationA0):
 	case digestText(workbenchInterpretationA1):
-		if err := loadWorkbenchSourceManifest(ctx, q, &item, auth); err != nil {
-			return workbench.Reading{}, err
+		if err := loadWorkbenchSourceManifest(ctx, q, &item.Reading, auth); err != nil {
+			return workbenchReadingSnapshot{}, err
 		}
 	default:
-		return workbench.Reading{}, workbench.ErrUnsupportedVersion
+		return workbenchReadingSnapshot{}, workbench.ErrUnsupportedVersion
 	}
-	if err := loadWorkbenchPurposeManifest(ctx, q, &item, auth); err != nil {
-		return workbench.Reading{}, err
+	if err := loadWorkbenchPurposeManifest(ctx, q, &item.Reading, auth); err != nil {
+		return workbenchReadingSnapshot{}, err
 	}
 	item.Period.Timezone = timezone
 	item.MoneyTitle = workbench.MoneyTitle(item.MoneyBasis)
 	if err := json.Unmarshal(coverageRaw, &item.Coverage); err != nil {
-		return workbench.Reading{}, err
+		return workbenchReadingSnapshot{}, err
 	}
 	return item, nil
 }
@@ -994,11 +1055,19 @@ func authorizationAllows(auth workbench.Authorization, filters workbench.Filters
 	return true
 }
 
-func loadWorkbenchCoverage(ctx context.Context, q workspaceQueryer, subject, readingID string, filters workbench.Filters, known int64, periodStart time.Time) (workbench.Coverage, error) {
+type workbenchMembershipSummary struct {
+	ref              string
+	gatewayMicros    string
+	calculatedMicros string
+}
+
+func summarizeWorkbenchMembership(ctx context.Context, q workspaceQueryer, subject, readingID string, filters workbench.Filters, known int64, periodStart time.Time, replayMembers bool) (workbench.Coverage, workbenchMembershipSummary, error) {
 	var capture, last, projection sql.NullTime
 	var received string
-	var gaps, sources int64
+	var membership workbenchMembershipSummary
+	var gaps, sources, resolvedMembers int64
 	var allWhole, allActivated, allConnected bool
+	facts := workbenchMemberFacts(replayMembers, false)
 	err := q.QueryRowContext(ctx, `
 WITH authorized_sources AS (
  SELECT g.source_system_id,bool_or(g.source_project_ref IS NULL AND g.cost_project_ref IS NULL) whole_source,
@@ -1026,23 +1095,37 @@ WITH authorized_sources AS (
   bool_and(capture_started IS NOT NULL AND capture_started<=$6) all_activated,
   bool_and(connected) all_connected
  FROM per_source_state
+), members AS MATERIALIZED (
+ SELECT f.id,f.source_system_id,f.request_id,f.evidence_event_id,f.occurred_at,f.projected_at,f.source_event_hash,f.event_hash,
+        f.gateway_charged_micros,f.calculated_reference_micros
+ FROM `+facts+` WHERE reading_id=$2
 ), member_state AS (
- SELECT max(f.projected_at) projection_watermark,max(e.ingested_at) last_durable FROM workbench_reading_members m
- JOIN workbench_economic_facts f ON f.id=m.economic_fact_id JOIN evidence_events e ON e.id=f.evidence_event_id WHERE m.reading_id=$2
+ SELECT max(f.projected_at) projection_watermark,max(e.ingested_at) last_durable,count(*) member_count,
+ 'sha256:' || encode(pg_catalog.sha256(convert_to(COALESCE(string_agg(
+   f.id::text || ':' || f.source_event_hash || ':' || f.event_hash, E'\n' ORDER BY f.occurred_at,f.id
+ ), ''), 'UTF8')), 'hex') membership,
+ COALESCE(sum(f.gateway_charged_micros),0)::text gateway_total,
+ COALESCE(sum(f.calculated_reference_micros),0)::text calculated_total
+ FROM members f JOIN evidence_events e ON e.id=f.evidence_event_id
 ), gap_state AS (
  SELECT count(*) gap_count FROM capture_gaps g
  JOIN authorized_sources s ON s.source_system_id=g.source_system_id AND s.whole_source
  WHERE EXISTS (
-   SELECT 1 FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id
-   WHERE m.reading_id=$2 AND f.source_system_id=g.source_system_id AND f.request_id=g.request_id
+   SELECT 1 FROM members f WHERE f.source_system_id=g.source_system_id AND f.request_id=g.request_id
  )
 )
 SELECT (SELECT count(*) FROM authorized_sources),state.capture_started,member_state.last_durable,
  state.received_watermark,member_state.projection_watermark,gap_state.gap_count,
- COALESCE(state.all_whole,false),COALESCE(state.all_activated,false),COALESCE(state.all_connected,false)
-FROM state,member_state,gap_state`, subject, readingID, pgTextArray(filters.SourceIDs), pgTextArray(filters.SourceProjects), pgTextArray(filters.CostProjects), periodStart).Scan(&sources, &capture, &last, &received, &projection, &gaps, &allWhole, &allActivated, &allConnected)
+ COALESCE(state.all_whole,false),COALESCE(state.all_activated,false),COALESCE(state.all_connected,false),
+ member_state.member_count,member_state.membership,member_state.gateway_total,member_state.calculated_total
+FROM state,member_state,gap_state`, subject, readingID, pgTextArray(filters.SourceIDs), pgTextArray(filters.SourceProjects), pgTextArray(filters.CostProjects), periodStart).Scan(
+		&sources, &capture, &last, &received, &projection, &gaps, &allWhole, &allActivated, &allConnected,
+		&resolvedMembers, &membership.ref, &membership.gatewayMicros, &membership.calculatedMicros)
 	if err != nil {
-		return workbench.Coverage{}, err
+		return workbench.Coverage{}, workbenchMembershipSummary{}, err
+	}
+	if resolvedMembers != known {
+		return workbench.Coverage{}, workbenchMembershipSummary{}, fmt.Errorf("workbench resolved membership differs from the transaction's eligible count")
 	}
 	item := workbench.Coverage{
 		Status:                       "period_completeness_unknown",
@@ -1084,7 +1167,7 @@ FROM state,member_state,gap_state`, subject, readingID, pgTextArray(filters.Sour
 	if allWhole && capture.Valid && !allActivated {
 		item.Gaps = append(item.Gaps, "period_precedes_capture_start")
 	}
-	return item, nil
+	return item, membership, nil
 }
 
 func (s *WorkspaceStore) loadWorkbenchFilters(ctx context.Context, subject, id string) (workbench.Filters, error) {
@@ -1107,12 +1190,12 @@ func (s *WorkspaceStore) workbenchCapabilityAllowed(ctx context.Context, subject
 	err := s.db.QueryRowContext(ctx, query, subject).Scan(&ok)
 	return ok, err
 }
-func (s *WorkspaceStore) workbenchGroupDetailsAllowed(ctx context.Context, subject, readingID, column, label string) (bool, error) {
+func (s *WorkspaceStore) workbenchGroupDetailsAllowed(ctx context.Context, subject, readingID, column, label string, replayMembers bool) (bool, error) {
 	operator := "="
 	if label == "" {
 		operator = "IS NOT DISTINCT FROM"
 	}
-	query := fmt.Sprintf(`SELECT NOT EXISTS(SELECT 1 FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE m.reading_id=$1 AND %s %s NULLIF($2,'') AND NOT EXISTS(SELECT 1 FROM workbench_access_grants g WHERE g.subject_id=$3 AND g.active AND g.allow_details AND g.source_system_id=f.source_system_id AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref) AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref))) AND EXISTS(SELECT 1 FROM workbench_reading_members m JOIN workbench_economic_facts f ON f.id=m.economic_fact_id WHERE reading_id=$1 AND %s %s NULLIF($2,''))`, column, operator, column, operator)
+	query := fmt.Sprintf(`SELECT NOT EXISTS(SELECT 1 FROM %[1]s WHERE f.reading_id=$1 AND %[2]s %[3]s NULLIF($2,'') AND NOT EXISTS(SELECT 1 FROM workbench_access_grants g WHERE g.subject_id=$3 AND g.active AND g.allow_details AND g.source_system_id=f.source_system_id AND (g.source_project_ref IS NULL OR g.source_project_ref=f.source_project_ref) AND (g.cost_project_ref IS NULL OR g.cost_project_ref=f.cost_project_ref))) AND EXISTS(SELECT 1 FROM %[1]s WHERE f.reading_id=$1 AND %[2]s %[3]s NULLIF($2,''))`, workbenchMemberFacts(replayMembers, false), column, operator)
 	var ok bool
 	err := s.db.QueryRowContext(ctx, query, readingID, label, subject).Scan(&ok)
 	return ok, err

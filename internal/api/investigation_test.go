@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -26,6 +27,39 @@ type fakeInvestigationStore struct {
 	sources   []investigation.SourceOption
 }
 
+func (store *fakeInvestigationStore) GetInvestigationProjection(
+	ctx context.Context,
+	executionID string,
+	asOf time.Time,
+) (investigation.InvestigationProjection, error) {
+	detail, err := store.GetExecution(ctx, executionID, asOf)
+	if err != nil {
+		return investigation.InvestigationProjection{}, err
+	}
+	timeline, timelineTotal, err := store.ListTimeline(ctx, investigation.TimelineQuery{
+		ExecutionID: executionID, AsOf: asOf, Limit: 201,
+	})
+	if err != nil {
+		return investigation.InvestigationProjection{}, err
+	}
+	events, eventTotal, err := store.ListExecutionEvents(ctx, executionID, asOf, 201)
+	if err != nil {
+		return investigation.InvestigationProjection{}, err
+	}
+	if timelineTotal != eventTotal {
+		return investigation.InvestigationProjection{}, errors.New("investigation event views are inconsistent")
+	}
+	gaps, gapTotal, err := store.ListExecutionGaps(ctx, investigation.GapQuery{
+		ExecutionID: executionID, AsOf: asOf, Limit: 101,
+	})
+	if err != nil {
+		return investigation.InvestigationProjection{}, err
+	}
+	return investigation.BuildProjection(investigation.ProjectionInput{
+		Detail: detail, Timeline: timeline, Events: events, TotalEventCount: timelineTotal,
+		Gaps: gaps, TotalGapCount: gapTotal,
+	}), nil
+}
 func (s *fakeInvestigationStore) GetTraceJourney(
 	_ context.Context,
 	executionID string,

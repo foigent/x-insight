@@ -32,6 +32,7 @@ type Store interface {
 }
 
 type InvestigationStore interface {
+	GetInvestigationProjection(context.Context, string, time.Time) (investigation.InvestigationProjection, error)
 	SearchExecutions(context.Context, investigation.SearchQuery) ([]investigation.ExecutionSummary, error)
 	GetExecution(context.Context, string, time.Time) (investigation.ExecutionDetail, error)
 	GetTraceJourney(context.Context, string, time.Time, int) (investigation.TraceJourney, error)

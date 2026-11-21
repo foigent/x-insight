@@ -3247,5 +3247,7 @@
   "syncCredentialBoundary": "同步一次按各通道的既有权限执行。自动同步开关不会续期或恢复连接凭据。",
   "syncCredentialExpired": "控制身份或当前凭据已过期。激活和项目更新需要管理员恢复，其它已获授权的通道可能仍可运行。请在连接状态中单独处理恢复。",
   "syncCredentialUnchecked": "尚未确认连接凭据状态。开始同步前请查看连接状态。",
-  "syncConnectionStatus": "查看连接状态与恢复"
+  "syncConnectionStatus": "查看连接状态与恢复",
+  "investigationLegacyCutoff": "此旧链接按时间筛选，后续提交的证据仍可能出现。",
+  "investigationEvidenceRevision": "证据版本"
 }

@@ -35,10 +35,10 @@ type workbenchEconomicFact struct {
 // projectWorkbenchEconomicFact runs inside the Evidence transaction. This
 // keeps the V1 Evidence write and its immutable, identity-preserving economic fact atomic.
 // The business identity deliberately excludes adapter and delivery epoch.
-func projectWorkbenchEconomicFact(ctx context.Context, tx *sql.Tx, event map[string]any, eventID string) error {
+func projectWorkbenchEconomicFact(ctx context.Context, tx *sql.Tx, event map[string]any, eventID string) (bool, error) {
 	fact, applicable, err := workbenchEconomicFactFromEvent(event, eventID)
 	if err != nil || !applicable {
-		return err
+		return false, err
 	}
 	rows, err := tx.QueryContext(ctx, `
 INSERT INTO workbench_economic_facts (
@@ -60,14 +60,14 @@ RETURNING id`,
 		fact.GatewayChargedMicros, fact.CalculatedReferenceMicros, fact.Currency, fact.AmountScale,
 	)
 	if err != nil {
-		return fmt.Errorf("project workbench economic fact: %w", err)
+		return false, fmt.Errorf("project workbench economic fact: %w", err)
 	}
 	inserted := rows.Next()
 	if closeErr := rows.Close(); closeErr != nil {
-		return fmt.Errorf("close workbench economic projection result: %w", closeErr)
+		return false, fmt.Errorf("close workbench economic projection result: %w", closeErr)
 	}
 	if inserted {
-		return nil
+		return true, nil
 	}
 
 	var existing workbenchEconomicFact
@@ -89,7 +89,7 @@ WHERE source_system_id = $1::uuid AND source_version = $2 AND source_ref = $3`,
 		&existing.CalculatedReferenceMicros, &existing.Currency, &existing.AmountScale,
 	)
 	if err != nil {
-		return fmt.Errorf("read existing workbench economic fact: %w", err)
+		return false, fmt.Errorf("read existing workbench economic fact: %w", err)
 	}
 	existing.SourceProjectRef = nullStringValue(sourceProject)
 	existing.CostProjectRef = nullStringValue(costProject)
@@ -104,9 +104,9 @@ WHERE source_system_id = $1::uuid AND source_version = $2 AND source_ref = $3`,
 		existing.GatewayChargedMicros != fact.GatewayChargedMicros ||
 		existing.CalculatedReferenceMicros != fact.CalculatedReferenceMicros ||
 		existing.Currency != fact.Currency || existing.AmountScale != fact.AmountScale {
-		return fmt.Errorf("workbench economic fact identity conflicts with immutable source content")
+		return false, fmt.Errorf("workbench economic fact identity conflicts with immutable source content")
 	}
-	return nil
+	return false, nil
 }
 
 func workbenchEconomicFactFromEvent(event map[string]any, eventID string) (workbenchEconomicFact, bool, error) {

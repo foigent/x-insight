@@ -1021,7 +1021,7 @@ func (engine *Engine) adminCredentialRotationFingerprint(
 	for _, table := range preview.Tables {
 		switch table.Table {
 		case "adapter_import_states", "adapter_manifests", "source_systems", "import_provenance",
-			"import_provenance_events", "evidence_events", "capture_gaps", "connector_import_operation_bindings",
+			"import_provenance_events", "evidence_events", "evidence_publications", "capture_gaps", "connector_import_operation_bindings",
 			"connector_operational_receipts", "ingestion_quarantine", "connector_checkpoint_epoch_operations",
 			"connector_checkpoint_epoch_history":
 			connectorTables = append(connectorTables, table)

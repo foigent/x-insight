@@ -1,3 +1,11 @@
+# FPV26 / schema 49 source candidate
+
+The development profile `0.2.0-dev.fpv26` binds the schema 49 migration set and compiled schema contract. Investigation citations pin an evidence publication. New Workbench Readings replay exact membership and seal the gateway and reference totals. Historical Readings retain their existing materialized members.
+
+CI uses a temporary trust identity. The published FPV25 preview and its owner-attested authority remain in the independent public release record.
+
+## Historical release notes
+
 # FPV25 source candidate
 
 The completed-execution feed records the failing stage and a safe reason after acquiring its synchronization permit. The connection page shows when feed activation or polling failed and can disclose the permitted diagnostic code. Authorization, retry, and cursor handling follow the existing flow.

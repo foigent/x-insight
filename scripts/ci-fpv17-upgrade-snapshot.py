@@ -72,13 +72,13 @@ for label, sql in {
 immutable_rows = {}
 for table in ("source_fact_documents", "source_content_manifests", "source_content_receipts",
               "review_body_operations", "workbench_economic_facts"):
+    document = "(to_jsonb(t) - 'publication_id')" if table == "workbench_economic_facts" else "to_jsonb(t)"
     sql = ("SELECT COALESCE(jsonb_agg(row_sha ORDER BY row_sha)::text,'[]') FROM "
-           "(SELECT md5(to_jsonb(t)::text) AS row_sha FROM public." + table + " t) rows")
+           "(SELECT md5(" + document + "::text) AS row_sha FROM public." + table + " t) rows")
     immutable_rows[table] = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
                                                "-v", "ON_ERROR_STOP=1", "-c", sql, env=pg_env))
 
-# The current upgrade appends only reviewed migrations46/47 after its exact predecessor. Retain
-# the original rows too, so additions cannot mask edits to predecessor history
+# Retain the original rows, so additions cannot mask edits to predecessor history
 # or privileges behind a changed whole-database digest.
 migration_rows = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
     "-v", "ON_ERROR_STOP=1", "-c",
@@ -88,6 +88,26 @@ table_acl_rows = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A
     "SELECT COALESCE(jsonb_object_agg(c.relname,c.relacl::text ORDER BY c.relname)::text,'{}') "
     "FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
     "WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','S')", env=pg_env))
+workbench_publication_acl = json.loads(command("/usr/lib/postgresql/16/bin/psql", "-X", "-A", "-t",
+    "-v", "ON_ERROR_STOP=1", "-c", """
+WITH relations AS (
+  SELECT c.* FROM pg_class c
+  WHERE c.relnamespace='public'::regnamespace AND c.relname IN
+    ('workbench_reading_members','workbench_legacy_reading_members',
+     'workbench_replayed_reading_facts','evidence_publications')
+)
+SELECT jsonb_build_object(
+  'owners', (SELECT COALESCE(jsonb_object_agg(relname,pg_get_userbyid(relowner)),'{}') FROM relations),
+  'tables', (SELECT COALESCE(jsonb_agg(jsonb_build_array(c.relname,
+     CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,x.privilege_type,x.is_grantable)),'[]')
+    FROM relations c CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl,acldefault('r',c.relowner))) x
+    WHERE x.grantee<>c.relowner),
+  'columns', (SELECT COALESCE(jsonb_agg(jsonb_build_array(a.attname,
+     CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,x.privilege_type,x.is_grantable)),'[]')
+    FROM pg_attribute a CROSS JOIN LATERAL aclexplode(a.attacl) x
+    WHERE a.attrelid='public.workbench_readings'::regclass
+      AND a.attname IN ('projection_publication_id','summary_scopes','gateway_total_micros','calculated_total_micros'))
+)""", env=pg_env))
 sync_privileges = {}
 sync_tables = "'connector_sync_controls','connector_sync_slots','connector_sync_runs'"
 for label, sql in {
@@ -200,6 +220,7 @@ print(json.dumps({"schema_version": "xinsight.ci-fpv17-upgrade-snapshot.v1",
                   "release": release, "server_invocation": invocation, "server_exe": server_exe,
                   "database": database, "immutable_rows": immutable_rows,
                   "migration_rows": migration_rows, "table_acl_rows": table_acl_rows,
+                  "workbench_publication_acl": workbench_publication_acl,
                   "sync_privileges": sync_privileges,
                   "legacy_account_inventory": legacy_account_inventory,
                   "account_inventory": account_inventory_value,"account_boundary":account_boundary,"account_state_digests":account_state_digests,"account_ticket_summary":account_ticket_summary,

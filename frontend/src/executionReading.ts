@@ -18,6 +18,7 @@ export function readExecutionFilters(search: string): SearchFilters {
   const params = new URLSearchParams(search), outcome = params.get("outcome"), hasGaps = params.get("has_gaps");
   return {
     asOf: params.get("as_of") || undefined,
+    evidenceRevision: params.get("evidence_revision") || undefined,
     requestID: params.get("request_id") || undefined,
     requestIDPrefix: params.get("request_id_prefix") || undefined,
     sourceSystemID: params.get("source_system_id") || undefined,
@@ -28,7 +29,7 @@ export function readExecutionFilters(search: string): SearchFilters {
 }
 export function executionFilterQuery(filters: SearchFilters) {
   const params = new URLSearchParams();
-  const fields = { as_of: filters.asOf, request_id: filters.requestID, request_id_prefix: filters.requestIDPrefix,
+  const fields = { as_of: filters.asOf, evidence_revision: filters.evidenceRevision, request_id: filters.requestID, request_id_prefix: filters.requestIDPrefix,
     source_system_id: filters.sourceSystemID, outcome: filters.outcome, has_gaps: filters.hasGaps, from: filters.from, to: filters.to };
   for (const [key, value] of Object.entries(fields)) if (value !== undefined && value !== "") params.set(key, String(value));
   return params.toString();
@@ -55,13 +56,20 @@ export function writeExecutionList(reading: ExecutionListReading, replace = fals
 export type ExecutionView = "contents" | "story" | "graph" | "chronology" | "proof" | "systems";
 export function readExecutionDetail(path = locationKey()) {
   const params = new URLSearchParams(path.includes("?") ? path.slice(path.indexOf("?") + 1) : ""), view = params.get("view");
-  return { asOf: params.get("as_of") || undefined, evidence: params.get("evidence") || undefined,
+  return { asOf: params.get("as_of") || undefined, evidenceRevision: params.get("evidence_revision") || undefined, evidence: params.get("evidence") || undefined,
     view: (view === "graph" || view === "chronology" || view === "proof" || view === "systems" || view === "contents" ? view : "story") as ExecutionView };
 }
-export function writeExecutionDetail(executionID: string, reading: ReturnType<typeof readExecutionDetail>, replace = false) {
+type DetailReading = Partial<ReturnType<typeof readExecutionDetail>>;
+
+export function executionDetailPath(executionID: string, reading: DetailReading) {
   const params = new URLSearchParams();
   if (reading.asOf) params.set("as_of", reading.asOf);
+  if (reading.evidenceRevision) params.set("evidence_revision", reading.evidenceRevision);
   if (reading.evidence) params.set("evidence", reading.evidence);
-  if (reading.view !== "story") params.set("view", reading.view);
-  writeReading(`/executions/${encodeURIComponent(executionID)}${params.size ? "?" + params : ""}`, replace);
+  if (reading.view && reading.view !== "story") params.set("view", reading.view);
+  return `/executions/${encodeURIComponent(executionID)}${params.size ? "?" + params : ""}`;
+}
+
+export function writeExecutionDetail(executionID: string, reading: DetailReading, replace = false) {
+  writeReading(executionDetailPath(executionID, reading), replace);
 }
