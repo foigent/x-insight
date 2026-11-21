@@ -1,6 +1,6 @@
 # Develop and qualify X-Insight
 
-This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md). The published preview is [FPV24 / schema 47](releases/v0.2.0-dev.fpv24.md). The commands below cover source builds and qualification. Historical scenarios keep their original revisions and evidence scope.
+This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md). The published preview is [FPV25 / schema 47](releases/v0.2.0-dev.fpv25.md). The commands below cover source builds and qualification. Historical scenarios keep their original revisions and evidence scope.
 
 ## Prerequisites
 
@@ -160,7 +160,7 @@ scripts/build-signed-release.sh output/current-preparation --profile=development
 
 Choose a new output path. `--dry-run` checks release preconditions without looking up a signing key. `--prepare-only` builds an unsigned, non-installable preparation and stops before signing. A release requires a separately authorized trust authority and exact-artifact verification. CI-generated ephemeral keys and packages are qualification outputs. Public downloadability does not establish owner release authority or authorize customer installation.
 
-For an approved managed distribution, follow [signed distribution and installation](signed-distribution.md). It covers the published FPV20 preview, independent bootstrap/trust and managed installation. The ordinary installed UniRouter pair still has its own pending acceptance; see [current status](release-readiness.md).
+For an approved managed distribution, follow [signed distribution and installation](signed-distribution.md) for the current FPV25 preview. See [current status](release-readiness.md) for version-specific installed and joint acceptance.
 
 ## Connect UniRouter and verify the pair
 
