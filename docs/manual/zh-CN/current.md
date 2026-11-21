@@ -6,7 +6,7 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 
 ## 版本与支持边界
 
-产品 `0.2.0-dev.schema49-ci.1`，手册 `0.2.0-dev.schema49-ci.1/manual-r1`。
+产品 `0.2.0-dev.fpv26`，手册 `0.2.0-dev.fpv26/manual-r1`。
 
 | 项目 | 当前合同 |
 | --- | --- |
@@ -58,8 +58,8 @@ dry-run 只读检查身份与工具链；prepare-only 构建二进制和 payload
 独立核对 bootstrap verifier 与信任权威后，验签并解入全新目录：
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.schema49-ci.1
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.schema49-ci.1
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
@@ -75,7 +75,7 @@ sudo /opt/x-insight/current/bin/xinsightctl status
 
 只在预检通过且部署已获授权后运行实际安装。安装创建受管部署身份，不得复制或编辑；首次安装不会自动接入 UniRouter 或启动未配置 worker。应用和数据库保持 loopback；浏览器登录前配置批准的 HTTPS origin 与可信本地 TLS terminator。未登录产品请求跳转登录，API 返回401；cookie 保持 Secure/HttpOnly/SameSite。浏览器在普通 HTTP 上拒绝提交密码。
 
-已有 FPV24 安装时，使用受管升级流程。若按发布权威选择增量传输，先用已核实的独立 `xinsight-release` 和本机缓存的准确 FPV24 签名包还原目标完整包。验签并解出目标后，用目标目录的 `xinsightctl upgrade --check` 核对当前安装、数据库和备份条件。按维护窗口保留原安装与数据。
+已有 FPV25 安装时，使用受管升级流程。若按发布权威选择增量传输，先用已核实的独立 `xinsight-release` 和本机缓存的准确 FPV25 签名包还原目标完整包。验签并解出目标后，用目标目录的 `xinsightctl upgrade --check` 核对当前安装、数据库和备份条件。按维护窗口保留原安装与数据。
 
 ## 首次来源接入
 

@@ -6,7 +6,7 @@ X-Insight (XI) can be used independently for supported imports, reported work ac
 
 ## Version and support
 
-Product `0.2.0-dev.schema49-ci.1`; manual `0.2.0-dev.schema49-ci.1/manual-r1`.
+Product `0.2.0-dev.fpv26`; manual `0.2.0-dev.fpv26/manual-r1`.
 
 | Item | Current contract |
 | --- | --- |
@@ -58,8 +58,8 @@ Managed installation needs an explicitly selected, qualified host, a dedicated e
 After independently checking the bootstrap verifier and trust authority, verify and extract into a new directory:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.schema49-ci.1
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.schema49-ci.1
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
@@ -75,7 +75,7 @@ sudo /opt/x-insight/current/bin/xinsightctl status
 
 Only run the mutating install after its preflight passes and the deployment is authorized. Installation creates the managed deployment identity; do not copy or edit it. A first install does not automatically connect to UniRouter or start an unconfigured source worker. Keep application/database listeners on loopback and configure the approved HTTPS origin and trusted local TLS terminator before browser login. Unauthenticated product navigation redirects to login; unauthenticated API calls return401. Session cookies remain Secure/HttpOnly/SameSite. The browser refuses password submission over plain HTTP.
 
-For an existing FPV24 installation, follow the managed upgrade procedure. If the release authority admits delta transfer, use the independently verified `xinsight-release` and the exact cached signed FPV24 bundle to reconstruct the complete target. Verify and extract it, then use the target payload’s `xinsightctl upgrade --check` to check the current installation, database and backup requirements. Preserve the installation and its data during the approved maintenance window.
+For an existing FPV25 installation, follow the managed upgrade procedure. If the release authority admits delta transfer, use the independently verified `xinsight-release` and the exact cached signed FPV25 bundle to reconstruct the complete target. Verify and extract it, then use the target payload’s `xinsightctl upgrade --check` to check the current installation, database and backup requirements. Preserve the installation and its data during the approved maintenance window.
 
 ## Connect the first source
 
