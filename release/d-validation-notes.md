@@ -1,3 +1,13 @@
+# FPV27 / schema 49 source candidate
+
+The development profile `0.2.0-dev.fpv27` retains the schema 49 migration set and the exact published FPV25 upgrade basis. New Workbench Readings replay membership and keep gateway and reference totals fixed. Rejected continuations require a fresh reading and authorization changes clear stale results.
+
+Cost and usage links carry the selected evidence event and a cutoff. Evidence committed later can appear under that time filter if the event occurred by the cutoff. Investigation links with an evidence revision replay that committed revision under current access. Legacy request-ID routes reject cross-source ambiguity before returning evidence.
+
+CI uses temporary qualification trust. The existing FPV25 release keeps its own package and authority record. FPV27 signing, public hashes and installed results are recorded after their respective checks.
+
+## Historical source candidates
+
 # FPV26 / schema 49 source candidate
 
 The development profile `0.2.0-dev.fpv26` binds the schema 49 migration set and compiled schema contract. Investigation citations pin an evidence publication. New Workbench Readings replay exact membership and seal the gateway and reference totals. Historical Readings retain their existing materialized members.

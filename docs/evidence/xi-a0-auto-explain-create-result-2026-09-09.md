@@ -1,5 +1,7 @@
 # XI-A0：一次真实300k创建成功，实际写事务复现digest/coverage差计划
 
+> **历史引用。** 当时隔离合成 PostgreSQL 实例的 auto_explain 探针及一次 300k 实际创建结果。两次探针目录分别对应失败尝试与成功的仪器化诊断。该成功样本仅覆盖一次创建。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **唯一一次正常Store创建成功并保留，新reading `xwr_9kVW5mAm_-NntzgtjeDoRQ`；实例现在为20 headers/6000000 members。** 完整ref和coverage与原有效基准及持久化读回一致。实际新写事务的digest/coverage均使用custom，将新ID的300000成员估为1行，确认此前既有行对照机制也发生于本次真实创建。仪器化总耗时10403.924ms，INSERT5468.094ms；这不是原连续20次资格、p95或HTTP通过，A0仍未通过。
 
 代码基线d6ae76f9990f7900276f4ac033ad9965428f7db5。仅新增诊断测试/runner、计划/记录/证据；产品SQL、索引、schema、角色权限、HTTP预算未改。运行完成后未执行产品候选、500k或额外创建。
@@ -8,7 +10,7 @@
 
 经理明确批准在同一隔离合成实例 `/private/tmp/xi-pc-hcpwpsza/data` 执行一次300k新ID正常产品创建，并使用现有auto_explain。原 `/private/tmp/xi-cap-7qgkhj7u/qualification/data` 保持停库只读，没有新增数据副本。采用本次启动参数session_preload_libraries及analyze/buffers/WAL/settings/triggers、JSON、timing/nested关闭、参数完整记录；其余WAL1GB/shared128MB/work4MB/wal_buffers4MB、约束/持久性/SQL10s保持。
 
-准备期编译/离线测试/vet完成后，沙箱拒绝/bin/ps；经平台审批仅补做资源读取，未重复编译或启动PG。首次运行08:00:33.281548UTC开始，在参数轻量前置之前因受限pg_settings不显示session_preload_libraries而停在**0创建**，PG正常停库。原始workspace日志已有实际auto_explain计划，全部模块参数也可见；错误是观察器将缺项等同空值。[首次诊断](../../output/xi-a0-auto-create-run/diagnostic.json)、[失败日志](../../output/xi-a0-auto-create-run/diagnostic.log)、执行时Go/runner/计划及原二进制均保留。
+准备期编译/离线测试/vet完成后，沙箱拒绝/bin/ps；经平台审批仅补做资源读取，未重复编译或启动PG。首次运行08:00:33.281548UTC开始，在参数轻量前置之前因受限pg_settings不显示session_preload_libraries而停在**0创建**，PG正常停库。原始workspace日志已有实际auto_explain计划，全部模块参数也可见；错误是观察器将缺项等同空值。首次诊断（`output/xi-a0-auto-create-run/diagnostic.json`）、失败日志（`output/xi-a0-auto-create-run/diagnostic.log`）、执行时Go/runner/计划及原二进制均保留。
 
 PG16实现将该设置标记为GUC_SUPERUSER_ONLY，并按pg_read_all_settings权限决定可见性。[设置定义](https://github.com/postgres/postgres/blob/REL_16_STABLE/src/backend/utils/misc/guc_tables.c)、[可见性实现](https://github.com/postgres/postgres/blob/REL_16_STABLE/src/backend/utils/misc/guc_funcs.c)。修正版只把启动项SHOW放到现有诊断admin，workspace仍强制验证实际模块设置、轻量text/array/timestamptz返回和完整参数日志。未增权、安装或降低前置要求。
 
@@ -22,7 +24,7 @@ PG16实现将该设置标记为GUC_SUPERUSER_ONLY，并按pg_read_all_settings�
 
 前后计数为 `[19,5700000,0,0,500020,500100]` → `[20,6000000,0,0,500020,500100]`，依次为reading/member/saved_filter/operation/F0/evidence。前19个header仍在，仅新增上述ID；该reading实际成员300000。产品返回和GetWorkbenchReading读回的membership_ref均为 `sha256:bc008bc4c4771660899c4659b8b1815d14999fce75acc347b54651391a0bb9a1`，coverage完整对象等于既有有效样本：not_connected、known_items300000、projection_complete_for_members=true、原固定水位及gaps均一致。这里有真实返回及持久化读回，不以EXPLAIN行数替代语义。
 
-原始[diagnostic.json](../../output/xi-a0-auto-create-run-02/diagnostic.json)、[PG日志](../../output/xi-a0-auto-create-run-02/postgres.log)、[参数/计划派生审计](../../output/xi-a0-auto-create-run-02/analysis.json)及[可重跑分析脚本](../../output/xi-a0-auto-create-run-02/analyze.py)保留。
+原始`output/xi-a0-auto-create-run-02/diagnostic.json`、PG日志（`output/xi-a0-auto-create-run-02/postgres.log`）、参数/计划派生审计（`output/xi-a0-auto-create-run-02/analysis.json`）及可重跑分析脚本（`output/xi-a0-auto-create-run-02/analyze.py`）保留。
 
 ## 阶段与实际计划
 
@@ -66,4 +68,4 @@ SQL均低于10秒；整次调用超过10秒不等于单SQL超时。阶段时间�
 3. **推荐读取候选稳定后，以无auto_explain的正常创建阶段数据决定INSERT下一步**。若INSERT仍阻断5秒，优先单变量对照shared_buffers128/512MB，明确固定wal_buffers4MB、WAL1GB、work4MB、持久性与SQL10s，检验本次大量随机页/写入周转是否真正下降；这是隔离配置诊断建议，未采用512默认，需另定匹配前态与资源计划。不要把增加WAL上限4GB当作已通过方案；先前反证保留。仅当相应证据支持时再决定产品配置或进一步SQL候选，保留原FK/不可变事实语义。
 4. **不以节省读阶段推算资格**：历史INSERT成功子集p95已超过5秒，本次仪器化INSERT也约5.468秒。不能减去异次G/C差额或相加阶段中位数，声称整体能达标。关闭诊断日志后，以最终代码/二进制在共同空成员模板完成原20×300k全成功且p95≤5s；只有该资格达到6M才做原500k，随后完成增长后summary/top/hourly、选定组全量分页、ordinal/money/ref及实际HTTP/lifecycle。当前诊断留下6M不满足该前置，HTTP现有3秒预算未变。
 
-当前已批准的“一次创建诊断”已完成；下一产品修改/配置对照仍供双方决定。原13项/TD/R3/A0/D-37-01和UR禁联、外部操作边界未改变。无push/PR/merge/release/deploy或跨任务消息。最终核验见[delivery-verification.json](../../output/xi-a0-auto-create-run-02/delivery-verification.json)，字节绑定见[evidence-binding.json](../../output/xi-a0-auto-create-run-02/evidence-binding.json)。
+当前已批准的“一次创建诊断”已完成；下一产品修改/配置对照仍供双方决定。原13项/TD/R3/A0/D-37-01和UR禁联、外部操作边界未改变。无push/PR/merge/release/deploy或跨任务消息。最终核验见`output/xi-a0-auto-create-run-02/delivery-verification.json`，字节绑定见`output/xi-a0-auto-create-run-02/evidence-binding.json`。

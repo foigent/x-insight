@@ -6,6 +6,10 @@ Date: 2026-07-14
 Owner: Codex
 Scope: X-Insight only
 
+This records the CI routing decision and qualification results from July 2026.
+For current jobs and path rules, see [CI](../../.github/workflows/ci.yml) and
+[the change router](../../scripts/ci-change-router.py).
+
 ## Decision
 
 X-Insight uses one `CI` workflow with event- and path-aware job routing. Pull

@@ -1,19 +1,21 @@
 # XI-A0 checkpoint 对照结果：4GB 未获得创建延迟收益
 
+> **历史引用。** 当时同一隔离合成基线的 1GB／4GB WAL 对照。文件涵盖两臂运行、EXPLAIN 和保护检查，该结果只回答文内首对筛选条件。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 已完成经理批准的首对诊断。**不采用4GB作为候选默认，不进入反序对或条件性500k探针。** 两臂各6次300k均提交成功，但B的中位数、最大值及含尾部checkpoint的摊销成本均未优于A，不满足计划中的20%方向筛选条件。A0和原13项目标仍未验收；这不是20次p95或HTTP资格通过。
 
 ## 运行身份与范围
 
 - 单一执行Owner：`01a08361-94fa-73a3-9a71-f2e2507f08c4`；工作树 `/private/tmp/xinsight-xi-a0-20260909`；产品基线 `033a19678a38dec6aacd9dcbb8466645259ba016`，tree `6e834e254b1b69438b38f44b4d2781be022eb870`。
 - 经理批准[计划](../planning/xi-a0-checkpoint-performance-plan-2026-09-09.md)的SHA256为 `41ab9ccfbac6ef1c2da22b97957fabf9bf3f8603e900564c3285a1f103a04804`；执行时一致。代码仅新增诊断测试/runner，并在原seed测试增加保留完整临时模板的分支，产品SQL、schema、索引、权限、HTTP/SQL预算均未修改。
-- A/B使用同一Go测试可执行文件，SHA256 `8aa4873c05e8dd699c1d38bbdccaf090e2f00c91e0e98a3c28559e4a96a8bac0`。全部编译输入、runner和计划绑定见[code-binding.json](../../output/xi-a0-checkpoint/code-binding.json)。实测后重新计算，编译输入与二进制均未漂移。运行时包含当前 `pg_catalog.sha256` 路径。
+- A/B使用同一Go测试可执行文件，SHA256 `8aa4873c05e8dd699c1d38bbdccaf090e2f00c91e0e98a3c28559e4a96a8bac0`。全部编译输入、runner和计划绑定见`output/xi-a0-checkpoint/code-binding.json`。实测后重新计算，编译输入与二进制均未漂移。运行时包含当前 `pg_catalog.sha256` 路径。
 - PG16.14、Go1.25.11、GOMAXPROCS10。每个臂均实际连接 `session_user=current_user=xinsight_workspace`、非超级用户、连接上限10、statement_timeout=10s、可INSERT成员但不可UPDATE F0。`EnsureRoles/ApplyGrants/VerifyRoleBoundaries`均使用现有hostctl实现，通过后才生成模板副本。密码仅用于已批准的合成角色，在内存生成；未使用真实凭据。
 - 逐项记录的PG参数中，A/B设置值仅 `max_wal_size` 不同：1024/4096MB。shared_buffers128MB、work_mem4MB、checkpoint_timeout300s、checkpoint_completion_target0.9、fsync/full_page_writes/synchronous_commit=on、wal_level=replica及正常autovacuum保持一致；观测开关两臂均开启。约束定义/validated状态、触发器及身份读回一致，F0 guard为ALWAYS。
 - 完整静止模板1599个文件逐字节SHA256核对通过，两臂manifest均绑定 `cc7ec1b048867c96c09a218fd3097ded6ae2a72d3133a72671e4f11539ec5032`。模板有性能来源500000条F0、另20条可见性事实，headers/members均为0。不是重新随机seed的两个数据库。
 
 ## 实测结果
 
-原始结果：[A1](../../output/xi-a0-checkpoint/A1.json)、[B1](../../output/xi-a0-checkpoint/B1.json)、[运行记录](../../output/xi-a0-checkpoint/run.json)、[差分分析](../../output/xi-a0-checkpoint/analysis.json)。下表均为毫秒；中位数不是p95。
+原始结果：A1（`output/xi-a0-checkpoint/A1.json`）、B1（`output/xi-a0-checkpoint/B1.json`）、运行记录（`output/xi-a0-checkpoint/run.json`）、差分分析（`output/xi-a0-checkpoint/analysis.json`）。下表均为毫秒；中位数不是p95。
 
 | 量 | A1：1GB | B1：4GB |
 | --- | ---: | ---: |
@@ -35,13 +37,13 @@ B中位数约升3.6%，最大值约升18.6%，含尾部成本约升4.4%。此单
 
 ## checkpoint 假设得到什么支持
 
-创建六次期间，A日志明确有2次 `checkpoint starting: wal`，B为0；两个臂都在最后执行一次显式checkpoint，并记录了其成本。A/B的整个实例日志另含EXPLAIN和停止时checkpoint，不把它们归入六次创建。[A日志](../../output/xi-a0-checkpoint/A1-postgres.log)、[B日志](../../output/xi-a0-checkpoint/B1-postgres.log)。
+创建六次期间，A日志明确有2次 `checkpoint starting: wal`，B为0；两个臂都在最后执行一次显式checkpoint，并记录了其成本。A/B的整个实例日志另含EXPLAIN和停止时checkpoint，不把它们归入六次创建。A日志（`output/xi-a0-checkpoint/A1-postgres.log`）、B日志（`output/xi-a0-checkpoint/B1-postgres.log`）。
 
 从开始到尾部结束的累计统计快照差分：WAL约1.504GB→1.032GB，FPI86462→26336；backend写缓冲块281658→286984，backend fsync均0。WAL量/FPI降低与更少checkpoint相符，但创建INSERT中位数3283→3521ms，digest304→313ms，coverage423→473ms，未见延迟收益。不要相加阶段中位数来重构完整中位数。
 
 统计存在发布滞后，以上差分不能声称是严格逐事务计量；完整原始快照和约1秒采样均保留在JSON及observations.jsonl。实际 `wal_sync_method=open_datasync`，wal_sync_time=0不代表关闭同步写；持久化设置读回保持开启。等待采样有WALWrite、DataFileRead、DataFileWrite，也有无等待的运行状态；这个粒度不足以将尾延迟归因于单一等待。
 
-六次之后的单条INSERT EXPLAIN：A5177.928ms、B4635.744ms；其中fact FK2586.202/2090.057ms、reading FK599.838/582.569ms，各调用300000次。它们属于后置、会写入且回滚的诊断，有仪表开销及不同缓存状态；**B的EXPLAIN更快不能覆盖完整创建与尾部成本没有改善的结果**。原始计划见[A EXPLAIN](../../output/xi-a0-checkpoint/A1-explain.json)、[B EXPLAIN](../../output/xi-a0-checkpoint/B1-explain.json)。
+六次之后的单条INSERT EXPLAIN：A5177.928ms、B4635.744ms；其中fact FK2586.202/2090.057ms、reading FK599.838/582.569ms，各调用300000次。它们属于后置、会写入且回滚的诊断，有仪表开销及不同缓存状态；**B的EXPLAIN更快不能覆盖完整创建与尾部成本没有改善的结果**。原始计划见A EXPLAIN（`output/xi-a0-checkpoint/A1-explain.json`）、B EXPLAIN（`output/xi-a0-checkpoint/B1-explain.json`）。
 
 ## 读取与数据分布
 
@@ -66,7 +68,7 @@ B中位数约升3.6%，最大值约升18.6%，含尾部成本约升4.4%。此单
 - 实际执行 `python3 scripts/xi-a0-checkpoint-diagnostic.py --execute` 成功退出0。`go test ./internal/db -run '^TestWorkbenchCheckpoint' -count=1`编译通过、未设置实验开关时跳过；随后同一测试二进制在实际PG中完成seed、角色、A/B测量及EXPLAIN，均成功。`go vet ./internal/db`与Python语法检查通过。实现过程中首轮编译发现遗漏testing import，修正后才开始PG实验；未产生失败的性能候选重跑。
 - 源码/文档差异检查通过。完整暂存差异检查只指出原始initdb.log的末尾空行；保留原始工具输出字节和既有哈希，未为消除格式提示改写日志。
 - 本次为测试/runner R1变更，未重跑无关前端、全项目R3或发布流程；原有适用证据仍保留，不将本次自测称为独立审查。CI/Artifact/Target/External Integration/Production均无新增验收。
-- [保护校验](../../output/xi-a0-checkpoint/protection-check.json)：原保存项目49份受保护文件及3份继承失败报告哈希均匹配；上一轮114份绑定文件中仅本次有意修改的EXECUTION-RECORD和benchmark测试文件不同，其余112份未变。旧JSON、旧日志、旧绑定、schema24迁移字节与历史发布合同未改。
+- 保护校验（`output/xi-a0-checkpoint/protection-check.json`）：原保存项目49份受保护文件及3份继承失败报告哈希均匹配；上一轮114份绑定文件中仅本次有意修改的EXECUTION-RECORD和benchmark测试文件不同，其余112份未变。旧JSON、旧日志、旧绑定、schema24迁移字节与历史发布合同未改。
 - 无UR联系、真实源/流量/凭据、外部消息、推送、合并、发布、部署、原实例或用户数据清理。仅本地测试改动和证据交付。
 
 ## 独立判断与建议的下一步

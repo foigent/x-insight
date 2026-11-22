@@ -110,6 +110,7 @@ const session: AccessSessionResponse = {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("WorkbenchPage", () => {
@@ -126,8 +127,8 @@ describe("WorkbenchPage", () => {
     vi.mocked(workbenchAPI.contributions).mockResolvedValue({ ...topContributions, dimension: "purpose", order_by: "requests", denominator_requests: 2, unassigned_requests: 1, other_known_requests: 0, rows: [{ ...topContributions.rows[0], label: "software_check", request_count: 1 }] });
     render(<WorkbenchPage session={session} navigate={vi.fn()} usage />);
     expect(await screen.findByRole("heading", { name: "当前范围的用途请求分布" })).toBeTruthy();
-    expect(workbenchAPI.contributions).toHaveBeenCalledWith(reading.reading_id, "purpose", { topN: 10, orderBy: "requests" });
-    expect(workbenchAPI.series).toHaveBeenCalledWith(reading.reading_id, undefined, 3600, "requests");
+    expect(workbenchAPI.contributions).toHaveBeenCalledWith(reading.reading_id, "purpose", { topN: 10, orderBy: "requests" }, expect.any(AbortSignal));
+    expect(workbenchAPI.series).toHaveBeenCalledWith(reading.reading_id, expect.any(AbortSignal), 3600, "requests");
     expect(screen.getByText("1 / 2")).toBeTruthy();
     expect(screen.getAllByText("¥0.000017").length).toBeGreaterThan(0);
     expect(screen.getByText("软件实现与检查")).toBeTruthy();
@@ -140,7 +141,7 @@ describe("WorkbenchPage", () => {
     vi.mocked(workbenchAPI.contributions).mockResolvedValue({ ...topContributions, dimension: "source_project", order_by: "requests", denominator_requests: 2, unassigned_requests: 0, other_known_requests: 0 });
     render(<WorkbenchPage session={session} navigate={vi.fn()} usage />);
     expect(await screen.findByRole("heading", { name: "当前范围的来源项目请求分布" })).toBeTruthy();
-    expect(workbenchAPI.contributions).toHaveBeenCalledWith(reading.reading_id, "source_project", { topN: 10, orderBy: "requests" });
+    expect(workbenchAPI.contributions).toHaveBeenCalledWith(reading.reading_id, "source_project", { topN: 10, orderBy: "requests" }, expect.any(AbortSignal));
     expect(screen.getByText(/本阅读未提供完整用途维度/)).toBeTruthy();
     expect(screen.queryByRole("option", { name: "请求用途" })).toBeNull();
     expect(screen.getByRole("option", { name: "应用" })).toBeTruthy();
@@ -153,7 +154,7 @@ describe("WorkbenchPage", () => {
     vi.mocked(workbenchAPI.contributions).mockResolvedValue({ ...topContributions, dimension: "account", order_by: "requests", denominator_requests: 2, unassigned_requests: 1, other_known_requests: 0 });
     render(<WorkbenchPage session={session} navigate={vi.fn()} usage />);
     expect(await screen.findByRole("heading", { name: "当前范围的账户归属请求分布" })).toBeTruthy();
-    expect(workbenchAPI.contributions).toHaveBeenCalledWith(reading.reading_id, "account", { topN: 10, orderBy: "requests" });
+    expect(workbenchAPI.contributions).toHaveBeenCalledWith(reading.reading_id, "account", { topN: 10, orderBy: "requests" }, expect.any(AbortSignal));
   });
 
   it("keeps source issue counts visible while the usage source facts stay collapsed", async () => {
@@ -182,7 +183,7 @@ describe("WorkbenchPage", () => {
     const initialConfig: WorkbenchReadingRequest = { contract_version: "xinsight.workbench.v1", page: "cost", metric_version: "xinsight.workbench.cost.v1", period: { start_inclusive: "2026-09-01T00:00:00Z", end_exclusive: "2026-09-08T00:00:00Z", display_timezone: "UTC" }, money_basis: "gateway_charged", currency: "CNY", filters: { source_ids: ["source-a"], source_projects: ["project-a"], cost_projects: ["cost-a"] } };
     const ui = render(<WorkbenchPage session={session} navigate={vi.fn()} initialConfig={initialConfig} />);
     await screen.findByText("project-202");
-    expect(workbenchAPI.createReading).toHaveBeenCalledWith(initialConfig, session.csrf_token);
+    expect(workbenchAPI.createReading).toHaveBeenCalledWith(initialConfig, session.csrf_token, expect.any(AbortSignal));
     expect(screen.getByDisplayValue("来源期间（固定起止）")).toBeTruthy();
     expect(screen.getByDisplayValue("已选来源 · source-a")).toBeTruthy();
     expect(screen.getByText(/费用项目：cost-a/)).toBeTruthy();
@@ -190,11 +191,11 @@ describe("WorkbenchPage", () => {
     expect(workbenchAPI.createReading).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole("button", { name: "应用范围" }));
     await waitFor(() => expect(workbenchAPI.createReading).toHaveBeenCalledTimes(2));
-    expect(workbenchAPI.createReading).toHaveBeenLastCalledWith(initialConfig, session.csrf_token);
+    expect(workbenchAPI.createReading).toHaveBeenLastCalledWith(initialConfig, session.csrf_token, expect.any(AbortSignal));
     await user.selectOptions(screen.getByLabelText("期间"), "168");
     await user.click(screen.getByRole("button", { name: "应用范围" }));
     await waitFor(() => expect(workbenchAPI.createReading).toHaveBeenCalledTimes(3));
-    expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({ ...initialConfig, period: { relative_hours: 168, display_timezone: "UTC" } }, session.csrf_token);
+    expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({ ...initialConfig, period: { relative_hours: 168, display_timezone: "UTC" } }, session.csrf_token, expect.any(AbortSignal));
   });
 
 
@@ -239,7 +240,7 @@ describe("WorkbenchPage", () => {
     expect(screen.getByLabelText("贡献维度")).toHaveProperty("value","model");
     expect(screen.getByLabelText("贡献模式")).toHaveProperty("value","top5");
     expect(create).toHaveBeenCalledTimes(1);
-    expect(validate).toHaveBeenCalledWith(reading.reading_id);
+    expect(validate).toHaveBeenCalledWith(reading.reading_id, expect.any(AbortSignal));
     expect((retained as WorkbenchSnapshot|null)?.reading.reading_id).toBe(reading.reading_id);
   });
 
@@ -375,7 +376,7 @@ describe("WorkbenchPage", () => {
     vi.mocked(workbenchAPI.createReading).mockResolvedValue({...reading,period:{...reading.period,start_inclusive:new Date(Date.parse(now)-hours*3600000).toISOString()}});
     const user=userEvent.setup();render(<WorkbenchPage session={session} navigate={vi.fn()}/>);
     await screen.findAllByText("¥0.000017");
-    expect(workbenchAPI.series).toHaveBeenLastCalledWith(reading.reading_id,undefined,seconds);
+    expect(workbenchAPI.series).toHaveBeenLastCalledWith(reading.reading_id,expect.any(AbortSignal),seconds);
     await user.selectOptions(screen.getByLabelText("趋势粒度"),"hourly");
     expect(workbenchAPI.series).toHaveBeenLastCalledWith(reading.reading_id,undefined,3600);
     expect(workbenchAPI.createReading).toHaveBeenCalledTimes(1);
@@ -439,6 +440,55 @@ describe("WorkbenchPage", () => {
     await user.click(screen.getByRole("button",{name:"重试更新"}));
     expect(await screen.findByRole("button",{name:"按当前权限重新建立阅读"})).toBeTruthy();
     expect(screen.queryByRole("button",{name:"← 返回费用贡献"})).toBeNull();expect(screen.queryByText("¥0.000017")).toBeNull();
+  });
+
+  it.each(["contributions", "details"] as const)("discards a rejected %s cursor and starts a fresh reading only on request", async panel => {
+    mockCoreReading(); mockOptional();
+    const user = userEvent.setup();
+    render(<WorkbenchPage session={session} navigate={vi.fn()} />);
+    await screen.findByRole("button", { name: /project-202/ });
+    if (panel === "contributions") {
+      vi.mocked(workbenchAPI.contributions).mockResolvedValueOnce(fullPage("source_project", "old-row", "17", "stale-page"));
+      await user.selectOptions(screen.getByLabelText("贡献模式"), "all");
+    } else {
+      vi.spyOn(workbenchAPI, "details").mockResolvedValueOnce({ reading_id: reading.reading_id, contribution_ref: topContributions.rows[0].ref, rows: [], next_cursor: "stale-page" });
+      await user.click(screen.getByRole("button", { name: /project-202/ }));
+    }
+    vi.mocked(workbenchAPI[panel]).mockRejectedValueOnce(problem(400, "invalid_workbench_request"));
+    const nextPage = await screen.findByRole("button", { name: panel === "details" ? "加载更多依据" : /加载更多贡献/ });
+    await user.click(nextPage);
+    await screen.findByText("分页位置已失效，请从头重新读取。");
+    expect(screen.queryByText("¥0.000017")).toBeNull();
+    expect(screen.queryByRole("button", { name: "重试更新" })).toBeNull();
+    expect(document.body.contains(nextPage)).toBe(false);
+    expect(workbenchAPI.createReading).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "按当前权限重新建立阅读" }));
+    await screen.findByRole("button", { name: /project-202/ });
+    expect(workbenchAPI.createReading).toHaveBeenCalledTimes(2);
+    expect(workbenchAPI.contributions).toHaveBeenLastCalledWith(reading.reading_id, "source_project", { topN: 10 }, expect.any(AbortSignal));
+  });
+
+  it("clears an open reading when its server lifetime ends", async () => {
+    vi.useFakeTimers();
+    mockCoreReading(); mockOptional();
+    vi.mocked(workbenchAPI.createReading).mockResolvedValue({ ...reading, expires_at: "2026-09-09T12:00:01Z" });
+    await act(async () => { render(<WorkbenchPage session={session} navigate={vi.fn()} />); });
+    expect(screen.getByRole("button", { name: /project-202/ })).toBeTruthy();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
+    expect(screen.getByRole("alert").textContent).toContain("本次阅读已过期");
+    expect(screen.queryByRole("button", { name: /project-202/ })).toBeNull();
+  });
+
+  it("stops before requesting summary if reading creation completes after authorization is invalidated", async () => {
+    mockCoreReading(); mockOptional();
+    let finish!: (value: WorkbenchReading) => void;
+    vi.mocked(workbenchAPI.createReading).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    render(<WorkbenchPage session={session} navigate={vi.fn()} />);
+    act(() => window.dispatchEvent(new Event("xinsight:scope-pending")));
+    expect(vi.mocked(workbenchAPI.createReading).mock.calls[0][2]?.aborted).toBe(true);
+    await act(async () => { finish(reading); });
+    expect(workbenchAPI.summary).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toContain("授权范围已变更");
   });
 
   it("does not swallow reading invalidation from optional source reads",async()=>{
@@ -585,7 +635,7 @@ it("blocks scope edits until retained reading restoration finishes after details
  await user.selectOptions(period,"24");await user.clear(project);await user.type(project,"project-new");
  await user.click(screen.getByRole("button",{name:"应用范围"}));
  await waitFor(()=>expect(workbenchAPI.createReading).toHaveBeenCalledOnce());
- expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({...fixed,period:{relative_hours:24,display_timezone:"UTC"},filters:{...fixed.filters,source_projects:["project-new"]}},session.csrf_token);
+ expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({...fixed,period:{relative_hours:24,display_timezone:"UTC"},filters:{...fixed.filters,source_projects:["project-new"]}},session.csrf_token, expect.any(AbortSignal));
  await waitFor(()=>expect(screen.getByRole("button",{name:"应用范围"})).toHaveProperty("disabled",false));
  expect(period.value).toBe("24");expect(project.value).toBe("project-new");
 });
@@ -609,7 +659,7 @@ it.each(["success","failure"] as const)("blocks scope edits during a new reading
  await user.selectOptions(screen.getByLabelText("期间"),"72");
  await user.click(screen.getByRole("button",{name:"应用范围"}));
  await waitFor(()=>expect(workbenchAPI.createReading).toHaveBeenCalledTimes(2));
- expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({...fixed,period:{relative_hours:72,display_timezone:"UTC"}},session.csrf_token);
+ expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({...fixed,period:{relative_hours:72,display_timezone:"UTC"}},session.csrf_token, expect.any(AbortSignal));
  await waitFor(()=>expect(screen.getByRole("button",{name:"应用范围"})).toHaveProperty("disabled",false));
  expect(screen.getByLabelText("期间")).toHaveProperty("value","72");
 });
@@ -632,7 +682,7 @@ it("keeps an available source selector disabled consistently during a busy view 
  await user.selectOptions(source,"source-a");
  await user.click(screen.getByRole("button",{name:"应用范围"}));
  await waitFor(()=>expect(workbenchAPI.createReading).toHaveBeenCalledTimes(2));
- expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({...scopeRequest(),filters:{...scopeRequest().filters,source_ids:["source-a"]}},session.csrf_token);
+ expect(workbenchAPI.createReading).toHaveBeenLastCalledWith({...scopeRequest(),filters:{...scopeRequest().filters,source_ids:["source-a"]}},session.csrf_token, expect.any(AbortSignal));
  await waitFor(()=>expect(source.disabled).toBe(false));
  expect(source.value).toBe("source-a");
 });
@@ -662,7 +712,7 @@ it("carries the applied project scope when switching from cost to request-ranked
   await user.click(screen.getByRole("link",{name:/使用与目的/}));
   expect(await screen.findByRole("heading",{name:"使用与目的"})).toBeTruthy();
   await waitFor(()=>expect(workbenchAPI.createReading).toHaveBeenCalledTimes(3));
-  expect(workbenchAPI.createReading).toHaveBeenLastCalledWith(expect.objectContaining({filters:{source_ids:[],source_projects:["project-new"],cost_projects:[]}}),session.csrf_token);
-  expect(workbenchAPI.contributions).toHaveBeenLastCalledWith(reading.reading_id,"source_project",{topN:10,orderBy:"requests"});
+  expect(workbenchAPI.createReading).toHaveBeenLastCalledWith(expect.objectContaining({filters:{source_ids:[],source_projects:["project-new"],cost_projects:[]}}),session.csrf_token, expect.any(AbortSignal));
+  expect(workbenchAPI.contributions).toHaveBeenLastCalledWith(reading.reading_id,"source_project",{topN:10,orderBy:"requests"}, expect.any(AbortSignal));
  }finally{cleanup();acceptScopeSession(null);window.history.replaceState(null,"","/")}
 });

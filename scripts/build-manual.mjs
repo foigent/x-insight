@@ -33,9 +33,8 @@ const chapters = budget ? [
   ["docs/manual/zh-CN/reference/09-maintenance-diagnostics-and-troubleshooting.md", "diagnostics"],
   ["docs/manual/zh-CN/release-notes/compatibility-matrix.md", "compatibility"],
 ] : [
-  [budget ? "docs/manual/zh-CN/d-validation.md" : "docs/manual/zh-CN/b-validation.md", budget ? "d-validation" : "b-validation"],
-  ...(budget ? [["docs/manual/zh-CN/admin/10-workbench-access.md", "workbench-access"]] : []),
-  [budget ? "docs/manual/zh-CN/operator/06-execution-investigation-workflow-development-d.md" : "docs/manual/zh-CN/operator/06-execution-investigation-workflow.md", "investigation-workflow"],
+  ["docs/manual/zh-CN/b-validation.md", "b-validation"],
+  ["docs/manual/zh-CN/operator/06-execution-investigation-workflow.md", "investigation-workflow"],
   ["docs/manual/zh-CN/operator/07-source-provenance-and-capture-gaps.md", "provenance-gaps"],
 ];
 
@@ -74,6 +73,7 @@ sourceDigest.update(`${matrixPath}\0`);
 sourceDigest.update(matrixSource);
 const rendered = [];
 const navigation = [];
+const chapterTargets = new Map(chapters.map(([path, id]) => [resolve(root, path), id]));
 for (const [relativePath, chapterID] of chapters) {
   const source = await readFile(resolve(root, relativePath), "utf8");
   if (["docs/manual/zh-CN/b-validation.md", "docs/manual/zh-CN/current.md", "docs/manual/en-US/index.md"].includes(relativePath)) {
@@ -153,7 +153,9 @@ for (const [relativePath, chapterID] of chapters) {
   sourceDigest.update(relativePath);
   sourceDigest.update("\0");
   sourceDigest.update(source);
-  const result = renderChapter(source, chapterID);
+  const chapterDirectory = dirname(resolve(root, relativePath));
+  const inline = (value) => renderInline(value, (filename) => chapterTargets.get(resolve(chapterDirectory, filename)));
+  const result = renderChapter(source, chapterID, inline);
   rendered.push(result.html);
   navigation.push(`<a href="#${chapterID}">${escapeHTML(result.title)}</a>`, ...result.navigation);
 }
@@ -265,7 +267,7 @@ console.log(`manual_source_sha256=${digest}`);
 
 for (const language of budget ? ["en-US", "zh-CN"] : ["zh-CN"]) await buildManual(language);
 
-function renderChapter(markdown, chapterID) {
+function renderChapter(markdown, chapterID, inline) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const firstHeading = lines.find((line) => /^#\s+/.test(line));
   if (!firstHeading) {
@@ -334,7 +336,7 @@ function renderChapter(markdown, chapterID) {
         index += 1;
       }
       index -= 1;
-      output.push(renderTable(tableLines));
+      output.push(renderTable(tableLines, inline));
       continue;
     }
     const unordered = line.match(/^-\s+(.+)$/);
@@ -369,7 +371,7 @@ function renderChapter(markdown, chapterID) {
   return { title, html: output.join("\n"), navigation };
 }
 
-function renderTable(lines) {
+function renderTable(lines, inline) {
   if (lines.length < 2 || !/^\|?\s*:?-{3}/.test(lines[1])) {
     throw new Error("manual table requires a header separator row");
   }
@@ -383,10 +385,14 @@ function renderTable(lines) {
   return `<div class="table-scroll"><table>${header}<tbody>${bodyRows}</tbody></table></div>`;
 }
 
-function inline(value) {
+function renderInline(value, chapterIDFor) {
   return escapeHTML(value)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\[\]]+)\]\(([A-Za-z0-9_-]+\.md)\)/g, (match, label, filename) => {
+      const chapterID = chapterIDFor(filename);
+      return chapterID ? `<a href="#${chapterID}">${label}</a>` : match;
+    });
 }
 
 function escapeHTML(value) {

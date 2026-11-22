@@ -20,7 +20,7 @@ import {
   type TraceJourneyNode,
 } from "./api";
 import { EmptyState, ErrorState, LoadingBlock } from "./Feedback";
-import { formatCanonicalTime, formatDateTime, shortRef } from "./format";
+import { displayValue, formatCanonicalTime, formatDateTime, shortRef } from "./format";
 import { OutcomeBadge } from "./status";
 
 interface PosturePageProps {
@@ -182,16 +182,16 @@ export function PosturePage({ session, navigate }: PosturePageProps) {
                 <small>{range === "24h" ? t("m1412") : t("m1413")}</small>
               </div>
               <div className="posture-hero-copy">
-                <strong>{formatCount(posture.risk.open_total)}</strong>
+                <strong>{displayValue(posture.risk.open_total)}</strong>
                 <div>
                   <h2>{tx("m1414")}</h2>
                   <p>{postureState?.description}</p>
                 </div>
               </div>
               <dl className="posture-hero-metrics">
-                <div><dt>{tx("m1415")}</dt><dd>{formatCount(posture.risk.critical + posture.risk.error)}</dd></div>
-                <div><dt>{tx("m1416")}</dt><dd>{formatCount(posture.risk.affected_executions)}</dd></div>
-                <div><dt>{tx("m1417")}</dt><dd>{formatCount(posture.executions.with_gaps)}</dd></div>
+                <div><dt>{tx("m1415")}</dt><dd>{displayValue(posture.risk.critical + posture.risk.error)}</dd></div>
+                <div><dt>{tx("m1416")}</dt><dd>{displayValue(posture.risk.affected_executions)}</dd></div>
+                <div><dt>{tx("m1417")}</dt><dd>{displayValue(posture.executions.with_gaps)}</dd></div>
               </dl>
               <button
                 type="button"
@@ -371,7 +371,7 @@ function SourceTrustCard({
           return (
             <div key={source.sourceSystemID}>
               <span><i className={`posture-source-dot source-${trust}`} aria-hidden="true" />{source.displayName}</span>
-              <span><strong>{formatCount(source.executionTotal)} exec</strong><small>{tx("m1444", { value0: source.failureTotal, value1: source.executionsWithGaps })}</small></span>
+              <span><strong>{displayValue(source.executionTotal)} exec</strong><small>{tx("m1444", { value0: source.failureTotal, value1: source.executionsWithGaps })}</small></span>
               <em>{trustLabel(trust)}</em>
             </div>
           );
@@ -544,7 +544,7 @@ function TrendPanel({ posture, signal, onSignal }: { posture: PostureSnapshot; s
         <TrendTab active={signal === "alerts"} label={t("m1472")} onClick={() => onSignal("alerts")} />
       </div>
       <div className="posture-trend-reading">
-        <div><span>{tx("m1473")}</span><strong>{formatCount(total)}</strong><p>{trendExplanation(signal)}</p></div>
+        <div><span>{tx("m1473")}</span><strong>{displayValue(total)}</strong><p>{trendExplanation(signal)}</p></div>
         <div className="posture-chart" role="img" aria-label={t("m1474", { value0: trendLabel(signal) })}>
           {posture.trend.items.length === 0 ? (
             <span className="posture-chart-empty">{tx("m1475")}</span>
@@ -671,10 +671,6 @@ function trendExplanation(signal: TrendSignal) {
 function formatPercent(value: string | undefined) {
   if (value === undefined || Number.isNaN(Number(value))) return "N/A";
   return `${Math.round(Number(value) * 100)}%`;
-}
-
-function formatCount(value: number) {
-  return new Intl.NumberFormat(getLocale()).format(value);
 }
 
 function formatBucket(value: string | undefined) {

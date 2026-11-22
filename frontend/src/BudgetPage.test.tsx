@@ -11,7 +11,8 @@ import { budgetPercentage, formatBudgetMoney, type BudgetItem, type BudgetReadin
 
 const session: AccessSessionResponse = { session: { session_ref: "session", subject_id: "reader", role: "workbench_reader", permissions: ["workbench.summary.read", "workbench.details.read"], created_at: "", last_seen_at: "", idle_expires_at: "", absolute_expires_at: "" }, csrf_token: "csrf" };
 const amount = (value: string) => ({ value_minor: value, currency: "CNY", scale: "1000000" });
-const reading: BudgetReading = { reading_id: "xbd_aaaaaaaaaaaaaaaaaaaaaa", contract_version: "xinsight.budget-reading.v1", cutoff: "2026-10-02T00:01:00Z", expires_at: "2026-10-02T00:31:00Z", membership_ref: "sha256:manifest", budget_count: 1, calculated_budget_source_state: "formal_source_profile_missing", independent_invoice_source_state: "independent_source_not_bound" };
+const cutoff = Date.now();
+const reading: BudgetReading = { reading_id: "xbd_aaaaaaaaaaaaaaaaaaaaaa", contract_version: "xinsight.budget-reading.v1", cutoff: new Date(cutoff).toISOString(), expires_at: new Date(cutoff + 30 * 60_000).toISOString(), membership_ref: "sha256:manifest", budget_count: 1, calculated_budget_source_state: "formal_source_profile_missing", independent_invoice_source_state: "independent_source_not_bound" };
 function item(): BudgetItem {
   return { ref: "00000000-0000-4000-8000-000000000001", budget_ref: "gateway-project:2", source_system_id: "source", source_instance: "synthetic", org_id: "1", project_id: "2", source_reading_id: "ur-reading-one", source_reading_cutoff: "2026-10-02T00:00:00Z", source_observed_at: "2026-10-02T00:00:01Z", received_at: "2026-10-02T00:00:02Z", definition_revision: "2", source_state: "active", runtime_effect: "report_only", detail_relationship: "request_membership_not_provided",
     definition: { state: "available", source_hash: "sha256:definition", body: { amount: amount("1000000000"), setting_state: "active", period_kind: "monthly" } },
@@ -109,4 +110,34 @@ it("shows a current source outage separately from the saved whole-period snapsho
   expect(await screen.findByText(/来源目前不可达/)).toBeTruthy();
   expect(screen.getByText("600 CNY")).toBeTruthy();
   expect(screen.getByText(/不代表当前已用/)).toBeTruthy();
+});
+
+it("retries a temporarily unavailable saved reading by its original ID", async () => {
+  window.history.replaceState({}, "", `/workbench/cost?view=budgets&reading=${reading.reading_id}`);
+  vi.mocked(budgetAPI.reading).mockRejectedValueOnce(new ApiRequestError(503));
+  const user = userEvent.setup();
+  render(<BudgetPage session={session} navigate={vi.fn()} />);
+  await user.click(await screen.findByRole("button", { name: "重试" }));
+  expect(await screen.findByText("1,000 CNY")).toBeTruthy();
+  expect(budgetAPI.reading).toHaveBeenCalledTimes(2);
+  expect(budgetAPI.reading).toHaveBeenLastCalledWith(reading.reading_id, expect.any(AbortSignal));
+  expect(budgetAPI.createReading).not.toHaveBeenCalled();
+});
+
+it.each([400, 410])("requires a new first page after a budget continuation returns %s", async status => {
+  const newReading = { ...reading, reading_id: "xbd_bbbbbbbbbbbbbbbbbbbbbb" };
+  vi.mocked(budgetAPI.createReading).mockResolvedValueOnce(reading).mockResolvedValueOnce(newReading);
+  vi.mocked(budgetAPI.items)
+    .mockResolvedValueOnce({ reading_id: reading.reading_id, items: [item()], next_cursor: "old-reading-cursor" })
+    .mockRejectedValueOnce(new ApiRequestError(status))
+    .mockResolvedValueOnce({ reading_id: newReading.reading_id, items: [item()] });
+  const user = userEvent.setup();
+  render(<BudgetPage session={session} navigate={vi.fn()} />);
+  await user.click(await screen.findByRole("button", { name: /更多预算/ }));
+  expect(await screen.findByRole("alert")).toBeTruthy();
+  expect(screen.queryByText("1,000 CNY")).toBeNull();
+  expect(screen.queryByRole("button", { name: "重试" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "重新读取预算" }));
+  expect(await screen.findByText("1,000 CNY")).toBeTruthy();
+  expect(budgetAPI.items).toHaveBeenLastCalledWith(newReading.reading_id, undefined, expect.any(AbortSignal));
 });

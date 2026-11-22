@@ -6,7 +6,7 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 
 ## 版本与支持边界
 
-产品 `0.2.0-dev.fpv26`，手册 `0.2.0-dev.fpv26/manual-r1`。
+产品 `0.2.0-dev.fpv27`，手册 `0.2.0-dev.fpv27/manual-r1`。
 
 | 项目 | 当前合同 |
 | --- | --- |
@@ -24,7 +24,7 @@ X-Insight（XI）可独立用于受支持的数据导入、工作活动报告、
 
 安装前先准备文档要求的系统依赖和专用 loopback PostgreSQL16 数据库。所附 Compose profile 使用固定 PostgreSQL 容器，应用仍以原生 systemd 服务运行。全新安装要求空库和未占用的 XI 应用路径及单元名称。若已有 XI，选择受支持升级路径，或按自己的维护／恢复流程先备份并退役精确的旧应用对象。数据重置、测试根映射或仅删除安装状态文件不构成全新安装；共享服务和数据库须保留。schema 49 新装须分别通过 Ubuntu 22.04／容器 PostgreSQL16 和 Ubuntu 24.04／原生 PostgreSQL16 验证。已发布 FPV22 至 FPV25 的增量还原及升级须在 Ubuntu 22.04／容器 PostgreSQL16 验证。
 
-配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`、`0.2.0-dev.fpv22`、`0.2.0-dev.fpv23`、`0.2.0-dev.fpv24`、`0.2.0-dev.fpv25`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。schema47 新增持久账号和 owner 明确项目阅读；不能将 schema46 的旧二进制用于回退。
+配置声明的升级来源为 `0.2.0-dev.b2`、`0.2.0-dev.d1`、`0.2.0-dev.d2`、`0.2.0-dev.fpv1`、`0.2.0-dev.fpv2`、`0.2.0-dev.fpv3`、`0.2.0-dev.fpv4`、`0.2.0-dev.fpv5`、`0.2.0-dev.fpv11`、`0.2.0-dev.fpv12`、`0.2.0-dev.fpv13`、`0.2.0-dev.fpv14`、`0.2.0-dev.fpv15`、`0.2.0-dev.fpv16`、`0.2.0-dev.fpv17`、`0.2.0-dev.fpv18`、`0.2.0-dev.fpv19`、`0.2.0-dev.fpv20`、`0.2.0-dev.fpv21`、`0.2.0-dev.fpv22`、`0.2.0-dev.fpv23`、`0.2.0-dev.fpv24`、`0.2.0-dev.fpv25`。声明只用于兼容性预检，不表示每条升级路径均已完成安装验证。FPV26 要求数据库 schema 49，禁用应用回退。恢复应依据已核验的备份与批准的恢复流程。
 
 ## 构建与本地试用
 
@@ -58,14 +58,14 @@ dry-run 只读检查身份与工具链；prepare-only 构建二进制和 payload
 独立核对 bootstrap verifier 与信任权威后，验签并解入全新目录：
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv27
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv27
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
 使用已验签 payload 的部署模板。在 `/etc/x-insight/database/current/` 保留四个独立受保护 DSN 文件：`postgres-admin.dsn`、`postgres-reader.dsn`、`postgres-workspace.dsn`、`postgres-importer.dsn`，指向同一个 loopback 专用数据库和不同角色。不得通过命令参数或服务环境值传递密码。主机工具、owner/mode、数据库身份、监听范围和 profile 均须通过控制器检查。
 
-新安装不需要账号文件，也不设默认密码。安装后按[账号与项目阅读](#accounts)创建首个 owner 的私有激活交付。升级只导入一次合法 v1/v2/v3 旧账号文件，之后以数据库为权威；日常邀请、恢复、停用／启用在网页完成。
+新安装不需要账号文件，也不设默认密码。安装后按[账号与项目阅读](accounts.md)创建首个 owner 的私有激活交付。升级只导入一次合法 v1/v2/v3 旧账号文件，之后以数据库为权威；日常邀请、恢复、停用／启用在网页完成。
 
 ```text
 sudo /approved/staging/candidate/bin/xinsightctl install --check --artifact /approved/candidate.tar.gz
@@ -91,7 +91,7 @@ sudo /opt/x-insight/current/bin/xinsightctl status
 
 ## 普通用户的范围授权
 
-owner 元数据阅读也须明确授权。在账号页面预览并确认账号、来源、精确项目和字段；管理能力不默认授予数据或正文，见[账号与项目阅读](#accounts)。
+owner 元数据阅读也须明确授权。在账号页面预览并确认账号、来源、精确项目和字段；管理能力不默认授予数据或正文，见[账号与项目阅读](accounts.md)。
 
 角色能力与 active grant 同时生效。grant 按能力与范围取并集，窄 grant 不能限制另一个宽 grant。UR 来源项目使用 `project-<project_id>`，不是裸数字。以下只示范形状，所有身份与范围都应替换为实际批准值：
 
@@ -121,7 +121,9 @@ sudo xinsightctl workbench-access show --grant-id 11111111-1111-4111-8111-111111
 
 ## 调查、费用与复核
 
-从总览或使用/目的、运行/执行、安全/复核、费用/使用、来源/覆盖专题开始，选择期间和获准项目后打开执行。先核对来源、execution ID、reading ID、截止、覆盖与证据引用。同一 reading 固定阅读依据，后到来源修订不改写旧阅读。
+从总览或使用/目的、运行/执行、安全/复核、费用/使用、来源/覆盖专题开始，选择期间和获准项目后打开执行。先核对来源、execution ID、reading ID、截止、覆盖与证据引用。带版本的执行链接同时携带 `as_of` 和 `evidence_revision`，按已提交的证据重放，每次读取仍检查当前权限。从费用与使用打开的链接携带截止时间和选中的证据事件，按时间筛选。发生在截止时间以内、之后才入库的已授权证据可能出现。阅读和授权仍有效时，返回工作台可恢复原选择。分页游标可能早于对应的版本阅读到期。原证据版本不可用时，可选择「读取最新结果」，保留筛选并建立新阅读。
+
+比较两个执行时，在表单中填写各自的执行 ID、截止时间和证据版本。从比较结果打开详情会带上该侧提交的版本。只填写截止时间时，按时间筛选。
 
 沿执行查看运行请求、资源、来源事实和相关工作。运行结果与经济事实是不同集合：扣费失败或缺失不能证明执行失败，缺少资源事件不能证明未访问。提供方请求表示提交了什么，不表示模型内部实际使用。相关工作只有真实关系依据满足条件时才合并。
 

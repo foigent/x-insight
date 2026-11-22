@@ -451,7 +451,7 @@ function AppContent() {
         ) : route.kind === "sessions" ? (
           <SessionsPage session={session} navigate={navigate} />
         ) : route.kind === "session-detail" ? (
-          <SessionDetailPage sessionID={route.sessionID} session={session} navigate={navigate} />
+          <SessionDetailPage key={route.sessionID} sessionID={route.sessionID} session={session} navigate={navigate} />
         ) : route.kind === "compare" ? (
           <ComparePage session={session} navigate={navigate} />
         ) : route.kind === "connector-setup" ? (<ConnectorSetupPage session={session}/>) : route.kind === "connectors" ? (

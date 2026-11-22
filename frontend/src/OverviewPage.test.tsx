@@ -6,7 +6,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { acceptScopeSession, accessAPI, ApiRequestError, investigationQueueAPI, runtimeAPI, workActivityAPI, workbenchAPI, type AccessSessionResponse, type WorkbenchContributions, type WorkbenchReading, type WorkbenchSummary, type WorkbenchSourceStatuses, type InvestigationQueuePage } from "./api";
-import { OverviewPage, overviewMoney, overviewShare, type OverviewContext } from "./OverviewPage";
+import { OverviewPage, overviewShare, type OverviewContext } from "./OverviewPage";
+import { formatCNYMicros } from "./format";
 import type * as Runtime from "./runtime";
 
 const coverage = { status: "scope_limited_unknown", period_completeness: "unknown", projection_complete_for_members: true, known_items: 2, gaps: ["资料不全"] } as const;
@@ -338,8 +339,14 @@ describe("combined overview within existing scope", () => {
   });
 });
 it("formats zero amounts and invalid ratios without inventing percentages", () => {
-  expect(overviewMoney("0")).toBe("¥0.000000");
-  expect(overviewMoney("-1")).toBe("-¥0.000001");
+  expect(formatCNYMicros("")).toBe("不可计算");
+  expect(formatCNYMicros(" ")).toBe("不可计算");
+  expect(formatCNYMicros("0x10")).toBe("不可计算");
+  expect(formatCNYMicros("0")).toBe("¥0.000000");
+  expect(formatCNYMicros("-1")).toBe("-¥0.000001");
+  expect(formatCNYMicros("9007199254740993")).toBe("¥9007199254.740993");
+  expect(overviewShare("", "100")).toBe("不可计算");
+  expect(overviewShare("1", "0x10")).toBe("不可计算");
   expect(overviewShare("0", "0")).toBe("不可计算");
   expect(overviewShare("0", "100")).toBe("0%");
   expect(overviewShare("bad", "100")).toBe("不可计算");
@@ -681,7 +688,7 @@ describe("overview comparison and recent requests", () => {
     const card = (await screen.findByRole("heading", { name: "项目费用构成" })).closest("article")!;
     expect(await within(card).findByText(expected)).toBeTruthy();
     expect(card.querySelector(".overview-donut-arc")).toBeNull();
-    expect(within(card).getAllByText(amount === "-10" ? "-¥0.000010" : overviewMoney(amount)).length).toBeGreaterThan(0);
+    expect(within(card).getAllByText(amount === "-10" ? "-¥0.000010" : formatCNYMicros(amount)).length).toBeGreaterThan(0);
   });
   it("compares equal request counts with equal bar lengths on one zero-based scale", async () => {
     vi.mocked(workbenchAPI.contributions).mockImplementation(async (_id, dimension, options) => {

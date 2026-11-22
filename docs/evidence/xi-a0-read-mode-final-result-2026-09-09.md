@@ -1,8 +1,10 @@
 # XI-A0 最终普通入口5次验证结果
 
+> **历史引用。** 隔离合成实例中最终候选的五次普通 Store 入口运行，含源码与调试二进制绑定、统计和 ordinal 读回。范围限于这五次，HTTP 和 20 次资格未验证。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **本轮5/5普通入口创建成功；最终候选定向验证完成，A0及20次p95资格仍未通过。** 仅本轮启动线按经理批准从23改为22GiB，其他资源/SQL/持久性/权限/数据约束保持。本地没有Go改动、重编译或新副本，没有资格重跑或512MB实验。
 
-基线commit `4360de03ec4fa1fc81e153333e3d3532ed4dd3cf`、tree `effe80bb53f36215f73abebc8379bbed5b20e0ae`。复用 `/private/tmp/xi-read-mode-build-saaq_bb0/db.test`，SHA256 `ab3c14624597b149bea302313c70060306aad2b456152ea3a40425b581d042b9`，361输入逐项匹配。当前runner/plan与复用二进制独立绑定在[新准备](../../output/xi-a0-read-mode-final-execution-ready/code-binding.json)，原final-ready及旧23GiB未执行证据原字节保留。正向22GiB、22GiB少1byte拒绝、512MiB预算少1byte拒绝和旧23GiB入口正反向均离线通过，没有启动PG。
+基线commit `4360de03ec4fa1fc81e153333e3d3532ed4dd3cf`、tree `effe80bb53f36215f73abebc8379bbed5b20e0ae`。复用 `/private/tmp/xi-read-mode-build-saaq_bb0/db.test`，SHA256 `ab3c14624597b149bea302313c70060306aad2b456152ea3a40425b581d042b9`，361输入逐项匹配。当前runner/plan与复用二进制独立绑定在新准备（`output/xi-a0-read-mode-final-execution-ready/code-binding.json`），原final-ready及旧23GiB未执行证据原字节保留。正向22GiB、22GiB少1byte拒绝、512MiB预算少1byte拒绝和旧23GiB入口正反向均离线通过，没有启动PG。
 
 ## 实际普通入口、模式与耗时
 
@@ -18,7 +20,7 @@
 
 前3次均未切换模式；后2次在INSERT后局部force_generic_plan，只覆盖digest/coverage，在header收尾前恢复auto。同一PID/auto进入及退出；prepared同名/SQL/OID/prepare_time保持，digest和coverage各自计数从G0/C1、G0/C2、G0/C3到G1/C3、G2/C3。5次count均有QueryExecModeExec驱动选项，未进入named prepared缓存；其余实际业务参数与原SQL的subject/time/source[]/project[]/cost[]顺序精确匹配。stdlib前置的QueryResultFormatsByOID已按真实源码规范化，不将它误读为$1。
 
-[95条原始trace及样本](../../output/xi-a0-read-mode-final-run/diagnostic.json)、[可复算审计](../../output/xi-a0-read-mode-final-run/analyze.py)、[审计结果](../../output/xi-a0-read-mode-final-run/analysis.json)覆盖以上结论。4.288秒是本次300k单样本，不是p95；69999与70000的count/INSERT耗时也变化，不能将总时间差全归于模式阈值。>=70000仍是已测有益规模的保守起点，不声称最优临界值。
+95条原始trace及样本（`output/xi-a0-read-mode-final-run/diagnostic.json`）、可复算审计（`output/xi-a0-read-mode-final-run/analyze.py`）、审计结果（`output/xi-a0-read-mode-final-run/analysis.json`）覆盖以上结论。4.288秒是本次300k单样本，不是p95；69999与70000的count/INSERT耗时也变化，不能将总时间差全归于模式阈值。>=70000仍是已测有益规模的保守起点，不声称最优临界值。
 
 ## 状态和语义
 
@@ -32,7 +34,7 @@
 | 70000 | `xwr_7PmvXlngpkUfK-XR5xyVEw` | `sha256:eb4eb2c7be9c674f4a67ccda03ac2de9f419f1cf166a9c622d3e5bf55d6b4d3a` |
 | 300000 | `xwr_AKZpqBzwCeIahIciN3FjNQ` | `sha256:bc008bc4c4771660899c4659b8b1815d14999fce75acc347b54651391a0bb9a1` |
 
-每条returned/readback coverage及完整ref一致，并与不依赖member表、直接按F0时间/项目/排序计算的独立ref一致；summary count和两种精确micros均等于成员数。计时后独立ordinal查询按F0 `(occurred_at,id)` 排序检查，5条mismatch均0，非空ordinal为1…N，空成员min/max为空。原header快照及[ordinal原始结果](../../output/xi-a0-read-mode-final-run/ordinal-readback.json)保留。
+每条returned/readback coverage及完整ref一致，并与不依赖member表、直接按F0时间/项目/排序计算的独立ref一致；summary count和两种精确micros均等于成员数。计时后独立ordinal查询按F0 `(occurred_at,id)` 排序检查，5条mismatch均0，非空ordinal为1…N，空成员min/max为空。原header快照及ordinal原始结果（`output/xi-a0-read-mode-final-run/ordinal-readback.json`）保留。
 
 选定表统计中只有member的n_live_tup6733321→7173336、n_mod_since_analyze2540032→2980047变化，reltuples/last_autoanalyze等未变；估计计数不冒充上面的实际精确计数。成员table+index1790091264→1903951872bytes，增113860608bytes；WAL目录起止均771751936bytes。没有在此短窗口内观测到自然checkpoint；日志只有正常停库checkpoint（25段回收），不能声称持续checkpoint压力合格。
 

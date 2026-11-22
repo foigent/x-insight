@@ -81,7 +81,7 @@ it.each([403,409,410])("does not silently replace a rejected reading (%s), allow
   expect(screen.queryByText("正在读取…")).toBeNull();
   fireEvent.click(retry);await screen.findByRole("button",{name:/Contribution one/});
   expect(workbenchAPI.createReading).toHaveBeenCalledTimes(1);
-  expect(workbenchAPI.createReading).toHaveBeenCalledWith(navigation().request,session.csrf_token);
+  expect(workbenchAPI.createReading).toHaveBeenCalledWith(navigation().request,session.csrf_token, expect.any(AbortSignal));
 });
 
 it.each(["session","scope"])("rejects %s identity changes before loading protected data",async kind=>{

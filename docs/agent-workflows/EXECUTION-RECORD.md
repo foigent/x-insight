@@ -2,6 +2,132 @@
 
 > Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
 
+## 2026-11-22 — Durable maintenance recovery and Connector follow-up
+
+The temporary checkout was absent and its uncommitted changes had no branch or
+patch to restore. Replayed the recorded edits on public main `64000cd`.
+Completed the base with immutable Git objects from the same-machine copy and
+verified all 4,479 paths against tree `c627f06`. The reconstructed revision
+`3f4d11d` rebuilt the previous `index-lADexuuX.js` and `index-CUVraRVZ.css`.
+The persistent checkout is `xi-maintenance-public` on local branch
+`codex/xi-maintenance-review`.
+
+The recovery includes the reading and pagination fixes, shared page header,
+formatters and Connector read logic. Rechecked 119 historical references and
+matched the four digest-bound plans byte for byte. The inventory covered 207
+project Markdown files and identified 70 current or reference candidates for
+entry-point and command checks. The old OpenAPI script shorthand occurs in
+dated evidence. The development guide and contribution map give the current
+commands. The only source-document removals are the three previously approved
+manual drafts.
+
+The follow-up localizes Connector details, removes the repeated last-report
+field, and uses one list layout and the existing theme token for invitations.
+Cost, budgets and runtime share the same scope invalidation subscription.
+Both connection manuals describe status refresh and recovery of an existing
+request.
+
+Local verification passed the full 684-test frontend suite, type and OpenAPI
+checks, three manual profiles, embedded production assets, Go web UI, draft
+and investigation tests, and the protected runtime verifier. Chromium passed
+65 cases initially. The follow-up assertion needed to select the UniRouter
+card because the fixture also contains LiteLLM. The four affected cases
+passed after scoping the assertion, with three existing duplicate visual
+skips from the full run. Browser requests used simulated API responses.
+Live XI–UniRouter acceptance, installed-host checks, signing and publication
+belong to delivery. Cross-module contract ownership stays with architecture.
+
+---
+
+## 2026-11-22 — Workbench, runtime and Connector read states
+
+Cost, usage, budgets and runtime share reading expiry and continuation failure
+handling. A transient page failure can retry the original cursor. A rejected
+cursor clears the affected results and requires a fresh reading or a first-page
+refresh of current inventory. Access changes close pending reads and clear
+previously visible results. Empty runtime measurements require successful
+pagination through the final page.
+
+Connector list, setup progress and sync status use the same read lifecycle.
+Failed progress reads remove prior states and dependent controls. Refresh
+reads state. An explicit retry of a pending write uses the original request
+identity. Setup reads an installation selected in the URL before considering
+stored consent for that installation.
+
+Local verification passed 684 frontend tests, 69 Chromium cases across four
+viewports with three expected duplicate visual skips, type and OpenAPI checks,
+the embedded frontend build, selected Go packages, and the protected runtime
+verifier. The new browser cases count requests across each interaction so
+development Strict Mode's initial requests do not affect the result. The
+Connector browser and component scenarios use simulated API responses.
+
+---
+
+## 2026-11-22 — Historical references and versioned execution comparison
+
+Reviewed 119 historical artifact references across 22 documents. The public
+tree contains related summaries. A raw file or verified equivalent remains
+unavailable for each reference in this set. In 18 documents, 109 links now
+appear as labeled historical locators with the original scope. Ten addresses
+belong to four plans read by digest-binding runners. Their bytes match the
+baseline, and the [historical reference notes](XI-CURRENT.md#历史本地引用)
+explain the source and scope of each address.
+
+Execution comparison submits independent cutoffs and optional evidence
+revisions for both sides. Result links use the shared detail route and keep
+the submitted revision. The interface identifies time-only results and clears
+previous results when another comparison starts. Connector load failures end
+the loading state. Overview and workbench share their exact CNY-micro formatter.
+The parser keeps malformed amounts outside reconciled cost charts.
+
+Four regressions failed before the fixes and passed afterward. The 666-test
+frontend suite and 61 Chromium cases passed with three expected visual skips.
+Type checking, OpenAPI, frontend build, selected Go packages, the protected
+runtime verifier, and three manual profile builds passed locally.
+
+---
+
+## 2026-11-22 — Manual source retirement and read-state maintenance
+
+The owner approved deleting three retired root manual sources. The `rc13`,
+`development-b` and `development-d` generators produced identical HTML, CSS
+and icon bytes before and after deletion. The FPV9 frozen-source validator
+checked all 316 selected inputs. The retained qualification copies still bind
+their own source paths.
+
+A source session that cannot be read now leaves the loading state. Navigation
+between session IDs clears the previous detail. Discovery keeps successful
+hypotheses and alerts available when a supplemental request fails. Case
+selection requires the same investigation-write capability as the API. The
+session and runtime views share their compact time formatter.
+
+The English and Simplified Chinese manuals now link from the installation and
+grant guidance to the accounts chapter. The historical profiles render the
+same content with updated generator source digests. The operations and
+architecture indexes point current readers to the signed distribution guide
+and the actual CI workflow. The link scan covered 207 project Markdown files.
+The 119 unavailable targets are historical local references across 22 records.
+
+Seven component regressions failed before the fixes and passed afterward.
+Frontend coverage ran 663 tests. Chromium ran 61 passing cases and three
+expected visual-test skips, including the in-text manual navigation in both
+languages. Type check, build, embedded Go web UI and draft validation, and
+protected-runtime checks passed locally.
+
+---
+
+## 2026-11-21 — Public main maintenance review
+
+Base `64000cd8f74ad431cb2ef635963993bf0d111d84` on `codex/xi-maintenance-review`. The local batch corrects lost budget reading identity on retry, separates failed and denied case lists from successful empty results, and restores execution-list focus after returning from detail. Execution search distinguishes unavailable evidence revisions from recoverable pagination failures. Shared page headings, date formatting, and the contribution map now give maintainers common entry points.
+
+The OpenAPI problem enum now declares 71 codes already emitted by the server, including the investigation 410 code. The Phase 2C verifier checks the updated OpenAPI digest. The draft validator caught a redundant comparison refactor in an immutable compatibility input. The pinned bundle file was restored and the equivalent simplification stays in sanitized preflight. The contribution map now points to both checks.
+
+Validation covered four component regressions that failed on the original source, 656 passing frontend tests, 61 passing synthetic Chromium runs across four viewports, and three expected visual-test skips. The pinned frontend build, asset manifest, bilingual offline manual, protected-runtime checks and 11 importer fixtures passed. Go vet passed. The offline Go package run passed outside the sandbox with a temp directory owned by the effective group, except for the draft validator while it still saw the superseded refactor. The validator, affected adapter, and embedded assets passed on the corrected tree. The `rc13` and `development-b` rendered manuals differ from the baseline only in the source digest.
+
+The public entry points now distinguish the published package, current development profile and historical instructions. Managed source and budget references point to the actual supported target schema. The link scan covered 210 project Markdown files and located 119 local-only evidence references. Three retired manual sources remain pending owner approval for deletion. Hosted CI, installed hosts and live PostgreSQL qualification are separate.
+
+---
+
 ## 2026-10-10 — FPV18/schema45 源码与 CI 升级资格候选
 
 在 FPV17 准确 main `164582cab0e7f169c265c2494d04920c61af833d` 上，将下节趋势与只读案件布局修复编为 `0.2.0-dev.fpv18` / `manual-r1` 候选。D 配置、兼容矩阵、手册及发布说明同版，schema contract 仍为45；升级白名单新增准确 FPV17 来源，其他声明来源和 rc13 冻结身份不变。Linux CI 的受管升级车道从固定 FPV17 源码重建 CI 专用前态，先安装并产生原连接、正文、授权及游标，再在活跃 UR 夹具内以候选控制器执行只读 `upgrade --check`、状态快照无副作用比较、同 schema 升级以及服务、来源和历史连续性核对。该车道只形成 CI 合成资格，不代替原 Target 的签名包升级与实际数据验收。

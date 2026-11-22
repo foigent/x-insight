@@ -1,5 +1,7 @@
 # XI-A0 1GB WAL：20×300k 失败结果与下一步判断
 
+> **历史引用。** 隔离合成实例的 1GB WAL 容量试验。原尝试与第二次执行各有运行标识，20 次尝试中有一次失败。500k 和下游读取均未执行。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **本切片按预定失败路径完成取证；300k 创建资格未通过。** 原定 20 次尝试全部保留：19 次成功，第 10 次在成员 INSERT 内触发 workspace 的 10 秒单 SQL 超时并回滚。成功子集 n=19 的 nearest-rank p95 为 **10700.776ms**，不能作为 20 次全成功资格，且仍超过原 5000ms 门槛。
 
 19 次成功事务对应 5.7M 已提交成员，未达到 6M 前置条件，因此 **500k 未执行**。已审定测试在此失败退出，创建后 summary/top/小时 series、完整贡献组分页、全体 ordinal 与金额对照亦 **未执行**；本次不能宣称这些读取检查通过。没有补成功样本、降低成员前态或放宽 SQL/HTTP 时限。
@@ -122,10 +124,10 @@ PG 统计有发布延迟，并包含采样连接与后台活动。checkpoint 日
 
 交付哈希核对通过：原保存仓库 49 个保护文件、3 个继承失败报告；旧 checkpoint 的 30 个原始输出；首次失败 7 个、实际负载 10 个原始输出。旧 A/B 的 40 项绑定在 `a3ae3b4`、准备版 9 项绑定在 `025a397` 均逐项匹配；当前工作树中的已授权 runner/记录及准备期测试变更明确另列，未把旧源码哈希当作当前哈希。
 
-- [原始 20 次结果与角色/设置/统计](../../output/xi-a0-capacity-run-02/qualification.json)
-- [原始 PG 日志](../../output/xi-a0-capacity-run-02/qualification-postgres.log) 与 [逐次资源/等待采样](../../output/xi-a0-capacity-run-02/qualification.observations.jsonl)
-- [runner 原始退出状态](../../output/xi-a0-capacity-run-02/run.json) 与 [首次启动失败](../../output/xi-a0-capacity-run/run.json)
-- [派生计算](../../output/xi-a0-capacity-run-02/analysis.json)、[源/历史保护/停库核验](../../output/xi-a0-capacity-run-02/delivery-verification.json)
-- [最终证据文件绑定](../../output/xi-a0-capacity-run-02/evidence-binding.json)，另保留两次执行的原始 output-hashes.json，不回写原始结果。
+- 原始 20 次结果与角色/设置/统计（`output/xi-a0-capacity-run-02/qualification.json`）
+- 原始 PG 日志（`output/xi-a0-capacity-run-02/qualification-postgres.log`） 与 逐次资源/等待采样（`output/xi-a0-capacity-run-02/qualification.observations.jsonl`）
+- runner 原始退出状态（`output/xi-a0-capacity-run-02/run.json`） 与 首次启动失败（`output/xi-a0-capacity-run/run.json`）
+- 派生计算（`output/xi-a0-capacity-run-02/analysis.json`）、源/历史保护/停库核验（`output/xi-a0-capacity-run-02/delivery-verification.json`）
+- 最终证据文件绑定（`output/xi-a0-capacity-run-02/evidence-binding.json`），另保留两次执行的原始 output-hashes.json，不回写原始结果。
 
 本地提交后正常交付供经理独立审查。已完成本次连续尝试、失败保存与诊断交付；未完成的 500k、创建后读取验证及完整 HTTP/A0 资格保持明确未通过/未执行状态。

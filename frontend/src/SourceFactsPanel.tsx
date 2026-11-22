@@ -4,6 +4,7 @@ import {
   ApiRequestError, type WorkbenchReading, type WorkbenchSourceObservation,
   type WorkbenchSourceObservations, workbenchAPI,
 } from "./api";
+import { canRetryRead, ReadingCursorError, readingUnavailable, rejectsPageCursor } from "./readFailures";
 import "./source-facts.css";
 
 export function SourceFactsPanel({ reading, onInvalidated }: {
@@ -13,6 +14,7 @@ export function SourceFactsPanel({ reading, onInvalidated }: {
   const [page, setPage] = useState<WorkbenchSourceObservations | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useMessageState("");
+  const [canRetry, setCanRetry] = useState(false);
   const generation = useRef(0);
   const failureHandler = useRef(onInvalidated);
   failureHandler.current = onInvalidated;
@@ -23,24 +25,26 @@ export function SourceFactsPanel({ reading, onInvalidated }: {
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
-    setBusy(true); setError(() => "");
+    setBusy(true); setError(() => ""); setCanRetry(false);
     try {
       const next = await workbenchAPI.sourceFacts(reading.reading_id, cursor, controller.signal);
       if (sequence !== generation.current) return;
       if (next.reading_id !== reading.reading_id || next.manifest_ref !== reading.source_manifest_ref) {
-        throw new Error("source reading changed");
+        throw new ApiRequestError(409);
       }
       setPage(previous => cursor && previous ? { ...next, items: [...previous.items, ...next.items] } : next);
     } catch (failure) {
       if (sequence !== generation.current || controller.signal.aborted) return;
-      if (failure instanceof ApiRequestError &&
-        ([401, 404, 410].includes(failure.status) || failure.problem?.code === "workbench_access_changed")) {
-        setPage(null); failureHandler.current(failure); return;
+      if (rejectsPageCursor(failure, cursor)) {
+        setPage(null); failureHandler.current(new ReadingCursorError()); return;
       }
-      if (failure instanceof ApiRequestError && failure.status === 403) setPage(null);
-      setError(() => failure instanceof ApiRequestError && failure.status === 403
-        ? t("m2379")
-        : t("m2380"));
+      const denied = failure instanceof ApiRequestError && failure.status === 403;
+      if (readingUnavailable(failure)) {
+        setPage(null);
+        if (!denied) { failureHandler.current(failure); return; }
+      }
+      setCanRetry(canRetryRead(failure));
+      setError(() => denied ? t("m2379") : t("m2380"));
     } finally { if (sequence === generation.current) setBusy(false); }
   }
 
@@ -77,9 +81,10 @@ export function SourceFactsPanel({ reading, onInvalidated }: {
     {coverage.gaps.some(gap => !["forward_only_capture", "timeline_completeness_unknown", "source_fact_conflict"].includes(gap))
       ? <p className="source-facts-notice">{tx("m2401")}</p> : null}
     {page?.items.map(fact => <SourceFactCard key={`${fact.source_system_id}:${fact.source_fact_id}`} fact={fact} />)}
-    {page?.items.length === 0 ? <p>{tx("m2402")}</p> : null}
-    {error ? <div role="status"><p>{error}</p><button disabled={busy} onClick={() => void load(page?.next_cursor)}>{tx("m2403")}</button></div> : null}
-    {page?.next_cursor ? <button disabled={busy} className="text-button" onClick={() => void load(page.next_cursor)}>{tx("m2404")}</button> : null}
+    {!error && page?.items.length === 0 ? <p>{tx("m2402")}</p> : null}
+    {busy ? <p role="status">{tx("m1150")}</p> : null}
+    {error ? <div role="alert"><p>{error}</p>{canRetry ? <button disabled={busy} onClick={() => void load(page?.next_cursor)}>{tx("m2403")}</button> : null}</div> : null}
+    {!error && page?.next_cursor ? <button disabled={busy} className="text-button" onClick={() => void load(page.next_cursor)}>{tx("m2404")}</button> : null}
   </article>;
 }
 

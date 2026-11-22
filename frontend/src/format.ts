@@ -32,6 +32,10 @@ export function formatDateTime(value: string | undefined): string {
   return dateTimeFormatter().format(date);
 }
 
+export function formatCompactDateTime(date: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat(getLocale(), { dateStyle: "short", timeStyle: "medium", timeZone, hour12: false }).format(date);
+}
+
 export function formatShortTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -109,6 +113,18 @@ export function displayValue(value: unknown): string {
     return new Intl.NumberFormat(getLocale()).format(value);
   }
   return String(value);
+}
+
+export function parseDecimalInteger(value: unknown): bigint | undefined {
+  if (typeof value !== "string" || !/^-?\d+$/.test(value)) return undefined;
+  return BigInt(value);
+}
+
+export function formatCNYMicros(value: string): string {
+  const amount = parseDecimalInteger(value);
+  if (amount === undefined) return t("m1139");
+  const digits = (amount < 0n ? -amount : amount).toString().padStart(7, "0");
+  return `${amount < 0n ? "-" : ""}¥${digits.slice(0, -6)}.${digits.slice(-6)}`;
 }
 
 export function formatMicroCNY(value: string): string {

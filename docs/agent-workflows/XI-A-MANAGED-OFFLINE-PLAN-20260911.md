@@ -1,14 +1,16 @@
 # 新A：受管来源采集与具名离线导入完整计划
 
+> **历史引用。** 2026-09-11 新 A 计划。内审材料、R35 收口报告与合同配对来自当时的内部协作档案和本地执行工作区。R35 Local 的公开记载见[同日工作记录](XI-CURRENT.md#当前事实与下一动作)。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 > Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
 
 2026-09-11。提交经理独立审阅，审阅一致后实施。本包沿第38份XI-A1/XI-X接续，交付能安装、启动、暂停、恢复并核对来源范围的采集路径，以及有明确授权和回执的离线入口；源事实进入现有真实工作台。R35 Local已获主管接受，M4镜像等待不构成本包硬依赖。
 
-修订v2：仅补主管首轮审阅提出的操作预约、在途停止/多profile、live/offline授权分离三项语义及对应验收。基线、合同配对、范围和12GiB整包预算保持不变。审阅入口：[plan-review.md](<PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/supporting/xi-iteration-20260909/a-managed-offline/plan-review.md>)。
+修订v2：仅补主管首轮审阅提出的操作预约、在途停止/多profile、live/offline授权分离三项语义及对应验收。基线、合同配对、范围和12GiB整包预算保持不变。审阅入口：`PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/supporting/xi-iteration-20260909/a-managed-offline/plan-review.md`。
 
 ## 1. 基线、现状与边界
 
-权威实施基线是华硕 `7bf683b55337a6e7f7bd957ce8aadb2227d988c0` / tree `b3eb9ac22fb474d158752319577ab4b5098402c8`，见 [R35收口](../../output/xi-asus-g1-20260911/R35-G1-FINAL-CLOSEOUT.md)。M4仍为`ece4d074...`加WIP，不能用其旧dist构建下一候选。下一源码工作副本从华硕完整Git基线形成，Linux新路径`/opt/xi-validation/sources/a-managed-offline`保留原R35现场；M4可做轻量文本修改，传入前逐项绑定基线/差异，最终提交仍在华硕完整父链形成。下一commit由实际内容产生。
+权威实施基线是华硕 `7bf683b55337a6e7f7bd957ce8aadb2227d988c0` / tree `b3eb9ac22fb474d158752319577ab4b5098402c8`，见 R35收口（`output/xi-asus-g1-20260911/R35-G1-FINAL-CLOSEOUT.md`）。M4仍为`ece4d074...`加WIP，不能用其旧dist构建下一候选。下一源码工作副本从华硕完整Git基线形成，Linux新路径`/opt/xi-validation/sources/a-managed-offline`保留原R35现场；M4可做轻量文本修改，传入前逐项绑定基线/差异，最终提交仍在华硕完整父链形成。下一commit由实际内容产生。
 
 当前源码事实：
 
@@ -64,7 +66,7 @@ offline登记的持久授权状态和版本由hostctl管理员管理，importer�
 
 ## 3. 离线合同精确配对
 
-[本次字节配对证据](../../output/xi-asus-g1-20260911/new-a-contract-pairing.json)：XI已验schema和golden-source-facts与UR候选归档逐字节相同。
+本次字节配对证据（`output/xi-asus-g1-20260911/new-a-contract-pairing.json`）：XI已验schema和golden-source-facts与UR候选归档逐字节相同。
 
 | 项目 | 本包固定输入 |
 | --- | --- |

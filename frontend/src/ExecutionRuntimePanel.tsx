@@ -3,6 +3,8 @@ import { authorizedNavigationReading, fixedReadingRequest, type WorkbenchNavigat
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiRequestError, isAbortError, runtimeAPI, scopeSessionKey, type AccessSessionResponse, type ExecutionSummary } from "./api";
 import { RuntimeRequestDetail } from "./RuntimePage";
+import { ReadingCursorError } from "./readFailures";
+import { readingDeadline, restoredReadingDeadline, useReadingExpiry } from "./readingExpiry";
 import type * as Runtime from "./runtime";
 
 export interface RuntimeDetailContext { reading: Runtime.Reading; deadline: number; identity: string }
@@ -21,13 +23,14 @@ export function ExecutionRuntimePanel({ executionAsOf, navigate, summary, sessio
   const creation = useRef<AbortController | null>(null);
   const lookup = useRef<AbortController | null>(null);
   const invalidate = useCallback((e: unknown) => { creation.current?.abort(); lookup.current?.abort(); setRequest(null); setContext(null); setError(e); setBusy(false); }, [setContext]);
+  const expire = useCallback(() => invalidate(new ApiRequestError(410)), [invalidate]);
+  useReadingExpiry(context?.deadline, expire);
   useEffect(() => {
     setRequest(null);
     if (!context) return;
     if (context.identity !== identity || !(context.deadline > performance.now())) { invalidate(new ApiRequestError(409)); return; }
     const controller = new AbortController(); lookup.current=controller;
     setBusy(true); setError(null);
-    const timer = window.setTimeout(() => { controller.abort(); invalidate(new ApiRequestError(410)); }, Math.min(context.deadline - performance.now(), 2_147_483_647));
     void runtimeAPI.executionRequest(context.reading.reading_id, summary.execution_id, controller.signal).then(link => {
       if (controller.signal.aborted) return;
       if (link.version !== "xinsight.runtime.execution-request.v1" || link.reading_id !== context.reading.reading_id || link.membership_ref !== context.reading.membership_ref ||
@@ -35,7 +38,7 @@ export function ExecutionRuntimePanel({ executionAsOf, navigate, summary, sessio
       setRequest(link.request);
     }).catch(e => { if (!isAbortError(e) && !controller.signal.aborted) invalidate(e); })
       .finally(() => { if (!controller.signal.aborted) setBusy(false); });
-    return () => { controller.abort(); window.clearTimeout(timer); };
+    return () => controller.abort();
   }, [context, identity, summary.execution_id, summary.source_system_id, summary.request_id, invalidate]);
   useEffect(() => {
     const invalidated=()=>invalidate(new ApiRequestError(409));
@@ -52,8 +55,9 @@ export function ExecutionRuntimePanel({ executionAsOf, navigate, summary, sessio
       await authorizedNavigationReading(origin,session,controller.signal);
       const reading=await runtimeAPI.reading(origin.related!.readingID,controller.signal);
       if(controller.signal.aborted)return;
-      if(reading.reading_id!==origin.related!.readingID||reading.contract_version!=="xinsight.runtime-reading.v1"||!(Date.parse(reading.expires_at)>Date.now()))throw new ApiRequestError(410);
-      setContext({reading,identity,deadline:performance.now()+Date.parse(reading.expires_at)-Date.now()});
+      const deadline=restoredReadingDeadline(reading);
+      if(reading.reading_id!==origin.related!.readingID||reading.contract_version!=="xinsight.runtime-reading.v1"||!(deadline>performance.now()))throw new ApiRequestError(410);
+      setContext({reading,identity,deadline});
     })().catch(e=>{if(!controller.signal.aborted)invalidate(e)});
     return()=>controller.abort();
   },[identity,summary.execution_id]);
@@ -81,13 +85,14 @@ export function ExecutionRuntimePanel({ executionAsOf, navigate, summary, sessio
       const sentAt=performance.now();
       const reading = await runtimeAPI.createReading({ contract_version: "xinsight.runtime-reading.v1", metric_version: "xinsight.runtime.request-observations.v1", period, filters }, session.csrf_token, controller.signal);
       if (controller.signal.aborted) return;
-      const deadline = sentAt + Date.parse(reading.expires_at) - Date.parse(reading.cutoff);
+      const deadline = readingDeadline(reading, sentAt);
       if (!(deadline > performance.now())) throw new ApiRequestError(410);
       rememberRelated(reading.reading_id);
       setContext({ reading, deadline, identity });
     } catch (e) { if (!isAbortError(e) && !controller.signal.aborted) { setError(e); setBusy(false); } }
   }
-  const message = error instanceof ApiRequestError && error.status === 404 ? t("m0577") :
+  const message = error instanceof ReadingCursorError ? t("reading.cursorRejected") :
+    error instanceof ApiRequestError && error.status === 404 ? t("m0577") :
     error instanceof ApiRequestError && error.status === 403 ? t("m0578") :
     (error instanceof Error && error.message==="navigation_access_changed") || error instanceof ApiRequestError && [409, 410].includes(error.status) ? t("m0579") : t("m0580");
   return <section className="runtime-workbench runtime-panel" aria-label={view === "contents" ? t("m0581") : t("m0582")}>

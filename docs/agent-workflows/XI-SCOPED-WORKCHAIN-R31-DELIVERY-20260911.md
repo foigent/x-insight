@@ -1,6 +1,8 @@
 # R31 交付：本人筛选维护与正常重验证的草稿保留
 
-2026-09-11（Asia/Shanghai）。两项主管反例已在同一代码与最终嵌入资源上完成修复、自测和真实浏览器工作链，交回主管独立复验；尚不表示主管已验收或整版通过。前态为 `1100b8a4a802a00a2ac349798374af61accc9624`，最终 commit/tree、源文件与证据哈希以 [delivery-binding.json](../../output/xi-scoped-workchain-r31/delivery-binding.json) 为准。
+> **历史引用。** 2026-09-11 R31 隔离工作区的绑定、受限角色 API、浏览器和数据库收口。各结果以文内原账号范围、准确制品和 Local 复验边界为准。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
+2026-09-11（Asia/Shanghai）。两项主管反例已在同一代码与最终嵌入资源上完成修复、自测和真实浏览器工作链，交回主管独立复验；尚不表示主管已验收或整版通过。前态为 `1100b8a4a802a00a2ac349798374af61accc9624`，最终 commit/tree、源文件与证据哈希以 `output/xi-scoped-workchain-r31/delivery-binding.json` 为准。
 
 ## 修复与结果
 
@@ -15,10 +17,10 @@
 
 ## 验证入口及复用
 
-- [native-api-final.log](../../output/xi-scoped-workchain-r31/native-api-final.log)：4项定向Go测试及两个角色子测试通过，`-race -count=1`，`go test`默认vet检查通过；浏览器夹具另在race下正常PASS，见 `browser-harness-final.log`。未重跑全仓Go。
-- [frontend-final.log](../../output/xi-scoped-workchain-r31/frontend-final.log)：130测试、类型、OpenAPI及最终嵌入构建通过；前端覆盖statements/branches/functions/lines为76.69/67.30/73.49/78.33%。`frontend-e2e-final.log`：四视口24项通过。产品前端源码在这些检查后未再修改。
-- [browser-focus-final.json](../../output/xi-scoped-workchain-r31/browser-focus-final.json)：新建草稿全字段/选择保留，两次会话重验证成功；服务实际返回的HTML/JS/CSS共3项与最终manifest字节和SHA-256逐一相符。`browser-update-final.json`保存更新草稿、版本2及原阅读逐值相等结果；`browser-filter-final.json`保存真实UI更新/删除响应；`browser-revoked-final.json`保存真实拒绝、DOM退出和有界无循环观察。
-- [go-coverage-verified.log](../../output/xi-scoped-workchain-r31/go-coverage-verified.log)：总64.4/API60.1/DB70.9/hostctl64.5/workspace65.9%，原门槛全过。21029个块的复用规则记录于 `coverage-reuse.json`：唯一改动的Go生产文件 `scoped_workchain.go` **只用本次计数**；未改源码沿用R30已独立审阅证据并合并本次覆盖。没有把R30首次全仓5项失败或本轮定向执行说成新全仓零失败。
+- `output/xi-scoped-workchain-r31/native-api-final.log`：4项定向Go测试及两个角色子测试通过，`-race -count=1`，`go test`默认vet检查通过；浏览器夹具另在race下正常PASS，见 `browser-harness-final.log`。未重跑全仓Go。
+- `output/xi-scoped-workchain-r31/frontend-final.log`：130测试、类型、OpenAPI及最终嵌入构建通过；前端覆盖statements/branches/functions/lines为76.69/67.30/73.49/78.33%。`frontend-e2e-final.log`：四视口24项通过。产品前端源码在这些检查后未再修改。
+- `output/xi-scoped-workchain-r31/browser-focus-final.json`：新建草稿全字段/选择保留，两次会话重验证成功；服务实际返回的HTML/JS/CSS共3项与最终manifest字节和SHA-256逐一相符。`browser-update-final.json`保存更新草稿、版本2及原阅读逐值相等结果；`browser-filter-final.json`保存真实UI更新/删除响应；`browser-revoked-final.json`保存真实拒绝、DOM退出和有界无循环观察。
+- `output/xi-scoped-workchain-r31/go-coverage-verified.log`：总64.4/API60.1/DB70.9/hostctl64.5/workspace65.9%，原门槛全过。21029个块的复用规则记录于 `coverage-reuse.json`：唯一改动的Go生产文件 `scoped_workchain.go` **只用本次计数**；未改源码沿用R30已独立审阅证据并合并本次覆盖。没有把R30首次全仓5项失败或本轮定向执行说成新全仓零失败。
 - `unchanged-native-evidence.json`及本次哈希核对确认授权存储、案件历史、锁序、schema/原生恢复相关35文件未变，复用review31独立通过结论；不重新做与方法路由/前端生命周期无关的大规模迁移、性能或恢复实验。
 
 失败记录全部保留：首次前端测试使用未加载的DOM断言、随后测试夹具readonly类型问题已修正并复验；撤权观察器首次把浏览器Fetch Response.status属性写成方法，失败于读数阶段，在同一已撤权现场修正为属性读取后通过。该修正没有重建夹具、重复业务写入或改产品代码；错误日志 `browser-revoked-final.log` 与成功日志 `browser-revoked-corrected.log` 分开留存。自签名本地HTTPS的浏览器证书探测握手日志、预期401/403网络记录也原样保留。
@@ -29,7 +31,7 @@
 
 截至PG收尾累计记录 264 个资源样本，全部在原守卫内；C采样峰值 5,394,350,080 B，RSS峰值 1,647,165,440 B。PG收尾时C 5,343,412,224 B，free 23,748,100,096 B。
 
-[database-closeout.json](../../output/xi-scoped-workchain-r31/database-closeout.json)确认开工前18条数据库目录/ACL原样保留、无新增留存库、无其他客户端，原实例system ID `7683496851946968342` / port49998正常停止；本轮浏览器已关闭。既有原生夹具按其原生命周期正常收尾，未手工删除现有数据、缓存、工作树或失败材料。
+`output/xi-scoped-workchain-r31/database-closeout.json`确认开工前18条数据库目录/ACL原样保留、无新增留存库、无其他客户端，原实例system ID `7683496851946968342` / port49998正常停止；本轮浏览器已关闭。既有原生夹具按其原生命周期正常收尾，未手工删除现有数据、缓存、工作树或失败材料。
 
 本次修的是R30新包的两项回归，不将它们重复报作旧技术债整体消除。个人偏好/复核写、当前授权/读取快照、来源事实/人工判断、历史版本和原深链继续分离；schema30、角色与恢复协议未改。旧构建资源由正式构建替换，前态保存在父提交；无新增依赖、授权旁路或持久草稿系统。
 

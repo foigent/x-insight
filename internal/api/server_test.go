@@ -108,14 +108,17 @@ func TestReadOnlyCollectionsRejectMutationBeforeStoreAccess(t *testing.T) {
 
 func TestReadinessReportsReleaseCompatibilityAndRejectsUnsupportedDatabase(t *testing.T) {
 	expected := []db.MigrationChecksum{{ID: "000019_current", SHA256: "sha256:" + strings.Repeat("a", 64)}}
+	legacyDigest := "sha256:" + strings.Repeat("b", 64)
+	schemaContractDigest := "sha256:" + strings.Repeat("c", 64)
 	compatible := &fakeReadinessStore{
 		fakeStore: &fakeStore{},
 		readiness: db.ReadinessStatus{
-			DatabaseSchema:     buildinfo.DatabaseSchemaMax,
-			MigrationCount:     19,
-			MigrationSetSHA256: "sha256:" + strings.Repeat("b", 64),
-			PostgresMajor:      16,
-			RepresentativeRead: true,
+			DatabaseSchema:                   buildinfo.DatabaseSchemaMax,
+			MigrationCount:                   19,
+			MigrationSetSHA256:               legacyDigest,
+			SchemaContractMigrationSetSHA256: schemaContractDigest,
+			PostgresMajor:                    16,
+			RepresentativeRead:               true,
 		},
 	}
 	response := httptest.NewRecorder()
@@ -130,7 +133,8 @@ func TestReadinessReportsReleaseCompatibilityAndRejectsUnsupportedDatabase(t *te
 	}
 	if readyBody["database_schema"] != buildinfo.DatabaseSchemaMax ||
 		readyBody["postgres_major"] != float64(16) ||
-		readyBody["migration_set_sha256"] == "" ||
+		readyBody["migration_set_sha256"] != legacyDigest ||
+		readyBody["schema_contract_migration_set_sha256"] != schemaContractDigest ||
 		readyBody["representative_read"] != "ok" {
 		t.Fatalf("readiness body=%+v", readyBody)
 	}
@@ -169,7 +173,25 @@ func TestReadinessFailsClosedWhenMigrationCapabilityIsMissing(t *testing.T) {
 	}
 }
 
-func (s *fakeStore) ListEvidenceEventsByRequestID(_ context.Context, requestID string, limit int) ([]db.EvidenceEventRecord, error) {
+func (s *fakeStore) ReadLegacyExecution(ctx context.Context, requestID string, limit int, includeEvents, includeGaps bool) (db.RequestEvidence, error) {
+	var result db.RequestEvidence
+	var err error
+	if includeEvents {
+		result.Events, err = s.listEvidenceEventsByRequestID(ctx, requestID, limit)
+		if err != nil {
+			return db.RequestEvidence{}, err
+		}
+	}
+	if includeGaps {
+		result.Gaps, err = s.listCaptureGapsByRequestID(ctx, requestID, limit)
+		if err != nil {
+			return db.RequestEvidence{}, err
+		}
+	}
+	return result, nil
+}
+
+func (s *fakeStore) listEvidenceEventsByRequestID(_ context.Context, requestID string, limit int) ([]db.EvidenceEventRecord, error) {
 	if s.eventErr != nil {
 		return nil, s.eventErr
 	}
@@ -185,7 +207,7 @@ func (s *fakeStore) ListEvidenceEventsByRequestID(_ context.Context, requestID s
 	return records, nil
 }
 
-func (s *fakeStore) ListCaptureGapsByRequestID(_ context.Context, requestID string, limit int) ([]db.CaptureGapRecord, error) {
+func (s *fakeStore) listCaptureGapsByRequestID(_ context.Context, requestID string, limit int) ([]db.CaptureGapRecord, error) {
 	if s.gapErr != nil {
 		return nil, s.gapErr
 	}

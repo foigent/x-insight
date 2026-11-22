@@ -810,7 +810,7 @@ paths:
         - $ref: '#/components/parameters/Cursor'
       responses:
         '200':
-          description: One deterministic page at a fixed as_of boundary
+          description: One execution search page. Evidence membership is pinned when the response carries an evidence revision.
           content:
             application/json:
               schema:
@@ -1540,7 +1540,8 @@ paths:
     get:
       tags: [Executions]
       operationId: compareExecutions
-      summary: Compare two fixed execution snapshots while preserving missing distinct from zero
+      summary: Compare two execution readings while preserving missing distinct from zero
+      description: Each optional evidence revision pins its side to committed evidence. A side with only an as_of parameter uses a time filter and may include evidence committed later.
       parameters:
         - {name: left, in: query, required: true, schema: {$ref: '#/components/schemas/ExecutionId'}}
         - {name: left_as_of, in: query, required: true, schema: {type: string, format: date-time}}
@@ -8550,6 +8551,77 @@ components:
             - workbench_revision_stale
             - workbench_unavailable
             - workspace_unavailable
+            - account_revision_changed
+            - account_username_exists
+            - agent_access_unavailable
+            - budget_reading_unavailable
+            - connector_control_unavailable
+            - connector_credential_recovery_expired
+            - connector_deployment_conflict
+            - connector_invitation_expired
+            - connector_not_found
+            - connector_operation_not_found
+            - connector_state_conflict
+            - connector_sync_binding_required
+            - connector_sync_conflict
+            - connector_sync_unavailable
+            - connector_transport_rejected
+            - content_expired
+            - content_integrity_failed
+            - content_missing
+            - content_not_supported
+            - content_read_busy
+            - content_read_limit
+            - content_source_unavailable
+            - directory_unavailable
+            - evidence_revision_unavailable
+            - https_required
+            - invalid_account_operation
+            - invalid_connector_request
+            - invalid_connector_sync
+            - invalid_content_choice
+            - invalid_request
+            - invalid_review_body
+            - invalid_review_exception
+            - invalid_review_policy
+            - invalid_review_project
+            - invalid_runtime_reading
+            - invalid_ur_policy
+            - invalid_ur_policy_operation
+            - invalid_ur_policy_scope
+            - invalid_work_event_item
+            - invalid_work_install
+            - not_found
+            - reauthentication_required
+            - review_body_audit_unavailable
+            - review_body_busy
+            - review_body_conflict
+            - review_body_expired
+            - review_body_integrity_failed
+            - review_body_key_unavailable
+            - review_body_not_authorized
+            - review_body_not_available
+            - review_body_quota_exhausted
+            - review_body_unavailable
+            - review_policy_unavailable
+            - review_policy_unconfirmed
+            - review_project_unconfirmed
+            - runtime_current_unavailable
+            - runtime_reading_unavailable
+            - unsupported_range
+            - ur_policy_unavailable
+            - ur_policy_unconfirmed
+            - ur_policy_version_conflict
+            - work_activity_unavailable
+            - work_event_conflict
+            - work_event_dependency_pending
+            - work_event_ingest_unavailable
+            - work_event_scope_changed
+            - work_install_conflict
+            - work_install_scope_changed
+            - work_install_transport_rejected
+            - work_install_unavailable
+            - work_install_unconfirmed
         correlation_id: {type: string, pattern: '^xc_[a-f0-9]{32}$'}
         retryable: {type: boolean}
         fields:

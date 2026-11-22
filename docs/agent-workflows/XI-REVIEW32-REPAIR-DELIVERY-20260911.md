@@ -1,6 +1,8 @@
 # review32 修复交付：费用页直达与已知撤权即时关闭
 
-2026-09-11。经理 review32 新增的两个 P2 已在同一 Local 候选完成修复和验证，提交独立验收。前态为 `cdb74f785f1adf9d7e9a666c5ac0be9cc01c29ba`；最终 commit/tree、源文件及证据以 [delivery-binding.json](../../output/xi-route-revocation-review32/delivery-binding.json) 为准。本包与待实施的 R32 运行阅读连续性计划分开。
+> **历史引用。** 2026-09-11 review32 返修的本地交付绑定、原生 API 与浏览器日志。结果只覆盖文内直达和受控撤权反例，对应当时的 Local 候选。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
+2026-09-11。经理 review32 新增的两个 P2 已在同一 Local 候选完成修复和验证，提交独立验收。前态为 `cdb74f785f1adf9d7e9a666c5ac0be9cc01c29ba`；最终 commit/tree、源文件及证据以 `output/xi-route-revocation-review32/delivery-binding.json` 为准。本包与待实施的 R32 运行阅读连续性计划分开。
 
 | 缺陷 | 修改与验证 |
 | --- | --- |
@@ -9,11 +11,11 @@
 
 ## 证据入口
 
-- [native-final.log](../../output/xi-route-revocation-review32/native-final.log)：9 项 Go 顶层测试及两个正式角色子测试，race/default vet 通过；[browser-harness-final.log](../../output/xi-route-revocation-review32/browser-harness-final.log) 使用同一生产 HTTPS handler、schema30、原生 PG 角色和最终嵌入资源，正常结束。
-- [frontend-final.log](../../output/xi-route-revocation-review32/frontend-final.log)：132 测试、类型、OpenAPI 与构建通过；覆盖 statements/branches/functions/lines 为 76.90/67.60/73.60/78.43%。现有四视口 [24 项 E2E](../../output/xi-route-revocation-review32/frontend-e2e-final.log) 通过。
-- [browser-direct-route.json](../../output/xi-route-revocation-review32/browser-direct-route.json)、[browser-controlled-denial.json](../../output/xi-route-revocation-review32/browser-controlled-denial.json) 保存两个原反例的修复结果。Page Visibility 为受控 getter；HTTP 拒绝和 Session 响应未伪造，未声称复现原生后台标签状态。已查看直达与 hidden 等待截图，后者只显示 Session 验证状态。
-- [browser-focus.json](../../output/xi-route-revocation-review32/browser-focus.json)、[browser-update.json](../../output/xi-route-revocation-review32/browser-update.json)、[browser-origin-match.json](../../output/xi-route-revocation-review32/browser-origin-match.json)：同一合成正式账号从 1 请求/17 微元贡献进入执行依据，保留新建与更新草稿、结论及非空采用依据，创建 Case/Finding，保存复核版本 2，并返回完全相同的阅读、成员/解释版本和选中贡献。草稿截图记录撤权前第二次准备，两个阶段各自 JSON 均保留。HTML/JS/CSS 三项 HTTP 字节及哈希与最终 manifest 一致，见 `asset-http-match.json`。
-- [unchanged-native-evidence.json](../../output/xi-route-revocation-review32/unchanged-native-evidence.json)：35 份原生权限、历史、锁序、恢复源码未变；上一包 79 份冻结证据哈希完整。复用经理 review32/31 的对应有效结论，不机械重跑迁移/权限全矩阵。`coverage-reuse.json` 对唯一改变的 Go 生产文件 `webui.go` 全部使用新计数，其他未变块复用/取最大；总/API/DB/hostctl/workspace 为 64.46/60.14/70.92/64.50/65.88%，原门槛均过。未宣称本轮全仓 Go 零失败。
+- `output/xi-route-revocation-review32/native-final.log`：9 项 Go 顶层测试及两个正式角色子测试，race/default vet 通过；`output/xi-route-revocation-review32/browser-harness-final.log` 使用同一生产 HTTPS handler、schema30、原生 PG 角色和最终嵌入资源，正常结束。
+- `output/xi-route-revocation-review32/frontend-final.log`：132 测试、类型、OpenAPI 与构建通过；覆盖 statements/branches/functions/lines 为 76.90/67.60/73.60/78.43%。现有四视口 24 项 E2E（`output/xi-route-revocation-review32/frontend-e2e-final.log`） 通过。
+- `output/xi-route-revocation-review32/browser-direct-route.json`、`output/xi-route-revocation-review32/browser-controlled-denial.json` 保存两个原反例的修复结果。Page Visibility 为受控 getter；HTTP 拒绝和 Session 响应未伪造，未声称复现原生后台标签状态。已查看直达与 hidden 等待截图，后者只显示 Session 验证状态。
+- `output/xi-route-revocation-review32/browser-focus.json`、`output/xi-route-revocation-review32/browser-update.json`、`output/xi-route-revocation-review32/browser-origin-match.json`：同一合成正式账号从 1 请求/17 微元贡献进入执行依据，保留新建与更新草稿、结论及非空采用依据，创建 Case/Finding，保存复核版本 2，并返回完全相同的阅读、成员/解释版本和选中贡献。草稿截图记录撤权前第二次准备，两个阶段各自 JSON 均保留。HTML/JS/CSS 三项 HTTP 字节及哈希与最终 manifest 一致，见 `asset-http-match.json`。
+- `output/xi-route-revocation-review32/unchanged-native-evidence.json`：35 份原生权限、历史、锁序、恢复源码未变；上一包 79 份冻结证据哈希完整。复用经理 review32/31 的对应有效结论，不机械重跑迁移/权限全矩阵。`coverage-reuse.json` 对唯一改变的 Go 生产文件 `webui.go` 全部使用新计数，其他未变块复用/取最大；总/API/DB/hostctl/workspace 为 64.46/60.14/70.92/64.50/65.88%，原门槛均过。未宣称本轮全仓 Go 零失败。
 
 ## 失败留存与边界
 

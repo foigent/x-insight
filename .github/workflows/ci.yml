@@ -1328,6 +1328,92 @@ jobs:
             ${{ runner.temp }}/p3-component-safe/browser-result.json
           if-no-files-found: warn
 
+  cold_public_source:
+    name: Anonymous Cold Source Build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    permissions: {}
+    needs: changes
+    if: github.repository == 'foigent/x-insight' && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.safe_docs_only != 'true'
+    steps:
+      - name: Set up pinned Go without a dependency cache
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.12'
+          cache: false
+
+      - name: Set up pinned Node without a dependency cache
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.23.1'
+          package-manager-cache: false
+
+      - name: Build and check the anonymous exact source
+        shell: bash
+        run: |
+          stage=$(mktemp -d "$RUNNER_TEMP/xi-public-source.XXXXXX")
+          env -i PATH="$PATH" LANG=C.UTF-8 TZ=UTC CI=true bash -s -- "$GITHUB_SHA" "$stage" <<'COLD'
+          set -euo pipefail
+          commit=$1
+          stage=$2
+          [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 && "$commit" =~ ^[a-f0-9]{40}$ ]]
+
+          export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0
+          git init --quiet "$stage/repository"
+          git -C "$stage/repository" fetch --quiet --depth=1 --no-tags https://github.com/foigent/x-insight.git "$commit"
+          test "$(git -C "$stage/repository" rev-parse FETCH_HEAD)" = "$commit"
+          tree=$(git -C "$stage/repository" rev-parse "$commit^{tree}")
+          curl -q --fail --silent --show-error --proto '=https' --max-time 90 --max-filesize 33554432 \
+            "https://codeload.github.com/foigent/x-insight/tar.gz/$commit" --output "$stage/source.tar.gz"
+          mkdir "$stage/source" "$stage/expected"
+          tar -xzf "$stage/source.tar.gz" --strip-components=1 -C "$stage/source"
+          git -C "$stage/repository" archive "$commit" | tar -xf - -C "$stage/expected"
+          diff -qr --no-dereference "$stage/expected" "$stage/source"
+          git --git-dir="$stage/repository/.git" --work-tree="$stage/source" add --all --force
+          test "$(git -C "$stage/repository" write-tree)" = "$tree"
+          printf 'anonymous_commit=%s tree=%s archive_bytes=%s\n' "$commit" "$tree" "$(wc -c < "$stage/source.tar.gz")"
+          sha256sum "$stage/source.tar.gz"
+
+          export GOTOOLCHAIN=local GOENV=/dev/null GOWORK=off GOAUTH=off GOFLAGS=-mod=readonly
+          export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+          export GOPATH="$stage/go" GOMODCACHE="$stage/go-modules" GOCACHE="$stage/go-build"
+          export npm_config_cache="$stage/npm-cache"
+          export npm_config_userconfig="$stage/user-npmrc" npm_config_globalconfig="$stage/global-npmrc"
+          export PLAYWRIGHT_BROWSERS_PATH="$stage/browser" XDG_CACHE_HOME="$stage/xdg"
+          touch "$npm_config_userconfig" "$npm_config_globalconfig"
+          test "$(go env GOVERSION)" = go1.25.12
+          test "$(node --version)" = v22.23.1
+          npm --cache "$stage/npm-tool-cache" install --global --prefix "$stage/npm-tool" \
+            --ignore-scripts --no-audit --no-fund npm@10.9.8
+          export PATH="$stage/npm-tool/bin:$PATH"
+          test "$(npm --version)" = 10.9.8
+          for cache in "$GOMODCACHE" "$GOCACHE" "$npm_config_cache" "$PLAYWRIGHT_BROWSERS_PATH"; do
+            mkdir "$cache"
+            test -z "$(find "$cache" -mindepth 1 -maxdepth 1 -print -quit)"
+          done
+          printf 'anonymous_build_cache=empty\n'
+
+          cd "$stage/source"
+          go mod download
+          go mod verify
+          npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
+          node scripts/build-manual.mjs --profile=development-d
+          npm --prefix frontend run check
+          npm --prefix frontend run test:coverage
+          npm --prefix frontend run build
+          python3 scripts/collect-third-party-notices.py --check
+          bash scripts/verify-protected-runtime.sh
+          go vet ./...
+          go test -p 1 ./...
+          go run ./cmd/xinsight-importer fixtures run
+          mkdir "$stage/commands"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=false -o "$stage/commands/" ./cmd/...
+          npm --prefix frontend run install:e2e:chromium
+          npm --prefix frontend run test:e2e
+          git --git-dir="$stage/repository/.git" --work-tree="$stage/source" diff --exit-code
+          printf 'anonymous_cold_source_build=pass commit=%s tree=%s\n' "$commit" "$tree"
+          COLD
+
   ci_gate:
     name: Backend Tests
     runs-on: ubuntu-22.04

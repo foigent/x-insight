@@ -1,4 +1,5 @@
-import { localizedLabels, getLocale, t, tx, useLocale, useMessageState } from "./i18n";
+import { localizedLabels, t, tx, useLocale, useMessageState } from "./i18n";
+import { formatDateTime } from "./format";
 import { useEffect, useRef, useState } from "react";
 import { ApiRequestError, type AccessSessionResponse, type PurposeAction, type PurposeBasis, type PurposeCategory, type PurposeCommand, type PurposeView, workbenchAPI } from "./api";
 import "./purpose.css";
@@ -113,7 +114,7 @@ export function PurposePanel({ executionID, readingID, basis, session, onInvalid
         </fieldset> : <p>{current ? t("m1679") : t("m1680")}</p>}
         <div className="purpose-claims">{view.state.claims.map(claim => <section key={claim.claim_id} aria-label={`${purposeLabels[claim.category]} ${reviewLabels[claim.review_state]}`}>
           <header><strong>{purposeLabels[claim.category]}</strong><span>{reviewLabels[claim.review_state]}{view.state.adopted_claim_id === claim.claim_id ? t("m1681") : ""}</span></header>
-          <p>{claim.reason}</p><small>{tx("m1682", { value0: claim.declared_by, value1: new Date(claim.declared_at).toLocaleString(getLocale()) })}</small>
+          <p>{claim.reason}</p><small>{tx("m1682", { value0: claim.declared_by, value1: formatDateTime(claim.declared_at) })}</small>
           {canReview && claim.review_state === "pending" ? <label><input type="checkbox" checked={rejectIDs.includes(claim.claim_id)} onChange={event => setRejectIDs(previous => event.target.checked ? [...previous, claim.claim_id] : previous.filter(id => id !== claim.claim_id))} />{t("m1683")}</label> : null}
           <details><summary>{tx("m1684")}</summary><code>{claim.claim_id}</code>{claim.basis_refs.map(ref => <p key={ref.evidence_event_id}><code>{ref.evidence_event_id}</code><code>{ref.event_hash}</code></p>)}{claim.revises ? <p>{t("m1685")}<code>{claim.revises}</code></p> : null}</details>
           {canReview && ["pending", "accepted"].includes(claim.review_state) ? <div className="purpose-actions">
@@ -124,7 +125,7 @@ export function PurposePanel({ executionID, readingID, basis, session, onInvalid
             {view.state.adopted_claim_id === claim.claim_id ? <button disabled={busy || !reason.trim()} onClick={() => void act("withdraw_adoption", claim.claim_id)}>{tx("m1658")}</button> : null}
           </div> : null}
         </section>)}</div>
-        <details><summary>{tx("m1687", { value0: view.history.length })}</summary><ol className="purpose-history">{view.history.map(event => <li key={event.revision}><strong>{tx("m1688", { value0: event.revision, value1: actionLabels[event.command.action] })}</strong><p>{event.command.reason}</p><small>{event.actor} · {new Date(event.recorded_at).toLocaleString(getLocale())}</small></li>)}</ol>{view.next_before_revision ? <button disabled={busy} onClick={() => void load(current, view.next_before_revision)}>{tx("m1689")}</button> : null}</details>
+        <details><summary>{tx("m1687", { value0: view.history.length })}</summary><ol className="purpose-history">{view.history.map(event => <li key={event.revision}><strong>{tx("m1688", { value0: event.revision, value1: actionLabels[event.command.action] })}</strong><p>{event.command.reason}</p><small>{event.actor} · {formatDateTime(event.recorded_at)}</small></li>)}</ol>{view.next_before_revision ? <button disabled={busy} onClick={() => void load(current, view.next_before_revision)}>{tx("m1689")}</button> : null}</details>
       </> : null}
       {notice ? <p role="status">{notice}</p> : null}
       {error ? <div role="alert"><p>{error}</p><button disabled={busy} onClick={() => void load()}>{tx("m1690")}</button></div> : null}

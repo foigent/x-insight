@@ -1,8 +1,9 @@
 # Completed-Execution Pull V1 Runtime Contract
 
-Status: production-intended implementation contract; Local implementation in
-progress on 2026-07-25. Deployment and live activation are separately
-sequenced.
+This reference describes the completed-execution pull V1 protocol and its
+worker lifecycle. For ordinary pairing and installed acceptance, use the
+[installation walkthrough](../community/getting-started.md) and
+[release readiness matrix](../community/release-readiness.md).
 
 ## Purpose And Ownership
 

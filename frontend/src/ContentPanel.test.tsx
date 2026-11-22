@@ -170,3 +170,21 @@ it.each([403,404,410,503,429])("classifies a list failure %s without claiming a 
  else expect(retry).toBeNull();
  expect(invalidated).not.toHaveBeenCalled();
 });
+
+it("retries a transient content page with the same cursor and removes previous references on cursor rejection", async () => {
+ const list = vi.mocked(content.fetchContentPage);
+ list.mockResolvedValueOnce({ ...page, next_cursor: "content-next" })
+   .mockRejectedValueOnce(new ApiRequestError(503)).mockRejectedValueOnce(new ApiRequestError(400));
+ const invalidated = vi.fn();
+ render(<ContentPanel session={session} reading={reading} request={request} onInvalidated={invalidated} />);
+ fireEvent.click(await screen.findByRole("button", { name: "加载更多内容引用" }));
+ const retry = await screen.findByRole("button", { name: "重试内容清单" });
+ expect(screen.getByRole("button", { name: "读取并核验正文" })).toBeTruthy();
+ expect(screen.queryByRole("button", { name: "加载更多内容引用" })).toBeNull();
+ fireEvent.click(retry);
+ await screen.findByText("分页位置已失效，请从头重新读取。");
+ expect(list.mock.calls.map(call => call[4])).toEqual([undefined, "content-next", "content-next"]);
+ expect(invalidated).toHaveBeenCalledOnce();
+ expect(screen.queryByRole("button", { name: "读取并核验正文" })).toBeNull();
+ expect(screen.queryByRole("button", { name: "重试内容清单" })).toBeNull();
+});

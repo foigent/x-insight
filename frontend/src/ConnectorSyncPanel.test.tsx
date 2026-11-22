@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ConnectorSyncPanel } from "./ConnectorSyncPanel";
-import { connectorSetupAPI, connectorSyncAPI, type ConnectorSyncStatus } from "./api";
+import { ApiRequestError, connectorSetupAPI, connectorSyncAPI, type ConnectorSyncStatus } from "./api";
 import { setLocale } from "./i18n";
 
 const id="xci_AAAAAAAAAAAAAAAAAAAAAA",other="xci_BBBBBBBBBBBBBBBBBBBBBB";
@@ -49,6 +49,52 @@ it("an initially running task keeps polling local status and settles after refre
  await act(async()=>{await vi.advanceTimersByTimeAsync(1500);});expect(read).toHaveBeenCalledTimes(2);
  expect(screen.getByText(/XI outbound confirmed quiet/)).toBeTruthy();
  await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});expect(read).toHaveBeenCalledTimes(2);
+});
+
+it("offers a read-only refresh after the first sync status request fails", async () => {
+ const read = vi.spyOn(connectorSyncAPI, "status").mockRejectedValueOnce(new ApiRequestError(503)).mockResolvedValue(state());
+ const once = vi.spyOn(connectorSyncAPI, "once");
+ const set = vi.spyOn(connectorSyncAPI, "set");
+ render(<ConnectorSyncPanel installationID={id} csrfToken="csrf" canManage />);
+ expect(screen.getByText("Loading local sync status")).toBeTruthy();
+ await screen.findByRole("alert");
+ expect(screen.queryByText("Loading local sync status")).toBeNull();
+ expect(screen.queryByRole("button", { name: "Sync once" })).toBeNull();
+ fireEvent.click(screen.getByRole("button", { name: "Refresh local status" }));
+ await screen.findByText(/XI outbound confirmed quiet/);
+ expect(read).toHaveBeenCalledTimes(2);
+ expect(once).not.toHaveBeenCalled();
+ expect(set).not.toHaveBeenCalled();
+});
+
+it("clears the previous run and its controls when polling is denied", async () => {
+ vi.useFakeTimers();
+ const read = vi.spyOn(connectorSyncAPI, "status")
+   .mockResolvedValueOnce(state(id, { effective: "manual_running", run: { request_id: "run", state: "running", pages: 3, attempts: 4, items: 1, deadline: "2026-10-19T00:00:00Z", results: {} } }))
+   .mockRejectedValueOnce(new ApiRequestError(403));
+ const once = vi.spyOn(connectorSyncAPI, "once");
+ await act(async () => { render(<ConnectorSyncPanel installationID={id} csrfToken="csrf" canManage />); });
+ expect(screen.getByText(/Effective state/)).toBeTruthy();
+ await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+ expect(screen.getByRole("alert")).toBeTruthy();
+ expect(screen.queryByText(/Effective state/)).toBeNull();
+ expect(screen.queryByText(/Last data commit/)).toBeNull();
+ expect(screen.queryByRole("button", { name: "Sync once" })).toBeNull();
+ expect(screen.queryByRole("button", { name: "Refresh local status" })).toBeNull();
+ await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+ expect(read).toHaveBeenCalledTimes(2);
+ expect(once).not.toHaveBeenCalled();
+});
+
+it("lets a connection authorization denial take precedence over a late sync status", async () => {
+ let finish!: (value: ConnectorSyncStatus) => void;
+ vi.spyOn(connectorSyncAPI, "status").mockReturnValue(new Promise(resolve => { finish = resolve; }));
+ vi.mocked(connectorSetupAPI.status).mockRejectedValue(new ApiRequestError(403));
+ render(<ConnectorSyncPanel installationID={id} csrfToken="csrf" canManage />);
+ await screen.findByRole("alert");
+ await act(async () => { finish(state()); });
+ expect(screen.queryByText(/XI outbound confirmed quiet/)).toBeNull();
+ expect(screen.queryByRole("button", { name: "Sync once" })).toBeNull();
 });
 
 it("changing installation discards the old view and late responses cannot overwrite it",async()=>{

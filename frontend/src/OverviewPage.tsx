@@ -6,7 +6,7 @@ import { ApiRequestError, investigationQueueAPI, isAbortError, runtimeAPI, scope
   type WorkbenchReadingRequest, type WorkbenchSeries, type WorkbenchSourceStatuses, type WorkbenchSummary,
   type OverviewRecentRequests, type WorkActivitySummary, type WorkActivityScopes } from "./api";
 import type * as Runtime from "./runtime";
-import { formatDateTime } from "./format";
+import { formatCNYMicros, formatDateTime, parseDecimalInteger } from "./format";
 import { purposeLabels } from "./PurposePanel";
 import { fixedReadingRequest, navigationOwner, usageDimension, type WorkbenchNavigation } from "./workbenchNavigation";
 import "./overview.css";
@@ -25,17 +25,17 @@ const empty = (): Data => ({ errors: {} });
 const parts = (value: string) => value.split(",").map(item => item.trim()).filter(Boolean);
 const outcomes: Record<string, string> = localizedLabels({}, {local_delivery_completed: "m1124", technical_failure: "m1125", admission_rejected: "m1126", output_held: "m1127", interrupted: "m1128", context_done_unresolved: "m1129", unresolved: "m1130", conflicting: "m1131", missing_predecessor: "m1132"});
 const coverageNames: Record<string, string> = localizedLabels({}, {observed: "m1133", observed_with_gaps: "m1134", scope_limited_unknown: "m1135", disconnected: "m1136", not_connected: "m1137", period_completeness_unknown: "m1138"});
-export function overviewMoney(value: string) {
-  try { const n = BigInt(value); const digits = (n < 0n ? -n : n).toString().padStart(7, "0"); return `${n < 0n ? "-" : ""}¥${digits.slice(0, -6)}.${digits.slice(-6)}`; }
-  catch { return t("m1139"); }
-}
 export function overviewShare(value: string, total: string) {
-  try { const denominator = BigInt(total); return denominator === 0n ? t("m1139") : `${Number(BigInt(value) * 1000n / denominator) / 10}%`; }
-  catch { return t("m1139"); }
+  const amount = parseDecimalInteger(value);
+  const denominator = parseDecimalInteger(total);
+  if (amount === undefined || denominator === undefined || denominator === 0n) return t("m1139");
+  return `${Number(amount * 1000n / denominator) / 10}%`;
 }
 function shareWidth(value: string, total: string) {
-  try { const denominator = BigInt(total); return denominator > 0n ? `${Math.min(100, Math.max(0, Number(BigInt(value) * 100n / denominator)))}%` : undefined; }
-  catch { return undefined; }
+  const amount = parseDecimalInteger(value);
+  const denominator = parseDecimalInteger(total);
+  if (amount === undefined || denominator === undefined || denominator <= 0n) return undefined;
+  return `${Math.min(100, Math.max(0, Number(amount * 100n / denominator)))}%`;
 }
 function failureMessage(error: unknown) {
   if (error instanceof ApiRequestError) {
@@ -324,7 +324,7 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
     {invalid ? <p role="alert">{invalid}</p> : null}
     <div className="overview-quick-scan" aria-label={t("m1184")}><div className="overview-stats">
       <Metric title={t("m1185")} value={data.summary?.request_count} note={data.summary?.request_total_complete ? t("m1186") : t("m1187")} unavailable={message("summary")} />
-      <Metric title={displayMoneyTitle} value={data.summary ? overviewMoney(data.summary.selected_amount_micros) : undefined} note="" unavailable={message("summary")} />
+      <Metric title={displayMoneyTitle} value={data.summary ? formatCNYMicros(data.summary.selected_amount_micros) : undefined} note="" unavailable={message("summary")} />
       <Metric title={t("m1188")} value={data.runtime ? `${localCompleted ?? 0} / ${data.runtime.requests}` : undefined} note={data.runtime ? t("m1189", { value0: resultAttention ?? 0 }) : ""} unavailable={canRuntime ? message("runtime") : t("m1190")} />
       <Metric title={t("m1191")} value={data.queue?.total} note={t("m1192")} unavailable={canQueue ? message("queue") : t("m1193")} />
     </div><OverviewInfo label={t("m1194")}><p>{tx("m1195")}</p></OverviewInfo></div>
@@ -350,7 +350,7 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
     <section className="overview-observatory-row overview-observatory-row--comparison" aria-label={t("m1237")}>
       <article className="overview-panel overview-cost-card"><header><h2>{appliedCostDimension === "application" ? t("m1238") : t("m1239")}</h2><select aria-label={t("m1240")} value={appliedCostDimension} onChange={event => setCostDimension(event.target.value as typeof costDimension)}><option value="source_project">{tx("m1180")}</option><option value="application" disabled={!data.reading?.dimensions.includes("application")}>{tx("m1241")}</option></select></header>
         <CostComposition value={currentCostContributions?.values[appliedCostDimension]} unavailable={costContributionMessage} moneyTitle={displayMoneyTitle} onSelect={canDetails ? row => openWorkbench(appliedCostDimension, false, row.ref) : undefined} />
-        <OverviewInfo label={t("m1242")}><p>{tx("m1244", { value0: displayMoneyTitle, value1: data.summary ? overviewMoney(request.money_basis === "calculated_reference" ? data.summary.gateway_charged_micros : data.summary.calculated_reference_micros) : t("m1243") })}</p></OverviewInfo>
+        <OverviewInfo label={t("m1242")}><p>{tx("m1244", { value0: displayMoneyTitle, value1: data.summary ? formatCNYMicros(request.money_basis === "calculated_reference" ? data.summary.gateway_charged_micros : data.summary.calculated_reference_micros) : t("m1243") })}</p></OverviewInfo>
       </article>
       <article className="overview-panel overview-model-card"><header><h2>{tx("m1245")}</h2></header><Contribution value={currentContributions?.values.model} unavailable={contributionMessage("model")} nested onSelect={canDetails ? row => openWorkbench("model", true, row.ref) : undefined} /><OverviewInfo label={t("m1246")}><p>{tx("m1247")}</p></OverviewInfo></article>
     </section>
@@ -378,7 +378,7 @@ export function OverviewPage({ session, navigate, context, onContext }: Props) {
         <td>{row.model || t("m1282")}<small>{tx("m1285", { value0: row.source_project || t("m0193"), value1: row.application_id ? t("m1283", { value0: row.application_id }) : t("m1284") })}</small></td>
         <td>{row.purpose_state === "adopted" ? purposeLabels[row.purpose_category || ""] ?? row.purpose_category : row.purpose_state === "unavailable" ? t("m1286") : t("m1287")}</td>
         <td>{row.runtime.match_state === "matched" ? outcomes[row.runtime.outcome || ""] ?? t("m1130") : row.runtime.match_state === "not_in_runtime_reading" ? t("m1288") : row.runtime.match_state === "ambiguous" ? t("m1289") : row.runtime.match_state === "no_request_observation" ? t("m1268") : t("m1290")}</td>
-        <td>{overviewMoney(request.money_basis === "calculated_reference" ? row.calculated_reference_micros : row.gateway_charged_micros)}<small>{moneyTitle}</small></td>
+        <td>{formatCNYMicros(request.money_basis === "calculated_reference" ? row.calculated_reference_micros : row.gateway_charged_micros)}<small>{moneyTitle}</small></td>
         <td><button type="button" disabled={!permissions.includes("evidence.read") && !(permissions.includes("investigation.scoped.read") && row.investigation_available === true)} onClick={() => navigate(`/executions/${encodeURIComponent(row.execution_id)}?as_of=${encodeURIComponent(recent.cutoff)}&evidence=${encodeURIComponent(row.evidence_event_id)}`)}>{tx("m1291")}</button></td>
       </tr>)}</tbody></table></div> : recent ? <p>{tx("m1292")}</p> : <p>{canDetails ? recentError || data.errors.economic || (recentBusy ? t("m1293") : t("m1294")) : t("m1295")}</p>}
       {recentRuntimeUnavailable ? <p role="status">{tx("m1296")}</p> : null}{recentError ? <p role="alert">{recentError}</p> : null}{recent?.next_cursor ? <button type="button" disabled={recentBusy} onClick={() => setRecentCursor(recent.next_cursor)}>{tx("m1297")}</button> : null}
@@ -435,10 +435,9 @@ function CostComposition({ value, unavailable, moneyTitle, onSelect }: { value?:
     { key: "__other__", label: t("m1355"), amount: value.other_known_micros, row: undefined },
     { key: "__unassigned__", label: t("m1356"), amount: value.unassigned_micros, row: undefined },
   ];
-  let total: bigint | undefined;
-  let values: bigint[] = [];
-  try { total = BigInt(value.denominator_micros); values = items.map(item => BigInt(item.amount)); } catch { /* Keep exact strings in the list. */ }
-  const totalAmount = total;
+  const totalAmount = parseDecimalInteger(value.denominator_micros);
+  const amounts = items.map(item => parseDecimalInteger(item.amount));
+  const values = amounts.every(amount => amount !== undefined) ? amounts : [];
   const positive = totalAmount !== undefined && totalAmount > 0n && values.length === items.length && values.every(amount => amount >= 0n);
   const reconciled = positive && values.reduce((sum, amount) => sum + amount, 0n) === totalAmount;
   const reason = totalAmount === undefined || values.length !== items.length ? t("m1357") : totalAmount <= 0n ? t("m1358") : values.some(amount => amount < 0n) ? t("m1359") : !reconciled ? t("m1360") : "";
@@ -447,15 +446,15 @@ function CostComposition({ value, unavailable, moneyTitle, onSelect }: { value?:
   const percent = (amount: bigint) => totalAmount && totalAmount > 0n ? Number(amount * 1000n / totalAmount) / 10 : 0;
   const percentLabel = (amount: bigint) => amount > 0n && percent(amount) === 0 ? "<0.1%" : `${percent(amount)}%`;
   const tinyAmount = reconciled && values.some(amount => amount > 0n && percent(amount) === 0);
-  return <div className="overview-cost-composition"><p className="overview-cost-total"><span>{tx("m1361", { value0: moneyTitle })}</span><strong>{overviewMoney(value.denominator_micros)}</strong></p>
+  return <div className="overview-cost-composition"><p className="overview-cost-total"><span>{tx("m1361", { value0: moneyTitle })}</span><strong>{formatCNYMicros(value.denominator_micros)}</strong></p>
     <div className="overview-cost-body">{reconciled ? <div className="overview-donut-wrap"><svg className="overview-donut" viewBox="0 0 120 120" role="group" aria-label={t("m1362", { value0: value.dimension === "application" ? t("m1241") : t("m1180") })}>
       <circle className="overview-donut-base" cx="60" cy="60" r="43" fill="none" strokeWidth="16" />
-      {items.map((item, index) => { const amount = values[index]; const width = Number(amount * 1000000n / totalAmount!) / 10000; const start = offset; offset += width; return amount > 0n ? <circle key={item.key} className={`overview-donut-arc overview-donut-arc--${item.row ? index % 5 : item.key === "__other__" ? "other" : "unassigned"}`} cx="60" cy="60" r="43" fill="none" strokeWidth="16" pathLength={100} strokeDasharray={`${width} ${100 - width}`} strokeDashoffset={-start} tabIndex={0} role="img" aria-label={t("m1363", { value0: item.label, value1: overviewMoney(item.amount), value2: percentLabel(amount) })} onFocus={() => setFocusedKey(item.key)} onBlur={() => setFocusedKey(undefined)} onMouseEnter={() => setHoveredKey(item.key)} onMouseLeave={() => setHoveredKey(current => current === item.key ? undefined : current)}><title>{item.label} · {overviewMoney(item.amount)} · {percentLabel(amount)}</title></circle> : null; })}
+      {items.map((item, index) => { const amount = values[index]; const width = Number(amount * 1000000n / totalAmount!) / 10000; const start = offset; offset += width; return amount > 0n ? <circle key={item.key} className={`overview-donut-arc overview-donut-arc--${item.row ? index % 5 : item.key === "__other__" ? "other" : "unassigned"}`} cx="60" cy="60" r="43" fill="none" strokeWidth="16" pathLength={100} strokeDasharray={`${width} ${100 - width}`} strokeDashoffset={-start} tabIndex={0} role="img" aria-label={t("m1363", { value0: item.label, value1: formatCNYMicros(item.amount), value2: percentLabel(amount) })} onFocus={() => setFocusedKey(item.key)} onBlur={() => setFocusedKey(undefined)} onMouseEnter={() => setHoveredKey(item.key)} onMouseLeave={() => setHoveredKey(current => current === item.key ? undefined : current)}><title>{item.label} · {formatCNYMicros(item.amount)} · {percentLabel(amount)}</title></circle> : null; })}
       <text className="overview-donut-center" x="60" y="61" textAnchor="middle">{tx("m1242")}</text>
-    </svg><output className="overview-donut-readout" aria-live="polite">{active ? `${active.label} · ${overviewMoney(active.amount)} · ${percentLabel(BigInt(active.amount))}` : t("m1364")}</output></div> : <p role="status" className="overview-donut-unavailable">{tx("m1365", { value0: reason })}</p>}
+    </svg><output className="overview-donut-readout" aria-live="polite">{active ? `${active.label} · ${formatCNYMicros(active.amount)} · ${percentLabel(BigInt(active.amount))}` : t("m1364")}</output></div> : <p role="status" className="overview-donut-unavailable">{tx("m1365", { value0: reason })}</p>}
       <ul className="overview-cost-list">{items.map((item, index) => <li key={item.key} onMouseEnter={() => setHoveredKey(item.key)} onMouseLeave={() => setHoveredKey(current => current === item.key ? undefined : current)}><span className={`overview-cost-key overview-cost-key--${item.row ? index % 5 : item.key === "__other__" ? "other" : "unassigned"}`} aria-hidden="true" />
         <span className="overview-cost-name">{item.row && onSelect && item.row.drilldown_allowed ? <button type="button" onClick={() => onSelect(item.row!)} onFocus={() => setFocusedKey(item.key)} onBlur={() => setFocusedKey(undefined)} aria-label={t("m1366", { value0: item.label })}>{item.label}</button> : item.label}</span>
-        <strong>{overviewMoney(item.amount)}</strong><small>{reconciled ? percentLabel(values[index]) : t("m1367")}</small>
+        <strong>{formatCNYMicros(item.amount)}</strong><small>{reconciled ? percentLabel(values[index]) : t("m1367")}</small>
       </li>)}</ul></div>
     {tinyAmount ? <small>{tx("m1368")}</small> : null}
   </div>;
@@ -497,13 +496,15 @@ function Contribution({ value, unavailable, nested, onSelect }: { value?: Workbe
       const width = requestsReconciled ? shareWidth(String(row.request_count), String(maxRequests)) : undefined;
       return <li key={row.ref}><div className="overview-contribution-line">
         {onSelect && row.drilldown_allowed ? <button type="button" onClick={() => onSelect(row)} aria-label={t("m1366", { value0: label })}>{label}</button> : <span title={label}>{label}</span>}
-        <span className="overview-contribution-values"><strong>{tx("m1383", { value0: row.request_count })}</strong><small>{share}</small><small>{overviewMoney(row.selected_amount_micros)}</small>{!row.drilldown_allowed ? <small>{tx("m1384")}</small> : null}</span>
+        <span className="overview-contribution-values"><strong>{tx("m1383", { value0: row.request_count })}</strong><small>{share}</small><small>{formatCNYMicros(row.selected_amount_micros)}</small>{!row.drilldown_allowed ? <small>{tx("m1384")}</small> : null}</span>
       </div><span className="overview-contribution-bar" aria-hidden="true">{width ? <i style={{ width }} /> : null}</span></li>;
     })}</ul>
     <div className="overview-contribution-footer"><span>{tx("m1385", { value0: value.denominator_requests, value1: value.other_known_requests, value2: value.unassigned_requests })}</span></div>
   </> : <p>{value ? t("m1386") : unavailable}</p>;
   return nested ? <div>{content}</div> : <article className="overview-panel">{content}</article>;
 }
+const overviewTrendTimeLabelMaxSpanMs = 2 * 24 * 60 * 60 * 1000;
+
 function Trend({ series, moneyTitle, onOpen }: { series: WorkbenchSeries; moneyTitle: string; onOpen: (activeBucket: string) => void }) {
   useLocale();
   const [focusedIndex, setFocusedIndex] = useState<number>();
@@ -533,9 +534,9 @@ function Trend({ series, moneyTitle, onOpen }: { series: WorkbenchSeries; moneyT
     return previous.end === point.start && from && to ? [{ from, to }] : [];
   });
   const active = plotted.find(point => point.index === focusedIndex) ?? plotted.find(point => point.index === hoveredIndex);
-  const labelFor = (point: WorkbenchSeries["points"][number]) => t("m1390", { value0: formatDateTime(point.start_inclusive), value1: formatDateTime(point.end_exclusive), value2: series.unit === "micros" ? `${moneyTitle} ${overviewMoney(point.known_value)}` : t("m1387", { value0: point.known_value }), value3: point.complete ? t("m1388") : t("m1389") });
-  const axisLabel = (value: bigint) => series.unit === "micros" ? overviewMoney(String(value)) : String(value);
-  const shortTime = (value: number) => new Intl.DateTimeFormat(getLocale(), { month: "numeric", day: "numeric", ...(lastTime - firstTime <= 172800000 ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), hour12: false }).format(value);
+  const labelFor = (point: WorkbenchSeries["points"][number]) => t("m1390", { value0: formatDateTime(point.start_inclusive), value1: formatDateTime(point.end_exclusive), value2: series.unit === "micros" ? `${moneyTitle} ${formatCNYMicros(point.known_value)}` : t("m1387", { value0: point.known_value }), value3: point.complete ? t("m1388") : t("m1389") });
+  const axisLabel = (value: bigint) => series.unit === "micros" ? formatCNYMicros(String(value)) : String(value);
+  const shortTime = (value: number) => new Intl.DateTimeFormat(getLocale(), { month: "numeric", day: "numeric", ...(lastTime - firstTime <= overviewTrendTimeLabelMaxSpanMs ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), hour12: false }).format(value);
   const invalidCount = points.filter(point => !point.validTime || point.value === undefined).length;
   const incomplete = points.some(point => !point.complete);
   const coverageLabel = coverageNames[series.coverage.status] ?? t("m1196");

@@ -1,5 +1,7 @@
 # XI-C 下一完整工作包：Finding 复核与跟进生命周期
 
+> **历史引用。** 2026-09-10 的经理裁定来自当时的内部协作档案。适用范围限于该轮 Finding 复核方案的补充要求。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 > Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
 
 状态：**review20 要求的两点补充已完成，待经理确认并发出实施决定。** 唯一 owner、工作树 `/private/tmp/xinsight-xi-c-responsibility-20260909`；代码基线 `fcda8832c8e5bf6e74f60277a66e91ab92723420` / tree `a5bfefacd79c06210c792eb3c0960991f6d0a447`，当前 schema26。本阶段仅形成并修订本方案，不启动 PG/浏览器、编译、迁移或修改产品。
@@ -12,7 +14,7 @@
 
 这是完整的“人工复核与跟进”子项，不是完整 C。安全线索产生/归并、当前与本期队列、完整分页/保存筛选和总览返回链仍属后续 P2-M02/M04；它们需要本包稳定的状态与依据版本。SE-02 的合格策略/效果来源和跨项目范围、A1/B/D/X、原13项与最终集成验收继续保留。
 
-依据：第38份第6/9节、第18份 P-02 合同第3/9/10节、第19份 P2-M03/M05 与 S04—S08，以及主管 [review19 决定](<PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/supporting/xi-iteration-20260909/independent-review-19/manager-decision.md>)。18/19中的字段名与 URL 是候选设计；以下对当前已接受实现作具体适配，不把历史草案当现行接口。
+依据：第38份第6/9节、第18份 P-02 合同第3/9/10节、第19份 P2-M03/M05 与 S04—S08，以及主管 review19 决定（`PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/supporting/xi-iteration-20260909/independent-review-19/manager-decision.md`）。18/19中的字段名与 URL 是候选设计；以下对当前已接受实现作具体适配，不把历史草案当现行接口。
 
 ## 2. 已核代码与实施边界
 

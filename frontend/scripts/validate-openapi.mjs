@@ -192,6 +192,14 @@ for (const path of ["/api/v1/work-event-ingest/config", "/api/v1/work-event-inge
   }
 }
 
+const investigationGone = contract.paths["/api/v1/executions"].get.responses["410"];
+const investigationGoneCodes = investigationGone?.content?.["application/problem+json"]?.schema?.properties?.code?.enum;
+for (const code of ["cursor_expired", "evidence_revision_unavailable"]) {
+  if (!investigationGoneCodes?.includes(code)) {
+    throw new Error(`execution search 410 does not declare the server problem code: ${code}`);
+  }
+}
+
 const bodyRead = contract.paths["/api/v1/work-activity/contents/{content_ref}"].get;
 if (!bodyRead.parameters?.some((parameter) => parameter.name === "X-XInsight-Scope-Revision" && parameter.required) ||
     !bodyRead.responses?.["200"]?.content?.["application/octet-stream"] ||

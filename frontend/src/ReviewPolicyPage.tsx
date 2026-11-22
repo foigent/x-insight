@@ -1,4 +1,5 @@
 import { t, tx, useLocale, useMessageState } from "./i18n";
+import { PageHeader } from "./PageHeader";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ApiRequestError, investigationAPI, isAbortError, reviewPolicyAPI, type AccessSessionResponse,
   type ReviewCaptureDefaultView, type ReviewCaptureSettings, type ReviewCaptureProjectCatalog } from "./api";
@@ -145,9 +146,8 @@ const [enterpriseWrite,setEnterpriseWrite]=useState<"available"|"denied"|"unknow
     finally { setBusy(false); }
   }
   return <section className="product-page review-policy-page" aria-labelledby="review-policy-title">
-    <header className="page-header"><div><p className="eyebrow">{tx("m1811")}</p><h1 id="review-policy-title">{tx("m1812")}</h1>
-      <p>{tx("m1813")}</p></div>
-      <button type="button" onClick={() => void refresh()} disabled={busy}>{tx("m1814")}</button></header>
+    <PageHeader eyebrow={t("m1811")} title={t("m1812")} titleID="review-policy-title" description={t("m1813")}
+      action={<button type="button" onClick={() => void refresh()} disabled={busy}>{tx("m1814")}</button>} />
     {error ? <p role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}
     {current && draft ? <><section aria-label={t("m1815")}>
       <details><summary>{tx("m1816")}</summary><p>{tx("m1817", { value0: current.state === "unconfigured" ? t("m0021") : current.policy.desired_revision, value1: current.state === "unconfigured" || current.policy.effective_revision === 0 ? t("m0342") : current.policy.effective_revision })}</p></details>

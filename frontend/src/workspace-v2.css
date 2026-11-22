@@ -681,8 +681,7 @@ tbody tr:last-child td {
 .note-list,
 .alert-list,
 .hypothesis-list,
-.identity-list,
-.connector-detail-list {
+.identity-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -701,7 +700,7 @@ tbody tr:last-child td {
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #f7fbff;
+  background: var(--evidence-soft);
 }
 
 .connector-invitation span {
@@ -1201,6 +1200,8 @@ dl > div dd {
 }
 
 .connector-detail-list {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 

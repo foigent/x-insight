@@ -1,5 +1,7 @@
 # XI-A0：digest统计对照有效，coverage参数错误使对照未完成
 
+> **历史引用。** 同一隔离合成实例的 MCV／非 MCV 对照。文件分别来自参数修订准备、先前尝试与第二次执行。只有文内 digest 的九次有效测量可采信。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **本轮执行了18次目标SELECT，但只有digest的9次可用于批准的对照；coverage的9次参数错误，全部排除。** digest证实：相同300000成员基数下，非MCV ID的custom计划估为1行并执行300000次F0索引访问，G/C中位数294.459/1030.703ms。coverage仍缺有效MCV/非MCV对照；原A0和完整创建资格未通过。
 
 经理批准基于`755e16f690f32559f34d54a088f74b6ad3904a90`的新18目标/20分钟只读切片，复用`/private/tmp/xi-pc-hcpwpsza/data`；条件性资源修订为4192MiB累计和23GiB启动，其余512MiB/21.5GiB首次目标、21GiB停止/20GiB保护、RSS4GiB、SQL10s均保留。已独立认可复用场景的2GiB启动至停止缓冲，并按编译后实际计量执行，没有新复制或清理。
@@ -12,7 +14,7 @@
 4. 恢复输出`output/xi-a0-plan-cache-mcv-run-02`，端口57884、workspace PID51962；18条目标执行均SQL成功、测试9.24秒/exit0。包括2条auto及16条实际prepared EXPLAIN ANALYZE，全部同PID、SQL/OID/name/prepare_time，强制模式的计数增量正确；统计分类持续符合指定MCV/非MCV。
 5. **事后参数语义审查发现本人的映射错误：digest的reading_id确在$1，coverage的$1是subject、reading_id在$2。harness及输入生成却都替换了第一个参数。** coverage自动执行的subject被换成reading ID；强制对照交错改变subject，却始终用MCV reading作为$2。真实角色/PID/参数类型一致没有证明参数业务含义正确；coverage自动结果中授权来源数为0，也暴露了此错误。
 
-所以原始run.json/diagnostic.json的`complete=true`、18次success及测试PASS只表示当时程序完成执行，不是完整有效诊断。保留这些原始值，不回写伪装成执行中已经识别错误；[analysis.json](../../output/xi-a0-plan-cache-mcv-run-02/analysis.json)逐条比对批准参考参数，明确标记9条有效digest与9条无效coverage。此前“coverage没有同样差异”的初步解释已撤回。首次0目标失败及更早1+36次均独立保留，没有合并样本。
+所以原始run.json/diagnostic.json的`complete=true`、18次success及测试PASS只表示当时程序完成执行，不是完整有效诊断。保留这些原始值，不回写伪装成执行中已经识别错误；`output/xi-a0-plan-cache-mcv-run-02/analysis.json`逐条比对批准参考参数，明确标记9条有效digest与9条无效coverage。此前“coverage没有同样差异”的初步解释已撤回。首次0目标失败及更早1+36次均独立保留，没有合并样本。
 
 ## 有效digest结果
 
@@ -37,7 +39,7 @@ coverage的9条执行只作为错误现场保存，不计算可采纳的G/C性�
 
 新的真实输入文件校验、错误subject/过滤器负向测试、混合类型统计回归、OID回归、默认跳过及vet通过。把本次实际错误的execution-queries.json交给修复版离线校验，明确得到预期拒绝`ambiguous reading parameter in coverage`，日志保留，没有启动PG。
 
-修复版二进制`/private/tmp/xi-pc-arg-fix-gt3mi52u/db.test`，SHA256 `8999885eb8ea0e457585cce366fcda67b81c5613e2a7eb1169df0ac6079540e9`；359输入、runner及正确/参考参数绑定见[argument-fix/code-binding.json](../../output/xi-a0-plan-cache-mcv-argument-fix/code-binding.json)。**此版仅离线验证，未执行任何PG目标查询。** 实际18目标二进制为`/private/tmp/xi-pc-mcv-build-dtjm1a56/db.test`，SHA256 `c590d34a794309a053072fa9bba380dee85402f34fb50fedd4b24be36c17196c`，仍保留。
+修复版二进制`/private/tmp/xi-pc-arg-fix-gt3mi52u/db.test`，SHA256 `8999885eb8ea0e457585cce366fcda67b81c5613e2a7eb1169df0ac6079540e9`；359输入、runner及正确/参考参数绑定见argument-fix/code-binding.json（`output/xi-a0-plan-cache-mcv-argument-fix/code-binding.json`）。**此版仅离线验证，未执行任何PG目标查询。** 实际18目标二进制为`/private/tmp/xi-pc-mcv-build-dtjm1a56/db.test`，SHA256 `c590d34a794309a053072fa9bba380dee85402f34fb50fedd4b24be36c17196c`，仍保留。
 
 ## 资源与停库核验
 
@@ -45,7 +47,7 @@ coverage的9条执行只作为错误现场保存，不计算可采纳的G/C性�
 
 恢复自身周期16.214678秒；从首次原始起点到最终检查241.184188秒，修复/停库间隔包含在同一20分钟窗口。源1604文件before/after一致；交付再次核对源和复用实例均shut down。两次PG日志各只有停库checkpoint，没有新增复制、旧场景清理或生产默认修改。观测峰值不是瞬时峰值保证。
 
-再完成参数修复的第五个保留二进制后，累计3876000400 bytes、预算余量519630192 bytes，约495.56MiB；仍未超4192MiB，但比下一轮首次目标所需512MiB少17240720 bytes（约16.44MiB）。真实空闲25204658176 bytes。见[修复后资源快照](../../output/xi-a0-plan-cache-mcv-argument-fix/resource-snapshot.json)；没有为了补差额删除缓存/二进制或放宽门槛。
+再完成参数修复的第五个保留二进制后，累计3876000400 bytes、预算余量519630192 bytes，约495.56MiB；仍未超4192MiB，但比下一轮首次目标所需512MiB少17240720 bytes（约16.44MiB）。真实空闲25204658176 bytes。见修复后资源快照（`output/xi-a0-plan-cache-mcv-argument-fix/resource-snapshot.json`）；没有为了补差额删除缓存/二进制或放宽门槛。
 
 ## 下一步产品候选与qualification建议（未执行）
 
@@ -61,6 +63,6 @@ coverage-only入口还需小范围测试/编译；按本轮每次保留构建约
 
 ## 复核入口及完成状态
 
-[原始18次执行](../../output/xi-a0-plan-cache-mcv-run-02/diagnostic.json)、[逐参数有效性审计](../../output/xi-a0-plan-cache-mcv-run-02/analysis.json)、[0目标观察器失败](../../output/xi-a0-plan-cache-mcv-run/diagnostic.log)、[修复后真实输入校验](../../output/xi-a0-plan-cache-mcv-argument-fix/offline-tests.log)、[错误输入被拒绝](../../output/xi-a0-plan-cache-mcv-argument-fix/rejected-runtime-input.log)、[交付核验](../../output/xi-a0-plan-cache-mcv-run-02/delivery-verification.json)和[最终字节绑定](../../output/xi-a0-plan-cache-mcv-run-02/evidence-binding.json)。
+原始18次执行（`output/xi-a0-plan-cache-mcv-run-02/diagnostic.json`）、逐参数有效性审计（`output/xi-a0-plan-cache-mcv-run-02/analysis.json`）、0目标观察器失败（`output/xi-a0-plan-cache-mcv-run/diagnostic.log`）、修复后真实输入校验（`output/xi-a0-plan-cache-mcv-argument-fix/offline-tests.log`）、错误输入被拒绝（`output/xi-a0-plan-cache-mcv-argument-fix/rejected-runtime-input.log`）、交付核验（`output/xi-a0-plan-cache-mcv-run-02/delivery-verification.json`）和最终字节绑定（`output/xi-a0-plan-cache-mcv-run-02/evidence-binding.json`）。
 
 交付状态为**部分诊断有效、coverage未完成、两处harness错误已离线修复**；不请求接受完整18目标对照。原13项/TD/R3/A0及D-37-01未改变。只有本地提交，没有push/PR/merge/release/deploy、真实凭据/业务数据、UR联系或跨任务消息。

@@ -1,8 +1,10 @@
 # R32 计划：运行列表、预览与共享详情的连续阅读
 
+> **历史引用。** 2026-09-10 的经理审阅来自当时内部协作档案，记录计划裁定。独立的实施与合成浏览器结果见[次日 R32 交付](XI-RUNNING-READING-R32-DELIVERY-20260911.md)。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 > Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
 
-2026-09-10。**方向、范围与分层验收已获经理审阅通过，等待既定实施条件。** 裁定见[经理审阅](<PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/supporting/xi-iteration-20260909/independent-review-31/r32-plan-review.md>)。本包是 XI-B/X 下一份完整前端工作包：客户从筛选后的运行列表选中请求、查看摘要、进入现有过程/时间线/依据，再返回原页和原选择；不增加来源、统计权威或新的过程图系统。计划通过不代表代码或产品通过。
+2026-09-10。**方向、范围与分层验收已获经理审阅通过，等待既定实施条件。** 裁定见经理审阅（`PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/supporting/xi-iteration-20260909/independent-review-31/r32-plan-review.md`）。本包是 XI-B/X 下一份完整前端工作包：客户从筛选后的运行列表选中请求、查看摘要、进入现有过程/时间线/依据，再返回原页和原选择；不增加来源、统计权威或新的过程图系统。计划通过不代表代码或产品通过。
 
 依据是第40份当前记录、原13项整体验收表、第31份统一导航与第32份 DESK 验收。当前 HEAD 为 `1100b8a4a802a00a2ac349798374af61accc9624`，工作树保留 R31 两项修复及其未完成验证；当前只维护计划，不修改或重测这些代码。R31 原生 API/真实账号验证和临时20.5GiB提案继续等待，21GiB现行底线不变。
 

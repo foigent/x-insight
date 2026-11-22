@@ -17,10 +17,10 @@ real external traffic.
 
 ## Read API
 
-`GET /api/v1/executions/{execution_id}/investigation?as_of={RFC3339Nano}`
+`GET /api/v1/executions/{execution_id}/investigation?as_of={RFC3339Nano}&evidence_revision={uuid}`
 
-The fixed `as_of` snapshot is required for a reproducible deep link. A response
-contains at most 200 Evidence nodes and 100 capture gaps. Larger executions
+Use `as_of` and `evidence_revision` together for a reproducible deep link. A
+response contains at most 200 Evidence nodes and 100 capture gaps. Larger executions
 return `integrity.truncated=true` and
 `integrity.projection_complete=false`; complete-chain claims are suppressed.
 
@@ -39,6 +39,13 @@ Core fields:
 The projection never includes raw prompt, raw response, raw upstream error,
 raw IP, authorization headers, API keys, credentials, or
 `raw_source_excerpt`.
+
+The legacy global Evidence reader also accepts raw request IDs under
+`/api/v1/executions/{request_id}` and its `/events` and `/gaps` suffixes. If
+matching records span more than one source, all three routes return HTTP 409
+with `ambiguous_request_id`. Use the execution search with `request_id` to
+resolve a source-qualified `xe1` execution ID. Scoped readers use the
+source-qualified routes.
 
 ## Evidence revisions
 
@@ -70,8 +77,11 @@ transaction as its new data. Order is allocated under a transaction-scoped
 lock after the import writes. UUIDs and publication order survive
 `pg_dump` / `pg_restore` independently of database transaction IDs.
 Keep the published FPV25 schema 47 profile and release authority intact.
-For development qualification, compare the existing `/readyz` schema and
-migration-set digest against the generated schema 48 contract.
+For release qualification, compare `/readyz.database_schema` and
+`/readyz.schema_contract_migration_set_sha256` with the generated schema
+contract. The latter hashes the ordered ledger using the signed contract's
+tab separator. `/readyz.migration_set_sha256` retains its original
+NUL-separated format for existing consumers.
 
 ## Presentation modes
 
