@@ -1,6 +1,6 @@
 # Develop and qualify X-Insight
 
-This is the contributor and qualification entry. Package users should follow the separate [installation walkthrough](getting-started.md). The published preview is [FPV25 / schema 47](releases/v0.2.0-dev.fpv25.md). The commands below cover source builds and qualification. Historical scenarios keep their original revisions and evidence scope.
+Package users should follow the [published-preview installation walkthrough](getting-started.md). The commands below build and qualify the checked-out source. Its development profile and schema are declared in [the release config](../../release/d-validation-config.json). Historical scenarios keep their original revisions and evidence scope.
 
 ## Prerequisites
 
@@ -82,6 +82,8 @@ go run ./cmd/xinsight-importer unirouter import-snapshot --snapshot fixtures/uni
 ```
 
 These fixtures demonstrate mapping and explicit gaps. They do not prove a current UniRouter deployment or a paid provider interaction.
+
+For the older local performance records, use the [historical reference notes](../agent-workflows/XI-CURRENT.md#历史本地引用) to identify the original output and the scope of each run. Plans recorded by the historical runners retain their source bytes.
 
 ## Database verification
 

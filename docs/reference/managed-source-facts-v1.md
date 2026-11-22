@@ -1,10 +1,10 @@
 # 受管 Source Facts 与独立离线导入
 
-适用于开发候选 schema32。此入口接收 `unirouter.workfacts@1.0.0` 的固定 Source Facts profile；I-01 仍负责经济事实。Local 合成验证不代表已接入真实来源。
+此入口接收 `unirouter.workfacts@1.0.0` 的 A 类 Source Facts 和 v2 的 B 类运行观察，I-01 仍负责经济事实。旧迁移记录见下文。常规安装和接入从[公开安装入口](../community/getting-started.md)开始。
 
 ## 管理员配置与启停
 
-配置模板在 `deploy/source-facts.json.example`，默认只有执行上下文。登记最多三个明确范围的流；账户/授权来源和计费依据必须显式加入。每个流绑定唯一 ID、source system、source instance、组织、项目、profile 和 scope generation。管理员填写已核对的来源端点及 source-only 凭据文件路径；不能使用 I-01 凭据。
+配置模板在 `deploy/source-facts.json.example`，默认只有执行上下文。v1 最多登记三个 A 类流。v2、v3 和 v4 的 `profiles`、`budgets`、`contents` 合计最多 16 个配置项。预算符合 v3/v4 的配置合同，正文采集使用 v4。账户/授权来源和计费依据必须显式加入。每个流绑定唯一 ID、source system、source instance、组织、项目、profile 和 scope generation。管理员填写已核对的来源端点及 source-only 凭据文件路径；不能使用 I-01 凭据。
 
 配置文件须为 root 所有、不可被组或其他用户写入的普通文件。凭据原文件须为 root 或执行服务用户所有、0400/0600、单链接普通文件；路径须为规范绝对路径，不含空白、引号、反斜线或 `%`，以保证 systemd 凭据装载与预检一致。配置不包含凭据内容。系统服务通过 `LoadCredential` 取得 importer DSN 和 source key，使用独立 `xinsight-source-facts.service`。其 `/run/credentials/xinsight-source-facts.service` 内的原生只读副本可为 root 所有的 0440，但必须校验只读挂载和精确 ACL：仅 root 与当前服务 UID 可读，组与其他用户无权读取；普通文件不适用此例外。
 
@@ -44,7 +44,7 @@ sudo xinsight-importer unirouter pull-source-facts --stream-id UUID
 
 离线不要求 live 登记或来源 key，不发现能力、不连接来源。使用 `deploy/source-facts-offline.authorization.json.example`，由管理员将其中目标、机器摘要、产品版本/commit、固定协议与来源 schema、精确来源范围、批次路径/摘要及操作身份替换为当前值。
 
-A 三种 profile 保持 `xinsight.source-facts-offline-authorization.v1`，不添加新字段，已有授权摘要不变。B 五种 observation profile 使用明确的 `xinsight.source-facts-offline-authorization.v2`，当前 D 集成候选必须另设 `target_database_schema: "36"`，source schema 摘要为 `sha256:ca0aabfb0c7b40c00cfb910e6bd255691326883b98b38b174afc86f2c4df2260`，批次 connector version 为 `2.0.0`。v2 只接收 B；单份授权和批次不能混入 A。登记、check、预约及完成/重放检查授权所绑定的实际当前 schema（本候选36）、非 dirty 且无缺失 checksum 的迁移账本；schema35 的旧 B 授权仍可作为恢复历史校验，但不能在 schema36 重放或新增导入；必须另建绑定36和当前目标/产品的授权，不能自动扩权。
+A 的三个 profile 使用 `xinsight.source-facts-offline-authorization.v1`。B 的五个 observation profile 使用 v2。v2 只接收 B，且 `target_database_schema` 必须等于已独立核对的目标数据库代数，并受当前二进制支持。来源 schema 摘要为 `sha256:ca0aabfb0c7b40c00cfb910e6bd255691326883b98b38b174afc86f2c4df2260`，批次 connector version 为 `2.0.0`。登记、检查、预约和完成/重放均绑定实际 schema 及无 dirty 或缺失校验和的迁移账本。目标 schema 变化须重新批准并签发绑定准确目标和产品版本的授权。
 
 授权文件与批次文件均须 root 所有、0400/0600、单链接普通文件。授权时间为微秒 UTC，最长两小时，必须当前有效。`machine_id_sha256` 对 `/etc/machine-id` 去除首尾空白后的字节求 SHA-256；`bundle_sha256` 对批次完整原始字节求 SHA-256；摘要均带 `sha256:` 前缀。产品信息取本次执行二进制的 `version --json`，不能填另一候选的身份。
 
@@ -95,4 +95,4 @@ B 五字段可以独立授予现有工作台受限读者，不要求同时授予
 
 schema35 的两个新表和资源授权字段纳入原有角色、基线及恢复验证；生成合同仍需由原生 PostgreSQL 生成并与候选绑定。此本地域通过不代表真实企业、PC 或 I-03 来源接通。
 
-D 的当前预算快照使用独立登记与非事件接收路径，见 [全周期预算快照接收与查询](managed-source-budgets-v1.md)。旧 v1/v2 配置不会自动开启预算；显式 v3 才包含 budgets 配置。
+D 的当前预算快照使用独立登记与非事件接收路径，见 [全周期预算快照接收与查询](managed-source-budgets-v1.md)。预算采集要求在 v3 或 v4 中显式配置 `budgets`。

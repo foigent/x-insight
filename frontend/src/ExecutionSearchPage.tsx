@@ -54,6 +54,8 @@ export function ExecutionSearchPage({
   const draftKey = executionFilterQuery({ ...activeFilters, asOf: undefined, evidenceRevision: undefined });
   const [draft, setDraft] = useState(() => draftFromFilters(activeFilters));
   const resolvedQuery = useRef("");
+  const resultPanel = useRef<HTMLElement>(null);
+  const restoreSelectionFocus = useRef(Boolean(reading.selected && window.history.state?.executionList));
   const [preview, setPreview] = useState<ExecutionDetail>();
   const [previewError, setPreviewError] = useState<unknown>();
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -69,7 +71,10 @@ export function ExecutionSearchPage({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const currentCursor = reading.cursor;
-  const cursorFailure = error instanceof ApiRequestError && ["cursor_expired", "cursor_mismatch", "invalid_cursor", "evidence_revision_unavailable"].includes(error.problem?.code ?? "");
+  const errorCode = error instanceof ApiRequestError ? error.problem?.code : undefined;
+  const accessDenied = error instanceof ApiRequestError && [401, 403].includes(error.status);
+  const readingUnavailable = errorCode === "evidence_revision_unavailable" || (errorCode === "cursor_expired" && !activeFilters.evidenceRevision);
+  const cursorFailure = readingUnavailable || errorCode === "cursor_expired" || errorCode === "cursor_mismatch" || errorCode === "invalid_cursor";
   const requestKey = `${filterKey}|${currentCursor ?? ""}|${refreshRevision}`;
   const accessStatus = window.location.protocol === "https:"
     ? t("m0597")
@@ -121,6 +126,21 @@ export function ExecutionSearchPage({
       .finally(() => { if (!controller.signal.aborted) setPreviewLoading(false); });
     return () => controller.abort();
   }, [reading.selected, activeFilters.asOf, activeFilters.evidenceRevision, loading, error]);
+
+  useEffect(() => {
+    if (!restoreSelectionFocus.current || (!result && !error)) return;
+    restoreSelectionFocus.current = false;
+    if (document.activeElement === document.body) focusSelectedRequest();
+  }, [result, error]);
+
+  function focusSelectedRequest() {
+    resultPanel.current?.querySelector<HTMLButtonElement>('.execution-link[aria-pressed="true"]')?.focus();
+  }
+
+  function closePreview() {
+    focusSelectedRequest();
+    writeExecutionList({ ...reading, selected: undefined });
+  }
 
   function restart(latest = false) {
     const filters = { ...activeFilters };
@@ -316,7 +336,7 @@ export function ExecutionSearchPage({
         )}
       </section>
 
-      <section className="result-panel" aria-labelledby="result-title" aria-busy={loading}>
+      <section ref={resultPanel} className="result-panel" aria-labelledby="result-title" aria-busy={loading}>
         <div className="section-heading result-heading">
           <div>
             <span className="eyebrow">{tx("m0628")}</span>
@@ -371,8 +391,11 @@ export function ExecutionSearchPage({
         </details>}
 
         {loading && !result && <LoadingBlock label={t("m0644")} />}
-        {Boolean(error) && <><ErrorState error={error} onRetry={cursorFailure ? undefined : () => setRefreshRevision(current => current + 1)} />
-          <div className="reading-recovery"><p>{tx("m0645")}</p><button className="button button-secondary" onClick={() => restart()}>{tx("m0646")}</button><button className="button button-secondary" onClick={() => restart(true)}>{tx("m0647")}</button></div></>}
+        {Boolean(error) && <><ErrorState error={error} onRetry={cursorFailure || accessDenied ? undefined : () => setRefreshRevision(current => current + 1)} />
+          {cursorFailure && <div className="reading-recovery">
+            {!readingUnavailable && <><p>{tx("m0645")}</p><button type="button" className="button button-secondary" onClick={() => restart()}>{tx("m0646")}</button></>}
+            <button type="button" className="button button-secondary" onClick={() => restart(true)}>{tx("m0647")}</button>
+          </div>}</>}
         {!error && result && result.items.length === 0 && (
           <EmptyState
             title={t("m0648")}
@@ -449,7 +472,7 @@ export function ExecutionSearchPage({
         )}
 
         {reading.selected && !loading && !error && <aside className="execution-preview" aria-label={t("m0663")}>
-          <div className="section-heading"><h2>{tx("m0664")}</h2><button className="button button-secondary" onClick={() => writeExecutionList({ ...reading, selected: undefined })}>{tx("m0665")}</button></div>
+          <div className="section-heading"><h2>{tx("m0664")}</h2><button className="button button-secondary" type="button" onClick={closePreview}>{tx("m0665")}</button></div>
           {previewLoading && <LoadingBlock label={t("m0666")} />}
           {Boolean(previewError) && <><ErrorState error={previewError} compact /><p>{tx("m0667")}</p></>}
           {preview && <><h3>{preview.summary.request_id}</h3><OutcomeBadge outcome={preview.summary.outcome}/><ProofBadge proofClass={preview.summary.proof_class}/>

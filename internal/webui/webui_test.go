@@ -271,6 +271,9 @@ func TestEmbeddedManualIsReleaseMatchedAndHasNoExternalDependency(t *testing.T) 
 					t.Fatalf("missing %q", expected)
 				}
 			}
+			if strings.Count(body, `href="#accounts"`) != 3 || !strings.Contains(body, `id="accounts"`) {
+				t.Fatal("expected the contents entry and both in-text links to reach the local accounts chapter")
+			}
 			for _, forbidden := range []string{`href="http:`, `href="https:`, `src="http:`, `src="https:`} {
 				if strings.Contains(body, forbidden) {
 					t.Fatalf("external dependency %q", forbidden)

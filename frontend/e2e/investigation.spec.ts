@@ -370,6 +370,10 @@ test("product help opens the release-matched offline manual on the same origin",
   expect(await page.locator('meta[name="xinsight-product-version"]').getAttribute("content")).toBe(releaseConfig.product_version);
   expect(await page.locator('meta[name="xinsight-manual-version"]').getAttribute("content")).toBe(releaseConfig.manual.version);
   await expectNoPageHorizontalScroll(page);
+  const accountLink = page.locator('section[aria-labelledby="current-manual"]').getByRole("link", { name: "账号与项目阅读" }).first();
+  await accountLink.click();
+  await expect(page).toHaveURL(`${e2eOrigin}/manual/zh-CN/#accounts`);
+  await expect(page.locator("#accounts")).toBeVisible();
   expect(offOriginRequests).toEqual([]);
 });
 
@@ -380,14 +384,19 @@ test("compare keeps Partial and Missing distinct without narrow-screen overflow"
   const selectors = page.locator("fieldset");
   await selectors.nth(0).getByLabel("Execution ID").fill(executionID);
   await selectors.nth(0).getByLabel("as_of (UTC RFC3339)").fill(asOf);
+  const revision = "cad877a0-35c2-48c9-a520-0256c4c4550e";
+  await selectors.nth(0).getByLabel("证据版本（可选）").fill(revision);
   await selectors.nth(1).getByLabel("Execution ID").fill("xe1_demo_right");
   await selectors.nth(1).getByLabel("as_of (UTC RFC3339)").fill(asOf);
   const compareRequest = page.waitForRequest((request) => new URL(request.url()).pathname === "/api/v1/compare");
-  await page.getByRole("button", { name: "比较固定快照" }).click();
+  await page.getByRole("button", { name: "比较执行" }).click();
 
   const requested = new URL((await compareRequest).url());
   expect(requested.searchParams.get("left")).toBe(executionID);
   expect(requested.searchParams.get("right")).toBe("xe1_demo_right");
+  expect(requested.searchParams.get("left_evidence_revision")).toBe(revision);
+  expect(requested.searchParams.has("right_evidence_revision")).toBe(false);
+  await expect(page.getByText("未填写证据版本的一侧仅按截止时间读取，再次打开时可能出现后来提交的证据。")).toBeVisible();
   const table = page.getByRole("table", { name: "Left 与 Right 的同维度值" });
   await expect(table.getByText("Partial")).toBeVisible();
   await expect(table.getByText("Missing")).toBeVisible();
@@ -422,6 +431,7 @@ test("running reading preserves page, preview, related request and copied-link r
   await page.getByRole("button", { name: "← 返回运行与执行", exact: true }).click();
   await expect(preview.getByRole("heading", { name: requestID })).toBeVisible();
   expect(page.url()).toBe(origin);
+  await expect(page.getByRole("button", { name: requestID, exact: true })).toBeFocused();
   await expect(page.getByText("第 2 页", { exact: true })).toBeVisible();
   await expectNoPageHorizontalScroll(page);
   const copy = await page.context().newPage();
@@ -434,8 +444,9 @@ test("running reading preserves page, preview, related request and copied-link r
     expect(new URL(copy.url()).searchParams.get("as_of")).toBe(asOf);
     expect(new URL(copy.url()).searchParams.has("cursor")).toBe(false);
   } finally { await copy.close(); }
-  await page.getByRole("button", { name: "关闭摘要" }).click();
+  await page.getByRole("button", { name: "关闭摘要" }).press("Enter");
   await expect(preview).toBeHidden();
+  await expect(page.getByRole("button", { name: requestID, exact: true })).toBeFocused();
   await page.goBack();
   await expect(preview).toBeVisible();
   await page.goForward();
@@ -506,6 +517,132 @@ async function installRunningAPI(page: Page, requests: string[]) {
     return route.fallback();
   });
 }
+
+test("read-only case list distinguishes unavailable data, denied access and successful empty results", async ({ page }) => {
+  await installMockAPI(page, [], { readOnlyCases: [] });
+  let status = 503;
+  await page.route("**/api/v1/cases", route => {
+    if (status === 200) return route.fulfill({ json: { items: [] } });
+    const code = status === 403 ? "permission_denied" : "database_unavailable";
+    return route.fulfill({ status, json: {
+      type: "about:blank", title: "Synthetic case list failure", status, code,
+      retryable: status === 503, correlation_id: "case-list-fixture",
+    } });
+  });
+  const empty = page.getByText("尚无案件", { exact: true });
+  for (const failure of [503, 403]) {
+    status = failure;
+    await page.goto("/cases");
+    await expect(page.getByRole("alert")).toContainText("case-list-fixture");
+    await expect(empty).toHaveCount(0);
+  }
+  status = 200;
+  await page.goto("/cases");
+  await expect(empty).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("connector list retries a failed read and removes invitation controls when a later read is denied", async ({ page }) => {
+  await installMockAPI(page, []);
+  await page.route("**/api/v1/access/session", route => route.fulfill({ json: {
+    session: { session_ref: "connector-browser-session", subject_id: "connector-admin", role: "platform_admin",
+      permissions: ["evidence.read", "connector.installations.manage"] },
+    csrf_token: "synthetic-connector-csrf",
+  } }));
+  let status = 503;
+  let useFixture = false;
+  const reads: string[] = [], writes: string[] = [];
+  await page.route("**/api/v1/connectors", route => {
+    if (useFixture) return route.fallback();
+    reads.push(route.request().method());
+    if (status === 200) return route.fulfill({ json: {
+      items: [], installations: [], delivery_state_boundary: "synthetic",
+      installation_control: { enabled: true, connector_type: "unirouter", event_scope: [], ordinary_sync_requires_assurance: false },
+    } });
+    return route.fulfill({ status, json: { type: "about:blank", title: "Connector list unavailable",
+      status, code: status === 403 ? "permission_denied" : "database_unavailable",
+      retryable: status === 503, correlation_id: "connector-list-fixture" } });
+  });
+  await page.route("**/api/v1/connectors/invitations", route => {
+    writes.push(route.request().method());
+    return route.fulfill({ status: 201, json: { invitation: {
+      installation_id: "xci_AAAAAAAAAAAAAAAAAAAAAA", expires_at: new Date(Date.now() + 60000).toISOString(),
+      install_url: "https://fixture.invalid/invitation",
+    } } });
+  });
+  await page.goto("/connectors");
+  const empty = page.getByText("没有已登记的 Connector");
+  const loader = page.getByText("正在读取 Connector trust");
+  await expect(page.getByRole("alert")).toContainText("connector-list-fixture");
+  await expect(empty).toHaveCount(0);
+  await expect(loader).toHaveCount(0);
+  const initialReads = reads.length;
+  status = 200;
+  await page.getByRole("button", { name: "重试" }).click();
+  await expect(empty).toBeVisible();
+  await expect(page.locator(".connector-detail-list")).toHaveCount(0);
+  expect(writes).toEqual([]);
+  await page.getByText("兼容安装邀请").click();
+  status = 403;
+  await page.getByRole("button", { name: "创建安装邀请" }).click();
+  await expect(page.getByRole("alert")).toContainText("connector-list-fixture");
+  await expect(empty).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "在 UniRouter 中继续" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "创建安装邀请" })).toHaveCount(0);
+  expect(reads.slice(initialReads)).toEqual(["GET", "GET"]);
+  expect(writes).toEqual(["POST"]);
+
+  useFixture = true;
+  await page.reload();
+  const details = page.locator(".connector-detail-list");
+  await expect(details).toHaveCount(1);
+  const uniRouter = details.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "UniRouter", exact: true }),
+  });
+  await expect(uniRouter.getByText("来源类型与状态", { exact: true })).toBeVisible();
+  await expect(uniRouter.getByText("已启用", { exact: true })).toBeVisible();
+});
+
+test("cost paging retries an unavailable response and starts from page one after cursor rejection", async ({ page }) => {
+  const requests: string[] = [];
+  await installMockAPI(page, [], { trendAmounts: ["17"] });
+  await installTrendMockAPI(page, ["17"], requests);
+  const pages: (string | null)[] = [];
+  await page.route("**/api/v1/workbench/readings/*/contributions?*", route => {
+    const url = new URL(route.request().url());
+    const cursor = url.searchParams.get("cursor");
+    pages.push(cursor);
+    if (cursor) {
+      const status = pages.filter(value => value === cursor).length === 1 ? 503 : 400;
+      return route.fulfill({ status, json: { type: "about:blank", title: "Paging failed", status,
+        code: status === 400 ? "invalid_workbench_request" : "workbench_unavailable",
+        retryable: status === 503, correlation_id: "cost-cursor-fixture" } });
+    }
+    const full = url.searchParams.has("limit");
+    return route.fulfill({ json: {
+      reading_id: "xwr_0123456789abcdefghijkl", dimension: "source_project", mode: full ? "full" : "top_n",
+      rows: [{ ref: "fixture-project-ref", label: "fixture-project", request_count: 1, selected_amount_micros: "17",
+        share: { numerator: "17", denominator: "17" }, drilldown_allowed: true }],
+      other_known_micros: "0", unassigned_micros: "0", unassigned_scope: "reading_constant", denominator_micros: "17",
+      is_last_page: !full, next_cursor: full ? "rejected-position" : undefined, authorized_group_count: full ? 2 : 1,
+    } });
+  });
+  await page.goto("/workbench/cost");
+  await expect(page.getByRole("button", { name: /fixture-project/ })).toBeVisible();
+  const initialReadings = requests.filter(request => request === "/api/v1/workbench/readings").length;
+  const initialPages = pages.length;
+  await page.getByLabel("贡献模式").selectOption("all");
+  await page.getByRole("button", { name: "加载更多贡献" }).click();
+  await expect(page.getByRole("button", { name: /fixture-project/ })).toBeVisible();
+  await page.getByRole("button", { name: "重试更新" }).click();
+  await expect(page.getByRole("alert")).toHaveText("分页位置已失效，请从头重新读取。");
+  await expect(page.getByRole("button", { name: /fixture-project|加载更多贡献|重试更新/ })).toHaveCount(0);
+  expect(requests.filter(request => request === "/api/v1/workbench/readings")).toHaveLength(initialReadings);
+  await page.getByRole("button", { name: "按当前权限重新建立阅读" }).click();
+  await expect(page.getByRole("button", { name: /fixture-project/ })).toBeVisible();
+  expect(pages.slice(initialPages)).toEqual([null, "rejected-position", "rejected-position", null]);
+  expect(requests.filter(request => request === "/api/v1/workbench/readings")).toHaveLength(initialReadings + 1);
+});
 
 test("read-only case list uses the full available width and renders all three records", async ({ page }, testInfo) => {
   const cases = ["Alpha", "Beta", "case-very-long-unbroken-identifier-0123456789abcdefghijklmnopqrstuvwxyz"].map((title, index) => ({ id: `xc_case_${index}`, title: `调查 ${title}`, description: `说明 ${title}`, status: "open", created_by_subject: "xs_0123456789abcdef", created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-02T00:00:00Z", version: 1 }));
@@ -1217,6 +1354,10 @@ test("English UI: manual follows the selected locale and is readable offline", a
   expect(await page.locator('meta[name="xinsight-product-version"]').getAttribute("content")).toBe(releaseConfig.product_version);
   await expect(page.getByRole("heading", { name: "Connect the first source", exact: true })).toBeVisible();
   await expectNoPageHorizontalScroll(page);
+  const accountLink = page.locator('section[aria-labelledby="current-manual"]').getByRole("link", { name: "Accounts and project reading" }).first();
+  await accountLink.click();
+  await expect(page).toHaveURL(`${e2eOrigin}/manual/en-US/#accounts`);
+  await expect(page.locator("#accounts")).toBeVisible();
   expect(offOrigin).toEqual([]);
   if (testInfo.project.name === "chromium-320-reserved-scrollbar") {
     await page.screenshot({ path: testInfo.outputPath("english-manual.png") });

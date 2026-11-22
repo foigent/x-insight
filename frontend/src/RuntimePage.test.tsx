@@ -129,6 +129,69 @@ it("retries the failed frozen cursor and removes the whole reading after a revok
   expect(screen.queryByText("request-one")).toBeNull();
 });
 
+it.each([
+  [400, "invalid_workbench_request", "分页位置已失效，请从头重新读取。"],
+  [404, "workbench_record_not_found", "本次阅读已不可用，请重新读取。"],
+] as const)("clears frozen data and never retries a rejected page (%s)", async (status, code, message) => {
+  vi.mocked(runtimeAPI.dimensions)
+    .mockResolvedValueOnce({ ...dimensions("reading-a", "operation", "known"), next_cursor: "old-position" })
+    .mockRejectedValueOnce(new ApiRequestError(status, { status, code, retryable: false, type: "about:blank", title: code, correlation_id: "test" }));
+  vi.mocked(runtimeAPI.createReading).mockResolvedValueOnce(reading()).mockResolvedValueOnce(reading("reading-b"));
+  render(<RuntimePage session={session} />);
+  fireEvent.click(await screen.findByRole("button", { name: "加载更多维度" }));
+  await screen.findByText(message);
+  expect(screen.queryByText("model-first")).toBeNull();
+  expect(screen.queryByRole("button", { name: "request-one" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "重试维度" })).toBeNull();
+  expect(runtimeAPI.createReading).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "读取历史" }));
+  await screen.findByRole("button", { name: "request-one" });
+  expect(runtimeAPI.dimensions).toHaveBeenLastCalledWith("reading-b", "operation", "known", undefined, expect.any(AbortSignal));
+});
+
+it("restarts a rejected current inventory cursor from the first page without replacing the historical reading", async () => {
+  const empty: Runtime.CurrentInventory = { version: "v1", evaluated_at: new Date().toISOString(), coverage: "lease_backed_inventory", uncovered: [], items: [] };
+  vi.mocked(runtimeAPI.current)
+    .mockResolvedValueOnce({
+      ...empty, next_cursor: "old-current-position", items: [{
+        ref: "current", source_system_id: "source", source_instance: "instance", org_id: "2", project_id: "3",
+        snapshot_observed_at: empty.evaluated_at, received_at: empty.evaluated_at, source_sha256: "sha256:source",
+        current_state: "last_known",
+        entry: { request_id: "current-only", family: "stream", subject_kind: "provider_attempt", subject_id: "attempt",
+          operation: "chat", freshness: "lease_valid_execution", original_state: "streaming", last_observed_at: empty.evaluated_at, evidence_ref: "lease" },
+      }],
+    })
+    .mockRejectedValueOnce(new ApiRequestError(400))
+    .mockResolvedValueOnce(empty);
+  render(<RuntimePage session={session} />);
+  fireEvent.click(screen.getByRole("button", { name: "查看当前筛选的租约观察" }));
+  await screen.findByRole("heading", { name: /current-only/ });
+  fireEvent.click(screen.getByRole("button", { name: "加载更多租约观察" }));
+  await screen.findByText("分页位置已失效，请从头重新读取。");
+  expect(screen.queryByRole("heading", { name: /current-only/ })).toBeNull();
+  expect(screen.queryByText(/当前没有可展示的租约观察/)).toBeNull();
+  expect(screen.getByRole("button", { name: "request-one" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "刷新租约观察" }));
+  await screen.findByText(/当前没有可展示的租约观察/);
+  expect(vi.mocked(runtimeAPI.current).mock.calls.map(call => call[1])).toEqual([undefined, "old-current-position", undefined]);
+  expect(runtimeAPI.createReading).toHaveBeenCalledTimes(1);
+});
+
+it("waits for successful final pagination before saying there are no comparable samples", async () => {
+  const measurements = vi.mocked(runtimeAPI.measurements);
+  const first = await measurements("reading-a", "known");
+  const group = first.items[0];
+  measurements.mockResolvedValueOnce({
+    ...first, items: [{ ...group, percentiles: { ...group.percentiles, state: "no_samples", sample_count: 0 } }], next_cursor: "more",
+  }).mockRejectedValueOnce(new ApiRequestError(503));
+  render(<RuntimePage session={session} />);
+  const more = await screen.findByRole("button", { name: "加载更多测量" });
+  expect(screen.queryByText("当前口径没有可比较样本。")).toBeNull();
+  fireEvent.click(more);
+  await screen.findByRole("button", { name: "重试测量" });
+  expect(screen.queryByText("当前口径没有可比较样本。")).toBeNull();
+});
+
 it("shows attempt evidence independently and does not display incomplete fields", async () => {
   const user = userEvent.setup();
   render(<RuntimePage session={session} />);

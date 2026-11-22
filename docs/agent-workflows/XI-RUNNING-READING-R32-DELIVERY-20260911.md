@@ -1,6 +1,8 @@
 # R32 交付：运行列表、预览与共享详情连续阅读
 
-2026-09-11。按经理review33裁定从已接受的 `5869a780e1ebc8a782fe01e93704a272f8e4fec0` 接续，已完成本地前端工作包，交回独立验收。精确候选与所有源文件/证据哈希见 [delivery-binding.json](../../output/xi-running-reading-r32/delivery-binding.json)。本包浏览器使用合成API响应，只证明前端合同和交互；不替代新页面与正式账号/真实来源的最终集成验收。
+> **历史引用。** 2026-09-11 R32 交付工作区的本地绑定、浏览器回归和原生证据复用记录。新增浏览器证据使用合成 API，覆盖文内的前端阅读链路。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
+2026-09-11。按经理review33裁定从已接受的 `5869a780e1ebc8a782fe01e93704a272f8e4fec0` 接续，已完成本地前端工作包，交回独立验收。精确候选与所有源文件/证据哈希见 `output/xi-running-reading-r32/delivery-binding.json`。本包浏览器使用合成API响应，只证明前端合同和交互；不替代新页面与正式账号/真实来源的最终集成验收。
 
 | 交付能力 / 原目标 | 行为与证据 |
 | --- | --- |
@@ -12,11 +14,11 @@
 
 ## 验证与复用
 
-- [frontend-final.log](../../output/xi-running-reading-r32/frontend-final.log)：143项测试、类型/OpenAPI通过；statements/branches/functions/lines覆盖为78.06/69.36/74.74/79.96%。新增11项回归覆盖分页/历史、首批外事件和投影失败、迟到请求、授权版本改变、同权保留、缺栈恢复及未提交筛选输入；原费用、队列、复核和撤权回归保留。
-- [e2e-browser.log](../../output/xi-running-reading-r32/e2e-browser.log)：四个既有视口共29项通过，3项仅跳过重复视觉项目。实际Chrome验证第二页/预览/详情/关联节点/原页返回、浏览器前进后退和新页复制链接恢复。后续只改受影响颜色，按相同组件/行为条件复用这组功能结果。
-- [visual-complete.log](../../output/xi-running-reading-r32/visual-complete.log)及[visual-review.json](../../output/xi-running-reading-r32/visual-review.json)：最终颜色下六个适用宽度1440/1920/1024/736/360/320及明暗主题通过，检查文档无横向溢出、预览位置和选定正文/图节点对比度≥4.5；六份截图已查看。不声称全站无障碍审计或机械全组合截图验收。
-- [static-final.log](../../output/xi-running-reading-r32/static-final.log)：最终正式构建、manifest与保留资源精确校验通过；7项嵌入WebUI测试通过（含费用直达/HEAD、默认拒绝、当前资源和手册）。后续颜色修正未改已测TS/TSX行为；最终构建绑定最终CSS。无新全仓Go、原生PG或A0负载执行。
-- [native-evidence-reuse.json](../../output/xi-running-reading-r32/native-evidence-reuse.json)：Go/API/SQL/schema/角色未变，35份原生范围、历史、锁序、恢复源码哈希一致，前包81份冻结证据保持完整；复用review33已接受的原生游标/截止/当前范围合同与覆盖结果。后端总/API/DB/hostctl/workspace门槛仍由原有效证据支持，不把复用说成新跑。
+- `output/xi-running-reading-r32/frontend-final.log`：143项测试、类型/OpenAPI通过；statements/branches/functions/lines覆盖为78.06/69.36/74.74/79.96%。新增11项回归覆盖分页/历史、首批外事件和投影失败、迟到请求、授权版本改变、同权保留、缺栈恢复及未提交筛选输入；原费用、队列、复核和撤权回归保留。
+- `output/xi-running-reading-r32/e2e-browser.log`：四个既有视口共29项通过，3项仅跳过重复视觉项目。实际Chrome验证第二页/预览/详情/关联节点/原页返回、浏览器前进后退和新页复制链接恢复。后续只改受影响颜色，按相同组件/行为条件复用这组功能结果。
+- `output/xi-running-reading-r32/visual-complete.log`及`output/xi-running-reading-r32/visual-review.json`：最终颜色下六个适用宽度1440/1920/1024/736/360/320及明暗主题通过，检查文档无横向溢出、预览位置和选定正文/图节点对比度≥4.5；六份截图已查看。不声称全站无障碍审计或机械全组合截图验收。
+- `output/xi-running-reading-r32/static-final.log`：最终正式构建、manifest与保留资源精确校验通过；7项嵌入WebUI测试通过（含费用直达/HEAD、默认拒绝、当前资源和手册）。后续颜色修正未改已测TS/TSX行为；最终构建绑定最终CSS。无新全仓Go、原生PG或A0负载执行。
+- `output/xi-running-reading-r32/native-evidence-reuse.json`：Go/API/SQL/schema/角色未变，35份原生范围、历史、锁序、恢复源码哈希一致，前包81份冻结证据保持完整；复用review33已接受的原生游标/截止/当前范围合同与覆盖结果。后端总/API/DB/hostctl/workspace门槛仍由原有效证据支持，不把复用说成新跑。
 
 首次类型检查的可空problem访问、一次测试source_ref层级写错、一次E2E数组缺括号均已修正，原日志/初稿保留；没有把测试准备错误算成产品问题。源码审查发现并覆盖快速历史往返和初次固定截止的草稿问题；截图确认并修正旧颜色造成的可读性问题。后续复验按实际改变范围执行，未另开实验审批或新writer。
 

@@ -1,6 +1,6 @@
 # X-Insight
 
-[Foigent](https://github.com/foigent) · [UniRouter](https://github.com/foigent/unirouter) · [English（规范版本）](README.md) · 本译文对应 0.2.0-dev.fpv25。
+[Foigent](https://github.com/foigent) · [UniRouter](https://github.com/foigent/unirouter) · [English（规范版本）](README.md) · [已发布版本与验收状态](docs/community/release-readiness.md)
 
 X-Insight 是理解 AI 工作的证据工作台：网关观察到什么、哪些请求产生费用、Agent 报告做了什么，以及人在复核证据后作出了什么判断。
 

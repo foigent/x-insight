@@ -6,7 +6,7 @@ X-Insight (XI) can be used independently for supported imports, reported work ac
 
 ## Version and support
 
-Product `0.2.0-dev.fpv26`; manual `0.2.0-dev.fpv26/manual-r1`.
+Product `0.2.0-dev.fpv27`; manual `0.2.0-dev.fpv27/manual-r1`.
 
 | Item | Current contract |
 | --- | --- |
@@ -22,9 +22,9 @@ Product `0.2.0-dev.fpv26`; manual `0.2.0-dev.fpv26/manual-r1`.
 
 This is a development candidate, not a public stable release or a production acceptance claim. The repository also retains an Ubuntu 22.04 CI installation lane and a frozen rc.13 profile. Their results and artifacts are distinct. Use the exact profile, signed artifact, trust authority, and host qualification for the intended installation; do not apply historical instructions to another profile.
 
-Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. schema 49 fresh-install qualification is pending on Ubuntu 22.04 with container PostgreSQL 16 and Ubuntu 24.04 with native PostgreSQL 16. Delta reconstruction and upgrade from the published FPV22 through FPV25 require their own qualification on Ubuntu 22.04 with container PostgreSQL 16.
+Provision the documented system dependencies and a dedicated loopback PostgreSQL 16 database before installation. The supplied Compose profile uses a pinned PostgreSQL container; the application still runs natively under systemd. A fresh install requires an empty database and unused XI application paths and unit names. If XI is already installed, use its supported upgrade path or first back up and retire its exact application objects under your maintenance and recovery procedure. A data reset, test-root mapping or deletion of only install-state metadata is not a fresh installation. Preserve shared services and databases. Schema 49 fresh-install qualification is pending on Ubuntu 22.04 with container PostgreSQL 16 and Ubuntu 24.04 with native PostgreSQL 16. Delta reconstruction and upgrade from the published FPV22 through FPV25 require their own qualification on Ubuntu 22.04 with container PostgreSQL 16.
 
-The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`, `0.2.0-dev.fpv21`, `0.2.0-dev.fpv22`, `0.2.0-dev.fpv23`, `0.2.0-dev.fpv24`, and `0.2.0-dev.fpv25`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. Schema47 adds durable accounts and explicit owner reading; an older schema46 binary is not a rollback target.
+The configured upgrade-source list is `0.2.0-dev.b2`, `0.2.0-dev.d1`, `0.2.0-dev.d2`, `0.2.0-dev.fpv1`, `0.2.0-dev.fpv2`, `0.2.0-dev.fpv3`, `0.2.0-dev.fpv4`, `0.2.0-dev.fpv5`, `0.2.0-dev.fpv11`, `0.2.0-dev.fpv12`, `0.2.0-dev.fpv13`, `0.2.0-dev.fpv14`, `0.2.0-dev.fpv15`, `0.2.0-dev.fpv16`, `0.2.0-dev.fpv17`, `0.2.0-dev.fpv18`, `0.2.0-dev.fpv19`, `0.2.0-dev.fpv20`, `0.2.0-dev.fpv21`, `0.2.0-dev.fpv22`, `0.2.0-dev.fpv23`, `0.2.0-dev.fpv24`, and `0.2.0-dev.fpv25`. Inclusion is a preflight compatibility declaration, not evidence that every source-to-target installation has passed. Verify the actual predecessor and candidate separately. FPV26 expects database schema 49 and disables application rollback. Plan recovery around the verified backup and the approved restore procedure.
 
 ## Build and try locally
 
@@ -58,14 +58,14 @@ Managed installation needs an explicitly selected, qualified host, a dedicated e
 After independently checking the bootstrap verifier and trust authority, verify and extract into a new directory:
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv26
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv27
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/staging/candidate --expected-commit EXACT_COMMIT --expected-version 0.2.0-dev.fpv27
 sudo /approved/staging/candidate/bin/xinsightctl version --json
 ```
 
 Use the verified payload's deploy templates. Preserve the four independent protected DSN files under `/etc/x-insight/database/current/`: `postgres-admin.dsn`, `postgres-reader.dsn`, `postgres-workspace.dsn`, and `postgres-importer.dsn`. They refer to one dedicated loopback database and distinct roles; do not pass their secrets as arguments or service environment values. Host tools, file ownership, database identity, listener scope, and profile must pass the controller's checks.
 
-A fresh install needs no account file or default password. After installation, use the private first-owner activation handoff described in [Accounts and project reading](#accounts). An upgrade imports the validated existing v1/v2/v3 account file exactly once; after that the database is authoritative. Daily invitations, recovery and disable/enable are completed on the Accounts page.
+A fresh install needs no account file or default password. After installation, use the private first-owner activation handoff described in [Accounts and project reading](accounts.md). An upgrade imports the validated existing v1/v2/v3 account file exactly once; after that the database is authoritative. Daily invitations, recovery and disable/enable are completed on the Accounts page.
 
 ```text
 sudo /approved/staging/candidate/bin/xinsightctl install --check --artifact /approved/candidate.tar.gz
@@ -91,7 +91,7 @@ Recovery after expiry requires current administrators on both sides and the orig
 
 ## Grant ordinary users the right scope
 
-Owner project-metadata access is also explicit. Use Accounts to preview and confirm the exact account, source, project and fields. Management does not imply data or body access; see [Accounts and project reading](#accounts).
+Owner project-metadata access is also explicit. Use Accounts to preview and confirm the exact account, source, project and fields. Management does not imply data or body access; see [Accounts and project reading](accounts.md).
 
 Role capabilities and active grants both apply. Grants form a union; a narrow grant cannot restrict another broad one. UniRouter projects use `project-<project_id>`, not a bare number. The following is a shape example, not an instruction to grant every project. Replace every identity and scope with an approved, registered value:
 
@@ -121,7 +121,9 @@ Execution-linked resource reviews also require the exact target and resource-rep
 
 ## Investigate, read costs, and review
 
-Start with the overview or one of the usage/purpose, runtime/execution, security/review, cost/usage, or source/coverage topics. Select the period and permitted projects, then open the execution. Check its source, execution identifier, reading ID, cutoff, coverage, and evidence references before drawing a conclusion. The same reading freezes the evidence basis; later source revisions do not rewrite it.
+Start with the overview or one of the usage/purpose, runtime/execution, security/review, cost/usage, or source/coverage topics. Select the period and permitted projects, then open the execution. Check its source, execution identifier, reading ID, cutoff, coverage, and evidence references before drawing a conclusion. A versioned execution link carries both `as_of` and `evidence_revision`. It replays the committed evidence and checks current access on every read. Links from Cost and usage carry the cutoff and the selected evidence event. They apply a time filter, so authorized evidence committed later can appear if it occurred by the cutoff. Returning to the Workbench can restore the selection while the reading and its authorization remain valid. A page cursor can expire while its versioned reading remains available. If the original evidence revision is unavailable, choose Read latest results to start a new reading with the same filters.
+
+To compare two executions, copy each execution ID, cutoff, and evidence revision into the comparison form. Opening a result opens that side with its submitted revision. With only a cutoff, the result uses the legacy time filter.
 
 Follow an execution to its runtime requests, resources, source facts, and related work. Runtime outcomes and economic facts are separate: a failed or missing charge does not prove an execution failed, and a missing resource event does not prove no access occurred. A provider request shows what was submitted, not what a model internally used. Related work is grouped only when its actual relationship evidence permits it.
 

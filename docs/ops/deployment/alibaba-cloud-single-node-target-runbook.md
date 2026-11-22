@@ -1,6 +1,6 @@
 # Alibaba Cloud Single-Node Target Runbook
 
-> Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
+> Historical non-production target runbook. For the published preview, use the [installation walkthrough](../../community/getting-started.md) and its exact release record. Private paths and target identifiers below are placeholders.
 
 Status: Active
 Owner: X-Insight
@@ -8,18 +8,18 @@ Applies to: non-production Alibaba Cloud ECS single-node deployments
 
 ## Purpose
 
-This runbook defines the project-owned deployment and acceptance requirements
-for the current X-Insight backend. It is stable project documentation, not an
-operator task file and not evidence that a particular deployment succeeded.
+This runbook records the deployment and acceptance requirements for the original
+non-production target. See the dated reconciliation records in
+[Atlas](../atlas/README.md) for the results of specific operations.
 
 Per-target X-Insight operator requests and sanitized results belong under
 `docs/ops/atlas/`. Cross-project UniRouter/X-Insight contracts and evidence stay
 in the shared cooperation workspace. Operator results become project evidence
 only after execution-owner reconciliation.
 
-## Current Product Boundary
+## Original Product Boundary
 
-The current backend provides:
+The backend at the time provided:
 
 - PostgreSQL migrations;
 - sanitized evidence import and idempotency handling;
@@ -103,7 +103,7 @@ failure.
 
 ## Approved Operator UI Access And Loopback Diagnostics
 
-The current trial UI uses the root-provisioned local accounts and `/login`
+The trial UI at the time used root-provisioned local accounts and `/login`
 defined in the release-matched
 [installation manual](../../manual/zh-CN/admin/02-install-and-first-start.md).
 Authenticated UI access requires the approved same-host TLS terminator and

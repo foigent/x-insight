@@ -1,25 +1,16 @@
 # X-Insight Operations
 
-This directory contains project-owned operational requirements and runbooks.
-These documents are authoritative for X-Insight deployment behavior. X-Insight-
-only operator tasks and reconciled reports live under `atlas/`; cross-project
-UniRouter/X-Insight contracts and evidence remain in the shared cooperation
-workspace.
+For an installation or upgrade from the current published preview, use the [installation walkthrough](../community/getting-started.md), [signed distribution guide](../community/signed-distribution.md), and [release readiness matrix](../community/release-readiness.md). For disposable local qualification, use the [development guide](../community/development.md).
 
 ## Deployment
 
-- [Alibaba Cloud single-node target runbook](deployment/alibaba-cloud-single-node-target-runbook.md)
-  defines the current non-production host, network, storage, PostgreSQL,
-  release, verification, evidence, and rollback requirements.
+The [Alibaba Cloud single-node target runbook](deployment/alibaba-cloud-single-node-target-runbook.md) records the earlier non-production target, including its network, storage, PostgreSQL, and rollback setup. The records below apply to their named artifacts and environments.
 
 ## PRD2 Field Operations
 
 - [PRD2 single-node upgrade and rollback contract](../architecture/prd2-single-node-upgrade-and-rollback-contract-2026-07-13.md)
-  defines the implemented managed upgrade, backup, application rollback,
-  database restore and first-customer owner-supervised release boundary. The
-  exact rc.6 supervised workflow artifact and named-Target synthetic v2 proof
-  are verified; counterpart decision on X-Insight's proposed, non-binding
-  `UR-E` External-integration gate and `N=1` field usability remain separate.
+  records the original managed-upgrade, backup, restore and owner-supervised
+  release design, including the exact rc.6 qualification boundary.
 - [Owner-supervised exact-main delivery evidence](../evidence/prd2/p2-4-owner-supervised-trial-main-delivery-evidence-2026-07-14.md)
   records the original exact-main/CI/workflow/artifact IDs and hashes without
   making a Target or Production claim.
@@ -45,9 +36,8 @@ workspace.
 ## CI And Release Qualification
 
 - [CI routing and release qualification contract](../architecture/ci-routing-and-release-qualification-2026-07-14.md)
-  separates pull-request source validation from exact-main release
-  qualification, defines the conservative docs-only route, and preserves the
-  protected aggregate check.
+  records the original separation of pull-request validation, exact-main
+  release qualification and the docs-only route.
 
 ## Infrastructure Coordination
 

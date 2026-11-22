@@ -1,6 +1,8 @@
 # Runtime Contract Capability Status
 
-Status: Current implementation facts
+Status: historical implementation and qualification record.
+
+For current responsibilities and code locations, see the [architecture map](../community/architecture.md). For release and installed acceptance, see the [release readiness matrix](../community/release-readiness.md).
 Original runtime audit: 2026-07-10 at `9172633e257f521682026442363869b26c81af5e`
 Planning-status review: 2026-07-13 at
 `a8c25167202d0dd9180d9437f44dcdb25fca48fc`

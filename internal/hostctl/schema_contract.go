@@ -11,6 +11,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/foigent/x-insight/internal/db"
 )
 
 const CleanBaselineSchemaContractVersion = "xinsight.schema-contract.v2"
@@ -331,8 +333,7 @@ ORDER BY version`)
 		return SchemaContractIdentity{}, fmt.Errorf("inspect schema contract migration identity: %w", err)
 	}
 	defer rows.Close()
-	digest := sha256.New()
-	count := 0
+	var migrations []db.MigrationChecksum
 	lastSequence := 0
 	for rows.Next() {
 		var version string
@@ -350,20 +351,23 @@ ORDER BY version`)
 			return SchemaContractIdentity{}, fmt.Errorf("schema contract migration ledger order is invalid")
 		}
 		lastSequence = sequence
-		_, _ = fmt.Fprintf(digest, "%s\t%s\n", version, *checksum)
-		count++
+		migrations = append(migrations, db.MigrationChecksum{ID: version, SHA256: *checksum})
 	}
 	if err := rows.Err(); err != nil {
 		return SchemaContractIdentity{}, err
 	}
-	if count == 0 {
+	if len(migrations) == 0 {
 		return SchemaContractIdentity{}, fmt.Errorf("schema contract migration ledger is empty")
+	}
+	digest, err := db.SchemaContractMigrationSetSHA256(migrations)
+	if err != nil {
+		return SchemaContractIdentity{}, fmt.Errorf("schema contract migration ledger identity: %w", err)
 	}
 	return SchemaContractIdentity{
 		DatabaseSchema:     strconv.Itoa(lastSequence),
 		PostgresMajor:      versionNumber / 10000,
-		MigrationCount:     count,
-		MigrationSetSHA256: "sha256:" + hex.EncodeToString(digest.Sum(nil)),
+		MigrationCount:     len(migrations),
+		MigrationSetSHA256: digest,
 	}, nil
 }
 

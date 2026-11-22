@@ -4,17 +4,17 @@
     {
       "path": "index.html",
       "size_bytes": 909,
-      "sha256": "sha256:5e478fc1840a4f9098de42042a2dbc6d8673237890a4ebfc8fa7a7f2fc7e6522"
+      "sha256": "sha256:847276ac49dc773a85e64d1b767cee3acbe9d5ab964383aa2fc2858d2a868a10"
     },
     {
-      "path": "assets/index-CLkM7aah.js",
-      "size_bytes": 1053538,
-      "sha256": "sha256:b5a8b07912595be9352ad3b57b5684327fb505218e6f1f65963f7631a77d093e"
+      "path": "assets/index-C02SLrak.js",
+      "size_bytes": 1065566,
+      "sha256": "sha256:aee1eb1ef8b29e4e8af406598cefa264f5d1af69b8cbfdb9ba8e5753e557b4e1"
     },
     {
-      "path": "assets/index-CknW8Frt.css",
-      "size_bytes": 162100,
-      "sha256": "sha256:1557757318ec5f1b56be0018b182f0139d0706072ffa2ce2e177ec33db4f44d4"
+      "path": "assets/index-HOp6CzzL.css",
+      "size_bytes": 162048,
+      "sha256": "sha256:5011a63ae9da26e30aeee7ac326861446cbfea5a5498ad21ca861b5de1337636"
     }
   ]
 }

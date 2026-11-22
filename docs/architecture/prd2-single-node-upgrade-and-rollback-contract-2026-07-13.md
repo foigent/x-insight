@@ -14,6 +14,12 @@ Decision owner: User
 Execution owner: Codex
 Fact baseline: X-Insight `a8c25167202d0dd9180d9437f44dcdb25fca48fc`
 
+This document records the PRD2 upgrade design and its 2026-07-19
+qualification checkpoints. For a current installation, follow the
+[signed distribution guide](../community/signed-distribution.md#consumer-verify-extract-check-then-install)
+and use the controller from the exact verified target bundle. Its release
+record defines the supported predecessor, backup and rollback boundaries.
+
 The acceptance rows below preserve their implementation-time checkpoints.
 Later exact rc.5 lifecycle proof and exact rc.6 Target refresh are recorded in
 [the current rc.6 named-Target evidence](../evidence/prd2/p2-4-rc6-named-target-v2-sidecar-and-ui-evidence-2026-07-19.md); they do not rewrite the
@@ -105,7 +111,7 @@ delegated installer or unattended/self-service upgrade requires a separately
 accepted persistent KMS/HSM, keyless or offline signing authority, including
 recovery and revocation.
 
-## Verified Current State
+## Phase 1 Baseline Before Managed Upgrade
 
 The repository already provides useful Phase 1 release primitives:
 

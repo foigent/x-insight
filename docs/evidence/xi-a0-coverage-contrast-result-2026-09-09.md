@@ -1,5 +1,7 @@
 # XI-A0：coverage补测9次有效，非MCV custom差计划已复现
 
+> **历史引用。** 隔离合成实例的只读 coverage 补测。记录对应九次有效目标执行及当时的查询集。创建延迟、HTTP 和整体资格在该轮范围之外。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **本轮coverage 9次目标执行全部有效，完整auto返回与755e16的同MCV有效基准一致。** 非MCV输入G/C中位数为172.324/2506.404ms；custom将实际300000成员估为1行，执行大量逐行索引访问。结合此前有效digest对照，两个阶段的既有行统计机制得到支持；真实创建事务、INSERT原因和A0资格仍未闭环。
 
 基线提交`2d773fae30d7333e38903ca9c6b9ebbccee08ca8`。经理批准仅coverage的9目标/独立20分钟、4256MiB累计预算和23GiB启动，保留其余首次目标/停止线。平台容量中断发生在PG执行前；接续核对仅有Go草稿、无coverage输出、实例shut down，未重复负载。实际运行2026-09-09 07:25:46.410853–07:26:02.592594 UTC，测试9.15秒、exit0，完整周期16.181741秒。
@@ -12,7 +14,7 @@
 - auto使用MCV `xwr_vzD1s7lPgy1RE3-Trd5V5Q`，按完整参数唯一匹配755e16的coverage自动第7轮。完整columns及九字段行相等：来源count=1、capture_started=null、last_durable/projection_watermark均为`2026-09-09T11:59:30+08:00`、received_watermark为空、gap_count=0、后三个布尔值为true/false/false。来源数、水位、布尔字段的负向回归均可拒绝差异，未以SQL成功或自我比较代替语义核验。
 - 第1次auto约1120.269ms；随后8次顺序为G(M),G(N),C(M),C(N),C(N),C(M),G(N),G(M)。原1+36+18共55次全部排除；此前无效coverage原始记录保持无效，不与本轮拼接。
 
-原始[diagnostic.json](../../output/xi-a0-coverage-run/diagnostic.json)、[run.json](../../output/xi-a0-coverage-run/run.json)、[输入](../../output/xi-a0-coverage-plan/queries.json)及[派生参数/结果审计](../../output/xi-a0-coverage-run/analysis.json)可直接复核。EXPLAIN不返回正文：本轮仅MCV auto验证了完整返回；非MCV的存储ref和EXPLAIN实际行数不能冒充其结果正文已重新核验。
+原始`output/xi-a0-coverage-run/diagnostic.json`、`output/xi-a0-coverage-run/run.json`、输入（`output/xi-a0-coverage-plan/queries.json`）及派生参数/结果审计（`output/xi-a0-coverage-run/analysis.json`）可直接复核。EXPLAIN不返回正文：本轮仅MCV auto验证了完整返回；非MCV的存储ref和EXPLAIN实际行数不能冒充其结果正文已重新核验。
 
 ## 对照结果与计划解释
 
@@ -50,7 +52,7 @@ generic估算总代价313961.13，成员估379381，采用并行成员/F0/eviden
 
 建议下一步对保留5.7M诊断实例执行**一次正常Store CreateWorkbenchReading（300k、新ID）**，在实际写事务内自动记录计划，不手工再复制一套创建SQL。目的为确认INSERT的源计划、约束调用/写入量及刚写成员时的digest/coverage路径；单次仪器化结果不用于5秒资格或p95。
 
-已只读确认本机现有`/opt/homebrew/Cellar/postgresql@16/16.14/lib/postgresql/auto_explain.dylib`（53376 bytes，SHA256 `e880e306b60a240cfdee2ff6a653f92ff59c63a0e67fd9c7e0fcc70687b78cf6`），尚未加载或试跑。PG官方支持通过session_preload_libraries加载并自动记录实际计划，提供analyze、buffers、WAL、settings及trigger统计；关闭逐节点timing可减少仪器开销，但不保证消除开销。[PG16 auto_explain](https://www.postgresql.org/docs/16/auto-explain.html)。现场与资料核对见[next-probe-support.json](../../output/xi-a0-coverage-run/next-probe-support.json)。
+已只读确认本机现有`/opt/homebrew/Cellar/postgresql@16/16.14/lib/postgresql/auto_explain.dylib`（53376 bytes，SHA256 `e880e306b60a240cfdee2ff6a653f92ff59c63a0e67fd9c7e0fcc70687b78cf6`），尚未加载或试跑。PG官方支持通过session_preload_libraries加载并自动记录实际计划，提供analyze、buffers、WAL、settings及trigger统计；关闭逐节点timing可减少仪器开销，但不保证消除开销。[PG16 auto_explain](https://www.postgresql.org/docs/16/auto-explain.html)。现场与资料核对见`output/xi-a0-coverage-run/next-probe-support.json`。
 
 建议具体边界如下，尚未实施或获得写入授权：
 
@@ -71,4 +73,4 @@ generic估算总代价313961.13，成员估379381，采用并行成员/F0/eviden
 
 ## 交付范围
 
-本次批准的coverage-only9目标已完成，先前无效9条仍排除。完整参数、基准、源码/二进制、历史65项与原49保护文件/3失败记录的核验见[delivery-verification.json](../../output/xi-a0-coverage-run/delivery-verification.json)，最终字节绑定见[evidence-binding.json](../../output/xi-a0-coverage-run/evidence-binding.json)。本地提交；原13项/TD/R3/A0、D-37-01及创建/HTTP资格未改变，没有push/PR/merge/release/deploy、真实数据/凭据、UR联系或跨任务消息。
+本次批准的coverage-only9目标已完成，先前无效9条仍排除。完整参数、基准、源码/二进制、历史65项与原49保护文件/3失败记录的核验见`output/xi-a0-coverage-run/delivery-verification.json`，最终字节绑定见`output/xi-a0-coverage-run/evidence-binding.json`。本地提交；原13项/TD/R3/A0、D-37-01及创建/HTTP资格未改变，没有push/PR/merge/release/deploy、真实数据/凭据、UR联系或跨任务消息。

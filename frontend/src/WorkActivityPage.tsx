@@ -1,4 +1,5 @@
-import { localizedLabels, getLocale, t, tx, useLocale, useMessageState } from "./i18n";
+import { localizedLabels, t, tx, useLocale, useMessageState } from "./i18n";
+import { formatDateTime } from "./format";
 import { scheduleBodyExpiry } from "./bodyExpiry";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { currentScopeSessionKey, scopeSessionKey, runtimeAPI, isAbortError, workActivityAPI, type AccessSessionResponse, type WorkActivityDetail, type WorkActivityPage as ActivityPage, type WorkActivityScopes } from "./api";
@@ -66,7 +67,7 @@ function landOnDetail(element: HTMLElement | null) {
 function RunActivityRow({ item, selected, onSelect }: { item: WorkActivityItem; selected: boolean; onSelect: (item: WorkActivityItem) => void }) {
   useLocale();
   return <li className="activity-run-event"><div><strong>{workEventObject(item.event)}</strong><span>{workEventLabel(item.event)}</span></div>
-    <time dateTime={item.event.occurred_at}>{new Date(item.event.occurred_at).toLocaleString(getLocale())}</time>
+    <time dateTime={item.event.occurred_at}>{formatDateTime(item.event.occurred_at)}</time>
     <button type="button" disabled={selected} onClick={() => onSelect(item)}>{selected ? t("m2492") : t("m2493")}</button></li>;
 }
 
@@ -301,15 +302,15 @@ export function WorkActivityPage({ session, navigate }: Props) {
         <label className="overview-filter-resource">{t("m2507")}<input value={resourceName} onChange={event => setResourceName(event.target.value)} placeholder={t("m2508")} maxLength={160} /></label>
         <button type="submit" disabled={!scopes?.items.length}>{tx("m2509")}</button></div>
     </form>
-    <p className="activity-range">{tx("m2510", { value0: new Date(applied.from).toLocaleString(getLocale()), value1: new Date(applied.to).toLocaleString(getLocale()) })}</p>
+    <p className="activity-range">{tx("m2510", { value0: formatDateTime(applied.from), value1: formatDateTime(applied.to) })}</p>
     {scopeError ? <p role="alert">{scopeError}</p> : null}
     {scopes && !scopes.items.length ? <p>{tx("m2511")}</p> : null}
     {selected ? <article className="activity-detail" aria-label={t("m2512")} ref={detailLanding} tabIndex={-1}><button className="activity-detail-back" type="button" onClick={() => { setSelected(undefined); setDetail(undefined); }}>{tx("m2513")}</button>
       {detailError ? <p role="alert">{detailError}</p> : !detail ? <p role="status">{tx("m2514")}</p> : <>
-        <div className="activity-detail-hero"><span className="eyebrow">{tx("m2515")}</span><h2>{workEventObject(detail.item.event)}</h2><strong>{workEventLabel(detail.item.event)}</strong><time dateTime={detail.item.event.occurred_at}>{new Date(detail.item.event.occurred_at).toLocaleString(getLocale())}</time></div>
+        <div className="activity-detail-hero"><span className="eyebrow">{tx("m2515")}</span><h2>{workEventObject(detail.item.event)}</h2><strong>{workEventLabel(detail.item.event)}</strong><time dateTime={detail.item.event.occurred_at}>{formatDateTime(detail.item.event.occurred_at)}</time></div>
         <div className="activity-detail-layout"><aside className="activity-detail-rail" aria-label={t("m2516")}><h3>{tx("m2517")}</h3>
           {detail.item.event.run_id ? <><small>{tx("m2518", { value0: visibleRun.length })}</small>
-            <ul>{visibleRun.map(item => <li key={item.event.event_ref}><button type="button" aria-current={item.event.event_ref === detail.item.event.event_ref ? "step" : undefined} disabled={item.event.event_ref === detail.item.event.event_ref} onClick={() => startSelection(item)}><strong>{workEventObject(item.event)}</strong><span>{workEventLabel(item.event)} · {new Date(item.event.occurred_at).toLocaleString(getLocale())}</span></button></li>)}</ul>
+            <ul>{visibleRun.map(item => <li key={item.event.event_ref}><button type="button" aria-current={item.event.event_ref === detail.item.event.event_ref ? "step" : undefined} disabled={item.event.event_ref === detail.item.event.event_ref} onClick={() => startSelection(item)}><strong>{workEventObject(item.event)}</strong><span>{workEventLabel(item.event)} · {formatDateTime(item.event.occurred_at)}</span></button></li>)}</ul>
             {(runPage ? runPage.more : detail.run_items_more) ? <small>{tx("m2519")}</small> : null}
           </> : <p>{tx("m2520")}</p>}
         </aside><div className="activity-detail-main"><h3>{tx("m2521")}</h3>
@@ -368,9 +369,9 @@ export function WorkActivityPage({ session, navigate }: Props) {
           {runPage?.more && !runPage.next ? <p>{tx("m2588")}</p> : null}
           {runError ? <p role="alert">{runError}</p> : null}
           <details><summary>{tx("m2589")}</summary><div className="overview-table-scroll"><table><thead><tr><th>{tx("m1063")}</th><th>{tx("m2590")}</th><th>{tx("m2591")}</th><th>{tx("m2592")}</th><th>{tx("m2593")}</th></tr></thead><tbody>{visibleRun.map(item => <tr key={item.event.event_ref}>
-            <td>{new Date(item.event.occurred_at).toLocaleString(getLocale())}</td><td>{actorLabel(item.event.actor)}</td><td>{workEventLabel(item.event)}</td><td>{workEventObject(item.event)}</td><td><button type="button" disabled={item.event.event_ref === detail.item.event.event_ref} onClick={() => startSelection(item)}>{tx("m2594")}</button></td>
+            <td>{formatDateTime(item.event.occurred_at)}</td><td>{actorLabel(item.event.actor)}</td><td>{workEventLabel(item.event)}</td><td>{workEventObject(item.event)}</td><td><button type="button" disabled={item.event.event_ref === detail.item.event.event_ref} onClick={() => startSelection(item)}>{tx("m2594")}</button></td>
           </tr>)}</tbody></table></div></details>
-          <details><summary>{tx("m2595")}</summary><p>{tx("m2596", { value0: detail.run_cutoff ? new Date(detail.run_cutoff).toLocaleString(getLocale()) : t("m0100") })}</p></details>
+          <details><summary>{tx("m2595")}</summary><p>{tx("m2596", { value0: detail.run_cutoff ? formatDateTime(detail.run_cutoff) : t("m0100") })}</p></details>
         </section></details> : null}
       </>}
     </article> : null}
@@ -384,7 +385,7 @@ export function WorkActivityPage({ session, navigate }: Props) {
         {group.runID && group.items.length > 1 ? <h3 className="activity-run-label">{tx("m2606", { value0: group.items.length })}</h3> : null}
         <ul>{group.items.map(item => <li className="activity-record" key={`${item.event.reporter.source_system_id}:${item.event.reporter.source_instance}:${item.event.reporter.org_id}:${item.event.reporter.project_id}:${item.event.event_ref}`}>
           <div className="activity-record-main"><strong>{workEventObject(item.event)}</strong><span>{workEventLabel(item.event)}</span></div>
-          <div className="activity-record-meta"><div className="activity-record-meta-primary"><time dateTime={item.event.occurred_at}>{new Date(item.event.occurred_at).toLocaleString(getLocale())}</time><span>{actorLabel(item.event.actor)}</span></div><small>{scopeLabel(item.event.reporter)}</small></div>
+          <div className="activity-record-meta"><div className="activity-record-meta-primary"><time dateTime={item.event.occurred_at}>{formatDateTime(item.event.occurred_at)}</time><span>{actorLabel(item.event.actor)}</span></div><small>{scopeLabel(item.event.reporter)}</small></div>
           <div className="activity-record-result"><strong>{workEventResultSummary(item.event)}</strong><details><summary>{tx("m2607")}</summary><p>{workEventResultNote(item.event)}</p></details></div>
           <button type="button" onClick={() => selectFromList(item)}>{tx("m2608")}</button>
         </li>)}</ul>

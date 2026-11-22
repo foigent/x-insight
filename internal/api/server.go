@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -27,8 +28,7 @@ import (
 
 type Store interface {
 	Ping(context.Context) error
-	ListEvidenceEventsByRequestID(context.Context, string, int) ([]db.EvidenceEventRecord, error)
-	ListCaptureGapsByRequestID(context.Context, string, int) ([]db.CaptureGapRecord, error)
+	ReadLegacyExecution(ctx context.Context, requestID string, limit int, includeEvents, includeGaps bool) (db.RequestEvidence, error)
 }
 
 type InvestigationStore interface {
@@ -506,6 +506,7 @@ func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 		}
 		response["database_schema"] = readiness.DatabaseSchema
 		response["migration_set_sha256"] = readiness.MigrationSetSHA256
+		response["schema_contract_migration_set_sha256"] = readiness.SchemaContractMigrationSetSHA256
 		response["postgres_major"] = readiness.PostgresMajor
 		response["representative_read"] = "ok"
 	}
@@ -560,62 +561,37 @@ func (s *Server) handleExecutionPath(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var includeEvents, includeGaps bool
 	switch {
 	case len(parts) == 1:
-		s.handleExecution(w, r, requestID, limit)
+		includeEvents, includeGaps = true, true
 	case len(parts) == 2 && parts[1] == "events":
-		s.handleExecutionEvents(w, r, requestID, limit)
+		includeEvents = true
 	case len(parts) == 2 && parts[1] == "gaps":
-		s.handleExecutionGaps(w, r, requestID, limit)
+		includeGaps = true
 	default:
 		writeProblem(w, http.StatusNotFound, "route_not_found", "Route not found", false)
+		return
 	}
-}
 
-func (s *Server) handleExecution(w http.ResponseWriter, r *http.Request, requestID string, limit int) {
-	events, err := s.store.ListEvidenceEventsByRequestID(r.Context(), requestID, limit)
+	evidence, err := s.store.ReadLegacyExecution(r.Context(), requestID, limit, includeEvents, includeGaps)
+	if errors.Is(err, db.ErrAmbiguousRequestID) {
+		writeProblem(w, http.StatusConflict, "ambiguous_request_id", "Request ID matches more than one source", false)
+		return
+	}
 	if err != nil {
 		writeProblem(w, http.StatusInternalServerError, "internal_error", "Internal server error", false)
 		return
 	}
-	gaps, err := s.store.ListCaptureGapsByRequestID(r.Context(), requestID, limit)
-	if err != nil {
-		writeProblem(w, http.StatusInternalServerError, "internal_error", "Internal server error", false)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"request_id":  requestID,
-		"event_count": len(events),
-		"gap_count":   len(gaps),
-		"events":      events,
-		"gaps":        gaps,
-	})
-}
 
-func (s *Server) handleExecutionEvents(w http.ResponseWriter, r *http.Request, requestID string, limit int) {
-	events, err := s.store.ListEvidenceEventsByRequestID(r.Context(), requestID, limit)
-	if err != nil {
-		writeProblem(w, http.StatusInternalServerError, "internal_error", "Internal server error", false)
-		return
+	body := map[string]any{"request_id": requestID}
+	if includeEvents {
+		body["event_count"], body["events"] = len(evidence.Events), evidence.Events
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"request_id":  requestID,
-		"event_count": len(events),
-		"events":      events,
-	})
-}
-
-func (s *Server) handleExecutionGaps(w http.ResponseWriter, r *http.Request, requestID string, limit int) {
-	gaps, err := s.store.ListCaptureGapsByRequestID(r.Context(), requestID, limit)
-	if err != nil {
-		writeProblem(w, http.StatusInternalServerError, "internal_error", "Internal server error", false)
-		return
+	if includeGaps {
+		body["gap_count"], body["gaps"] = len(evidence.Gaps), evidence.Gaps
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"request_id": requestID,
-		"gap_count":  len(gaps),
-		"gaps":       gaps,
-	})
+	writeJSON(w, http.StatusOK, body)
 }
 
 func parseLimit(r *http.Request) (int, error) {

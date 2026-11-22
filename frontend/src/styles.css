@@ -2521,7 +2521,6 @@ button.coverage-item:hover {
 .series-bars>div:focus .series-trend-dot { width:12px; height:12px; }
 .series-bars>div:first-of-type .series-tick { left:0; }
 .series-bars>div:last-of-type .series-tick { right:0; }
-.boundary-note { margin:12px 0 0; color:var(--muted); font-size:var(--type-body); }
 .source-list { display:grid; gap:10px; }
 .source-list>div { display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:12px; border-radius:10px; background:var(--panel-soft); }
 .source-list small { color:var(--muted); }

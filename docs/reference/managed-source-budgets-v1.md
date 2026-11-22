@@ -4,7 +4,7 @@ D 按冻结 UR 提交 `a84ac2726e079796ade0af573b575b7c11bbdfbc` 的 `contracts/
 
 ## 在线接收
 
-在 root 所有、0400/0600 的 managed-source-facts 配置中显式使用 `xinsight.managed-source-facts.v3`，增加 `budgets` 数组。每项明确 collection_id、source_system_id、source_instance、org_id、project_id、scope_generation、profiles、endpoint、key_file、allow_private_tunnel_http；其他 A/B 配置不变。A/B 与预算配置合计最多16项，旧连接/凭据不会自动增加预算权。
+在 root 所有、0400/0600 的 managed-source-facts 配置中使用 `xinsight.managed-source-facts.v3` 或正文采集所用的 v4，并显式配置 `budgets` 数组。每项明确 collection_id、source_system_id、source_instance、org_id、project_id、scope_generation、profiles、endpoint、key_file、allow_private_tunnel_http；其他 A/B 配置不变。来源 profile、预算及正文配置合计最多 16 项，旧连接/凭据不会自动增加预算权。
 
 endpoint 必须为批准来源的 `/api/v1/integrations/xinsight/source/v2/budgets`。来源配置、连接和凭据决定真实授权；XI 的 profiles 是额外上限。每次目录检查实际授权1—3份，收到的 reading 必须恰好匹配目录集合。合法收缩与同一授权代数的真遗漏分别处理。目录/提醒位置仅用于枚举；它们不是金融事件游标，也不累计金额。
 
@@ -24,7 +24,7 @@ sudo xinsightctl source-facts budget-revoke --collection-id UUID --revision REVI
 
 ## 受控离线接收
 
-使用 `deploy/source-budgets-offline.authorization.json.example`。管理员填写当前精确 target/machine ID、产品版本/commit、schema36、冻结来源提交/manifest 摘要、来源完整身份、profiles、独立 collection UUID、绝对 bundle 路径/完整字节 SHA 和最长2小时有效期。授权及 bundle 均须 root 所有、0400/0600、无符号/硬链接。只支持 development/test/integration；此入口不启用网络采集。
+使用 `deploy/source-budgets-offline.authorization.json.example`。管理员填写当前精确 target/machine ID、产品版本/commit、当前目标数据库 schema、冻结来源提交/manifest 摘要、来源完整身份、profiles、独立 collection UUID、绝对 bundle 路径/完整字节 SHA 和最长2小时有效期。授权及 bundle 均须 root 所有、0400/0600、无符号/硬链接。只支持 development/test/integration；此入口不启用网络采集。
 
 bundle 为 `xinsight.budget-offline-bundle.v1`：`catalog` 是完整单页原始目录，`readings` 是按该目录顺序排列的对象数组，每项有 `alerts_input_cursor` 和原始 `reading`。必须完整覆盖目录；有后续提醒时包含相应新 reading，直至其 next_cursor 为空。目录及 reading 总数各不超过50，总文件不超过10,780,672字节。更大的来源须按正式在线目录/提醒分页接收，不能把不完整离线包标为完整。合法单/双/三 profile 集合都适用。
 

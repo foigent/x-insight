@@ -57,8 +57,14 @@ CREATE TABLE connector_operational_receipts (id bigint PRIMARY KEY);
 	if closeErr := store.Close(); closeErr != nil {
 		t.Fatalf("close evidence store: %v", closeErr)
 	}
-	if err != nil || readiness.DatabaseSchema != "2" || readiness.MigrationCount != 2 || readiness.PostgresMajor < 10 || !strings.HasPrefix(readiness.MigrationSetSHA256, "sha256:") {
+	legacyDigest, legacyErr := db.MigrationSetSHA256(expected)
+	schemaContractDigest, schemaContractErr := db.SchemaContractMigrationSetSHA256(expected)
+	if err != nil || readiness.DatabaseSchema != "2" || readiness.MigrationCount != 2 || readiness.PostgresMajor < 10 {
 		t.Fatalf("readiness=%+v err=%v", readiness, err)
+	}
+	if legacyErr != nil || schemaContractErr != nil || legacyDigest == schemaContractDigest ||
+		readiness.MigrationSetSHA256 != legacyDigest || readiness.SchemaContractMigrationSetSHA256 != schemaContractDigest {
+		t.Fatalf("readiness digests=%+v legacy error=%v schema contract error=%v", readiness, legacyErr, schemaContractErr)
 	}
 	for _, record := range records {
 		if record.Dirty || !strings.HasPrefix(record.SHA256, "sha256:") {

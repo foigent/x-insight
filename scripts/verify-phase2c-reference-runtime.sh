@@ -147,6 +147,10 @@ tree_contains() {
 # and covers the newly extracted snapshot modules in both triggers. Evidence
 # identity and hashes, adapter protocol and checkpoint configuration keep
 # their existing bytes. The import transaction publishes evidence membership.
+# The OpenAPI baseline reflects the handlers' existing problem codes and
+# per-side evidence revision parameters. FPV27 binds the reviewed scoped
+# request lookup and shared readiness digest implementation. The fixtures and
+# migration tree retain their existing pins.
 # Runtime verification stays read-only; stale-baseline rejection is mandatory.
 protocol_workflow=".github/workflows/foigent-protocol-conformance.yml"
 expected_protocol_action='        uses: foigent/event-connector-spec/actions/source-neutral-v2@ad8fe7a38c9d7335657630baa8670dd07556b98c'
@@ -171,11 +175,11 @@ while read -r expected path; do
     exit 1
   fi
 done <<'BASELINE'
-d5a8a818bb9f331a314d19206a79a1f26562f1f1f7266f1c48696cdd9204551e api/openapi/prd2-v1.yaml
+f9c9e98bdf89c90da0300fba351b585387e4fd15daa5791a4acc6dd9055727c9 api/openapi/prd2-v1.yaml
 7147f90de8c5686f5575ee8ed313ed1425c7051b59143240d35a006421adb58d cmd/xinsight-launcher/main.go
 73a609ed59aa34093d4b611140bd468bef828b13f828d97c97e5b3a02e1ff69a cmd/xinsight-server/main.go
 fe6c8436a5b42800e31e7cd63dba1226cb2134c223998abfdb889da523493856 cmd/xinsightctl/main.go
-305afa264c01c6413889c5d78d519586057be42a08e3e50fdcddaf002c0338ee cmd/xinsight-importer/main.go
+4962063a7357a598aff9453d28d1f96f3786c42258db43252f11ee71dcc671e4 cmd/xinsight-importer/main.go
 f1db78469383ca80a990f2032b8f07a987ba92fa36777784a4beab918aaf5804 deploy/xinsight.service
 7924a8b75f4f49a995227d51bfdee60b83bac43c64715e33165bb48f2492090e contracts/foigent/event-connector-protocol.pin.json
 c3f99a441beb813cf2c3f25091cc61309d095993bc347ccc5f9a921f47ed14a4 contracts/openinference/shared-protocol-compatibility.v1.json
@@ -192,7 +196,7 @@ fd5d82a7a9c09be804cde7bd64d4f713cd8161d05fade420dd5f9fe5a9ebf8f5 internal/api/ac
 a034ec11938f012641f97788292bf4671f3c5d51b56e41e2ee2681870efe2d79 internal/api/evidence_snapshot.go
 b4190c2d059ec131bc45e81dcb6de50b361b1e2b49499ae1537e39259b5d2324 internal/api/problem.go
 d0c1b307bb4d9a4f7de169cf0916d0c325b0a4d4374a71ed7ce9fbaf0a0e7d69 internal/api/posture.go
-cd2bedda33c5868e49e9e78e9d07d55ec3f269340d86d9032ea75bd36c4f0146 internal/api/server.go
+710e675295a7673c77fb76757b6f58d7f54d1e150b2badb03391c845aadf4ee5 internal/api/server.go
 3f963125a30bd43e55c8a6ec2d9d9ee7f2e07a9f7fbb4dd3abcc52e3ae8db8d0 internal/api/transport_security.go
 ab00d2e9d2af76d5e3f1553dc0cca41ecd3fa38bebe5731ff3048d1cb226c740 internal/api/workspace.go
 a8b77d02b1c5b287ee1aa404b14fdbbb7d1a6b85d94ba0488fb61c43d2e27048 internal/config/postgres.go
@@ -201,13 +205,13 @@ b685f2a729b48cd29b77a5b0d7b006485377025cffa901116e7c7ce23efb48ff internal/db/age
 b232e80cbe68667b7ce18a2667b54654c320f88d71656018b49c31524b634f75 internal/db/analysis_extension_store.go
 79153b36b059fc4461a842f9d028c27f5bbc7fc3e359da4a7d5dc7eb20463110 internal/db/connector_trust_store.go
 34961627ef923eea45c57ce4832150cce7897e06dc5cd24b08ecf8d1e67dbd26 internal/db/discovery_store.go
-29f0ce3e5724267425fcfb2f53da287ccdd3bd12da0ea4c1ea0839b09dcac82b internal/db/evidence_store.go
+8fb3aec6e7c19519e9af620041dae1179fd997a0a0db701afc7eec9d3ab95ef9 internal/db/evidence_store.go
 f65c76e66c24baa41672e026f343337722991965ca15696bb765412681056188 internal/db/evidence_publications.go
 eb937c4e827a4cc912091bb05f9c9244fe4965e05617c1f0d6c769abb06b8fda internal/db/investigation_store.go
 cc089e24b61918d5783595b049701de2a849fb864031ae5e5d2969644d35e9fc internal/db/investigation_projection.go
 c1050e58f6a5c90194769972777b05dcaa91f1b25509e514356193cdef13f94a internal/db/posture_store.go
 23690d9e0471c89ebea2d054d28dc796c95b8dc1a17e787b14b3aa2cd4ea1218 internal/db/trace_journey_store.go
-013a7e12596f3b0be311b92b43bc43e94f5c6df77856ec2501ad4e56f7a94b07 internal/db/migrate.go
+f6e31c83e1e2287047e1f5a77eb602554ebdd37e9bfceab692e8621053fd2da7 internal/db/migrate.go
 98a3c2e2aed842f872feb5987a28627bab40e8eb191e80dd3409eca56b88d2c9 internal/db/session_store.go
 08467895c51093a116382b08ddab8b27eb74d9fd429dfb15c0c55e993f9ffe3e internal/db/workspace_store.go
 a961198cf1d13c2d940520bbfdf657c6629a8ad88561141e25c75b473ab807e8 internal/discovery/engine.go

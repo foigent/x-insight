@@ -3,7 +3,7 @@ import { setLocale as setLegacyLocale } from "./i18n";
 // These existing semantic assertions explicitly exercise the Chinese translation.
 beforeLegacyLocale(() => setLegacyLocale("zh-CN"));
 import {afterEach,expect,it,vi} from "vitest";
-import {cleanup,render,screen,waitFor} from "@testing-library/react";
+import {act,cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {ConnectorSetupPage,type SetupCreated,type SetupPreview,type SetupStatus} from "./ConnectorSetupPage";
 import {ApiRequestError,connectorSetupAPI,type AccessSessionResponse} from "./api";
@@ -14,7 +14,7 @@ const preview:SetupPreview={schema_version:"xinsight.connector-setup-preview.v1"
 const created:SetupCreated={invitation:{schema_version:"xinsight.connector-installation-invitation.v1",invitation_id:"xii_AAAAAAAAAAAAAAAAAAAAAA",installation_id:installation,deployment_id:preview.deployment_id,audience:"unirouter",xinsight_origin:"https://xi.example",requested_event_scope:[],expires_at:"2026-10-03T10:00:00Z",install_url:"https://ur.example/connectors/x-insight/install#invitation=synthetic-secret"},consent:{schema_version:"xinsight.connector-setup-consent-view.v1",installation_id:installation,deployment_id:preview.deployment_id,xi_origin:"https://xi.example",ur_origin:preview.ur_origin,consent_revision:1,consent_sha256:"sha256:"+"a".repeat(64),expires_at:"2026-10-03T10:00:00Z",custody:settings,expected_custody_revision:0}};
 const status:SetupStatus={schema_version:"xinsight.connector-setup-status.v1",installation_id:installation,deployment_id:preview.deployment_id,consent_revision:1,state:"waiting_consent",custody:{...preview.custody,loaded:false},receiving:{last_success_at:null,profiles_received:[],content_received_at:null,content_read_verified_at:null},issues:[]};
 const storageKey=`xinsight:connector-setup:${session.session.subject_id}`;
-afterEach(()=>{cleanup();vi.restoreAllMocks();sessionStorage.clear();history.replaceState(null,"","/")});
+afterEach(()=>{cleanup();vi.restoreAllMocks();vi.useRealTimers();sessionStorage.clear();history.replaceState(null,"","/")});
 function mocks(){vi.spyOn(connectorSetupAPI,"preview").mockResolvedValue(preview);vi.spyOn(connectorSetupAPI,"status").mockResolvedValue(status);return vi.spyOn(connectorSetupAPI,"create").mockResolvedValue(created)}
 it("recommends full content 90 days and only creates after explicit confirmation",async()=>{
  const save=mocks();const user=userEvent.setup();render(<ConnectorSetupPage session={session}/>);
@@ -72,4 +72,66 @@ it("does not replay a request belonging to a different XI subject",async()=>{
 });
 it("preserves an existing disabled effective policy as explicit reuse",async()=>{
  const save=mocks();vi.spyOn(connectorSetupAPI,"preview").mockResolvedValue({...preview,custody:{desired_revision:4,effective_revision:4,settings:{...settings,mode:"disabled"}}});const user=userEvent.setup();render(<ConnectorSetupPage session={session}/>);expect(await screen.findByLabelText("复用当前生效设置")).toHaveProperty("checked",true);expect(screen.getByLabelText("正文复制模式")).toHaveProperty("value","disabled");await user.click(screen.getByRole("button",{name:"确认设置并创建邀请"}));await screen.findByRole("link",{name:"在 UniRouter 中继续"});expect(save.mock.calls[0][0]).toMatchObject({custody:null,expected_custody_revision:4});
+});
+
+it("stops loading after a preview failure and retries only the read", async () => {
+ const save = mocks();
+ vi.mocked(connectorSetupAPI.preview).mockRejectedValueOnce(new ApiRequestError(503));
+ render(<ConnectorSetupPage session={session} />);
+ expect(screen.getByText("正在读取当前设置…")).toBeTruthy();
+ const retry = await screen.findByRole("button", { name: "重试" });
+ expect(screen.queryByText("正在读取当前设置…")).toBeNull();
+ expect(screen.queryByRole("button", { name: "确认设置并创建邀请" })).toBeNull();
+ fireEvent.click(retry);
+ await screen.findByRole("button", { name: "确认设置并创建邀请" });
+ expect(save).not.toHaveBeenCalled();
+ expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("keeps a denied progress update from showing the previous invitation", async () => {
+ const save = mocks();
+ const read = vi.mocked(connectorSetupAPI.status).mockResolvedValueOnce(status).mockRejectedValueOnce(new ApiRequestError(403));
+ render(<ConnectorSetupPage session={session} />);
+ fireEvent.click(await screen.findByRole("button", { name: "确认设置并创建邀请" }));
+ await screen.findByRole("link", { name: "在 UniRouter 中继续" });
+ fireEvent.click(screen.getByRole("button", { name: "重新读取进度" }));
+ await screen.findByRole("alert");
+ expect(screen.queryByRole("region", { name: "连接进度" })).toBeNull();
+ expect(screen.queryByRole("link", { name: "在 UniRouter 中继续" })).toBeNull();
+ expect(screen.queryByRole("button", { name: "重试" })).toBeNull();
+ expect(save).toHaveBeenCalledTimes(1);
+ expect(read).toHaveBeenCalledTimes(2);
+});
+
+it("reads progress again after a transient poll failure without replaying the confirmed consent", async () => {
+ vi.useFakeTimers();
+ const save = mocks();
+ const read = vi.mocked(connectorSetupAPI.status).mockResolvedValueOnce(status)
+   .mockRejectedValueOnce(new ApiRequestError(503)).mockResolvedValue({ ...status, state: "ready" });
+ history.replaceState(null, "", `/connectors/unirouter/setup?installation=${installation}`);
+ await act(async () => { render(<ConnectorSetupPage session={session} />); });
+ expect(screen.getByRole("heading", { name: "等待 UniRouter 确认" })).toBeTruthy();
+ await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+ expect(screen.queryByRole("heading", { name: "等待 UniRouter 确认" })).toBeNull();
+ expect(screen.queryByText("正在读取连接进度")).toBeNull();
+ await act(async () => { fireEvent.click(screen.getByRole("button", { name: "重试" })); });
+ expect(screen.getByRole("heading", { name: "已开始实际同步" })).toBeTruthy();
+ expect(read).toHaveBeenCalledTimes(3);
+ expect(save).not.toHaveBeenCalled();
+});
+
+it("loads the requested installation without restoring a stored confirmation for another installation", async () => {
+ const save = mocks();
+ const other = "xci_BBBBBBBBBBBBBBBBBBBBBB";
+ const read = vi.mocked(connectorSetupAPI.status).mockImplementation(async id => ({
+   ...status, installation_id: id, state: id === other ? "ready" : "waiting_consent",
+ }));
+ sessionStorage.setItem(storageKey, JSON.stringify({ subject: session.session.subject_id, installation,
+   put: { schema_version: "xinsight.connector-setup-consent.v1", request_id: "12345678-1234-4234-8234-123456789abc", expected_custody_revision: 0, custody: settings },
+ }));
+ history.replaceState(null, "", `/connectors/unirouter/setup?installation=${other}`);
+ render(<ConnectorSetupPage session={session} />);
+ await screen.findByRole("heading", { name: "已开始实际同步" });
+ expect(read).toHaveBeenCalledExactlyOnceWith(other, expect.any(AbortSignal));
+ expect(save).not.toHaveBeenCalled();
 });

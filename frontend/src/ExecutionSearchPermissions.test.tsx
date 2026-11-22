@@ -5,7 +5,7 @@ beforeLegacyLocale(() => setLegacyLocale("zh-CN"));
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
-import { type AccessPermission, type AccessRole, type AccessSessionResponse, investigationAPI, workspaceAPI } from "./api";
+import { ApiRequestError, type AccessPermission, type AccessRole, type AccessSessionResponse, investigationAPI, workspaceAPI } from "./api";
 import { ExecutionSearchPage } from "./ExecutionSearchPage";
 afterEach(() => { cleanup(); vi.restoreAllMocks(); window.history.replaceState(null, "", "/executions"); });
 function setup(role: AccessRole, permissions: AccessPermission[]) {
@@ -36,4 +36,34 @@ it("preserves legacy saving and hides it when the current session loses its writ
   expect(save.mock.calls[0][1]).not.toHaveProperty("asOf");
   ui.rerender(<ExecutionSearchPage navigate={vi.fn()} session={{ ...session, session: { ...session.session, permissions: ["evidence.read"] } }} />);
   expect(screen.queryByText("保存为调查入口")).toBeNull();
+});
+
+it("keeps filters but only offers a new reading once the pinned revision is unavailable", async () => {
+  const session = setup("investigation_reader", ["evidence.read"]);
+  const evidenceRevision = "00000000-0000-4000-8000-000000000001";
+  const code = "evidence_revision_unavailable";
+  window.history.replaceState(null, "", `/executions?request_id_prefix=req&as_of=2026-09-11T00%3A00%3A00Z&evidence_revision=${evidenceRevision}`);
+  vi.mocked(investigationAPI.search).mockRejectedValueOnce(new ApiRequestError(410, {
+    type: "about:blank", title: "Evidence revision is unavailable", status: 410, code,
+    retryable: false, correlation_id: "synthetic",
+  }));
+  const user = userEvent.setup();
+  render(<ExecutionSearchPage navigate={vi.fn()} session={session} />);
+  expect((await screen.findByRole("alert")).textContent).toContain("证据版本不可用");
+  expect(screen.queryByRole("button", { name: "从此截止第一页重新读取" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "重试" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "读取最新结果" }));
+  expect(investigationAPI.search).toHaveBeenLastCalledWith(expect.objectContaining({
+    requestIDPrefix: "req", asOf: undefined, evidenceRevision: undefined,
+  }), undefined, expect.any(AbortSignal));
+});
+
+it("shows a denied search without success-empty or recovery actions", async () => {
+  const session = setup("investigation_reader", ["evidence.read"]);
+  vi.mocked(investigationAPI.search).mockRejectedValue(new ApiRequestError(403));
+  render(<ExecutionSearchPage navigate={vi.fn()} session={session} />);
+  await screen.findByRole("alert");
+  expect(screen.queryByRole("button", { name: "读取最新结果" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "重试" })).toBeNull();
+  expect(screen.queryByText("当前条件下没有 execution")).toBeNull();
 });

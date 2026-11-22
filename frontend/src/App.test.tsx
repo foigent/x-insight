@@ -1011,6 +1011,69 @@ describe("PRD2 investigation UI", () => {
     }
   });
 
+  it.each([
+    ["/sessions", "正在读取 authoritative sessions"],
+    ["/sessions/unavailable", "正在读取 Session"],
+  ])("ends loading after a source session request fails on %s", async (path, loadingLabel) => {
+    installAPI({ responseFor: url => url.startsWith("/api/v1/sessions")
+      ? problemResponse(503, "database_unavailable", "corr-authoritative-session") : undefined });
+    window.history.replaceState(null, "", path);
+    render(<App />);
+
+    expect(await screen.findByText("corr-authoritative-session")).toBeTruthy();
+    expect(screen.queryByText(loadingLabel)).toBeNull();
+    expect(screen.queryByText("没有 authoritative Session")).toBeNull();
+  });
+
+  it("clears the previous source session when navigating to an unavailable one", async () => {
+    installAPI({ responseFor(url) {
+      if (url === "/api/v1/sessions/first") return jsonResponse({
+        session: { source_session_ref: "First source session", source_display_name: "Fixture", source_session_type: "thread" },
+        executions: [],
+      });
+      if (url === "/api/v1/sessions/second") return problemResponse(503, "database_unavailable", "corr-next-session");
+    } });
+    window.history.replaceState(null, "", "/sessions/first");
+    render(<App />);
+    await screen.findByRole("heading", { name: "First source session" });
+
+    act(() => {
+      window.history.pushState(null, "", "/sessions/second");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+
+    expect(await screen.findByText("corr-next-session")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "First source session" })).toBeNull();
+  });
+
+  it.each([
+    ["hypotheses", "/api/v1/discovery/hypotheses?"],
+    ["alerts", "/api/v1/alerts?"],
+    ["cases", "/api/v1/cases"],
+  ])("keeps Discovery read states truthful when %s fails", async (failed, path) => {
+    installAPI({ discovery: true, discoveryAlert: true, responseFor: url => url.startsWith(path)
+      ? problemResponse(503, "database_unavailable", "corr-discovery") : undefined });
+    window.history.replaceState(null, "", "/discovery");
+    render(<App />);
+
+    expect(await screen.findByText("corr-discovery")).toBeTruthy();
+    expect(screen.queryByText("没有 Discovery 输出")).toBeNull();
+    expect(screen.queryByText("当前截止时间下未返回告警。")).toBeNull();
+    expect(Boolean(screen.queryByRole("heading", { name: "Coverage pattern" }))).toBe(failed !== "hypotheses");
+    expect(Boolean(screen.queryByText("Observed provider failure"))).toBe(failed === "cases");
+    expect(screen.queryByLabelText("目标 Case")).toBeNull();
+  });
+
+  it("displays Discovery alerts without requesting write-only options for a reader", async () => {
+    const fetchMock = installAPI({ operator: true, discoveryAlert: true, openCase: true });
+    window.history.replaceState(null, "", "/discovery");
+    render(<App />);
+
+    expect(await screen.findByText("Observed provider failure")).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === "/api/v1/cases")).toBe(false);
+    expect(screen.queryByRole("button", { name: "确认关联" })).toBeNull();
+  });
+
   it("shows a fixed discovery run with sample provenance and explicit abstention", async () => {
     const fetchMock = installAPI({ discovery: true });
     window.history.replaceState(null, "", "/discovery");
@@ -1018,6 +1081,7 @@ describe("PRD2 investigation UI", () => {
 
     expect(await screen.findByRole("heading", { name: "可审查的假设，不是系统事实" })).toBeTruthy();
     expect(await screen.findByText("Observed 4 execution records; minimum is 100.")).toBeTruthy();
+    expect(screen.getByText("当前截止时间下未返回告警。")).toBeTruthy();
     await userEvent.click(screen.getByText("限制与方法"));
     expect(screen.getByText("100")).toBeTruthy();
     expect(screen.getByText("xinsight.discovery.deterministic.v1")).toBeTruthy();
@@ -1104,12 +1168,67 @@ describe("PRD2 investigation UI", () => {
     await user.type(within(selectors[0]!).getByLabelText("as_of (UTC RFC3339)"), asOf);
     await user.type(within(selectors[1]!).getByLabelText("Execution ID"), "xe1_demo_right");
     await user.type(within(selectors[1]!).getByLabelText("as_of (UTC RFC3339)"), asOf);
-    await user.click(screen.getByRole("button", { name: "比较固定快照" }));
+    await user.click(screen.getByRole("button", { name: "比较执行" }));
 
     const result = await screen.findByRole("table", { name: "Left 与 Right 的同维度值" });
     expect(within(result).getByText("Partial")).toBeTruthy();
     expect(within(result).getByText("Missing")).toBeTruthy();
     expect(within(result).getAllByText("unavailable")).toHaveLength(2);
+  });
+
+  it("clears an old execution comparison when the next comparison cannot be read", async () => {
+    let deny = false;
+    installAPI({ comparison: true, responseFor: url => deny && url.startsWith("/api/v1/compare?")
+      ? problemResponse(410, "evidence_revision_unavailable", "corr-comparison-expired") : undefined });
+    window.history.replaceState(null, "", "/compare");
+    render(<App />);
+    const [left, right] = await screen.findAllByRole("group");
+    for (const [side, id] of [[left!, executionID], [right!, "xe1_demo_right"]] as const) {
+      fireEvent.change(within(side).getByLabelText("Execution ID"), { target: { value: id } });
+      fireEvent.change(within(side).getByLabelText("as_of (UTC RFC3339)"), { target: { value: asOf } });
+    }
+    await userEvent.click(screen.getByRole("button", { name: "比较执行" }));
+    await screen.findByRole("table", { name: "Left 与 Right 的同维度值" });
+
+    deny = true;
+    fireEvent.change(within(right!).getByLabelText("as_of (UTC RFC3339)"), { target: { value: "2026-07-13T06:06:00Z" } });
+    await userEvent.click(screen.getByRole("button", { name: "比较执行" }));
+    await screen.findByText("corr-comparison-expired");
+    expect(screen.queryByRole("table", { name: "Left 与 Right 的同维度值" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "打开 Left" })).toBeNull();
+  });
+
+  it("binds both comparison inputs and detail navigation to their selected evidence revisions", async () => {
+    const api = installAPI({ comparison: true });
+    const leftRevision = "9a2a3db0-97a3-40ca-b065-2476cfe3a2df";
+    const rightRevision = "cad877a0-35c2-48c9-a520-0256c4c4550e";
+    window.history.replaceState(null, "", "/compare");
+    render(<App />);
+    const [left, right] = await screen.findAllByRole("group");
+    for (const [side, id, revision] of [[left!, executionID, leftRevision], [right!, "xe1_demo_right", rightRevision]] as const) {
+      fireEvent.change(within(side).getByLabelText("Execution ID"), { target: { value: id } });
+      fireEvent.change(within(side).getByLabelText("as_of (UTC RFC3339)"), { target: { value: asOf } });
+      fireEvent.change(within(side).getByLabelText("证据版本（可选）"), { target: { value: revision } });
+    }
+    await userEvent.click(screen.getByRole("button", { name: "比较执行" }));
+    await screen.findByRole("table", { name: "Left 与 Right 的同维度值" });
+    const compare = api.mock.calls.find(([url]) => String(url).startsWith("/api/v1/compare?"));
+    const query = new URL(String(compare?.[0]), "https://x-insight.local").searchParams;
+    expect(query.get("left_evidence_revision")).toBe(leftRevision);
+    expect(query.get("right_evidence_revision")).toBe(rightRevision);
+
+    await userEvent.click(screen.getByRole("button", { name: "打开 Left" }));
+    expect(window.location.pathname).toBe(`/executions/${executionID}`);
+    expect(new URLSearchParams(window.location.search).get("evidence_revision")).toBe(leftRevision);
+  });
+
+  it("ends Connector loading when its list request fails", async () => {
+    installAPI({ responseFor: url => url === "/api/v1/connectors"
+      ? problemResponse(503, "database_unavailable", "corr-connectors-unavailable") : undefined });
+    window.history.replaceState(null, "", "/connectors");
+    render(<App />);
+    await screen.findByText("corr-connectors-unavailable");
+    expect(screen.queryByText("正在读取 Connector trust")).toBeNull();
   });
 
   it("keeps a partially unavailable Inbox useful without presenting failed reads as empty", async () => {

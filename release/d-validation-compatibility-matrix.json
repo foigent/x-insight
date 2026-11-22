@@ -1,7 +1,7 @@
 {
   "schema_version": "xinsight.compatibility-matrix.v1",
-  "product_version": "0.2.0-dev.fpv26",
-  "manual_version": "0.2.0-dev.fpv26/manual-r1",
+  "product_version": "0.2.0-dev.fpv27",
+  "manual_version": "0.2.0-dev.fpv27/manual-r1",
   "release_channel": "release_candidate",
   "database_schema": "49",
   "config_schema": "xinsight.config.v1",
@@ -67,7 +67,7 @@
     "first_tool": "xinsight-release",
     "scope": "Retained isolated-validation fields do not establish formal release authority; formal distribution uses the owner-attested public authority and pinned public trust record."
   },
-  "field_qualification": "Schema 49 Workbench replay and exact evidence revisions. The CI profile uses temporary qualification trust. Owner signing and target acceptance are pending.",
+  "field_qualification": "FPV27 uses schema 49 and the signed FPV25 predecessor. The Cost and usage link carries the selected event and cutoff. Investigation links with an evidence revision pin that committed revision. The CI profile uses temporary qualification trust. Owner signing and target acceptance are recorded separately.",
   "qualification_environments": {
     "previously_documented_isolated_profile": {
       "os": "Ubuntu 24.04 isolated XI validation guest",

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"syscall"
@@ -495,7 +496,7 @@ func PreflightSanitizedSnapshot(path string, manifestPath string, options Saniti
 		for _, key := range actualMetadataKeys {
 			metadataKeys[key] = true
 		}
-		if !equalStrings(actualMetadataKeys, row.MetadataKeys) {
+		if !slices.Equal(actualMetadataKeys, row.MetadataKeys) {
 			findings.add(base+".metadata_keys", "metadata_key_inventory_mismatch")
 		}
 		scanApprovedMetadata(base+".metadata", row.Metadata, findings)
@@ -985,18 +986,6 @@ func sortedMapKeys(values map[string]any) []string {
 	}
 	sort.Strings(keys)
 	return keys
-}
-
-func equalStrings(left []string, right []string) bool {
-	if len(left) != len(right) {
-		return false
-	}
-	for index := range left {
-		if left[index] != right[index] {
-			return false
-		}
-	}
-	return true
 }
 
 type sanitizedFindingSet map[string]SanitizedPreflightFinding

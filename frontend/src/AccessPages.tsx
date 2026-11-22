@@ -1,5 +1,6 @@
-import { getLocale, t, tx, useLocale, useMessageState } from "./i18n";
+import { t, tx, useLocale, useMessageState } from "./i18n";
 import { FormEvent, useEffect, useState } from "react";
+import { formatCompactDateTime } from "./format";
 
 import {
   accessAPI,
@@ -226,9 +227,5 @@ function formatAccessTime(value: string) {
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
-  return new Intl.DateTimeFormat(getLocale(), {
-    dateStyle: "short",
-    timeStyle: "medium",
-    hour12: false,
-  }).format(parsed);
+  return formatCompactDateTime(parsed);
 }

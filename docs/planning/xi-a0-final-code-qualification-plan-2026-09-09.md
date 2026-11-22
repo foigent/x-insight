@@ -1,5 +1,7 @@
 # XI-A0 最终代码：共同空成员模板资格复测方案
 
+> **历史引用。** 资格复测方案引用了最终普通入口运行工作区的资源预检。该方案没有进行资格负载。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 状态：**本轮只提交方案，未复制、未启动、未运行资格负载。须与经理共同落定代码/资源及可用窗口后执行。** 最终普通入口5次验证已完成，见[本轮结果](../evidence/xi-a0-read-mode-final-result-2026-09-09.md)。本次22GiB许可仅覆盖那5次，不能用于资格复测。
 
 ## 精确代码和最小实施
@@ -12,7 +14,7 @@
 
 ## 同一初态与保留要求
 
-只读源：`/var/folders/48/r2my3shx3yqb_v8ngzvygg8m0000gn/T/xi-checkpoint-run-eeh92u0h/template/data`。本轮09:22:15 UTC重新核验：shut down、无PID、1599文件均匹配原manifest `cc7ec1b048867c96c09a218fd3097ded6ae2a72d3133a72671e4f11539ec5032`。逻辑2169079161bytes，分配2185322496bytes（约2.035GiB）。[只读预检](../../output/xi-a0-read-mode-final-run/qualification-proposal-preflight.json)记录精确路径和数值。
+只读源：`/var/folders/48/r2my3shx3yqb_v8ngzvygg8m0000gn/T/xi-checkpoint-run-eeh92u0h/template/data`。本轮09:22:15 UTC重新核验：shut down、无PID、1599文件均匹配原manifest `cc7ec1b048867c96c09a218fd3097ded6ae2a72d3133a72671e4f11539ec5032`。逻辑2169079161bytes，分配2185322496bytes（约2.035GiB）。只读预检（`output/xi-a0-read-mode-final-run/qualification-proposal-preflight.json`）记录精确路径和数值。
 
 fixture SHA256 `450b53b4a85d4c3d51e7cddcd45be6a0f82d88033f3f8e2a8da0c00cc5782691`，cutoff `2026-09-09T03:59:30Z`；性能来源500000 F0、另一来源20条事实，原模板0 header/0 member。全表F0/evidence预期500020/500100、saved_filter/operation均0，必须在副本实际读回，不将历史描述冒充新运行数据。300k项目/7天70k的聚集分布与原template相同，不改seed、不ANALYZE、不预热剔除、不flush主机缓存。声明“同一停库模板、新PG进程、首条计入”，不是OS冷缓存。
 

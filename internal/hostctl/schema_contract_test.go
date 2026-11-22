@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/foigent/x-insight/internal/db"
 )
 
 func TestSchemaContractComparisonIgnoresPhysicalLayoutOnly(t *testing.T) {
@@ -78,6 +80,14 @@ func TestGeneratedSchemaContractIsSortedAndSelfConsistent(t *testing.T) {
 		manifest.MigrationCount != 49 || manifest.SemanticSHA256 != expectedCleanBaselineSchemaContract.SemanticSHA256 ||
 		manifest.Objects.Tables != len(cleanBaselineTables)+3 || len(manifest.Entries) == 0 {
 		t.Fatalf("generated contract identity: version=%s schema=%s postgres=%d migrations=%d tables=%d entries=%d semantic=%s", manifest.SchemaVersion, manifest.DatabaseSchema, manifest.PostgresMajor, manifest.MigrationCount, manifest.Objects.Tables, len(manifest.Entries), manifest.SemanticSHA256)
+	}
+	migrations, err := db.LoadMigrationChecksums(filepath.Join("..", "..", "migrations"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest, err := db.SchemaContractMigrationSetSHA256(migrations)
+	if err != nil || digest != manifest.MigrationSetSHA256 {
+		t.Fatalf("migration set digest: got %q, embedded contract %q, err=%v", digest, manifest.MigrationSetSHA256, err)
 	}
 	for index := 1; index < len(manifest.Entries); index++ {
 		if schemaContractObjectKey(manifest.Entries[index-1]) >= schemaContractObjectKey(manifest.Entries[index]) {

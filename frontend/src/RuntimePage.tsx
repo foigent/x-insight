@@ -12,6 +12,9 @@ import "./runtime.css";
 import { ViewTabs } from "./DetailViewTabs";
 import type { ExecutionView } from "./executionReading";
 import { SourceFactCard } from "./SourceFactsPanel";
+import { formatCompactDateTime } from "./format";
+import { canRetryRead, ReadingCursorError, readingUnavailable, rejectsPageCursor, subscribeReadInvalidation } from "./readFailures";
+import { readingDeadline, restoredReadingDeadline, useReadingExpiry } from "./readingExpiry";
 
 const dimensionNames: Record<Runtime.Dimension, string> = localizedLabels({}, {operation: "m0079", selected_model: "m1983", selected_provider: "m1984", required_capability: "m1985", enabled_capability: "m1986", destination_provider: "m1987", destination_origin: "m1988"});
 const outcomeNames: Record<string, string> = localizedLabels({}, {local_delivery_completed: "m1124", technical_failure: "m1125", admission_rejected: "m1126", output_held: "m1127", interrupted: "m1128", context_done_unresolved: "m1129", unresolved: "m1130", conflicting: "m1131", missing_predecessor: "m1132"});
@@ -36,14 +39,13 @@ function time(value: string | undefined, timezone: string) {
   if (!value) return t("m0193");
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return t("m2075");
-  return new Intl.DateTimeFormat(getLocale(), { dateStyle: "short", timeStyle: "medium", timeZone: timezone, hour12: false }).format(date);
-}
-function invalidReading(error: unknown) {
-  return error instanceof ApiRequestError && [401, 403, 409, 410].includes(error.status);
+  return formatCompactDateTime(date, timezone);
 }
 function problem(error: unknown) {
+  if (error instanceof ReadingCursorError) return t("reading.cursorRejected");
   if (error instanceof ApiRequestError) {
     if (error.status === 403) return t("m2076");
+    if (error.status === 404) return t("reading.unavailable");
     if (error.status === 409 || error.status === 410) return t("m2077");
     if (error.status === 401) return t("m0225");
     if (error.status === 400) return t("m2078");
@@ -53,11 +55,11 @@ function problem(error: unknown) {
 
 // Each panel progresses independently. Reading/profile changes cancel old
 // work and erase old values; a transient page failure can retry that cursor.
-function usePage<P extends { items: unknown[]; next_cursor?: string }>(loader: (cursor: string | undefined, signal: AbortSignal) => Promise<P>, onInvalidated: (error: unknown) => void) {
+function usePage<P extends { items: unknown[]; next_cursor?: string }>(loader: (cursor: string | undefined, signal: AbortSignal) => Promise<P>, onInvalidated?: (error: unknown) => void) {
   const [items, setItems] = useState<P["items"][number][]>([]);
   const [page, setPage] = useState<P | null>(null);
   const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const generation = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const failedCursor = useRef<string | undefined>(undefined);
@@ -73,18 +75,31 @@ function usePage<P extends { items: unknown[]; next_cursor?: string }>(loader: (
       setPage(next);
     }).catch(e => {
       if (seq !== generation.current || isAbortError(e)) return;
-      setError(e);
-      if (invalidReading(e)) { setItems([]); setPage(null); onInvalidated(e); }
+      const failure = rejectsPageCursor(e, cursor) ? new ReadingCursorError() : e;
+      setError(failure);
+      if (failure instanceof ReadingCursorError || readingUnavailable(failure)) {
+        setItems([]); setPage(null);
+        onInvalidated?.(failure);
+      }
     }).finally(() => { if (seq === generation.current) setBusy(false); });
   }, [loader, onInvalidated]);
   useEffect(() => { load(); return () => { generation.current++; controller.current?.abort(); }; }, [load]);
-  return { items, page, error, busy, refresh: () => load(), more: () => load(page?.next_cursor), retry: () => load(failedCursor.current) };
+  const cursorRejected = error instanceof ReadingCursorError;
+  const restart = !onInvalidated && cursorRejected;
+  const retry = restart || (error && !cursorRejected && !readingUnavailable(error) && canRetryRead(error))
+    ? () => load(restart ? undefined : failedCursor.current)
+    : undefined;
+  const complete = !!page && !busy && !error && !page.next_cursor;
+  const retained = !!onInvalidated && !!page && !!error;
+  return { items, page, error, busy, complete, retained, restart, refresh: () => load(), more: () => load(page?.next_cursor), retry };
 }
-function PageActions({ state, noun }: { state: { busy: boolean; error: unknown; page: { next_cursor?: string } | null; more: () => void; retry: () => void }; noun: string }) {
+function PageActions({ state, noun }: { state: { busy: boolean; error: unknown; page: { next_cursor?: string } | null; more: () => void; retry?: () => void; restart: boolean; retained: boolean }; noun: string }) {
   useLocale();
   return <div className="runtime-page-actions">
     {state.busy ? <span role="status">{tx("m2080", { value0: noun })}</span> : null}
-    {state.error ? <><p role="alert">{problem(state.error)}</p><button disabled={state.busy} onClick={state.retry}>{tx("m2081", { value0: noun })}</button></> : null}
+    {state.error ? <p role="alert">{problem(state.error)}</p> : null}
+    {state.retained ? <small>{tx("m2691")}</small> : null}
+    {state.retry ? <button disabled={state.busy} onClick={state.retry}>{state.restart ? t("m2269") : t("m2081", { value0: noun })}</button> : null}
     {!state.error && state.page?.next_cursor ? <button disabled={state.busy} onClick={state.more}>{tx("m2082", { value0: noun })}</button> : null}
   </div>;
 }
@@ -133,7 +148,7 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
   const [currentFilters, setCurrentFilters] = useState<Runtime.ReadingRequest["filters"] | null>(null);
   const controller = useRef<AbortController | null>(null);
   const generation = useRef(0);
-  const readingDeadline = useRef(saved.current?.deadline ?? 0);
+  const deadline = useRef(saved.current?.deadline ?? 0);
   const identity = scopeSessionKey(session);
   const csv = (value: string) => [...new Set(value.split(",").map(v => v.trim()).filter(Boolean))];
   const projectHintID = useId();
@@ -142,7 +157,11 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
     const projectRefs = csv(project).map(value => /^[1-9][0-9]{0,18}$/.test(value) ? `project-${value}` : value);
     return { source_ids: csv(source), source_projects: [...new Set(projectRefs)], cost_projects: csv(costProject) };
   };
-  const invalidate = useCallback((e: unknown) => { setReading(null); setApplied(null); setView(initialView()); setError(e); }, []);
+  const invalidate = useCallback((e: unknown) => {
+    generation.current++;
+    controller.current?.abort();
+    setReading(null); setApplied(null); setView(initialView()); setError(e); setBusy(false);
+  }, []);
   const create = useCallback((input: Runtime.ReadingRequest) => {
     const seq = ++generation.current;
     controller.current?.abort(); controller.current = new AbortController();
@@ -152,8 +171,8 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
       if (seq === generation.current) {
         // Use the server's lifetime and conservatively include request transit;
         // a workstation clock change must not extend reading eligibility.
-        readingDeadline.current = sentAt + Date.parse(next.expires_at) - Date.parse(next.cutoff);
-        if (!(readingDeadline.current > performance.now())) throw new ApiRequestError(410);
+        deadline.current = readingDeadline(next, sentAt);
+        if (!(deadline.current > performance.now())) throw new ApiRequestError(410);
         retainedNavigation.current=undefined;
         snapshotReadingID.current=next.reading_id;
         setReading(next); setApplied(input);
@@ -178,13 +197,16 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
         if(seq!==generation.current||control.signal.aborted)return;
         if(scopeSessionKey(current)!==identity||next.reading_id!==retained.readingID||next.contract_version!=="xinsight.runtime-reading.v1"||next.metric_version!=="xinsight.runtime.request-observations.v1"||
           next.period.start_inclusive!==retained.request.period.start_inclusive||next.period.end_exclusive!==retained.request.period.end_exclusive||next.period.timezone!==retained.request.period.display_timezone)throw new ApiRequestError(409);
-        const deadline=performance.now()+Math.min(Date.parse(next.expires_at)-Date.now(),Date.parse(next.expires_at)-Date.parse(next.cutoff));
-        if(!(deadline>performance.now()))throw new ApiRequestError(410);
+        const expires=restoredReadingDeadline(next);
+        if(!(expires>performance.now()))throw new ApiRequestError(410);
         let selected:Runtime.Request|null=null;
         if(retained.selectedRef){
           let cursor:string|undefined;const seen=new Set<string>();
           do{
-            const page=await runtimeAPI.requests(next.reading_id,retained.entry,cursor,control.signal);
+            const page=await runtimeAPI.requests(next.reading_id,retained.entry,cursor,control.signal).catch(error=>{
+              if(rejectsPageCursor(error,cursor))throw new ReadingCursorError();
+              throw error;
+            });
             if(seq!==generation.current||control.signal.aborted)return;
             if(page.reading_id!==next.reading_id)throw new ApiRequestError(409);
             selected=page.items.find(item=>item.request_ref===retained.selectedRef)??null;
@@ -195,8 +217,8 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
           }while(cursor);
           if(!selected)throw new ApiRequestError(409);
         }
-        if(!(deadline>performance.now()))throw new ApiRequestError(410);
-        readingDeadline.current=deadline;setReading(next);setApplied(retained.request);
+        if(!(expires>performance.now()))throw new ApiRequestError(410);
+        deadline.current=expires;setReading(next);setApplied(retained.request);
         setView({...initialView(),entry:retained.entry,selected,detailView:retained.detailView});
       })().catch(e=>{if(seq===generation.current&&!isAbortError(e))invalidate(e)})
         .finally(()=>{if(seq===generation.current)setBusy(false)});
@@ -214,7 +236,7 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
         const stable = ["reading_id", "membership_ref", "authorization_revision", "interpretation_revision", "contract_version", "metric_version", "cutoff", "expires_at", "period"] as const;
         if (stable.some(key => JSON.stringify(next[key]) !== JSON.stringify(previous.reading![key]))) throw new ApiRequestError(409);
         if (!(previous.deadline > performance.now())) throw new ApiRequestError(410);
-        readingDeadline.current = previous.deadline;
+        deadline.current = previous.deadline;
         setReading(next); setApplied(previous.applied); setView(previous.view);
       })().catch(e => { if (seq === generation.current && !isAbortError(e)) invalidate(e); })
         .finally(() => { if (seq === generation.current) setBusy(false); });
@@ -223,16 +245,16 @@ export function RuntimePage({ session, capabilities = false, navigate, canInvest
   }, [identity]); // CSRF refresh preserves the same reading; changed grants invalidate it.
   useEffect(() => {
     if (busy || owner !== identity) return;
-    const value = { identity, hours, inheritedPeriod, source, project, costProject, reading, readingID: snapshotReadingID.current, applied, deadline: readingDeadline.current, view, error };
+    const value = { identity, hours, inheritedPeriod, source, project, costProject, reading, readingID: snapshotReadingID.current, applied, deadline: deadline.current, view, error };
     saved.current = value;
     onSnapshot?.(value);
   }, [busy, owner, identity, hours, inheritedPeriod, source, project, costProject, reading, applied, view, error, onSnapshot]);
   useEffect(() => {
-    if (!reading) return;
-    const delay = Math.max(0, readingDeadline.current - performance.now());
-    const timer = window.setTimeout(() => invalidate(new ApiRequestError(410)), Math.min(delay, 2_147_483_647));
-    return () => window.clearTimeout(timer);
-  }, [reading, invalidate]);
+    const revoke = () => { setCurrentFilters(null); invalidate(new ApiRequestError(403)); };
+    return subscribeReadInvalidation(revoke);
+  }, [invalidate]);
+  const expire = useCallback(() => invalidate(new ApiRequestError(410)), [invalidate]);
+  useReadingExpiry(reading ? deadline.current : undefined, expire);
 
   return <div className="runtime-workbench">
     <header className="runtime-heading"><div><h1>{capabilities ? t("m0157") : t("m0155")}</h1><p>{capabilities ? t("m2083") : t("m2084")}</p></div></header>
@@ -290,11 +312,11 @@ function SummaryPanel({ reading, entry, onInvalidated }: { reading: Runtime.Read
   useEffect(() => {
     const controller = new AbortController(); let live = true;
     setSummary(null); setError(null);
-    void runtimeAPI.summary(reading.reading_id, entry, controller.signal).then(s => { if (live) setSummary(s); }).catch(e => { if (!live || isAbortError(e)) return; setError(e); if (invalidReading(e)) onInvalidated(e); });
+    void runtimeAPI.summary(reading.reading_id, entry, controller.signal).then(s => { if (live) setSummary(s); }).catch(e => { if (!live || isAbortError(e)) return; setError(e); if (readingUnavailable(e)) onInvalidated(e); });
     return () => { live = false; controller.abort(); };
   }, [reading.reading_id, entry, retry, onInvalidated]);
   const failure = summary?.diagnostic_failure;
-  return <section className="runtime-panel" aria-labelledby="summary-title"><h2 id="summary-title">{tx("m2123")}</h2>{error ? <><p role="alert">{problem(error)}</p><button onClick={() => setRetry(n => n + 1)}>{tx("m2124")}</button></> : !summary ? <p role="status">{tx("m2125")}</p> : <>
+  return <section className="runtime-panel" aria-labelledby="summary-title"><h2 id="summary-title">{tx("m2123")}</h2>{error ? <><p role="alert">{problem(error)}</p>{canRetryRead(error) ? <button onClick={() => setRetry(n => n + 1)}>{tx("m2124")}</button> : null}</> : !summary ? <p role="status">{tx("m2125")}</p> : <>
     <div className="runtime-metrics"><div><span>{tx("m2126")}</span><strong>{summary.requests}</strong></div><div><span>{tx("m2127")}</span><strong>{failure!.numerator} / {failure!.denominator}</strong><small>{tx("m2128", { value0: failure!.state === "computed" && failure!.denominator > 0 ? `${(100 * failure!.numerator / failure!.denominator).toFixed(1)}%` : t("m1139"), value1: failure!.excluded_requests })}</small></div></div>
     <details><summary>{tx("m2129")}</summary><p>{tx("m2130")}</p></details>
     <ul className="runtime-outcomes">{summary.outcomes.map(o => <li key={o.outcome}><span>{outcomeNames[o.outcome] ?? o.outcome}</span><strong>{o.requests}</strong></li>)}</ul>
@@ -308,7 +330,7 @@ function DimensionsPanel({ reading, entry, dimension, onInvalidated }: { reading
   const state = usePage(loader, onInvalidated);
   return <>{state.page ? <p>{tx("m2133", { value0: state.page.requests, value1: state.page.requests_with_values, value2: state.page.requests_without_values, value3: state.page.missing_predecessors > 0 ? t("m2132", { value0: state.page.missing_predecessors }) : "" })}</p> : null}
     <details><summary>{tx("m2134")}</summary><p>{dimension.startsWith("selected_") ? t("m2135") : dimension.startsWith("destination_") ? t("m2136") : dimension === "enabled_capability" ? t("m2137") : t("m2138")}</p></details>
-    {state.items.length ? <div className="runtime-table-scroll"><table><thead><tr><th scope="col">{dimensionNames[dimension]}</th><th scope="col">{tx("m2139")}</th><th scope="col">{tx("m2140")}</th><th scope="col">{tx("m2141")}</th><th scope="col">{tx("m2142")}</th></tr></thead><tbody>{state.items.map(d => <tr key={JSON.stringify([d.value, d.evidence_state])}><td>{dimension === "selected_model" ? <><span>{tx("m2143")}</span><br /></> : null}<code>{d.value}</code></td><td>{stateName(d.evidence_state)}</td><td>{d.requests}</td><td>{d.subjects}</td><td>{d.observation_count}</td></tr>)}</tbody></table></div> : state.page ? <p>{tx("m2144")}</p> : null}
+    {state.items.length ? <div className="runtime-table-scroll"><table><thead><tr><th scope="col">{dimensionNames[dimension]}</th><th scope="col">{tx("m2139")}</th><th scope="col">{tx("m2140")}</th><th scope="col">{tx("m2141")}</th><th scope="col">{tx("m2142")}</th></tr></thead><tbody>{state.items.map(d => <tr key={JSON.stringify([d.value, d.evidence_state])}><td>{dimension === "selected_model" ? <><span>{tx("m2143")}</span><br /></> : null}<code>{d.value}</code></td><td>{stateName(d.evidence_state)}</td><td>{d.requests}</td><td>{d.subjects}</td><td>{d.observation_count}</td></tr>)}</tbody></table></div> : state.complete ? <p>{tx("m2144")}</p> : null}
     <PageActions state={state} noun={t("m2145")} /></>;
 }
 function MeasurementBasis({ group: g }: { group: Runtime.MeasurementGroup }) {
@@ -332,14 +354,14 @@ function MeasurementsPanel({ reading, entry, onInvalidated }: { reading: Runtime
       <Fields rows={[[t("m2162"),g.percentiles.sample_count],[t("m2163"),<span title={g.percentiles.p50}>{displayMilliseconds(g.percentiles.p50)}</span>],[t("m2164"),<span title={g.percentiles.p95}>{displayMilliseconds(g.percentiles.p95)}</span>]]}/>
       <MeasurementBasis group={g}/></article>)}
     {empty.length ? <details><summary>{tx("m2165", { value0: empty.length })}</summary>{empty.map(g => <article className="runtime-measurement" key={key(g)}><h3>{operationName(g.operation)} · {measurementName(g.measurement_kind)}</h3><Fields rows={[[t("m2162"),0],[t("m2142"),g.observation_count]]}/><MeasurementBasis group={g}/></article>)}</details> : null}
-    {state.page && !comparable.length ? <p>{tx("m2166")}</p> : null}<PageActions state={state} noun={t("m2167")} />
+    {state.complete && !comparable.length ? <p>{tx("m2166")}</p> : null}<PageActions state={state} noun={t("m2167")} />
   </section>;
 }
 function RequestsPanel({ reading, entry, onSelect, onInvalidated }: { reading: Runtime.Reading; entry: Runtime.EntryTime; onSelect: (r: Runtime.Request) => void; onInvalidated: (e: unknown) => void }) {
   useLocale();
   const loader = useCallback((cursor: string | undefined, signal: AbortSignal) => runtimeAPI.requests(reading.reading_id, entry, cursor, signal), [reading.reading_id, entry]);
   const state = usePage(loader, onInvalidated);
-  return <section className="runtime-panel" aria-labelledby="requests-title"><h2 id="requests-title">{tx("m2168")}</h2>{state.items.length ? <div className="runtime-table-scroll"><table><thead><tr><th scope="col">{tx("m1211")}</th><th scope="col">{tx("m2169")}</th><th scope="col">{tx("m2170")}</th><th scope="col">{tx("m2142")}</th></tr></thead><tbody>{state.items.map(r => <tr key={r.request_ref}><td><button className="runtime-text-button" onClick={() => onSelect(r)} title={r.request_id}>{compactIdentifier(r.request_id)}</button>{r.request_id.length > 32 ? <Identifier value={r.request_id} label={t("m2171")} /> : null}</td><td>{r.source_instance} / {r.org_id} / {r.project_id}</td><td>{r.observation_count===0&&r.content_eligible_at?t("m2172", { value0: time(r.content_eligible_at,reading.period.timezone) }):r.entry_time_state === "observed" ? time(r.entry_at, reading.period.timezone) : t("m0193")}</td><td>{r.observation_count===0&&r.content_eligible_at?t("m2173"):r.observation_count}</td></tr>)}</tbody></table></div> : state.page ? <p>{tx("m2174")}</p> : null}<PageActions state={state} noun={t("m1211")} /></section>;
+  return <section className="runtime-panel" aria-labelledby="requests-title"><h2 id="requests-title">{tx("m2168")}</h2>{state.items.length ? <div className="runtime-table-scroll"><table><thead><tr><th scope="col">{tx("m1211")}</th><th scope="col">{tx("m2169")}</th><th scope="col">{tx("m2170")}</th><th scope="col">{tx("m2142")}</th></tr></thead><tbody>{state.items.map(r => <tr key={r.request_ref}><td><button className="runtime-text-button" onClick={() => onSelect(r)} title={r.request_id}>{compactIdentifier(r.request_id)}</button>{r.request_id.length > 32 ? <Identifier value={r.request_id} label={t("m2171")} /> : null}</td><td>{r.source_instance} / {r.org_id} / {r.project_id}</td><td>{r.observation_count===0&&r.content_eligible_at?t("m2172", { value0: time(r.content_eligible_at,reading.period.timezone) }):r.entry_time_state === "observed" ? time(r.entry_at, reading.period.timezone) : t("m0193")}</td><td>{r.observation_count===0&&r.content_eligible_at?t("m2173"):r.observation_count}</td></tr>)}</tbody></table></div> : state.complete ? <p>{tx("m2174")}</p> : null}<PageActions state={state} noun={t("m1211")} /></section>;
 }
 
 export function RuntimeRequestDetail({ executionContext, session, reading, request, view, onViewChange, onInvalidated, navigate, canInvestigate = false }: { executionContext?: ExecutionContext; session?: AccessSessionResponse; reading: Runtime.Reading; request: Runtime.Request; view: ExecutionView; onViewChange?: (view: ExecutionView) => void; onInvalidated: (e: unknown) => void; navigate?: (path: string) => void; canInvestigate?: boolean }) {
@@ -370,7 +392,7 @@ function ObservationsPanel({ reading, request, onInvalidated, mode = "story" }: 
   const started = requestStages.some(o => o.document.observation_kind === "request_started");
   const ended = requestStages.some(o => ["request_terminal", "admission_rejected", "local_delivery", "output_held", "request_context_done"].includes(o.document.observation_kind));
   const latestStage = requestStages.at(-1)?.document;
-  const allObservationsLoaded = Boolean(state.page && !state.page.next_cursor && !state.error);
+  const allObservationsLoaded = state.complete;
   const groups = new Map<string, Runtime.Observation[]>();
   for (const o of ordered) { const key = `${o.document.subject_kind}:${o.document.subject_id}`; groups.set(key, [...(groups.get(key) ?? []), o]); }
   return <>
@@ -426,8 +448,7 @@ function CurrentPanel({ filters, timezone }: { filters: Runtime.ReadingRequest["
     // whole round trip is conservative and does not depend on the host clock.
     return { ...page, items: page.items.map(item => ({ ...item, deadline: sentAt + Date.parse(item.entry.valid_until ?? "") - Date.parse(page.evaluated_at) })) };
   }, [filters]);
-  const noHistoryInvalidation = useCallback(() => {}, []);
-  const state = usePage(loader, noHistoryInvalidation);
+  const state = usePage(loader);
   const [, updateClock] = useState(0);
   const now = performance.now();
   useEffect(() => {
@@ -443,7 +464,7 @@ function CurrentPanel({ filters, timezone }: { filters: Runtime.ReadingRequest["
       const effective = active && (state.busy || state.error || !Number.isFinite(i.deadline) || !(i.deadline > now)) ? "not_current" : i.current_state;
       return <article className="runtime-current-item" key={i.ref}><h3>{i.entry.request_id} · {stateName(effective)}</h3><p>{tx("m2271", { value0: i.source_instance, value1: i.org_id, value2: i.project_id, value3: i.entry.subject_id })}</p><Fields rows={[[t("m0079"), i.entry.operation], [t("m2272"), stateName(i.entry.original_state)], [t("m2273"), time(i.snapshot_observed_at, timezone)], [t("m2274"), time(i.entry.last_observed_at, timezone)], [t("m2275"), time(i.entry.valid_until, timezone)]]} /></article>;
     })}
-    {state.page && !state.items.length ? <p>{tx("m2276")}</p> : null}<PageActions state={state} noun={t("m2096")} />
+    {state.complete && !state.items.length ? <p>{tx("m2276")}</p> : null}<PageActions state={state} noun={t("m2096")} />
   </div>;
 }
 
@@ -458,7 +479,7 @@ function AssociationsPanel({ reading, request, onInvalidated, navigate, canInves
  return <section aria-label={t("m2277")}><h3>{tx("m2278")}</h3><p>{tx("m2279")}</p>
  {state.items.map(item => item.kind === "source" ? <SourceFactCard key={`${item.source.source_system_id}:${item.source.source_fact_id}`} fact={item.source} /> : <section className="source-fact-card" key={item.economic.economic_fact_id}><h4>{tx("m2280")}</h4><Fields rows={[[t("m2281"), item.economic.economic_fact_id], [t("m2282"), item.economic.execution_id], [t("m2263"), item.economic.source_event_hash]]} />
  {canInvestigate && navigate ? <button onClick={() => navigate(`/executions/${encodeURIComponent(item.economic.execution_id)}?as_of=${encodeURIComponent(reading.cutoff)}`)}>{tx("m2283")}</button> : null}</section>)}
- {state.page && state.items.length === 0 ? <p>{tx("m2284")}</p> : null}<PageActions state={state} noun={t("m2285")} /></section>;
+ {state.complete && state.items.length === 0 ? <p>{tx("m2284")}</p> : null}<PageActions state={state} noun={t("m2285")} /></section>;
 }
 
 
@@ -507,7 +528,7 @@ function ResourcesPanel({ executionContext,session,navigate,reading, request, on
             </tr>;
           })}</tbody>
         </table></div> : null}
-        {state.page && !state.items.length ? <p>{tx("m2326")}</p> : null}
+        {state.complete && !state.items.length ? <p>{tx("m2326")}</p> : null}
         <PageActions state={state} noun={t("m2327")} />
       </div>
       <aside className="runtime-resource-detail" aria-label={t("m2328")}>

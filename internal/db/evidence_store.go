@@ -172,6 +172,10 @@ func (s *EvidenceStore) Readiness(ctx context.Context, expected []MigrationCheck
 	if err != nil {
 		return ReadinessStatus{}, err
 	}
+	schemaContractDigest, err := SchemaContractMigrationSetSHA256(expected)
+	if err != nil {
+		return ReadinessStatus{}, err
+	}
 	lastID := expected[len(expected)-1].ID
 	separator := strings.IndexByte(lastID, '_')
 	if separator < 1 {
@@ -218,25 +222,107 @@ SELECT
 	_ = provenanceEventRowsPresent
 	_ = operationalReceiptPresent
 	return ReadinessStatus{
-		DatabaseSchema:     strconv.Itoa(schemaNumber),
-		MigrationCount:     len(records),
-		MigrationSetSHA256: migrationDigest,
-		PostgresMajor:      versionNumber / 10000,
-		RepresentativeRead: true,
+		DatabaseSchema:                   strconv.Itoa(schemaNumber),
+		MigrationCount:                   len(records),
+		MigrationSetSHA256:               migrationDigest,
+		SchemaContractMigrationSetSHA256: schemaContractDigest,
+		PostgresMajor:                    versionNumber / 10000,
+		RepresentativeRead:               true,
 	}, nil
 }
 
-func (s *EvidenceStore) ListEvidenceEventsByRequestID(ctx context.Context, requestID string, limit int) ([]EvidenceEventRecord, error) {
+var ErrAmbiguousRequestID = errors.New("request ID belongs to more than one source")
+
+type RequestEvidence struct {
+	Events []EvidenceEventRecord
+	Gaps   []CaptureGapRecord
+}
+
+// ReadLegacyExecution accepts an unqualified ID only when every matching
+// event and gap belongs to the same source.
+func (s *EvidenceStore) ReadLegacyExecution(ctx context.Context, requestID string, limit int, includeEvents, includeGaps bool) (RequestEvidence, error) {
+	return s.readRequestEvidence(ctx, requestID, "", limit, includeEvents, includeGaps)
+}
+
+// ReadSourceRequestEvidence reads the evidence for an importer's known source.
+func (s *EvidenceStore) ReadSourceRequestEvidence(ctx context.Context, sourceSystemID, requestID string, limit int) (RequestEvidence, error) {
+	sourceSystemID, err := executionid.CanonicalSourceSystemID(sourceSystemID)
+	if err != nil {
+		return RequestEvidence{}, err
+	}
+	return s.readRequestEvidence(ctx, requestID, sourceSystemID, limit, true, true)
+}
+
+func (s *EvidenceStore) readRequestEvidence(ctx context.Context, requestID, sourceSystemID string, limit int, includeEvents, includeGaps bool) (RequestEvidence, error) {
 	if s == nil || s.db == nil {
-		return nil, fmt.Errorf("evidence store is not initialized")
+		return RequestEvidence{}, fmt.Errorf("evidence store is not initialized")
 	}
 	requestID = strings.TrimSpace(requestID)
 	if requestID == "" {
-		return nil, fmt.Errorf("request_id is required")
+		return RequestEvidence{}, fmt.Errorf("request_id is required")
 	}
 	limit = normalizeLimit(limit)
 
-	rows, err := s.db.QueryContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return RequestEvidence{}, err
+	}
+	defer tx.Rollback()
+
+	if sourceSystemID == "" {
+		// Check both tables before applying the response limit. The same
+		// snapshot protects the check and the following reads from late writes.
+		var ambiguous bool
+		err := tx.QueryRowContext(ctx, `
+SELECT COALESCE(min(source_system_id::text), ''), count(*) > 1
+FROM (
+  SELECT source_system_id FROM evidence_events WHERE request_id = $1
+  UNION
+  SELECT source_system_id FROM capture_gaps WHERE request_id = $1
+  LIMIT 2
+) AS matching_sources`, requestID).Scan(&sourceSystemID, &ambiguous)
+		if err != nil {
+			return RequestEvidence{}, err
+		}
+		if ambiguous {
+			return RequestEvidence{}, ErrAmbiguousRequestID
+		}
+		if sourceSystemID == "" {
+			return RequestEvidence{}, nil
+		}
+	}
+
+	var result RequestEvidence
+	if includeEvents {
+		result.Events, err = listEvidenceEventsByRequestID(ctx, tx, requestID, sourceSystemID, limit)
+		if err != nil {
+			return RequestEvidence{}, err
+		}
+	}
+	if includeGaps {
+		result.Gaps, err = listCaptureGapsByRequestID(ctx, tx, requestID, sourceSystemID, limit)
+		if err != nil {
+			return RequestEvidence{}, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return RequestEvidence{}, err
+	}
+	return result, nil
+}
+
+func (s *EvidenceStore) ListEvidenceEventsByRequestID(ctx context.Context, requestID string, limit int) ([]EvidenceEventRecord, error) {
+	result, err := s.ReadLegacyExecution(ctx, requestID, limit, true, false)
+	return result.Events, err
+}
+
+func (s *EvidenceStore) ListCaptureGapsByRequestID(ctx context.Context, requestID string, limit int) ([]CaptureGapRecord, error) {
+	result, err := s.ReadLegacyExecution(ctx, requestID, limit, false, true)
+	return result.Gaps, err
+}
+
+func listEvidenceEventsByRequestID(ctx context.Context, tx *sql.Tx, requestID, sourceSystemID string, limit int) ([]EvidenceEventRecord, error) {
+	rows, err := tx.QueryContext(ctx, `
 SELECT
   id::text, schema_version, source_system_id::text, adapter_manifest_id::text, source_type,
   source_version, source_event_id, source_event_type, source_ref, event_type, stage,
@@ -246,10 +332,11 @@ SELECT
   outcome::text, payload_policy::text, field_provenance::text, raw_source_excerpt::text,
   created_at
 FROM evidence_events
-WHERE request_id = $1
+WHERE request_id = $1 AND source_system_id = $2::uuid
 ORDER BY COALESCE(occurred_at, observed_at, ingested_at), created_at, id
-LIMIT $2`,
+LIMIT $3`,
 		requestID,
+		sourceSystemID,
 		limit,
 	)
 	if err != nil {
@@ -327,26 +414,18 @@ LIMIT $2`,
 	return records, rows.Err()
 }
 
-func (s *EvidenceStore) ListCaptureGapsByRequestID(ctx context.Context, requestID string, limit int) ([]CaptureGapRecord, error) {
-	if s == nil || s.db == nil {
-		return nil, fmt.Errorf("evidence store is not initialized")
-	}
-	requestID = strings.TrimSpace(requestID)
-	if requestID == "" {
-		return nil, fmt.Errorf("request_id is required")
-	}
-	limit = normalizeLimit(limit)
-
-	rows, err := s.db.QueryContext(ctx, `
+func listCaptureGapsByRequestID(ctx context.Context, tx *sql.Tx, requestID, sourceSystemID string, limit int) ([]CaptureGapRecord, error) {
+	rows, err := tx.QueryContext(ctx, `
 SELECT
   id::text, source_system_id::text, adapter_manifest_id::text,
   evidence_event_id::text, request_id, gap_type, array_to_json(candidate_gap_types)::text, affected_claim, gap_reason,
   severity, recommendation, created_at
 FROM capture_gaps
-WHERE request_id = $1
+WHERE request_id = $1 AND source_system_id = $2::uuid
 ORDER BY created_at, id
-LIMIT $2`,
+LIMIT $3`,
 		requestID,
+		sourceSystemID,
 		limit,
 	)
 	if err != nil {

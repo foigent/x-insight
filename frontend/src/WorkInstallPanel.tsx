@@ -1,4 +1,5 @@
-import { localizedLabels, getLocale, t, tx, useLocale, useMessageState } from "./i18n";
+import { localizedLabels, t, tx, useLocale, useMessageState } from "./i18n";
+import { formatDateTime } from "./format";
 import { useEffect, useState, type FormEvent } from "react";
 import { isAbortError, workInstallAPI, type AccessSessionResponse, type ReviewCaptureProjectCatalog,
   type WorkInstallInvitation, type WorkInstallMapping } from "./api";
@@ -152,7 +153,7 @@ export function WorkInstallPanel({ session, projects }: Props) {
       <p>{tx("m2654", { value0: stateLabel(selected.state), value1: selected.projects?.length??0 })}</p>
       {selected.state==="approved"?<section aria-label={t("m2655")}><h4>{tx("m2655")}</h4>
         {selected.latest_status && selected.status_received_at?<>
-          <p>{tx("m2656", { value0: new Date(selected.status_received_at).toLocaleString(getLocale()) })}</p>
+          <p>{tx("m2656", { value0: formatDateTime(selected.status_received_at) })}</p>
           {Date.now()-Date.parse(selected.status_received_at)>180000?<p role="status">{tx("m2657")}</p>:null}
           <p>{tx("m2658", { value0: selected.latest_status.metadata_pending, value1: selected.latest_status.metadata_blocked, value2: selected.latest_status.body_pending })}</p>
           {selected.latest_status.gaps.length?<><p>{tx("m2659")}</p>

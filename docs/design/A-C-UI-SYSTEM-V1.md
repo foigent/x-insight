@@ -2,7 +2,9 @@
 
 Date: `2026-07-31`
 
-Status: implementation design contract.
+Status: historical design baseline.
+
+See the [contribution map](../community/contribution-map.md) for current shared UI components, interaction checks, and theme tokens. The values and layouts below describe the July 2026 design.
 
 `A+C` combines a precision investigation workbench with a print-first evidence
 dossier. It is intentionally calm, dense and explicit. It must not resemble a

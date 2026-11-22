@@ -1093,6 +1093,12 @@ export interface ComparisonDimension {
   relation: "equal" | "different" | "unavailable";
 }
 
+export interface ExecutionComparisonInput {
+  executionID: string;
+  asOf: string;
+  evidenceRevision: string;
+}
+
 export interface ExecutionComparison {
   schema_version: string;
   left_as_of: string;
@@ -1719,19 +1725,15 @@ export const investigationAPI = {
     );
   },
 
-  compare(
-    left: string,
-    leftAsOf: string,
-    right: string,
-    rightAsOf: string,
-    signal?: AbortSignal,
-  ) {
+  compare(left: ExecutionComparisonInput, right: ExecutionComparisonInput, signal?: AbortSignal) {
     const params = new URLSearchParams({
-      left,
-      left_as_of: leftAsOf,
-      right,
-      right_as_of: rightAsOf,
+      left: left.executionID,
+      left_as_of: left.asOf,
+      right: right.executionID,
+      right_as_of: right.asOf,
     });
+    if (left.evidenceRevision) params.set("left_evidence_revision", left.evidenceRevision);
+    if (right.evidenceRevision) params.set("right_evidence_revision", right.evidenceRevision);
     return requestJSON<ExecutionComparison>(`/api/v1/compare?${params.toString()}`, signal);
   },
 

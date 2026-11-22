@@ -1,5 +1,7 @@
 # XI-A0：CoW 验证通过，计划观察器失败
 
+> **历史引用。** 隔离合成实例首次计划缓存诊断及后续离线修订。原查询后的观察器失败，后续目录记录修订与资源预检。成功的数据库诊断另见[后续结果](xi-a0-plan-cache-diagnostic-result-2026-09-09.md)。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **诊断未完成，计划缓存假设仍未验证。** 强制逐文件 CoW 副本及全部前置检查通过；第一条 eligible_count 查询成功返回300000，耗时51.152833ms。随后诊断代码将 prepared 元数据中的字符串 OID 解码为 int，测试退出。没有取得执行后的有效计划计数，也没有执行 digest、coverage、EXPLAIN 或 G/C 对照。
 
 这是本次新增观察器的实现错误，不是产品 SQL 失败、SQL 超时、资源停止或计划缓存根因证据。已修复并完成离线验证；**修复版尚未运行 PG 诊断**。
@@ -13,7 +15,7 @@
 - 本轮独立读回19 headers、5700000 members；七个目标reading各300000且membership_ref与原记录一致。这是本轮新证据，不回填成此前容量试验已经做过的最终计数。
 - 唯一目标执行为第1轮count。执行前prepared列表为空；原始结果是300000。执行后inspect的JSON解码失败：`cannot unmarshal string into Go struct field planCachePrepared.statements.oids of type int`。测试运行约1.17秒、exit1；runner正常停库并重新核验原源全部元数据/摘要相同。
 
-原始 [diagnostic.json](../../output/xi-a0-plan-cache-run/diagnostic.json)、[错误日志](../../output/xi-a0-plan-cache-run/diagnostic.log)、[PG日志](../../output/xi-a0-plan-cache-run/postgres.log) 与 [runner退出记录](../../output/xi-a0-plan-cache-run/run.json) 均原样保存。执行时Go源码另存 [failed-runtime-source.go.txt](../../output/xi-a0-plan-cache-run/failed-runtime-source.go.txt)，与实际二进制的源码绑定一致；执行时计划保存为 [execution-plan.md](../../output/xi-a0-plan-cache-run/execution-plan.md)。未将修复后代码冒充本轮实际运行代码。
+原始 `output/xi-a0-plan-cache-run/diagnostic.json`、错误日志（`output/xi-a0-plan-cache-run/diagnostic.log`）、PG日志（`output/xi-a0-plan-cache-run/postgres.log`） 与 runner退出记录（`output/xi-a0-plan-cache-run/run.json`） 均原样保存。执行时Go源码另存 `output/xi-a0-plan-cache-run/failed-runtime-source.go.txt`，与实际二进制的源码绑定一致；执行时计划保存为 `output/xi-a0-plan-cache-run/execution-plan.md`。未将修复后代码冒充本轮实际运行代码。
 
 ## 资源与安全状态
 
@@ -31,9 +33,9 @@
 
 `/private/tmp/xi-pc-fix-build-jdy_iwzj/db.test`
 
-SHA256 `aaa6ecbdbc7b27256c0eb8b7ecff59936d9ac96b48211b49d0dda73cb8221a5a`。源码/二进制绑定及真实离线日志在 [fix输出](../../output/xi-a0-plan-cache-fix/code-binding.json)。原失败二进制 `/private/tmp/xi-pc-build-86uyh9ps/db.test` 保留。
+SHA256 `aaa6ecbdbc7b27256c0eb8b7ecff59936d9ac96b48211b49d0dda73cb8221a5a`。源码/二进制绑定及真实离线日志在 fix输出（`output/xi-a0-plan-cache-fix/code-binding.json`）。原失败二进制 `/private/tmp/xi-pc-build-86uyh9ps/db.test` 保留。
 
-完成二进制验证后，仅移除一个本任务在失败后新生成、由go list -test -export精确确认的可重建测试编译cache文件（4242388 bytes）；原缓存、失败二进制和数据目录未删。精确路径、创建时间、摘要和保留二进制证明见 [task-cache-cleanup.json](../../output/xi-a0-plan-cache-fix/task-cache-cleanup.json)，没有批量缓存清理。
+完成二进制验证后，仅移除一个本任务在失败后新生成、由go list -test -export精确确认的可重建测试编译cache文件（4242388 bytes）；原缓存、失败二进制和数据目录未删。精确路径、创建时间、摘要和保留二进制证明见 `output/xi-a0-plan-cache-fix/task-cache-cleanup.json`，没有批量缓存清理。
 
 ## 下一步所需的经理决定
 
@@ -41,12 +43,12 @@ SHA256 `aaa6ecbdbc7b27256c0eb8b7ecff59936d9ac96b48211b49d0dda73cb8221a5a`。源�
 
 **建议将修复后的运行明确列为一次新的、最多36条/20分钟诊断尝试，复用目前已停库的新副本 `/private/tmp/xi-pc-hcpwpsza/data`，不再创建第二副本。** 原一次执行及原二进制完整保留，新会话/PID、输出、计数单列；原36条诊断设计保持不变，仍只读，10秒SQL限制不变。
 
-05:58:16 UTC补充核算已含两个二进制、全部准备/失败输出和cache增长：累计计量3760322541 bytes，4GiB预算还剩534644755 bytes（约509.877MiB），比512MiB发样门槛少2226157 bytes；真实余量26040172544 bytes仍超过24GiB。详情见 [修复后资源快照](../../output/xi-a0-plan-cache-fix/resource-preflight.json)。没有因缺口小而越过门槛或继续清理现场。
+05:58:16 UTC补充核算已含两个二进制、全部准备/失败输出和cache增长：累计计量3760322541 bytes，4GiB预算还剩534644755 bytes（约509.877MiB），比512MiB发样门槛少2226157 bytes；真实余量26040172544 bytes仍超过24GiB。详情见 修复后资源快照（`output/xi-a0-plan-cache-fix/resource-preflight.json`）。没有因缺口小而越过门槛或继续清理现场。
 
 建议经理为新诊断仅将累计新增预算增加32MiB至 **4128MiB（4328521728 bytes）**，保留512MiB发样余量、21GiB真实停止线、20GiB保护量、RSS4GiB和原SQL限制。多出的32MiB覆盖修复版保留成本和新输出，执行前仍重查；此项及新的36条尝试范围尚未获准，当前安全状态为全部停库。本地工程诊断即可处理，不需要用户重新决定产品方向。
 
 ## 复核入口
 
-[交付核验](../../output/xi-a0-plan-cache-run/delivery-verification.json) 证明实际运行359个编译输入中，当前仅新增测试因上述修复不同；失败源码快照、原运行二进制和runner绑定一致。准备/执行原始hash清单、此前容量与checkpoint原始输出均核对通过。[派生摘要](../../output/xi-a0-plan-cache-run/analysis.json) 保留资源和单次结果计算。
+交付核验（`output/xi-a0-plan-cache-run/delivery-verification.json`） 证明实际运行359个编译输入中，当前仅新增测试因上述修复不同；失败源码快照、原运行二进制和runner绑定一致。准备/执行原始hash清单、此前容量与checkpoint原始输出均核对通过。派生摘要（`output/xi-a0-plan-cache-run/analysis.json`） 保留资源和单次结果计算。
 
-最终文件绑定见 [evidence-binding.json](../../output/xi-a0-plan-cache-run/evidence-binding.json)。本轮只交付实现、CoW实证、观察器失败与已离线验证的修复；计划缓存根因、500k、后续读取及HTTP/A0/原13项验收仍未完成。没有伪造第六次切换或任何G/C计划结果。
+最终文件绑定见 `output/xi-a0-plan-cache-run/evidence-binding.json`。本轮只交付实现、CoW实证、观察器失败与已离线验证的修复；计划缓存根因、500k、后续读取及HTTP/A0/原13项验收仍未完成。没有伪造第六次切换或任何G/C计划结果。

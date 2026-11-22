@@ -1,5 +1,7 @@
 # XI-A0：读取模式校准通过，最终候选已准备，普通入口验证受启动空闲线阻塞
 
+> **历史引用。** 隔离合成实例的四组读取模式校准与最终候选启动前检查。校准已执行，最终普通入口的独立五次运行见[后续结果](xi-a0-read-mode-final-result-2026-09-09.md)。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 **0/16/70k/300k四组真实创建对照、模式恢复和取消验证已通过。** 据此选择已测得收益的最小规模70000作为保守启用起点：count局部Exec；insertedMembers>=70000时digest/coverage连续区段局部generic，成功恢复进入前模式；其余保留auto。最终代码已接入普通入口并通过编译、离线回归、边界单测和vet，**最终普通入口真实验证尚未执行，当前不是完整修复交付或A0通过**。
 
 阻塞是实际磁盘空闲低于已批准23GiB启动线；累计4480MiB预算仍有余量。未重新启动PG、清理旧现场、新增数据副本或擅自放宽边界。经理可以据本报告的精确资源增量决定下一步，独立代码/验证准备已完成。
@@ -29,7 +31,7 @@ INSERT SQL、ctid物理策略、FK/immutable guard、schema、默认WAL1GB/share
 
 8个对照reading完整ref/coverage、持久化读回、summary金额、ordinal均通过。四种规模另与不依赖member表、直接从不可变F0按时间/项目/排序计算的ref一致。实际计划缓存计数逐次核验：两条派生SQL在8个样本后均generic4/custom4，各次增量与A/G请求相符；没有将pgx调用成功当作实际模式证据。
 
-原始[diagnostic.json](../../output/xi-a0-read-mode-run/diagnostic.json)、[运行记录](../../output/xi-a0-read-mode-run/run.json)、[参数/计数/语义分析](../../output/xi-a0-read-mode-run/analysis.json)和[分析脚本](../../output/xi-a0-read-mode-run/analyze.py)保留。
+原始`output/xi-a0-read-mode-run/diagnostic.json`、运行记录（`output/xi-a0-read-mode-run/run.json`）、参数/计数/语义分析（`output/xi-a0-read-mode-run/analysis.json`）和分析脚本（`output/xi-a0-read-mode-run/analyze.py`）保留。
 
 ## 参数、恢复与取消
 
@@ -57,7 +59,7 @@ pgx15次count调用均使用Exec，包括8对照、2空恢复、1预期取消和
 
 最终二进制 `/private/tmp/xi-read-mode-build-saaq_bb0/db.test`，SHA256 `ab3c14624597b149bea302313c70060306aad2b456152ea3a40425b581d042b9`，361项输入。编译、全部TestWorkbench离线可运行项、69999/70000/70001边界和vet通过；依赖PG的测试明确skip。最终计划为普通入口0/16/69999/70000/300000各一次，最多5新header/440015成员，期望35headers/7180047members；独立20分钟、无补样。最终源对应的该真实验证**尚未运行**。
 
-最终准备[resource-preflight.json](../../output/xi-a0-read-mode-final-ready/resource-preflight.json)记录：累计4056435387bytes，距4480MiB仍有641185093bytes（约611.5MiB）；free23778684928bytes，距23GiB缺917377024bytes（约874.9MiB）。交付再次核验于08:54:11UTC：累计4057033403bytes、余量640587077bytes，free23774425088bytes、启动缺口921636864bytes（约879MiB）。因此没有调用final执行入口，没有创建final-run输出。当前未满足的条件是**启动free线**，不是累计上限、512MiB首大负载余量、产品测试失败或缺少用户功能决定。
+最终准备`output/xi-a0-read-mode-final-ready/resource-preflight.json`记录：累计4056435387bytes，距4480MiB仍有641185093bytes（约611.5MiB）；free23778684928bytes，距23GiB缺917377024bytes（约874.9MiB）。交付再次核验于08:54:11UTC：累计4057033403bytes、余量640587077bytes，free23774425088bytes、启动缺口921636864bytes（约879MiB）。因此没有调用final执行入口，没有创建final-run输出。当前未满足的条件是**启动free线**，不是累计上限、512MiB首大负载余量、产品测试失败或缺少用户功能决定。
 
 向经理建议最小资源调整：**仅本次5次最终验证把启动free线23→22GiB**，其余4480MiB累计、首大负载512MiB/21.5GiB、21GiB停止/20GiB保护、RSS4GiB/SQL10s/20min全部保持；新增副本/清理/配置变更仍不做。当前free约22.15GiB，按现有成员增长约需109MiB成员/索引，另预留WAL软增长256、temp80、日志8和余量96MiB，共约549MiB，落在当前约611.5MiB累计空间内，但WAL及实际CoW消耗不保证，须以每个资源门槛和持续停止检查为准。若保持23GiB，则需要恢复至少上述约875MiB空闲并在启动前重读；本任务不自行选择删除对象或释放旧现场。**该调整只是待审阅建议，代码仍硬性23GiB。**
 
@@ -67,4 +69,4 @@ pgx15次count调用均使用Exec，包括8对照、2空恢复、1预期取消和
 
 当前不能从单个4.796s推断INSERT已解决，也没有依据立即启动512MB对照；先完成普通入口和必要持续创建证据。若INSERT仍阻断，再提交128/512shared且wal_buffers4固定的匹配前态资源方案共同决定。原13项/TD01—04及其他未阻塞切片、UR禁联与外部边界均保留。无push/PR/merge/release/deploy或跨任务消息。
 
-最终文件核验见[delivery-verification.json](../../output/xi-a0-read-mode-final-ready/delivery-verification.json)，本次部分交付字节绑定见[evidence-binding.json](../../output/xi-a0-read-mode-final-ready/evidence-binding.json)。
+最终文件核验见`output/xi-a0-read-mode-final-ready/delivery-verification.json`，本次部分交付字节绑定见`output/xi-a0-read-mode-final-ready/evidence-binding.json`。

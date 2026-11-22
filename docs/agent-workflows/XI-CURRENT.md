@@ -1,5 +1,26 @@
 # XI 当前工作入口
 
+- [当前代码位置、组件与验证入口](../community/contribution-map.md)
+- [当前协作规则](AGENT-PROTOCOL.md)和[维护执行记录](EXECUTION-RECORD.md)
+- [版本及已安装验收](../community/release-readiness.md)
+
+## 历史本地引用
+
+2026 年 9 月的工作记录中有 119 处引用，指向当时的 `output/` 或内部协作档案。公开仓可复核的是记录正文、保留的代码与配置，以及表中列出的适用范围。原始日志、收据与私有裁定需在当时的档案或执行环境中核对。
+
+下列四份计划是历史 runner 的摘要输入。计划内的原始地址按当时工作区解释。表内目录以当时的仓库根为起点。
+
+| 计划 | 当时的材料 | 适用范围 |
+| --- | --- | --- |
+| [xi-a0-capacity-resource-review-2026-09-09.md](../planning/xi-a0-capacity-resource-review-2026-09-09.md) | `output/xi-a0-capacity/resource-preflight.json`<br>`output/xi-a0-capacity/code-binding.json` | 2026-09-09 容量资格的资源预检与代码绑定，由 checkpoint runner 记录计划摘要。 |
+| [xi-a0-checkpoint-performance-plan-2026-09-09.md](../planning/xi-a0-checkpoint-performance-plan-2026-09-09.md) | `output/xi-a0-storage/store-performance.json`<br>`output/xi-a0-storage/store-locality-performance.json`<br>`output/xi-a0-storage/http-period-performance.json` | 2026-09-09 WAL checkpoint 对照所引用的既有 Store、局部性及 HTTP 测量，由 checkpoint runner 记录计划摘要。 |
+| [xi-a0-plan-cache-diagnostic-2026-09-09.md](../planning/xi-a0-plan-cache-diagnostic-2026-09-09.md) | `output/xi-a0-plan-cache-plan/queries.json`<br>`output/xi-a0-plan-cache-plan/preflight.json`<br>`output/xi-a0-plan-cache-plan/failed-source-files.json` | 2026-09-09 只读计划缓存诊断的查询集、预检与失败源清单，由诊断 runner 校验计划身份。 |
+| [xi-a0-qualification-resource-disposition-2026-09-09.md](../planning/xi-a0-qualification-resource-disposition-2026-09-09.md) | `output/xi-a0-resource-preparation/resource-inventory.json`<br>`output/xi-a0-resource-preparation/inventory.py` | 2026-09-09 资格准备阶段的资源清点和清点脚本，由最终资格 runner 记录计划摘要。 |
+
+以下是 2026 年 10 月及之前的工作记录。
+
+> **历史引用。** 2026-09-11 的新 A 返修、R35 收口与用量基线文件来自当时的执行工作区。文件名保留用于历史溯源。该节的用量是单任务历史样本，各交付结果仅覆盖各自的 Local 候选。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 > Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
 
 ## 2026-10-10 总览说明层级、活动重点与时间趋势原预览验收通过
@@ -581,11 +602,11 @@ go test ./internal/db -run '^(TestContentReceiptRetryPostgresCreationClosureAndR
 
 ## 当前事实与下一动作
 
-- M4活动工作树 `/private/tmp/xinsight-xi-a1-source-reading-20260910` 仍是基线 `ece4d074e0c7a9b2dd01650fb2ec3b81065a983d` 加WIP；**当前交付/恢复入口：[新A两项修复交付](../../output/xi-a-managed-offline-20260911/A-MANAGED-OFFLINE-REPAIR1.md)**。最终提交、制品、环境恢复和经理结论以该入口的实际记录为准；原[R35收口](../../output/xi-asus-g1-20260911/R35-G1-FINAL-CLOSEOUT.md)保留。
+- M4活动工作树 `/private/tmp/xinsight-xi-a1-source-reading-20260910` 仍是基线 `ece4d074e0c7a9b2dd01650fb2ec3b81065a983d` 加WIP；**当前交付/恢复入口：新A两项修复交付（`output/xi-a-managed-offline-20260911/A-MANAGED-OFFLINE-REPAIR1.md`）**。最终提交、制品、环境恢复和经理结论以该入口的实际记录为准；原R35收口（`output/xi-asus-g1-20260911/R35-G1-FINAL-CLOSEOUT.md`）保留。
 - 华硕最终commit `7bf683b55337a6e7f7bd957ce8aadb2227d988c0` / tree `b3eb9ac22fb474d158752319577ab4b5098402c8`。完整2,057项树、原父链和1,265项历史blob/mode核验通过；792项已验源码摘要仍为`a36cd812270dec6cb0c2fdb752fb51092d8509543a6bf0b93db26722a8470806`。原37Go包/154前端测试及实际产品浏览器/恢复证据有效；主管已接受R35 Local完整交付；最终commit二进制及嵌入资源增量也已独立核对，M4镜像同步单独等待。
 - 主管已接受的原生Git整包1GiB预算独立于G1主管45GiB准入，覆盖历史、checkout、对象、后续二进制、校验与留存；当前已知文件约280.24MiB。原输入、完整/增量bundle、失败及预提交证据均保留；M4无本地bundle，HEAD/index未变。
 - M4镜像同步仍独立等待；旧准入是**21GiB+128MiB**，执行时须按最终增量重新核完整预算和WIP。最近读数21,585,661,952B低于21GiB保留线，不能在M4构建、导入bundle或更新Git。轻量源码与文本证据可继续，本地dist/schema生成物仍旧，不作为新A制品来源。
-- 新A候选 `4c814eb558a9148698986cbffe2621a5973060bc` / tree `d24674033f07b950fe641cda90179de4928fe2ba` 已经经理独立核对制品、迁移恢复、CLI/TLS、页面权限与金额隔离，但整包暂不接受：A-M01授权行锁等待期间到期仍创建预约；A-M02缺少独立offline预检。原[交付](../../output/xi-a-managed-offline-20260911/A-MANAGED-OFFLINE-CLOSEOUT.md)及经理反例/原生dump保留。当前两项修复已有定向实测通过：锁后单独读DB时间；`import-source-facts --check`严格输入校验+只读当前登记/操作绑定，15个真实CLI检查全部业务表与序列不变、源请求0。最终回归与经理结论见当前交付入口。
+- 新A候选 `4c814eb558a9148698986cbffe2621a5973060bc` / tree `d24674033f07b950fe641cda90179de4928fe2ba` 已经经理独立核对制品、迁移恢复、CLI/TLS、页面权限与金额隔离，但整包暂不接受：A-M01授权行锁等待期间到期仍创建预约；A-M02缺少独立offline预检。原交付（`output/xi-a-managed-offline-20260911/A-MANAGED-OFFLINE-CLOSEOUT.md`）及经理反例/原生dump保留。当前两项修复已有定向实测通过：锁后单独读DB时间；`import-source-facts --check`严格输入校验+只读当前登记/操作绑定，15个真实CLI检查全部业务表与序列不变、源请求0。最终回归与经理结论见当前交付入口。
 - 返修沿 `4c814eb5` 完整父链，不改变固定合同、schema32及双方完整12GiB预算。Windows Git仍为`git/a-managed-offline`，Linux源码为`/opt/xi-validation/sources/a-managed-offline`。修复最终身份由Windows `transfer/a-managed-delivery-repair1/source-binding.json`、`evidence/a-managed-git-repair1/result.json`、`transfer/a-managed-runtime-repair1/runtime-binding.json`绑定；恢复记录为`evidence/a-managed-repair1-restored.json`。未变前端/页面及历史验证按精确源码复用，原[冻结v2](XI-A-MANAGED-OFFLINE-PLAN-20260911.md)未改。新A正式接受后再接F；不联系UR。
 - D2/D3具名授权已核对总体原始role=user记录（09-11 03:12:44Z，第10254行），无需重复批准。后续只在实质边界变化时升级。经理“X-insight派发并验收迭代任务”=`01a0822d-9593-7260-87a4-0d3001400de9`/local，发送交付及实质阻塞摘要已有持续授权。
 - A0未实施；F依赖R35闭合、新A受管/offline及环境完整准入，可先于A0。S原规模/留存及适用A0仍约束最终V；新A/B/D等独立工作按自身授权接续。G1实测不能冒充F/G2完整并发证明。准备v2及主管决定通过交付入口按需定位。
@@ -599,7 +620,7 @@ go test ./internal/db -run '^(TestContentReceiptRetryPostgresCreationClosureAndR
 
 ## 如何判断是否有效
 
-- 历史基线见 [用量汇总](../../output/xi-a1-purpose-r35/workflow-usage-baseline-20260911.json)。2026-09-10 00:00至09-11 06:56（北京时间，含06:56分钟），按 `token_usage_record.response_id` 去重；不累计相互重叠的thread/turn totals。2,011响应，输入中位154,848/P90 225,545，缓存95.31%，输出1,898,947（含推理690,369），23次压缩，1,992工具回包中171个含明确截断标记。既往华硕初稿有1次实质集中返修；v2准备审阅已通过并回交总体，不代表资源准入或产品验收通过。此汇总仅为XI单任务历史基线，收益仍待实际同类完整包比较，不为测量增加实验或任务。
+- 历史基线见 用量汇总（`output/xi-a1-purpose-r35/workflow-usage-baseline-20260911.json`）。2026-09-10 00:00至09-11 06:56（北京时间，含06:56分钟），按 `token_usage_record.response_id` 去重；不累计相互重叠的thread/turn totals。2,011响应，输入中位154,848/P90 225,545，缓存95.31%，输出1,898,947（含推理690,369），23次压缩，1,992工具回包中171个含明确截断标记。既往华硕初稿有1次实质集中返修；v2准备审阅已通过并回交总体，不代表资源准入或产品验收通过。此汇总仅为XI单任务历史基线，收益仍待实际同类完整包比较，不为测量增加实验或任务。
 - [离线统计](../../scripts/xi-session-usage-summary.py)只读日志，参数为路径、带时区的`--start`/`--end`（左闭右开），完整包可重复指定`--turn-id`。新增回包UTF-8字节分布和最大5项的工具名/日志行号，不回传内容；字节不是模型token。对比响应数、输入分位数、输出、截断及实际包耗时，人工注明目标/规模/验证种类和实质返修次数。经理消耗另列，响应跨度含等待。
 - 下一次**实际同类完整交付**做一次前后观察，不为测量重复执行产品或制造审批。尽量保持模型/推理设置、目标复杂度、证据量和验收层次一致；差异显式注明。整体历史混合样本只能作背景，不能与一个小修订包直接计算“优化率”。没有可比完成包前，结论是“执行方式已调整，收益未验证”。
 - 新上下文的稳定交接点是R35候选身份与经理结论固定、剩余同步项清楚。若用户明确切换，只带本节目标/工作包、源码身份、有效证据、授权与阻塞入口，保留旧任务。当前未新建或迁移任务，不能声称已加载上下文缩短。

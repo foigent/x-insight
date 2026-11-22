@@ -1,5 +1,7 @@
 # XI-A0：计划缓存诊断完成，整体创建瓶颈仍未闭环
 
+> **历史引用。** 隔离合成实例第二次计划缓存诊断的绑定、计划节点和分析。结果覆盖 36 次目标 SELECT 及其对照条件。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 本轮独立的36次目标SELECT全部成功。**eligible_count在第六次auto执行切换为generic，且明显变慢；membership_digest与coverage七次均保持custom。不能把原容量试验的三个阶段变慢统一归因于generic，也不能统一强制custom。** 本轮只读诊断没有完成创建性能、HTTP或A0验收。
 
 基线提交为`9c9deec663417392e730ad5e16707aa013489067`。经理明确批准新的36次/20分钟诊断及4128MiB累计预算，复用已停止的`/private/tmp/xi-pc-hcpwpsza/data`，未再复制。此前观察器失败的一次count、旧PID、二进制和输出单列保留，没有拼接计数。实际执行2026-09-09 06:15:20–06:15:41 UTC；测试13.80秒、exit0，整个启动/查询/停库/源核验周期21.417806秒。
@@ -11,7 +13,7 @@
 - 独立读回19 headers、5700000 members；指定七个reading各300000，membership_ref均与原记录一致。21次auto目标执行后，三条SQL各进行auto EXPLAIN及G→C→C→G，共15次EXPLAIN ANALYZE；总计36次，无失败、替换或超预算补样。
 - PG16.14；max_wal_size=1GB、shared_buffers=128MB、work_mem=4MB、wal_buffers=4MB，fsync/full_page_writes/synchronous_commit/autovacuum均on，max_parallel_workers_per_gather=2，temp_file_limit=-1。I/O计时按诊断计划开启。未改产品SQL、索引、角色权限、PG默认或HTTP预算。
 
-原始数据：[diagnostic.json](../../output/xi-a0-plan-cache-run-02/diagnostic.json)、[run.json](../../output/xi-a0-plan-cache-run-02/run.json)、[code-binding.json](../../output/xi-a0-plan-cache-run-02/code-binding.json)。[analysis.json](../../output/xi-a0-plan-cache-run-02/analysis.json)及[plan-nodes.json](../../output/xi-a0-plan-cache-run-02/plan-nodes.json)是事后派生数据，不覆盖原始输出hash清单。
+原始数据：`output/xi-a0-plan-cache-run-02/diagnostic.json`、`output/xi-a0-plan-cache-run-02/run.json`、`output/xi-a0-plan-cache-run-02/code-binding.json`。`output/xi-a0-plan-cache-run-02/analysis.json`及`output/xi-a0-plan-cache-run-02/plan-nodes.json`是事后派生数据，不覆盖原始输出hash清单。
 
 ## 三条SQL的auto与G/C结果
 
@@ -75,6 +77,6 @@
 
 ## 交付边界与复核
 
-本轮Python语法和资源边界定向检查通过，实际固定二进制36次诊断通过；Go未变，复用上一提交的OID回归、默认跳过及vet证据。原49个保护文件、3份继承失败和本轮10项原始hash清单均匹配。此前37项交付绑定在原提交全部匹配，其中34项当前字节仍相同，另3项为本轮已授权的runner、计划及执行记录修改；旧失败原始输出9项hash仍匹配。核验结果见[delivery-verification.json](../../output/xi-a0-plan-cache-run-02/delivery-verification.json)，本轮最终字节绑定见[evidence-binding.json](../../output/xi-a0-plan-cache-run-02/evidence-binding.json)。
+本轮Python语法和资源边界定向检查通过，实际固定二进制36次诊断通过；Go未变，复用上一提交的OID回归、默认跳过及vet证据。原49个保护文件、3份继承失败和本轮10项原始hash清单均匹配。此前37项交付绑定在原提交全部匹配，其中34项当前字节仍相同，另3项为本轮已授权的runner、计划及执行记录修改；旧失败原始输出9项hash仍匹配。核验结果见`output/xi-a0-plan-cache-run-02/delivery-verification.json`，本轮最终字节绑定见`output/xi-a0-plan-cache-run-02/evidence-binding.json`。
 
 这是Local诊断完成；原13项父目标、TD/R3未完成事项及A0仍未验收，D-37-01仍待决定。没有产品模式采用、完整创建性能资格、500k、后续读取或HTTP/CI/Target/External/Production的新通过声明。本地提交，不push/PR/merge/release/deploy，不联系UR，不使用真实凭据或业务数据，不发送跨任务消息。

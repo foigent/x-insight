@@ -44,11 +44,12 @@ type MigrationRecord struct {
 }
 
 type ReadinessStatus struct {
-	DatabaseSchema     string `json:"database_schema"`
-	MigrationCount     int    `json:"migration_count"`
-	MigrationSetSHA256 string `json:"migration_set_sha256"`
-	PostgresMajor      int    `json:"postgres_major"`
-	RepresentativeRead bool   `json:"representative_read"`
+	DatabaseSchema                   string `json:"database_schema"`
+	MigrationCount                   int    `json:"migration_count"`
+	MigrationSetSHA256               string `json:"migration_set_sha256"`
+	SchemaContractMigrationSetSHA256 string `json:"schema_contract_migration_set_sha256"`
+	PostgresMajor                    int    `json:"postgres_major"`
+	RepresentativeRead               bool   `json:"representative_read"`
 }
 
 type MaintenanceSession struct {
@@ -296,14 +297,25 @@ func ReadMigrationLedger(ctx context.Context, dsn string) ([]MigrationRecord, er
 	return loadMigrationRecords(ctx, conn)
 }
 
+// MigrationSetSHA256 preserves the original NUL-separated readiness digest.
 func MigrationSetSHA256(values []MigrationChecksum) (string, error) {
+	return migrationSetSHA256(values, 0)
+}
+
+// SchemaContractMigrationSetSHA256 hashes the ordered ledger in the format used
+// by the signed schema contract.
+func SchemaContractMigrationSetSHA256(values []MigrationChecksum) (string, error) {
+	return migrationSetSHA256(values, '\t')
+}
+
+func migrationSetSHA256(values []MigrationChecksum, separator byte) (string, error) {
 	if err := validateExpectedMigrations(values); err != nil {
 		return "", err
 	}
 	digest := sha256.New()
 	for _, value := range values {
 		_, _ = digest.Write([]byte(value.ID))
-		_, _ = digest.Write([]byte{0})
+		_, _ = digest.Write([]byte{separator})
 		_, _ = digest.Write([]byte(value.SHA256))
 		_, _ = digest.Write([]byte{'\n'})
 	}

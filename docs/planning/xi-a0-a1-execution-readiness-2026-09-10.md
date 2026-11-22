@@ -1,10 +1,12 @@
 # A0 / A1 增量执行准备：C 验收后的接续
 
+> **历史引用。** 2026-09-10 的跨项目合同准备来自当时的内部协作档案。本页只记录执行准备与依赖判断。本公开副本保留文内记载，原件需回到当时的工作区或档案查阅。
+
 > Public-copy note: private workstation paths and target identifiers use explicit placeholders. The private original is retained. These historical notes are not portable commands or a new qualification result.
 
 2026-09-10。**C 部署队列/本人筛选 Local 子项已由 review25 接受；本次只交执行准备。A0 的正常路径和失败后隔离恢复尚不能同时得到当前资源保证，建议先审 A1 三 profile 消费与阅读子项。** 不扩大完整 C、A1、SE-03、原13项或 TD 的完成状态。本轮没有构建、启库、迁移、复制数据库或运行负载。
 
-本方案只增补 [5f23135 已审设计](/private/tmp/xinsight-xi-a0-20260909/docs/planning/xi-a0-key-storage-and-c-queue-plan-2026-09-10.md)、[原 A1 接续表](/private/tmp/xinsight-xi-c-responsibility-20260909/docs/planning/xi-continuation-and-debt-review-2026-09-09.md) 和[第46份共同合同](<PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/46-UR-A供数与XI消费衔接-共同合同准备-2026-09-10.md>)。当前字节、停库控制和资源来源见 [planning-facts.json](/private/tmp/xinsight-xi-c-responsibility-20260909/output/xi-a0-a1-readiness-20260910/planning-facts.json)；这是定向源码判断，不是新功能已通过的证据。
+本方案只增补 [5f23135 已审设计](/private/tmp/xinsight-xi-a0-20260909/docs/planning/xi-a0-key-storage-and-c-queue-plan-2026-09-10.md)、[原 A1 接续表](/private/tmp/xinsight-xi-c-responsibility-20260909/docs/planning/xi-continuation-and-debt-review-2026-09-09.md) 和第46份共同合同（`PRIVATE_HOME/Desktop/projects/PRIVATE_PERSONAL_ARCHIVE/library/reports/企业AI工作事实平台-目标拆解与验收-2026-09-05/46-UR-A供数与XI消费衔接-共同合同准备-2026-09-10.md`）。当前字节、停库控制和资源来源见 [planning-facts.json](/private/tmp/xinsight-xi-c-responsibility-20260909/output/xi-a0-a1-readiness-20260910/planning-facts.json)；这是定向源码判断，不是新功能已通过的证据。
 
 ## 1. 实施面及完整 A0 包
 

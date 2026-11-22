@@ -68,6 +68,8 @@ function errorMessage(error: unknown): { title: string; description: string } {
       return { title: t("m0686"), description: t("m0687") };
     case "event_not_found":
       return { title: t("m0688"), description: t("m0689") };
+    case "evidence_revision_unavailable":
+      return { title: t("investigationRevisionUnavailable.title"), description: t("investigationRevisionUnavailable.description") };
     case "cursor_expired":
       return { title: t("m0690"), description: t("m0691") };
     case "cursor_mismatch":

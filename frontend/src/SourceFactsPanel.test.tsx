@@ -99,6 +99,23 @@ it("removes previous source details after the detail action is denied", async ()
   expect(screen.queryByText("9007199254740995")).toBeNull();
 });
 
+it("retries only a transient source page failure and discards the cursor on rejection", async () => {
+  const read = vi.spyOn(workbenchAPI, "sourceFacts").mockResolvedValueOnce({ ...page(), next_cursor: "next" })
+    .mockRejectedValueOnce(new ApiRequestError(503)).mockRejectedValueOnce(new ApiRequestError(400));
+  const invalidated = vi.fn();
+  const user = userEvent.setup();
+  render(<SourceFactsPanel reading={reading} onInvalidated={invalidated} />);
+  await user.click(await screen.findByRole("button", { name: "加载更多来源记录" }));
+  const retry = await screen.findByRole("button", { name: "重试来源明细" });
+  expect(screen.queryByRole("button", { name: "加载更多来源记录" })).toBeNull();
+  expect(screen.getByText("9007199254740995")).toBeTruthy();
+  await user.click(retry);
+  await waitFor(() => expect(invalidated).toHaveBeenCalledOnce());
+  expect(read.mock.calls.map(call => call[1])).toEqual([undefined, "next", "next"]);
+  expect(screen.queryByText("9007199254740995")).toBeNull();
+  expect(screen.queryByRole("button", { name: "重试来源明细" })).toBeNull();
+});
+
 it.each(["active", "paused", "revoked"] as const)("shows frozen %s collection independently from historical reading access", async state => {
   vi.spyOn(workbenchAPI, "sourceFacts").mockResolvedValue(page());
   render(<SourceFactsPanel reading={{...reading,source_coverage:{...reading.source_coverage!,collection_states:[state],gaps:["forward_only_capture","timeline_completeness_unknown"]}}} onInvalidated={vi.fn()} />);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { formatDateTime } from "./format";
 import { accessAPI, ApiRequestError, ApiResponseError, managedAccountsAPI, type ManagedAccount, type AccessSessionResponse, type ProjectReadCommand, type ProjectReadOptions } from "./api";
 import { LoginPage } from "./AccessPages";
 import { roleLabel } from "./accessPresentation";
@@ -144,7 +145,7 @@ export function AccountsPage({ session }: { session: AccessSessionResponse }) {
       <button disabled={blocked||!actionPassword}>{tx("accounts.confirmAction")}</button><button type="button" disabled={busy} onClick={()=>{setPending(undefined);setActionPassword("");}}>{tx("accounts.cancelAction")}</button>
     </form></section>}
     {result&&<section className="access-session-panel" aria-label={t("accounts.actionResult")}><h2>{tx("accounts.actionResult")}</h2><p>{tx("accounts.resultAccount",{value0:result.account.username})}</p><p role="status">{result.account.disabled?t("accounts.disabled"):result.account.needs_activation?t("accounts.awaitingHolder"):t("accounts.active")}</p>
-      {result.link&&<><h3>{tx(result.action==="recover"?"accounts.recoveryLink":"accounts.activationLink")}</h3><p>{tx("accounts.shareSecurely")}</p><p>{tx("accounts.setupDoesNotSwitch")}</p><label>{tx("accounts.link")}<input readOnly value={result.link} onFocus={e=>e.target.select()}/></label><p>{tx("accounts.expires",{value0:new Date(result.expires).toLocaleString()})}</p><button onClick={()=>setResult({...result,link:""})}>{tx("accounts.hideLink")}</button></>}
+      {result.link&&<><h3>{tx(result.action==="recover"?"accounts.recoveryLink":"accounts.activationLink")}</h3><p>{tx("accounts.shareSecurely")}</p><p>{tx("accounts.setupDoesNotSwitch")}</p><label>{tx("accounts.link")}<input readOnly value={result.link} onFocus={e=>e.target.select()}/></label><p>{tx("accounts.expires",{value0:formatDateTime(result.expires)})}</p><button onClick={()=>setResult({...result,link:""})}>{tx("accounts.hideLink")}</button></>}
     </section>}
     <section className="access-session-panel"><h2>{tx("accounts.confirmIdentity")}</h2><p>{tx("accounts.grantPasswordBoundary")}</p><label>{tx("accounts.ownerPassword")}<input type="password" autoComplete="current-password" maxLength={1024} value={password} disabled={blocked} onChange={e=>setPassword(e.target.value)}/></label></section>
     <section className="access-session-panel"><h2>{tx("accounts.projectReading")}</h2><p>{tx("accounts.explicitScope")}</p>

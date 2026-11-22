@@ -1,6 +1,6 @@
 import { executionDetailPath } from "./executionReading";
 import { getLocale, t, tx, useLocale } from "./i18n";
-import { Fragment, FormEvent, type ReactNode, useEffect, useState } from "react";
+import { Fragment, FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import {
 	ApiRequestError,
@@ -11,19 +11,22 @@ import {
   type AuthoritativeSessionDetail,
   type AuthoritativeSessionListResponse,
   type CaseRecord,
-  type ConnectorListResponse,
   type ConnectorInvitation,
   type DiscoveryHypothesis,
   type ExecutionComparison,
+  type ExecutionComparisonInput,
   type InvestigationAlert,
   type InvestigationCase,
   type ServiceIdentity,
 } from "./api";
 import { EmptyState, ErrorState, LoadingBlock } from "./Feedback";
+import { PageHeader } from "./PageHeader";
 import { formatCanonicalTime, formatDateTime, shortRef } from "./format";
 import { ConnectorSyncPanel } from "./ConnectorSyncPanel";
 import { FindingLifecycle } from "./FindingLifecycle";
 import { newFindingReferences, ReviewStart } from "./ReviewStart";
+import { canRetryRead, isAccessDenied } from "./readFailures";
+import { useConnectorRead } from "./useConnectorRead";
 
 interface PageProps {
   session: AccessSessionResponse;
@@ -35,7 +38,8 @@ export function CasesPage({ session, navigate }: PageProps) {
   const canWrite = session.session.permissions.includes("investigation.write");
   const [items, setItems] = useState<InvestigationCase[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>();
+  const [listError, setListError] = useState<unknown>();
+  const [createError, setCreateError] = useState<unknown>();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -43,9 +47,11 @@ export function CasesPage({ session, navigate }: PageProps) {
   useEffect(() => {
     const controller = new AbortController();
     workspaceAPI.listCases(controller.signal)
-      .then((response) => setItems(response.items))
+      .then((response) => {
+        if (!controller.signal.aborted) setItems(response.items);
+      })
       .catch((caught) => {
-        if (!isAbortError(caught) && !controller.signal.aborted) setError(caught);
+        if (!isAbortError(caught) && !controller.signal.aborted) setListError(caught);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -57,7 +63,7 @@ export function CasesPage({ session, navigate }: PageProps) {
     event.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
-    setError(undefined);
+    setCreateError(undefined);
     try {
       const item = await workspaceAPI.createCase(title.trim(), description, session.csrf_token);
       setItems((current) => [item, ...current]);
@@ -65,7 +71,7 @@ export function CasesPage({ session, navigate }: PageProps) {
       setDescription("");
       navigate(`/cases/${item.id}`);
     } catch (caught) {
-      setError(caught);
+      setCreateError(caught);
     } finally {
       setSaving(false);
     }
@@ -85,14 +91,15 @@ export function CasesPage({ session, navigate }: PageProps) {
             <label>{t("m1499")}<input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} /></label>
             <label>{t("m1352")}<textarea value={description} maxLength={4000} rows={5} onChange={(event) => setDescription(event.target.value)} /></label>
             <button className="button button-primary" disabled={saving || !title.trim()}>{saving ? t("m1500") : t("m1501")}</button>
+            {createError ? <ErrorState error={createError} compact /> : null}
           </form>
           <ReviewStart session={session} available={{ evidence: [], gaps: [] }} navigate={navigate} />
         </section> : null}
         <section className="panel panel-grow" aria-labelledby="case-list-title">
           <PanelHeading eyebrow={t("m1502")} title={t("m1503")} id="case-list-title" />
           {loading ? <LoadingBlock label={t("m1504")} /> : null}
-          {error ? <ErrorState error={error} /> : null}
-          {!loading && items.length === 0 ? <EmptyState title={t("m1505")} description={canWrite ? t("m1506") : t("m1507")} /> : null}
+          {listError ? <ErrorState error={listError} /> : null}
+          {!loading && !listError && items.length === 0 ? <EmptyState title={t("m1505")} description={canWrite ? t("m1506") : t("m1507")} /> : null}
           <div className="case-card-grid">
             {items.map((item) => (
               <button className="case-card" key={item.id} title={t("m1508", { value0: item.id })} onClick={() => navigate(`/cases/${item.id}`)}>
@@ -367,7 +374,7 @@ export function SessionsPage({ navigate }: PageProps) {
   useEffect(() => {
     const controller = new AbortController();
     investigationAPI.listSessions(controller.signal)
-      .then(setResult)
+      .then((value) => { if (!controller.signal.aborted) setResult(value); })
       .catch((caught) => {
         if (!isAbortError(caught) && !controller.signal.aborted) setError(caught);
       });
@@ -376,20 +383,20 @@ export function SessionsPage({ navigate }: PageProps) {
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Source-declared identity"
+        eyebrow={t("sourceSessionIdentity")}
         title={t("m1569")}
         description={t("m1570")}
       />
       {error ? <ErrorState error={error} /> : null}
-      {!result ? <LoadingBlock label={t("m1571")} /> : null}
+      {!result && !error ? <LoadingBlock label={t("m1571")} /> : null}
       {result?.items.length === 0 ? <EmptyState title={t("m1572")} description={t("m1573")} /> : null}
       <div className="session-grid">
         {result?.items.map((item) => (
           <button className="session-item" key={item.session_id} onClick={() => navigate(`/sessions/${item.session_id}`)}>
-            <span className="evidence-kind kind-declared">Source-declared</span>
+            <span className="evidence-kind kind-declared">{tx("sourceSessionDeclared")}</span>
             <strong>{item.source_session_ref}</strong>
             <p>{item.source_display_name} · {item.source_session_type}</p>
-            <footer><span>{item.execution_count} executions</span><time>{formatDateTime(item.observed_at)}</time></footer>
+            <footer><span>{tx("sourceSessionExecutionCount", { value0: item.execution_count })}</span><time>{formatDateTime(item.observed_at)}</time></footer>
           </button>
         ))}
       </div>
@@ -404,7 +411,7 @@ export function SessionDetailPage({ sessionID, navigate }: PageProps & { session
   useEffect(() => {
     const controller = new AbortController();
     investigationAPI.getSession(sessionID, controller.signal)
-      .then(setDetail)
+      .then((value) => { if (!controller.signal.aborted) setDetail(value); })
       .catch((caught) => {
         if (!isAbortError(caught) && !controller.signal.aborted) setError(caught);
       });
@@ -414,16 +421,16 @@ export function SessionDetailPage({ sessionID, navigate }: PageProps & { session
     <div className="page-stack">
       <button className="back-link" onClick={() => navigate("/sessions")}>{tx("m1574")}</button>
       {error ? <ErrorState error={error} /> : null}
-      {!detail ? <LoadingBlock label={t("m1575")} /> : null}
+      {!detail && !error ? <LoadingBlock label={t("m1575")} /> : null}
       {detail ? (
         <>
           <PageHeader
-            eyebrow="Authoritative Session"
+            eyebrow={t("sourceSessionAuthoritative")}
             title={detail.session.source_session_ref}
             description={t("m1576", { value0: detail.session.source_display_name, value1: detail.session.source_session_type })}
           />
           <section className="panel">
-            <PanelHeading eyebrow="Execution membership" title={t("m1577")} id="session-members-title" />
+            <PanelHeading eyebrow={t("sourceSessionMembership")} title={t("m1577")} id="session-members-title" />
             {detail.executions.length === 0 ? (
               <EmptyState
                 title={t("m1578")}
@@ -448,51 +455,62 @@ export function SessionDetailPage({ sessionID, navigate }: PageProps & { session
 
 export function ComparePage({ navigate }: PageProps) {
   useLocale();
-  const [left, setLeft] = useState("");
-  const [right, setRight] = useState("");
-  const [leftAsOf, setLeftAsOf] = useState("");
-  const [rightAsOf, setRightAsOf] = useState("");
-  const [result, setResult] = useState<ExecutionComparison>();
+  const [left, setLeft] = useState<ExecutionComparisonInput>({ executionID: "", asOf: "", evidenceRevision: "" });
+  const [right, setRight] = useState<ExecutionComparisonInput>({ executionID: "", asOf: "", evidenceRevision: "" });
+  const [comparison, setComparison] = useState<{ result: ExecutionComparison; left: ExecutionComparisonInput; right: ExecutionComparisonInput }>();
   const [error, setError] = useState<unknown>();
   const [loading, setLoading] = useState(false);
 
   async function compare(event: FormEvent) {
     event.preventDefault();
-    if (!left || !right || !leftAsOf || !rightAsOf) return;
+    if (loading || !left.executionID || !right.executionID || !left.asOf || !right.asOf) return;
     setLoading(true);
+    setComparison(undefined);
     setError(undefined);
     try {
-      setResult(await investigationAPI.compare(left, leftAsOf, right, rightAsOf));
+      const submittedLeft = { ...left, evidenceRevision: left.evidenceRevision.trim().toLowerCase() };
+      const submittedRight = { ...right, evidenceRevision: right.evidenceRevision.trim().toLowerCase() };
+      const result = await investigationAPI.compare(submittedLeft, submittedRight);
+      setComparison({ result, left: submittedLeft, right: submittedRight });
     } catch (caught) {
       setError(caught);
     } finally {
       setLoading(false);
     }
   }
+
+  const result = comparison?.result;
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Deterministic compare"
+        eyebrow={t("compareEvidence")}
         title={t("m0160")}
         description={t("m1580")}
       />
       <section className="panel">
+        <p id="comparison-evidence-help">{tx("compareEvidenceHelp")}</p>
         <form className="compare-form" onSubmit={(event) => void compare(event)}>
-          <ExecutionSelector label="Left execution" id={left} asOf={leftAsOf} onID={setLeft} onAsOf={setLeftAsOf} />
+          <ExecutionSelector label={t("compareLeftExecution")} value={left} onChange={setLeft} disabled={loading} />
           <span className="compare-divider" aria-hidden="true">↔</span>
-          <ExecutionSelector label="Right execution" id={right} asOf={rightAsOf} onID={setRight} onAsOf={setRightAsOf} />
+          <ExecutionSelector label={t("compareRightExecution")} value={right} onChange={setRight} disabled={loading} />
           <button className="button button-primary" disabled={loading}>{tx("m1581")}</button>
         </form>
       </section>
       {error ? <ErrorState error={error} /> : null}
-      {result ? (
+      {loading ? <LoadingBlock label={t("compareLoading")} /> : null}
+      {result && comparison ? (
         <section className="panel">
-          <PanelHeading eyebrow="Comparison result" title={t("m1582")} id="comparison-title" />
+          <PanelHeading eyebrow={t("compareResult")} title={t("m1582")} id="comparison-title" />
           <p className="snapshot-line">
-            Left <code>{formatCanonicalTime(result.left_as_of)}</code>
-            {" · "}
-            Right <code>{formatCanonicalTime(result.right_as_of)}</code>
+            {tx("compareLeftExecution")} <code>{formatCanonicalTime(result.left_as_of)}</code>
+            {comparison.left.evidenceRevision && <> · <code>{comparison.left.evidenceRevision}</code></>}
           </p>
+          <p className="snapshot-line">
+            {tx("compareRightExecution")} <code>{formatCanonicalTime(result.right_as_of)}</code>
+            {comparison.right.evidenceRevision && <> · <code>{comparison.right.evidenceRevision}</code></>}
+          </p>
+          {(!comparison.left.evidenceRevision || !comparison.right.evidenceRevision) &&
+            <p className="reading-recovery">{tx("compareLegacyCutoff")}</p>}
           <div className="comparison-table-wrap">
             <table className="comparison-table">
               <caption>{tx("m1583")}</caption>
@@ -510,8 +528,8 @@ export function ComparePage({ navigate }: PageProps) {
             </table>
           </div>
           <div className="button-cluster">
-            <button className="text-link" onClick={() => navigate(`/executions/${result.left.execution_id}?as_of=${encodeURIComponent(result.left_as_of)}`)}>{tx("m1584")}</button>
-            <button className="text-link" onClick={() => navigate(`/executions/${result.right.execution_id}?as_of=${encodeURIComponent(result.right_as_of)}`)}>{tx("m1585")}</button>
+            <button className="text-link" onClick={() => navigate(executionDetailPath(result.left.execution_id, { asOf: result.left_as_of, evidenceRevision: comparison.left.evidenceRevision }))}>{tx("m1584")}</button>
+            <button className="text-link" onClick={() => navigate(executionDetailPath(result.right.execution_id, { asOf: result.right_as_of, evidenceRevision: comparison.right.evidenceRevision }))}>{tx("m1585")}</button>
           </div>
         </section>
       ) : null}
@@ -521,53 +539,58 @@ export function ComparePage({ navigate }: PageProps) {
 
 export function ConnectorsPage({ session, navigate }: PageProps) {
   useLocale();
-  const [result, setResult] = useState<ConnectorListResponse>();
-  const [error, setError] = useState<unknown>();
+  const list = useConnectorRead(session.session.session_ref, investigationAPI.listConnectors);
+  const result = list.data;
+  const [writeError, setWriteError] = useState<unknown>();
   const [invitation, setInvitation] = useState<ConnectorInvitation>();
   const [creating, setCreating] = useState(false);
-  const canManage = session.session.permissions.includes("connector.installations.manage");
+  const mutationGeneration = useRef(0);
+  const canManage = session.session.permissions.includes("connector.installations.manage") && !isAccessDenied(writeError);
   const installations = result?.installations ?? [];
 
-  const load = (signal?: AbortSignal) => investigationAPI.listConnectors(signal).then(setResult);
   useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal)
-      .catch((caught) => {
-        if (!isAbortError(caught) && !controller.signal.aborted) setError(caught);
-      });
-    return () => controller.abort();
-  }, []);
+    setInvitation(undefined);
+    setCreating(false);
+    return () => { mutationGeneration.current++; };
+  }, [session.session.session_ref, canManage]);
+  useEffect(() => {
+    if (isAccessDenied(list.error)) setInvitation(undefined);
+  }, [list.error]);
 
   async function createInvitation() {
+    if (creating || list.loading || !result?.installation_control?.enabled || !canManage) return;
+    const generation = ++mutationGeneration.current;
     setCreating(true);
-    setError(undefined);
+    setWriteError(undefined);
+    setInvitation(undefined);
     try {
       const created = await workspaceAPI.createConnectorInvitation(session.csrf_token);
+      if (generation !== mutationGeneration.current) return;
       setInvitation(created.invitation);
-      await load();
+      await list.refresh();
     } catch (caught) {
-      setError(caught);
+      if (generation === mutationGeneration.current && !isAbortError(caught)) setWriteError(caught);
     } finally {
-      setCreating(false);
+      if (generation === mutationGeneration.current) setCreating(false);
     }
   }
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Trust and delivery"
+        eyebrow={t("connector.trustEyebrow")}
         title={t("m1586")}
         description={t("m1587")}
       />
       {result?.installation_control?.enabled && canManage ? (
         <section className="panel connector-install-panel">
-          <PanelHeading eyebrow="Install Connector" title={t("m1588")} id="connector-install-title" />
+          <PanelHeading eyebrow={t("connector.installEyebrow")} title={t("m1588")} id="connector-install-title" />
           <p>{tx("m1589")}</p>
 <a className="button button-primary" href="/connectors/unirouter/setup">{tx("m1590")}</a>
 <details><summary>{tx("m1591")}</summary>
-          <button className="button button-primary" disabled={creating} onClick={() => void createInvitation()}>
+          <button className="button button-primary" disabled={creating || list.loading} onClick={() => void createInvitation()}>
             {creating ? t("m1592") : t("m1593")}
           </button>
-          {invitation ? (
+          {invitation && !list.loading ? (
             <div className="connector-invitation" role="status">
               <strong>{tx("m1594")}</strong>
               <span>{tx("m1595", { value0: formatDateTime(invitation.expires_at) })}</span>
@@ -577,15 +600,16 @@ export function ConnectorsPage({ session, navigate }: PageProps) {
           </details>
         </section>
       ) : null}
-      {error ? <ErrorState error={error} /> : null}
-      {!result ? <LoadingBlock label={t("m1596")} /> : null}
-      {result?.items.length === 0 && installations.length === 0 ? (
+      {writeError ? <ErrorState error={writeError} /> : null}
+      {list.error ? <ErrorState error={list.error} onRetry={canRetryRead(list.error) ? () => void list.refresh() : undefined} /> : null}
+      {list.loading ? <LoadingBlock label={t("m1596")} /> : null}
+      {!list.loading && result?.items.length === 0 && installations.length === 0 ? (
         <EmptyState
           title={t("m1597")}
           description={t("m1598")}
         />
       ) : null}
-      <div className="connector-detail-list">
+      {result && (installations.length > 0 || result.items.length > 0) ? <div className="connector-detail-list">
         {installations.map((installation) => (
           <article className={`panel connector-detail connector-installation connector-installation-${installation.status}`} key={installation.installation_id}>
             <header>
@@ -598,27 +622,24 @@ export function ConnectorsPage({ session, navigate }: PageProps) {
               <section className="connector-column">
                 <h3>{tx("m1607")}</h3>
                 <dl>
-                  <Fact label="Desired" value={installation.desired_state} />
-                  <Fact label="Observed" value={installation.observed_state} />
-                  <Fact label="Project" value={installation.project_id || t("m1608")} />
-                  <Fact label="Last agent sync" value={installation.last_agent_seen_at ? formatDateTime(installation.last_agent_seen_at) : t("m1609")} />
+                  <Fact label={t("connector.details.desired")} value={installation.desired_state} />
+                  <Fact label={t("connector.details.observed")} value={installation.observed_state} />
+                  <Fact label={t("connector.details.project")} value={installation.project_id || t("m1608")} />
                 </dl>
               </section>
               <section className="connector-column">
                 <h3>{tx("m1610")}</h3>
                 <dl>
-                  <Fact label="Requested" value={installation.requested_event_scope.join(", ")} />
-                  <Fact label="Final" value={installation.final_event_scope?.join(", ") || t("m1599")} />
-                  <Fact label="Reason" value={installation.status_reason_code || "—"} />
+                  <Fact label={t("connector.details.requestedScope")} value={installation.requested_event_scope.join(", ")} />
+                  <Fact label={t("connector.details.approvedScope")} value={installation.final_event_scope?.join(", ") || t("m1599")} />
+                  <Fact label={t("connector.details.reasonCode")} value={installation.status_reason_code || "—"} />
                 </dl>
               </section>
             </div>
             <p className="boundary-note">{tx("m1611")}</p></details>
           </article>
         ))}
-      </div>
-      <div className="connector-detail-list">
-        {result?.items.map((item) => (
+        {result.items.map((item) => (
           <article className="panel connector-detail" key={item.connector_key}>
             <header>
               <div><span className={`trust-state trust-${item.trust_state}`}>{item.trust_state}</span><h2>{item.source_display_name}</h2></div>
@@ -628,29 +649,29 @@ export function ConnectorsPage({ session, navigate }: PageProps) {
               <section className="connector-column">
                 <h3>{tx("m1612")}</h3>
                 <dl>
-                  <Fact label="Source" value={`${item.source_type} · ${item.source_status}`} />
-                  <Fact label="Manifest" value={item.manifest_active ? "active" : "inactive"} />
-                  <Fact label="Fidelity" value={item.fidelity_level} />
-                  <Fact label="Payload" value={item.payload_behavior} />
-                  <Fact label="Idempotency" value={item.idempotency_strategy} />
+                  <Fact label={t("connector.details.source")} value={`${item.source_type} · ${item.source_status}`} />
+                  <Fact label={t("connector.details.manifest")} value={item.manifest_active ? t("connector.details.manifestActive") : t("connector.details.manifestInactive")} />
+                  <Fact label={t("connector.details.fidelity")} value={item.fidelity_level} />
+                  <Fact label={t("connector.details.payload")} value={item.payload_behavior} />
+                  <Fact label={t("connector.details.idempotency")} value={item.idempotency_strategy} />
                 </dl>
               </section>
               <section className="connector-column">
                 <h3>{tx("m1613")}</h3>
                 <dl>
-                  <Fact label="Worker" value={item.checkpoint.worker_status} />
-                  <Fact label="Import" value={item.checkpoint.import_status} />
-                  <Fact label="Checkpoint epoch" value={String(item.checkpoint.epoch)} />
-                  <Fact label="Pages" value={String(item.checkpoint.pages_committed)} />
-                  <Fact label="Committed" value={String(item.checkpoint.items_committed)} />
-                  <Fact label="Duplicate no-op" value={String(item.checkpoint.duplicate_noop)} />
+                  <Fact label={t("connector.details.worker")} value={item.checkpoint.worker_status} />
+                  <Fact label={t("connector.details.ingest")} value={item.checkpoint.import_status} />
+                  <Fact label={t("connector.details.checkpointEpoch")} value={String(item.checkpoint.epoch)} />
+                  <Fact label={t("connector.details.pages")} value={String(item.checkpoint.pages_committed)} />
+                  <Fact label={t("connector.details.items")} value={String(item.checkpoint.items_committed)} />
+                  <Fact label={t("connector.details.duplicates")} value={String(item.checkpoint.duplicate_noop)} />
                 </dl>
               </section>
               <section className="connector-column digest-list">
                 <h3>{tx("m1614")}</h3>
                 <dl>
-                  <Fact label="Cursor" value={item.checkpoint.cursor_present ? item.checkpoint.cursor_digest || "digest unavailable" : "absent"} />
-                  <Fact label="High-watermark" value={item.checkpoint.high_watermark_present ? item.checkpoint.high_watermark_digest || "digest unavailable" : "absent"} />
+                  <Fact label={t("connector.details.cursor")} value={item.checkpoint.cursor_present ? item.checkpoint.cursor_digest || t("connector.details.digestUnavailable") : t("connector.details.positionAbsent")} />
+                  <Fact label={t("connector.details.watermark")} value={item.checkpoint.high_watermark_present ? item.checkpoint.high_watermark_digest || t("connector.details.digestUnavailable") : t("connector.details.positionAbsent")} />
                 </dl>
               </section>
             </div>
@@ -658,7 +679,7 @@ export function ConnectorsPage({ session, navigate }: PageProps) {
             <button className="button" onClick={() => navigate(`/executions?source_system_id=${encodeURIComponent(item.source_system_id)}`)}>{tx("m1615")}</button>
           </article>
         ))}
-      </div>
+      </div> : null}
     </div>
   );
 }
@@ -669,41 +690,67 @@ export function DiscoveryPage({ session, navigate }: PageProps) {
   const [alerts, setAlerts] = useState<InvestigationAlert[]>([]);
   const [cases, setCases] = useState<InvestigationCase[]>([]);
   const [asOf, setAsOf] = useState("");
-  const [error, setError] = useState<unknown>();
+  const [readError, setReadError] = useState<unknown>();
+  const [alertError, setAlertError] = useState<unknown>();
+  const [caseError, setCaseError] = useState<unknown>();
+  const [linkError, setLinkError] = useState<unknown>();
   const [loading, setLoading] = useState(true);
   const [alertTargets, setAlertTargets] = useState<Record<string, string>>({});
+  const canLink = session.session.permissions.includes("investigation.write");
+
   useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
+    setReadError(undefined);
+    setAlertError(undefined);
+    setCaseError(undefined);
+    setLinkError(undefined);
+    setAlertTargets({});
     async function load() {
       try {
         const hypothesisResult = await investigationAPI.listHypotheses(undefined, controller.signal);
-        const [alertResult, caseResult] = await Promise.all([
+        if (controller.signal.aborted) return;
+        const [alertResult, caseResult] = await Promise.allSettled([
           investigationAPI.listAlerts(hypothesisResult.as_of, controller.signal),
-          workspaceAPI.listCases(controller.signal),
+          canLink ? workspaceAPI.listCases(controller.signal) : Promise.resolve(undefined),
         ]);
         if (controller.signal.aborted) return;
+
         setHypotheses(hypothesisResult.items);
-        setAlerts(alertResult.items);
-        setCases(caseResult.items.filter((item) => item.status === "open"));
         setAsOf(hypothesisResult.as_of);
+        if (alertResult.status === "fulfilled") setAlerts(alertResult.value.items);
+        else {
+          setAlerts([]);
+          setAlertError(alertResult.reason);
+        }
+        if (caseResult.status === "fulfilled") {
+          setCases(caseResult.value?.items.filter((item) => item.status === "open") ?? []);
+        } else {
+          setCases([]);
+          setCaseError(caseResult.reason);
+        }
       } catch (caught) {
-        if (!controller.signal.aborted) setError(caught);
+        if (!controller.signal.aborted) {
+          setAsOf("");
+          setReadError(caught);
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
     void load();
     return () => controller.abort();
-  }, []);
+  }, [canLink]);
 
   async function link(alertID: string, caseID: string) {
-    if (!caseID) return;
+    if (!canLink || !caseID) return;
+    setLinkError(undefined);
     try {
       const linked = await workspaceAPI.linkAlertToCase(alertID, caseID, session.csrf_token);
       setAlerts((current) => current.map((item) => item.id === alertID ? { ...item, case_id: linked.case_id, state: linked.alert_state } : item));
       setAlertTargets((current) => ({ ...current, [alertID]: "" }));
     } catch (caught) {
-      setError(caught);
+      setLinkError(caught);
     }
   }
 
@@ -714,10 +761,10 @@ export function DiscoveryPage({ session, navigate }: PageProps) {
         title={t("m1616")}
         description={t("m1617")}
       />
-      {asOf ? <p className="snapshot-line">Fixed snapshot <code>{formatCanonicalTime(asOf)}</code></p> : null}
-      {error ? <ErrorState error={error} /> : null}
+      {asOf ? <p className="snapshot-line">{tx("discoveryCutoff")} <code>{formatCanonicalTime(asOf)}</code></p> : null}
+      {readError ? <ErrorState error={readError} /> : null}
       {loading ? <LoadingBlock label={t("m1618")} /> : null}
-      {!loading ? <div className="discovery-grid">
+      {!loading && !readError ? <div className="discovery-grid">
         <section className="panel">
           <PanelHeading eyebrow="Hypotheses" title={t("m1619")} id="hypotheses-title" />
           <div className="hypothesis-list">
@@ -750,7 +797,10 @@ export function DiscoveryPage({ session, navigate }: PageProps) {
           </div>
         </section>
         <section className="panel">
-          <PanelHeading eyebrow="Alerts" title={t("m1623")} id="alerts-title" />
+          <PanelHeading eyebrow={t("discoveryAlerts")} title={t("m1623")} id="alerts-title" />
+          {alertError ? <ErrorState error={alertError} compact /> : null}
+          {caseError ? <ErrorState error={caseError} compact /> : null}
+          {linkError ? <ErrorState error={linkError} compact /> : null}
           <div className="alert-list">
             {alerts.map((item) => (
               <article key={item.id} className={`alert-item alert-${item.severity}`}>
@@ -758,7 +808,7 @@ export function DiscoveryPage({ session, navigate }: PageProps) {
                 <p>{item.state} · {formatDateTime(item.observed_at)}</p>
                 {item.case_id ? (
                   <button className="text-link" onClick={() => navigate(`/cases/${item.case_id}`)}>{tx("m1624")}</button>
-                ) : (
+                ) : canLink && !caseError ? (
                   <div className="alert-case-link">
                     <label>{t("m1625")}<select
                         value={alertTargets[item.id] ?? ""}
@@ -774,10 +824,10 @@ export function DiscoveryPage({ session, navigate }: PageProps) {
                       onClick={() => void link(item.id, alertTargets[item.id] ?? "")}
                     >{tx("m1627")}</button>
                   </div>
-                )}
+                ) : null}
               </article>
             ))}
-            {alerts.length === 0 ? <p className="quiet-copy">{tx("m1628")}</p> : null}
+            {!alertError && alerts.length === 0 ? <p className="quiet-copy">{tx("m1628")}</p> : null}
           </div>
         </section>
       </div> : null}
@@ -871,26 +921,6 @@ export function ServiceIdentitiesPage({ session }: PageProps) {
   );
 }
 
-function PageHeader({
-  eyebrow,
-  title,
-  description,
-  action,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  action?: ReactNode;
-}) {
-  useLocale();
-  return (
-    <header className="page-header">
-      <div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>
-      {action ? <div className="page-header-action">{action}</div> : null}
-    </header>
-  );
-}
-
 function PanelHeading({
   eyebrow,
   title,
@@ -928,23 +958,22 @@ function TechnicalReference({ label, value }: { label: string; value: string }) 
 
 function ExecutionSelector({
   label,
-  id,
-  asOf,
-  onID,
-  onAsOf,
+  value,
+  onChange,
+  disabled,
 }: {
   label: string;
-  id: string;
-  asOf: string;
-  onID: (value: string) => void;
-  onAsOf: (value: string) => void;
+  value: ExecutionComparisonInput;
+  onChange: (value: ExecutionComparisonInput) => void;
+  disabled: boolean;
 }) {
   useLocale();
   return (
-    <fieldset>
+    <fieldset disabled={disabled}>
       <legend>{label}</legend>
-      <label>Execution ID<input value={id} onChange={(event) => onID(event.target.value)} placeholder="xe1_…" /></label>
-      <label>as_of (UTC RFC3339)<input value={asOf} onChange={(event) => onAsOf(event.target.value)} placeholder="2026-07-31T02:00:00Z" /></label>
+      <label>Execution ID<input required value={value.executionID} onChange={(event) => onChange({ ...value, executionID: event.target.value })} placeholder="xe1_…" /></label>
+      <label>as_of (UTC RFC3339)<input required value={value.asOf} onChange={(event) => onChange({ ...value, asOf: event.target.value })} placeholder="YYYY-MM-DDTHH:mm:ssZ" /></label>
+      <label>{tx("compareEvidenceRevision")}<input value={value.evidenceRevision} onChange={(event) => onChange({ ...value, evidenceRevision: event.target.value })} aria-describedby="comparison-evidence-help" /></label>
     </fieldset>
   );
 }

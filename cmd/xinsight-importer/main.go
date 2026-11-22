@@ -907,7 +907,7 @@ func runUniRouterGateACheck(args []string) error {
 			return err
 		}
 		report.Persistence = &persistReport
-		readback, err := readBackRequests(ctx, store, snapshotFile.RequestIDs, *readbackLimit)
+		readback, err := readBackRequests(ctx, store, importReport.SourceSystemID, snapshotFile.RequestIDs, *readbackLimit)
 		if err != nil {
 			return err
 		}
@@ -1183,17 +1183,14 @@ func parseOptionalRFC3339(value string) (*time.Time, error) {
 	return &parsed, nil
 }
 
-func readBackRequests(ctx context.Context, store *db.EvidenceStore, requestIDs []string, limit int) ([]gateAReadback, error) {
+func readBackRequests(ctx context.Context, store *db.EvidenceStore, sourceSystemID string, requestIDs []string, limit int) ([]gateAReadback, error) {
 	readback := make([]gateAReadback, 0, len(requestIDs))
 	for _, requestID := range requestIDs {
-		events, err := store.ListEvidenceEventsByRequestID(ctx, requestID, limit)
+		result, err := store.ReadSourceRequestEvidence(ctx, sourceSystemID, requestID, limit)
 		if err != nil {
 			return nil, err
 		}
-		gaps, err := store.ListCaptureGapsByRequestID(ctx, requestID, limit)
-		if err != nil {
-			return nil, err
-		}
+		events, gaps := result.Events, result.Gaps
 		row := gateAReadback{
 			RequestID:         requestID,
 			EventCount:        len(events),
