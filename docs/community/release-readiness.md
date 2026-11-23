@@ -1,12 +1,13 @@
 # Public release and acceptance status
 
-As of **2026-11-15**, X-Insight source is public under Apache-2.0. [FPV25 / schema 47](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) is published and owner-signed. Use the [immutable FPV25 authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) to authenticate the download.
+X-Insight source is public under Apache-2.0. Authenticate [FPV27 / schema 49](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27) with the immutable authority linked on the canonical release. [中文安装与校验](releases/v0.2.0-dev.fpv27.md#中文速查)。
 
 Start with [install → choose your password → sign in → connect UR → confirm access and the first fact](getting-started.md). Source-building and historical qualification recipes are a separate [contributor entry](development.md).
 
 | Surface | Verified state | Boundary |
 | --- | --- | --- |
 | Public source | Canonical `foigent/x-insight` is public; Apache-2.0 covers project-owned product source | Dependency licenses, authentication, grants and tenant boundaries still apply |
+| Signed FPV27 | [FPV27 release record](releases/v0.2.0-dev.fpv27.md). Exact product CI and protocol, eleven Linux test-signing scenarios, anonymous cold source build and owner-signed reconstruction from FPV25 passed | See the canonical release for publication identity and formal consumer evidence |
 | Signed FPV25 | [FPV25 release record](releases/v0.2.0-dev.fpv25.md), product source `b77fa1d7cff40a9adafe495d1c4951632819a4d3`. Exact product CI and protocol, ten Linux qualification lanes, owner signature, and anonymous signed reconstruction and extraction from the exact FPV24 package passed | [Public release and 12 assets](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) and [immutable release authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) |
 | FPV25 installed host | Native preserving FPV24→FPV25 upgrade with a private backup and verified isolated restore. Schema 47, original deployment, existing account and grant digests, and service readiness verified | Original Ubuntu 22.04 amd64/container-PG16 host. Current owner/reader browser and installed UR 1.15.7→XI FPV25 joint acceptance are tracked separately and remain pending at this checkpoint |
 | Signed FPV24 | [FPV24 release record](releases/v0.2.0-dev.fpv24.md), product source `fa1e64e1d1259c3b7d631baa7794952b0ae72d93`. Exact main CI/protocol, nine Linux lanes, owner signature and byte-identical reconstruction verified | Consumer trust is pinned to the [immutable authority record](https://github.com/foigent/x-insight/blob/9c83fba272b165edcf88134eece5a533f5ab389f/docs/community/release-authority.json) |
