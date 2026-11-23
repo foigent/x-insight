@@ -1,15 +1,21 @@
 # Public release and acceptance status
 
-X-Insight source is public under Apache-2.0. Authenticate [FPV27 / schema 49](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27) with the immutable authority linked on the canonical release. [中文安装与校验](releases/v0.2.0-dev.fpv27.md#中文速查)。
+X-Insight source is public under Apache-2.0. Authenticate [FPV27 / schema 49](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27) with the [fixed FPV27 authority](https://github.com/foigent/x-insight/blob/c93d5d97c80d8b24d9cf6a7f95f1303211626263/docs/community/release-authority.json) linked on the canonical release. [中文安装与校验](releases/v0.2.0-dev.fpv27.md#中文速查)。
 
 Start with [install → choose your password → sign in → connect UR → confirm access and the first fact](getting-started.md). Source-building and historical qualification recipes are a separate [contributor entry](development.md).
+
+**FPV27 packaged manual erratum · FPV27 随包手册勘误**
+
+Both packaged manuals are `0.2.0-dev.fpv27/manual-r1`. The FPV26 label in the schema and rollback paragraph is a typo for FPV27. The rest of that paragraph is correct. FPV27 requires schema 49 and disables application rollback. For recovery, use a verified backup and the approved restore procedure. The qualification table reflects the source snapshot frozen on 2026-11-22 at 14:11:28 UTC, before publication. See the release status for acceptance completed after that snapshot.
+
+签名包内的中英文手册均为 `0.2.0-dev.fpv27/manual-r1`。schema 和回退段落里的 FPV26 是版号笔误，应为 FPV27。该段其余内容正确。FPV27 要求 schema 49，禁用应用回退，恢复时须使用已核验的备份并按获批流程执行。手册验收表基于北京时间 2026 年 11 月 22 日 22:11:28 冻结的签前源码快照。此后的验收结果见发布状态。
 
 | Surface | Verified state | Boundary |
 | --- | --- | --- |
 | Public source | Canonical `foigent/x-insight` is public; Apache-2.0 covers project-owned product source | Dependency licenses, authentication, grants and tenant boundaries still apply |
-| Signed FPV27 | [FPV27 release record](releases/v0.2.0-dev.fpv27.md). Exact product CI and protocol, eleven Linux test-signing scenarios, anonymous cold source build and owner-signed reconstruction from FPV25 passed | See the canonical release for publication identity and formal consumer evidence |
-| Signed FPV25 | [FPV25 release record](releases/v0.2.0-dev.fpv25.md), product source `b77fa1d7cff40a9adafe495d1c4951632819a4d3`. Exact product CI and protocol, ten Linux qualification lanes, owner signature, and anonymous signed reconstruction and extraction from the exact FPV24 package passed | [Public release and 12 assets](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) and [immutable release authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) |
-| FPV25 installed host | Native preserving FPV24→FPV25 upgrade with a private backup and verified isolated restore. Schema 47, original deployment, existing account and grant digests, and service readiness verified | Original Ubuntu 22.04 amd64/container-PG16 host. Current owner/reader browser and installed UR 1.15.7→XI FPV25 joint acceptance are tracked separately and remain pending at this checkpoint |
+| Signed FPV27 | Published 2026-11-23 (UTC). The [FPV27 release record](releases/v0.2.0-dev.fpv27.md) binds the signed package. Exact product CI and protocol, eleven Linux test-signing scenarios, anonymous cold source build and byte-identical reconstruction from owner-signed FPV25 passed | Owner-signed fresh installation in [one public qualification run](https://github.com/foigent/x-insight/actions/runs/45122118301). Ubuntu 22.04 with container PostgreSQL 16 — passed. Ubuntu 24.04 with native PostgreSQL 16 — passed. Original-host upgrade acceptance is tracked separately. |
+| Historical FPV25 (2026-11-14 UTC) | [FPV25 release record](releases/v0.2.0-dev.fpv25.md), product source `b77fa1d7cff40a9adafe495d1c4951632819a4d3`. Exact product CI and protocol, ten Linux qualification lanes, owner signature, and anonymous signed reconstruction and extraction from the exact FPV24 package passed | [Public release and 12 assets](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) and [immutable release authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) |
+| FPV25 installed host | Native preserving FPV24→FPV25 upgrade with a private backup and verified isolated restore. Schema 47, original deployment, existing account and grant digests, and service readiness verified | Original Ubuntu 22.04 amd64/container-PG16 host. The owner/reader browser and installed UR 1.15.7→XI FPV25 joint results were tracked separately at the FPV25 checkpoint |
 | Signed FPV24 | [FPV24 release record](releases/v0.2.0-dev.fpv24.md), product source `fa1e64e1d1259c3b7d631baa7794952b0ae72d93`. Exact main CI/protocol, nine Linux lanes, owner signature and byte-identical reconstruction verified | Consumer trust is pinned to the [immutable authority record](https://github.com/foigent/x-insight/blob/9c83fba272b165edcf88134eece5a533f5ab389f/docs/community/release-authority.json) |
 | FPV24 installed host | Native preserving FPV23→FPV24 upgrade with backup and isolated restore on Ubuntu 22.04 amd64 with pinned container PostgreSQL 16 | Original host and topology. Earlier native empty-database installation was FPV20 |
 | UR 1.15.6 → XI FPV24 | Original connection recovered and completed a bounded sync. Owner and ordinary reader read the granted project in Runtime. Automatic credential rotation and communication after rotation passed | That sync returned zero new items. Real first-fact arrival was separately observed on the earlier preview |
@@ -29,7 +35,7 @@ The exact FPV21 package, verifier, public trust and hashes are in the [FPV21 rec
 
 ## What remains after connection acceptance
 
-For a new connection, use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair) with current sessions and the intended source/project configuration. Preserve an existing accepted connection rather than creating another invitation to obtain data. The existing pair has matching completed-request metadata and an authorized owner reading. Native holder recovery, true reader login, exact project reading and foreign-project denial are now verified independently. Complete account-identification and legitimate-denial UI fixes and the remaining body-refusal boundary; keep the partial control-step result and unverified acknowledgement explicit. Current protocol pins and historical P3 results do not substitute for these installed-pair checks.
+For a new connection, use the normal [two-administrator route](getting-started.md#connect-unirouter-and-verify-the-pair) with current sessions and the intended source/project configuration. Preserve an existing accepted connection rather than creating another invitation to obtain data. The historical FPV21 and FPV24 results above cover authorized metadata, normal owner and reader access, and foreign-project denial. See the historical rows for the partial control run, acknowledgement and content-verification limits. For FPV27, verify the same source and request with the current grants on the installed pair. Captured-body byte denial on the installed pair remains a separate check.
 
 ## Why the repository retains technical material
 
@@ -61,6 +67,6 @@ Linux or installed UR/XI evidence. See the [cold-build scope](development.md).
 
 Public dependency access uses exact pinned public repositories with read-only job credentials. Release-relevant PRs retain current signed-artifact/fresh-install gates and negative authorization checks. Documentation routing is determined by the existing CI classifier; this document does not change it. `Backend Tests` remains the protected aggregate check.
 
-The [signed-distribution guide](signed-distribution.md) covers the current FPV25 preview and retains the maintainer procedure separately. The frozen rc13 and earlier preview records retain their original scope.
+The [signed-distribution guide](signed-distribution.md) covers the published FPV27 preview. It also retains the separate maintainer procedure. The frozen rc13 and earlier preview records retain their original scope.
 
 Private build paths, credentials, raw customer content and internal operations evidence do not belong in the public repository.

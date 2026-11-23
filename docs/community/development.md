@@ -162,7 +162,7 @@ scripts/build-signed-release.sh output/current-preparation --profile=development
 
 Choose a new output path. `--dry-run` checks release preconditions without looking up a signing key. `--prepare-only` builds an unsigned, non-installable preparation and stops before signing. A release requires a separately authorized trust authority and exact-artifact verification. CI-generated ephemeral keys and packages are qualification outputs. Public downloadability does not establish owner release authority or authorize customer installation.
 
-For an approved managed distribution, follow [signed distribution and installation](signed-distribution.md) for the current FPV25 preview. See [current status](release-readiness.md) for version-specific installed and joint acceptance.
+For an approved managed distribution, follow [signed distribution and installation](signed-distribution.md). The [release status](release-readiness.md) links the current preview, its fixed authority and the installation and integration evidence for each release.
 
 ## Connect UniRouter and verify the pair
 

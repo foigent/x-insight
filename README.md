@@ -32,7 +32,7 @@ The UI defaults to English, with a persistent Simplified Chinese selector. The s
 
 1. Use the [packaged-preview walkthrough](docs/community/getting-started.md). It explains the verified download, host preparation, and native first-owner activation after a new installation; each holder sets their own password. A package user does not need Go, Node.js, or a source build.
 2. Follow [normal UniRouter connection and first-fact checks](docs/community/getting-started.md#connect-unirouter-and-verify-the-pair). Each administrator confirms their own installation and grants; connection management does not grant every reader access.
-3. Keep the [release-matched manual](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/en-US/index.md), [FPV25 release record](docs/community/releases/v0.2.0-dev.fpv25.md), and [data-handling boundaries](docs/community/data-handling.md) alongside that walkthrough.
+3. Read the [FPV27 manual](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md) or open the manual for your installed version at `/manual/en-US/`. See the [data-handling boundaries](docs/community/data-handling.md) and the [historical FPV25 release and upgrade record](docs/community/releases/v0.2.0-dev.fpv25.md).
 
 For source builds, synthetic fixtures, database/browser tests, and historical pairing recipes, use the separate [development guide](docs/community/development.md). Its pinned build tools and qualification fixtures are contributor prerequisites, not extra customer installation steps.
 

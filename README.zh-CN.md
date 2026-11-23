@@ -10,9 +10,9 @@ X-Insight 可独立用于受支持的数据导入、工作活动报告、调查�
 
 ## 状态与支持范围
 
-源码已按 **Apache-2.0 公开**。已发布预览版为 **0.2.0-dev.fpv25，schema 47**：[签名预览包](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25)与[安装入口](docs/community/getting-started.md)。完整产品源码包括访问控制、调查、工作台、连接器与受管安装代码，没有另一个付费功能树。认证、来源/项目授权、发布信任与租户边界继续强制执行。
+源码已按 **Apache-2.0 公开**。从[当前签名预览与验收状态](docs/community/release-readiness.md)查看可下载版本、数据库 schema 和验收进度，再按[安装指南](docs/community/getting-started.md)操作。完整产品源码包括访问控制、调查、工作台、连接器与受管安装代码，没有另一个付费功能树。认证、来源/项目授权、发布信任与租户边界继续强制执行。
 
-FPV25 是面向**单部署租户**的开发预览版。签名包通过 Linux 验证，并在原 Ubuntu 22.04 amd64／固定容器 PostgreSQL 16 主机完成 FPV24→FPV25 保留数据升级，含备份和隔离恢复。核验下载时使用[固定的发布授权记录](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json)。原 owner、普通 reader 的新版本页面和 UR→XI 连续使用另行验收，见[状态矩阵](docs/community/release-readiness.md)。
+当前开发预览面向**单部署租户**。核验下载时，从状态页进入对应发布页，并使用发布页链接的固定授权记录。原机升级、owner 与普通 reader 页面及 UR→XI 连续使用的实测结果见[状态矩阵](docs/community/release-readiness.md)。
 
 UI 默认英文，可以切换并保存简体中文偏好。同版离线手册位于 `/manual/en-US/` 与 `/manual/zh-CN/`。切换语言不改变 API 代码、来源身份、原始证据、币种或已保存阅读范围。
 
@@ -32,7 +32,7 @@ UI 默认英文，可以切换并保存简体中文偏好。同版离线手册�
 
 1. 使用[签名预览包安装路线](docs/community/getting-started.md)：先核下载与主机条件，新安装完成后通过原生入口激活首个 owner，由账号持有人自行设置密码。使用已发布包不需要 Go、Node.js 或源码构建。
 2. 按[普通接入与首条事实检查](docs/community/getting-started.md#connect-unirouter-and-verify-the-pair)完成两端管理员各自的确认；连接管理权限不等于每个普通用户的数据权限。
-3. 同时保留[中文手册](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/zh-CN/current.md)、[FPV25 发布记录](docs/community/releases/v0.2.0-dev.fpv25.md)和[数据处理边界](docs/community/data-handling.md)。
+3. 安装后从 `/manual/zh-CN/` 阅读同版中文手册。另见[数据处理边界](docs/community/data-handling.md)和[历史 FPV25 发布及升级记录](docs/community/releases/v0.2.0-dev.fpv25.md)。
 
 源码构建、合成夹具、数据库／浏览器检查及历史配对配方放在次级[开发指南](docs/community/development.md)。这些是贡献者验证入口，不是额外的客户安装步骤。
 
