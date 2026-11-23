@@ -4,7 +4,7 @@ The [FPV27 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev
 
 Package users start with the [five-step installation route](getting-started.md) and [exact FPV27 record](releases/v0.2.0-dev.fpv27.md). They do not build the source, select a new signing authority, create a release key or run historical qualification fixtures. This page keeps the existing low-level commands and separate maintainer procedure.
 
-Authenticate the immutable authority commit linked from the [FPV27 release page](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27). Verify the package, release verifier and trust hashes. The product source is `4d2f53b048f63439fff59f6194946953732ea106`. The [FPV25 record](releases/v0.2.0-dev.fpv25.md) and earlier previews retain their own evidence.
+Use the [fixed FPV27 authority](https://github.com/foigent/x-insight/blob/c93d5d97c80d8b24d9cf6a7f95f1303211626263/docs/community/release-authority.json) linked from the [FPV27 release page](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27). Check the package, release verifier and public trust hashes against that record. The product source is `4d2f53b048f63439fff59f6194946953732ea106`. The [FPV25 record](releases/v0.2.0-dev.fpv25.md) and earlier previews retain their own evidence.
 
 ## Consumer: verify, extract, check, then install
 
@@ -13,11 +13,11 @@ store. Check their actual hashes and key identity against the authority record
 before executing the verifier. The consumer uses the standalone CLI and does
 not need the source checkout, Go, Node.js or npm to perform these steps.
 
-The following commands use the exact FPV25 product commit.
+The following commands use the exact FPV27 product commit. The examples place the downloaded verifier at `/approved/xinsight-release` and its verified public trust file at `/approved/public-trust.json`. Prepare the installed trust file separately as described in the installation manual before running the controller.
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit 4d2f53b048f63439fff59f6194946953732ea106 --expected-version 0.2.0-dev.fpv27
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit 4d2f53b048f63439fff59f6194946953732ea106 --expected-version 0.2.0-dev.fpv27
+/approved/xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /approved/public-trust.json --expected-commit 4d2f53b048f63439fff59f6194946953732ea106 --expected-version 0.2.0-dev.fpv27
+/approved/xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /approved/public-trust.json --destination /approved/new-staging --expected-commit 4d2f53b048f63439fff59f6194946953732ea106 --expected-version 0.2.0-dev.fpv27
 sudo /approved/new-staging/bin/xinsightctl version --json
 ```
 
@@ -29,7 +29,7 @@ Follow the release-matched [installation and access manual](https://github.com/f
 ([中文](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/zh-CN/current.md#安装与账户)). The managed controller supports
 Ubuntu 22.04/24.04 amd64 with systemd and a dedicated loopback PostgreSQL 16
 database. Its checks require four distinct database roles, protected DSN files,
-an approved service account, local TLS and the exact trust file. A new FPV25
+an approved service account, local TLS and the exact trust file. A new FPV27
 install needs no account file or default password; first-owner activation follows
 installation through the [native private handoff](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/accounts.md#first-owner-and-existing-installations).
 The current Ubuntu 24.04 native PostgreSQL profile still requires Docker Compose
@@ -48,10 +48,12 @@ On Ubuntu 22.04 or 24.04, provision the documented system dependencies and a
 dedicated loopback PostgreSQL 16 database. The distributed Compose profile uses
 a pinned PostgreSQL container; it does not replace native systemd application
 installation. The matrix separates runtime prerequisites from the previously
-documented Ubuntu 24.04/native-PG validation environment. Exact FPV25 Linux qualification and
-one existing Ubuntu 22.04/container-PG16 host's preserving FPV24→FPV25 upgrade
-have been accepted; the earlier FPV20 empty-database installation is a separate
-historical result. None of these results qualifies every declared topology.
+documented Ubuntu 24.04/native-PG validation environment. FPV27 passed eleven
+Linux qualification scenarios with CI test signing and byte-identical reconstruction
+from the exact owner-signed FPV25 archive. The [FPV27 status](release-readiness.md) tracks
+formal-package fresh installation and original-host acceptance separately. The historical
+[FPV25 preview](releases/v0.2.0-dev.fpv25.md), published 2026-11-14 (UTC), records the
+accepted FPV24→FPV25 preserving upgrade on one Ubuntu 22.04/container-PG16 host.
 
 Use an empty database and unused XI application paths/unit names for a fresh
 install. Where XI already exists, use a supported upgrade or first back up and
@@ -82,7 +84,7 @@ In the earlier qualification on 2026-10-27, connection, Runtime, enrollment, and
 
 ## Maintainers: preparing a future release
 
-The following procedure remains available to contributors and release operators. It is not a list of unresolved choices for a user consuming the published FPV25 preview.
+This procedure is for contributors and release operators preparing later releases. Users of the published FPV27 preview follow the installation route above.
 
 ### Select authority and qualify the exact source
 
@@ -115,13 +117,14 @@ untrusted package cannot establish that authority. Consumers may instead build
 the verifier from the independently authenticated exact source and pinned
 toolchain. Choosing a checksum is a trust decision, not signature verification.
 
-The owner-approved public key and XI issuance window are recorded in
-[release authority](release-authority.json) and [public trust](trusted-release-keys.json).
-The XI window is 2026-10-18T10:42:42.832Z through 2026-11-17T10:42:42.832Z;
-it asserts no earlier UR activation or original key-generation date. The real
-source timestamp of the formal candidate must fall in this window. The
-FPV25 artifact is issued and qualified within the [dated accepted scope](release-readiness.md);
-key custody and future issuance retain their separate requirements.
+The [fixed FPV27 authority](https://github.com/foigent/x-insight/blob/c93d5d97c80d8b24d9cf6a7f95f1303211626263/docs/community/release-authority.json) records the published trust file and owner-approved publisher
+`ed25519:sha256:765f38f8a4a4f38bf7e94aa3236c28f74dccac56431ab3a1d035a880f6086116`.
+For that record, the inclusive window runs from `2026-10-18T10:42:42.832Z` through
+`2026-11-22T14:11:28Z`. FPV27’s signed manifest `created_at` is the exact upper
+endpoint. The [historical FPV25 authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) records
+the same publisher with its original end of `2026-11-17T10:42:42.832Z`. These
+windows describe the respective XI release records. Key custody and future
+issuance retain their separate requirements.
 A new owner-only private representation records its actual creation time and
 reuses the same material; never backfill the unknown original material birthday.
 
@@ -130,7 +133,7 @@ source plus the owner's direct fingerprint attestation. Consumers pin the real
 source and authority-record commits, and check the public trust/bootstrap hashes
 before execution, or build a verifier from that authenticated exact source.
 For a future release, add its real package/bootstrap hashes only after
-production and independent review; the FPV25 record contains them. A record cannot embed its own unknown commit.
+production and independent review. Follow the fixed authority link on the release page to find them.
 Source and Release still share an owner account: this model does not claim an
 independent administrative domain or protection from complete account compromise.
 It does not require a new domain or service by default.
@@ -174,8 +177,10 @@ normal read-only admission. Missing or changed basis, an incompatible decoder
 profile, or any identity mismatch stops the delta path. Any full download is a
 separately approved use of the exact same complete artifact.
 
-The owner-reviewed delivery record must bind the standalone bootstrap and
-existing public trust store, plus a delta plan's exact SHA-256. The plan uses
+The owner-reviewed delivery record must bind the standalone bootstrap, the public
+trust store and the delta plan’s exact SHA-256. For FPV27, the
+[release record](releases/v0.2.0-dev.fpv27.md#choose-a-download-route) identifies
+the exact cached owner-signed FPV25 basis and the public trust used in staging. The plan uses
 `schema_version: xinsight.release-delta.v1`, `codec: zstd-raw-tar-v1`, and
 `target_os: linux`, `target_arch: amd64`. `basis` and `target` each carry the
 exact `commit`, `version`, and `bundle` and `raw_tar` identities. `patch`,
@@ -197,15 +202,15 @@ xinsight-release materialize-delta --plan /approved/input/delta.json \
   --plan-sha256 SHA256_REFERENCE_FROM_AUTHORITY --basis /approved/cache/basis.tar.gz \
   --patch /approved/input/payload.zst --manifest /approved/input/release-manifest.json \
   --signature /approved/input/release-manifest.sig \
-  --trust-store /etc/x-insight/trusted-release-keys.json \
+  --trust-store /approved/public-trust.json \
   --output /approved/private-staging/target.tar.gz
 ```
 
 Use an existing private staging directory. `--check` in place of `--output`
 verifies the entire reconstruction without writing a file. A materialization
 uses no installation state or network and never replaces an existing output.
-Only the verified full bundle goes to the existing `xinsightctl upgrade --check`
-and upgrade procedure. Backup, current release checks, migration, journal,
+Before the native `xinsightctl upgrade --check`, confirm that the installed trust
+accepts the exact target bundle under the site’s maintenance policy. Backup, current release checks, migration, journal,
 rollback, and recovery still belong to the native controller.
 
 A first transfer needs a full admitted bootstrap. A transport may carry it as
@@ -232,8 +237,9 @@ the accompanying license texts; keep them intact.
 
 Reuse the CLI's `xinsight.release-verify-result.v1` JSON as portable public
 verification metadata: it includes all three package hashes, key ID, version,
-commit and target. The signed manifest and exact source config bind schema 47,
-manual-r1, compatibility and the existing schema/migration digests. Publish the
+commit and target. For FPV27 the signed manifest and exact source config bind
+schema 49, manual `0.2.0-dev.fpv27/manual-r1`, compatibility and the schema and
+migration digests. Publish the
 independently authenticated bootstrap/trust hashes in the authority record.
 No new release schema or signing framework is needed for this path.
 
