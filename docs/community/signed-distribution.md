@@ -1,10 +1,10 @@
 # Signed preview: verify and install
 
-The [FPV25 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25) is the published owner-signed Linux amd64 release, with schema 47 and manual `0.2.0-dev.fpv25/manual-r1`. See the [status matrix](release-readiness.md) for installation, recovery and integration evidence.
+The [FPV27 preview](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27) is the published owner-signed Linux amd64 release, with schema 49 and manual `0.2.0-dev.fpv27/manual-r1`. See the [status matrix](release-readiness.md) for installation, recovery and integration evidence.
 
-Package users start with the [five-step installation route](getting-started.md) and [exact FPV25 record](releases/v0.2.0-dev.fpv25.md). They do not build the source, select a new signing authority, create a release key or run historical qualification fixtures. This page keeps the existing low-level commands and separate maintainer procedure.
+Package users start with the [five-step installation route](getting-started.md) and [exact FPV27 record](releases/v0.2.0-dev.fpv27.md). They do not build the source, select a new signing authority, create a release key or run historical qualification fixtures. This page keeps the existing low-level commands and separate maintainer procedure.
 
-Authenticate [the immutable FPV25 authority](https://github.com/foigent/x-insight/blob/59f65bdbdc79dd0d5fff854e09dd44b10cf398d1/docs/community/release-authority.json) and match the package, verifier, and trust hashes. The product source commit is `b77fa1d7cff40a9adafe495d1c4951632819a4d3`. The [FPV21 record](releases/v0.2.0-dev.fpv21.md) and [FPV20 record and erratum](releases/v0.2.0-dev.fpv20.md) retain their historical scope.
+Authenticate the immutable authority commit linked from the [FPV27 release page](https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27). Verify the package, release verifier and trust hashes. The product source is `4d2f53b048f63439fff59f6194946953732ea106`. The [FPV25 record](releases/v0.2.0-dev.fpv25.md) and earlier previews retain their own evidence.
 
 ## Consumer: verify, extract, check, then install
 
@@ -16,8 +16,8 @@ not need the source checkout, Go, Node.js or npm to perform these steps.
 The following commands use the exact FPV25 product commit.
 
 ```text
-xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit b77fa1d7cff40a9adafe495d1c4951632819a4d3 --expected-version 0.2.0-dev.fpv25
-xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit b77fa1d7cff40a9adafe495d1c4951632819a4d3 --expected-version 0.2.0-dev.fpv25
+xinsight-release verify --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --expected-commit 4d2f53b048f63439fff59f6194946953732ea106 --expected-version 0.2.0-dev.fpv27
+xinsight-release extract --artifact /approved/candidate.tar.gz --trust-store /etc/x-insight/trusted-release-keys.json --destination /approved/new-staging --expected-commit 4d2f53b048f63439fff59f6194946953732ea106 --expected-version 0.2.0-dev.fpv27
 sudo /approved/new-staging/bin/xinsightctl version --json
 ```
 
@@ -25,13 +25,13 @@ Verification rejects invalid/untrusted or revoked keys, a manifest timestamp
 outside the key's declared validity, and wrong commit/version/target. Extraction verifies again and creates a new
 absolute destination. Preserve the returned version/commit/manual identities.
 
-Follow the release-matched [installation and access manual](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/en-US/index.md#install-and-establish-access)
-([中文](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/zh-CN/current.md#安装与账户)). The managed controller supports
+Follow the release-matched [installation and access manual](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md#install-and-establish-access)
+([中文](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/zh-CN/current.md#安装与账户)). The managed controller supports
 Ubuntu 22.04/24.04 amd64 with systemd and a dedicated loopback PostgreSQL 16
 database. Its checks require four distinct database roles, protected DSN files,
 an approved service account, local TLS and the exact trust file. A new FPV25
 install needs no account file or default password; first-owner activation follows
-installation through the [native private handoff](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/en-US/accounts.md#first-owner-and-existing-installations).
+installation through the [native private handoff](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/accounts.md#first-owner-and-existing-installations).
 The current Ubuntu 24.04 native PostgreSQL profile still requires Docker Compose
 and inspection of the pinned PostgreSQL image; native database provisioning
 does not remove those checks. The disk check requires the manifest's compressed payload artifact size
@@ -72,7 +72,7 @@ preserved, and the database then becomes authoritative.
 
 Use UniRouter's own [installation entry](https://github.com/foigent/unirouter/blob/main/docs/community/getting-started.md) and [published release](https://github.com/foigent/unirouter/releases), matching its exact artifact and instructions. Old source observations that signed downloads were pending do not describe the current public channel. Neither XI's compiled CI fixture nor the P3 producer is a substitute for installing UR.
 
-Follow the [normal administrator and first-fact route](getting-started.md#connect-unirouter-and-verify-the-pair), [first-source manual](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/en-US/index.md#connect-the-first-source) and [ordinary-reader grants](https://github.com/foigent/x-insight/blob/b77fa1d7cff40a9adafe495d1c4951632819a4d3/docs/manual/en-US/index.md#grant-ordinary-users-the-right-scope). Prepare current administrator sessions and UR source/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field scope; keep Auto off for the initial explicit bounded synchronization.
+Follow the [normal administrator and first-fact route](getting-started.md#connect-unirouter-and-verify-the-pair), [first-source manual](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md#connect-the-first-source) and [ordinary-reader grants](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md#grant-ordinary-users-the-right-scope). Prepare current administrator sessions and UR source/project/model configuration before creating a timed invitation. Confirm exact custody, capture and field scope; keep Auto off for the initial explicit bounded synchronization.
 
 For one authorized completed request, retain matching source/request identity and the applicable usage, currency, and cost basis. Have an ordinary authorized XI user find those exact facts. Check foreign-scope denial and revocation within the acceptance scope. Confirm first-fact arrival from a matching record.
 
@@ -221,8 +221,7 @@ added to the existing delivery inventory or run directly.
 ### Publish a portable record after approval
 
 For a future publication, the owner must bind the canonical release/download
-channel and authority-record location. FPV25 uses the existing
-canonical GitHub release and original authority commit recorded above.
+channel and authority-record location. For FPV27, pin the authority commit linked on the canonical GitHub release page.
 Before any immutable release, bind its exact repository, source commit/tree,
 profile, version/channel, artifact name/size/SHA-256, manifest/payload hashes,
 signing key ID, bootstrap name/size/hash and public trust-store hash. Include

@@ -1,6 +1,6 @@
 {
   "record_kind": "Foigent X-Insight release public-key authority",
-  "state": "FPV25 owner-signed release candidate. Exact product main CI, ten Linux lanes, owner signature and local byte-identical reconstruction passed. The canonical release record publishes the immutable authority commit. Public Linux and original-host acceptance are tracked separately.",
+  "state": "FPV27 owner-signed development preview. The canonical release record pins the immutable authority commit.",
   "product": "x-insight",
   "release_version_scope": [
     "0.2.0-dev.fpv19",
@@ -9,7 +9,8 @@
     "0.2.0-dev.fpv22",
     "0.2.0-dev.fpv23",
     "0.2.0-dev.fpv24",
-    "0.2.0-dev.fpv25"
+    "0.2.0-dev.fpv25",
+    "0.2.0-dev.fpv27"
   ],
   "release_channel": "release_candidate",
   "algorithm": "ed25519",
@@ -19,8 +20,8 @@
   "UR_key_label": "ur-community-upgrade-20261011-a",
   "XI_purpose_approved_at": "2026-10-18T10:42:42.832Z",
   "not_before": "2026-10-18T10:42:42.832Z",
-  "not_after": "2026-11-17T10:42:42.832Z",
-  "time_policy": "The unchanged verifier compares the signed manifest.created_at (real source commit timestamp), not current wall-clock expiry. No original UR key birthday, activation date or lifetime is asserted.",
+  "not_after": "2026-11-22T14:11:28Z",
+  "time_policy": "The verifier compares signed manifest.created_at with the publisher key validity interval. For FPV27, the same publisher upper endpoint is the exact FPV27 product source commit time.",
   "new_XI_private_representation": "The FPV25 holder reused the existing owner Ed25519 material for this exact release. Public distribution provides the public trust and signed outputs.",
   "authority_channel": {
     "repository": "https://github.com/foigent/x-insight",
@@ -30,97 +31,97 @@
     "administrative_boundary": "Authority source and Release may share the same owner GitHub account. This model trusts that canonical owner identity; it does not assert an independent administrative domain or resistance to full owner-account compromise."
   },
   "public_trust_store": "docs/community/trusted-release-keys.json",
-  "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
+  "public_trust_store_sha256": "sha256:031e95661bf4d7d94b9d41dffcf03998d702f76c4a30afe858fc06319c48f50c",
   "formal_release": {
-    "product_version": "0.2.0-dev.fpv25",
+    "product_version": "0.2.0-dev.fpv27",
+    "source_commit": "4d2f53b048f63439fff59f6194946953732ea106",
+    "source_tree": "bd3c86dd7c7d5f7d9832afd36b06b5bb8b04374b",
     "release_channel": "release_candidate",
-    "source_commit": "b77fa1d7cff40a9adafe495d1c4951632819a4d3",
-    "source_tree": "b0353fdb32049ca2d1f1591c8dfdb15e6e378e71",
-    "canonical_release_tag": "v0.2.0-dev.fpv25",
-    "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25",
+    "canonical_release_tag": "v0.2.0-dev.fpv27",
+    "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv27",
     "publication_state": "see_canonical_release_record",
-    "bundle_name": "xinsight-v0.2.0-dev.fpv25-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3.tar.gz",
-    "bundle_bytes": 22412159,
-    "bundle_sha256": "sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081",
-    "manifest_sha256": "sha256:9b1f8d22d287bcec182f5b2f6714c84541775bc9ba7312ba2b9fc8a0f8ad7d91",
-    "payload_sha256": "sha256:539578834744e572a6283b42725c61730247d564d0156a9510d4b06bdc57756d",
-    "bootstrap_name": "xinsight-release-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3",
+    "bundle_name": "xinsight-v0.2.0-dev.fpv27-linux-amd64-4d2f53b048f63439fff59f6194946953732ea106.tar.gz",
+    "bundle_bytes": 22480265,
+    "bundle_sha256": "sha256:17a31a42222e2efcd7708563385398978a11442d5452cb5596eb1f24b8f1f2bb",
+    "manifest_sha256": "sha256:a5693455b2f0d235576cda7bc14f5e015e45b3d5b6b4ecf864cb41a8f67011bc",
+    "payload_sha256": "sha256:431b711e849c38a012efd6de610e86c806e8600f2f7a5904a97f0432239d22ca",
+    "bootstrap_name": "xinsight-release-linux-amd64-4d2f53b048f63439fff59f6194946953732ea106",
     "bootstrap_bytes": 8249492,
-    "bootstrap_sha256": "sha256:7f6e2a726d6f8535b7d848dfebf3442ad24fbea6e38681efdbf2300a6791647f",
-    "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
-    "database_schema": "47",
-    "qualification_status": "Exact product main CI and protocol, ten Linux installation and upgrade lanes, exact owner signature, and local byte-identical reconstruction from the signed FPV24 basis passed. See separate records for public Linux consumption, original-host upgrade and installed-pair acceptance.",
-    "installation_guide": "docs/community/releases/v0.2.0-dev.fpv25.md",
+    "bootstrap_sha256": "sha256:a40465d4cba693566f3ddd27ff573f10ad6548ae4ca20898e07e4e8dcd327689",
+    "public_trust_store_sha256": "sha256:031e95661bf4d7d94b9d41dffcf03998d702f76c4a30afe858fc06319c48f50c",
+    "database_schema": "49",
+    "installation_guide": "docs/community/releases/v0.2.0-dev.fpv27.md",
+    "qualification_status": "Exact product main CI and protocol, eleven test-signing Linux qualification lanes, anonymous cold source build, and owner-signed byte-identical reconstruction from FPV25 passed. See the public release for formal Linux consumer and installed-site acceptance status.",
     "delta": {
       "codec": "zstd-raw-tar-v1",
-      "basis_archive_name": "xinsight-v0.2.0-dev.fpv24-linux-amd64-fa1e64e1d1259c3b7d631baa7794952b0ae72d93.tar.gz",
+      "basis_archive_name": "xinsight-v0.2.0-dev.fpv25-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3.tar.gz",
       "basis": {
-        "commit": "fa1e64e1d1259c3b7d631baa7794952b0ae72d93",
-        "version": "0.2.0-dev.fpv24",
         "bundle": {
-          "bytes": 22409208,
-          "sha256": "sha256:34aa6dd9e9ecff09015fe45c34d22e204bc6ca43c223413f6329bfba9c4aa92c"
+          "bytes": 22412159,
+          "sha256": "sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081"
         },
+        "commit": "b77fa1d7cff40a9adafe495d1c4951632819a4d3",
         "raw_tar": {
-          "bytes": 63015424,
-          "sha256": "sha256:3dd1bed59cc257d569b51147d4c1a7047c52f1e6fa641354d948ca1864d62c28"
-        }
+          "bytes": 63020544,
+          "sha256": "sha256:20cc2c98aa0a90929c3d8c804abfc3098eeae60641acc02abf36ab75251227e4"
+        },
+        "version": "0.2.0-dev.fpv25"
       },
       "plan_name": "delta.json",
-      "plan_sha256": "sha256:47de3ceb76ae49114dac5c36398825a9f56e12102b4e8bea15d1b066776f60bf",
+      "plan_sha256": "sha256:a9478ad86d85dddd1f409a109d41864e936ee06a8edae61387be7823e24db332",
       "patch_name": "payload.zst",
       "manifest_name": "release-manifest.json",
       "signature_name": "release-manifest.sig",
       "compressed_bootstrap_name": "xinsight-release-linux-amd64.gz"
     },
     "release_assets": {
-      "INSTALL-AND-VERIFY-FPV25.md": {
-        "bytes": 8256,
-        "sha256": "sha256:77eb67d8a3a0f55c2b63c581b1d68cf2bf04ef1a4d88083c03e38e20b899ff8e"
+      "INSTALL-AND-VERIFY-FPV27.md": {
+        "bytes": 6159,
+        "sha256": "sha256:4f52aa82f22248058b9dfcbd417a1beca1769a2798bfb30538ab1118e4c308c8"
       },
       "RELEASE-NOTES.md": {
-        "bytes": 1228,
-        "sha256": "sha256:7db6c0ffc04a44c3c3752af0e73e103f2023fd62c7c48952e3d8853219f5c09f"
+        "bytes": 1260,
+        "sha256": "sha256:58f26b6aa53682af594039d5cafcaf7e0ea4dea8a7f165dde3791d3654e50805"
       },
       "SHA256SUMS": {
         "bytes": 1070,
-        "sha256": "sha256:76d0fa62df23c0643d61748e2a43984f0b65b7751da36299ee208da0703771e3"
+        "sha256": "sha256:723fb326bca2af674ed2c243356deea8981ef1db9e5976aeb9ad2a90fd150586"
       },
       "delta.json": {
         "bytes": 1290,
-        "sha256": "sha256:47de3ceb76ae49114dac5c36398825a9f56e12102b4e8bea15d1b066776f60bf"
+        "sha256": "sha256:a9478ad86d85dddd1f409a109d41864e936ee06a8edae61387be7823e24db332"
       },
       "payload.zst": {
-        "bytes": 2944270,
-        "sha256": "sha256:969fada22388026038268ab7f30f97360ef3dfc451f0045246f69b58048bba2a"
+        "bytes": 9455265,
+        "sha256": "sha256:c7545c3b3e7b8ebc9e3ab7b112bc77faa2007d83a794fb36db318f82ae12b4b9"
       },
       "release-manifest.json": {
-        "bytes": 48482,
-        "sha256": "sha256:9b1f8d22d287bcec182f5b2f6714c84541775bc9ba7312ba2b9fc8a0f8ad7d91"
+        "bytes": 49698,
+        "sha256": "sha256:a5693455b2f0d235576cda7bc14f5e015e45b3d5b6b4ecf864cb41a8f67011bc"
       },
       "release-manifest.sig": {
         "bytes": 387,
-        "sha256": "sha256:a870553e35704777d557f510e9c4d528b850d6e6846b7afcd12428ceb31173ed"
+        "sha256": "sha256:80378ae302ad3aa14895ab5d83d5ebf25fba8934bb700986a77320044d526bcb"
       },
       "trusted-release-keys.json": {
-        "bytes": 602,
-        "sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd"
+        "bytes": 598,
+        "sha256": "sha256:031e95661bf4d7d94b9d41dffcf03998d702f76c4a30afe858fc06319c48f50c"
       },
       "verify-result.json": {
         "bytes": 645,
-        "sha256": "sha256:b950129c6ef5a46843ab9df351bb09689ef764c3c87bcebd8cf9bfb7c05d77a0"
+        "sha256": "sha256:4f24da911c47c8ad81742cff5654d84622f5e7d882744e8b79bae1f486f4b629"
       },
-      "xinsight-release-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3": {
+      "xinsight-release-linux-amd64-4d2f53b048f63439fff59f6194946953732ea106": {
         "bytes": 8249492,
-        "sha256": "sha256:7f6e2a726d6f8535b7d848dfebf3442ad24fbea6e38681efdbf2300a6791647f"
+        "sha256": "sha256:a40465d4cba693566f3ddd27ff573f10ad6548ae4ca20898e07e4e8dcd327689"
       },
       "xinsight-release-linux-amd64.gz": {
-        "bytes": 3239823,
-        "sha256": "sha256:e4f8da8b6a68f5668eca9b88289560b990e69068cd34af175b26e8c37eed9dbc"
+        "bytes": 3239822,
+        "sha256": "sha256:b2e3b520078399823ed0eb0040ded0dd0f4680e1abb725e3b248ceac02124d64"
       },
-      "xinsight-v0.2.0-dev.fpv25-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3.tar.gz": {
-        "bytes": 22412159,
-        "sha256": "sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081"
+      "xinsight-v0.2.0-dev.fpv27-linux-amd64-4d2f53b048f63439fff59f6194946953732ea106.tar.gz": {
+        "bytes": 22480265,
+        "sha256": "sha256:17a31a42222e2efcd7708563385398978a11442d5452cb5596eb1f24b8f1f2bb"
       }
     }
   },
@@ -378,6 +379,100 @@
       "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
       "qualification_status": "As of 2026-10-23, exact source 08435e0949dfae0ae65497d2e12ca356f6d820f0 passed Linux artifact qualification and one ordinary empty-database install on an existing Ubuntu 22.04 amd64 host with pinned container PostgreSQL 16, followed by normal owner HTTPS access. Other topologies, the ordinary installed UR-to-XI pair, stable release and Production acceptance are not established by this result. See docs/community/release-readiness.md.",
       "installation_erratum": "docs/community/releases/v0.2.0-dev.fpv20.md"
+    },
+    {
+      "product_version": "0.2.0-dev.fpv25",
+      "release_channel": "release_candidate",
+      "source_commit": "b77fa1d7cff40a9adafe495d1c4951632819a4d3",
+      "source_tree": "b0353fdb32049ca2d1f1591c8dfdb15e6e378e71",
+      "canonical_release_tag": "v0.2.0-dev.fpv25",
+      "canonical_release_url": "https://github.com/foigent/x-insight/releases/tag/v0.2.0-dev.fpv25",
+      "publication_state": "see_canonical_release_record",
+      "bundle_name": "xinsight-v0.2.0-dev.fpv25-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3.tar.gz",
+      "bundle_bytes": 22412159,
+      "bundle_sha256": "sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081",
+      "manifest_sha256": "sha256:9b1f8d22d287bcec182f5b2f6714c84541775bc9ba7312ba2b9fc8a0f8ad7d91",
+      "payload_sha256": "sha256:539578834744e572a6283b42725c61730247d564d0156a9510d4b06bdc57756d",
+      "bootstrap_name": "xinsight-release-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3",
+      "bootstrap_bytes": 8249492,
+      "bootstrap_sha256": "sha256:7f6e2a726d6f8535b7d848dfebf3442ad24fbea6e38681efdbf2300a6791647f",
+      "public_trust_store_sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd",
+      "database_schema": "47",
+      "qualification_status": "Exact product main CI and protocol, ten Linux installation and upgrade lanes, exact owner signature, and local byte-identical reconstruction from the signed FPV24 basis passed. See separate records for public Linux consumption, original-host upgrade and installed-pair acceptance.",
+      "installation_guide": "docs/community/releases/v0.2.0-dev.fpv25.md",
+      "delta": {
+        "codec": "zstd-raw-tar-v1",
+        "basis_archive_name": "xinsight-v0.2.0-dev.fpv24-linux-amd64-fa1e64e1d1259c3b7d631baa7794952b0ae72d93.tar.gz",
+        "basis": {
+          "commit": "fa1e64e1d1259c3b7d631baa7794952b0ae72d93",
+          "version": "0.2.0-dev.fpv24",
+          "bundle": {
+            "bytes": 22409208,
+            "sha256": "sha256:34aa6dd9e9ecff09015fe45c34d22e204bc6ca43c223413f6329bfba9c4aa92c"
+          },
+          "raw_tar": {
+            "bytes": 63015424,
+            "sha256": "sha256:3dd1bed59cc257d569b51147d4c1a7047c52f1e6fa641354d948ca1864d62c28"
+          }
+        },
+        "plan_name": "delta.json",
+        "plan_sha256": "sha256:47de3ceb76ae49114dac5c36398825a9f56e12102b4e8bea15d1b066776f60bf",
+        "patch_name": "payload.zst",
+        "manifest_name": "release-manifest.json",
+        "signature_name": "release-manifest.sig",
+        "compressed_bootstrap_name": "xinsight-release-linux-amd64.gz"
+      },
+      "release_assets": {
+        "INSTALL-AND-VERIFY-FPV25.md": {
+          "bytes": 8256,
+          "sha256": "sha256:77eb67d8a3a0f55c2b63c581b1d68cf2bf04ef1a4d88083c03e38e20b899ff8e"
+        },
+        "RELEASE-NOTES.md": {
+          "bytes": 1228,
+          "sha256": "sha256:7db6c0ffc04a44c3c3752af0e73e103f2023fd62c7c48952e3d8853219f5c09f"
+        },
+        "SHA256SUMS": {
+          "bytes": 1070,
+          "sha256": "sha256:76d0fa62df23c0643d61748e2a43984f0b65b7751da36299ee208da0703771e3"
+        },
+        "delta.json": {
+          "bytes": 1290,
+          "sha256": "sha256:47de3ceb76ae49114dac5c36398825a9f56e12102b4e8bea15d1b066776f60bf"
+        },
+        "payload.zst": {
+          "bytes": 2944270,
+          "sha256": "sha256:969fada22388026038268ab7f30f97360ef3dfc451f0045246f69b58048bba2a"
+        },
+        "release-manifest.json": {
+          "bytes": 48482,
+          "sha256": "sha256:9b1f8d22d287bcec182f5b2f6714c84541775bc9ba7312ba2b9fc8a0f8ad7d91"
+        },
+        "release-manifest.sig": {
+          "bytes": 387,
+          "sha256": "sha256:a870553e35704777d557f510e9c4d528b850d6e6846b7afcd12428ceb31173ed"
+        },
+        "trusted-release-keys.json": {
+          "bytes": 602,
+          "sha256": "sha256:be67a9b1502f79784d14688338d1d731b338d92807d9764bb6311855ce8cc8dd"
+        },
+        "verify-result.json": {
+          "bytes": 645,
+          "sha256": "sha256:b950129c6ef5a46843ab9df351bb09689ef764c3c87bcebd8cf9bfb7c05d77a0"
+        },
+        "xinsight-release-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3": {
+          "bytes": 8249492,
+          "sha256": "sha256:7f6e2a726d6f8535b7d848dfebf3442ad24fbea6e38681efdbf2300a6791647f"
+        },
+        "xinsight-release-linux-amd64.gz": {
+          "bytes": 3239823,
+          "sha256": "sha256:e4f8da8b6a68f5668eca9b88289560b990e69068cd34af175b26e8c37eed9dbc"
+        },
+        "xinsight-v0.2.0-dev.fpv25-linux-amd64-b77fa1d7cff40a9adafe495d1c4951632819a4d3.tar.gz": {
+          "bytes": 22412159,
+          "sha256": "sha256:ee028acaa06c1f319bc650926a1641e4dac0ba5c6ab129843edb3c3417bdd081"
+        }
+      },
+      "original_authority_record_commit": "59f65bdbdc79dd0d5fff854e09dd44b10cf398d1"
     }
   ]
 }
