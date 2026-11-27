@@ -1,6 +1,6 @@
 # Install and start X-Insight
 
-[English entry](../../README.md) · [中文入口](../../README.zh-CN.md) · [Current status](release-readiness.md) · [For contributors](development.md)
+[English entry](../../README.md) · [中文：从 UniRouter 到首条执行记录](getting-started.zh-CN.md) · [Current status](release-readiness.md) · [For contributors](development.md)
 
 **Install → choose your own password → sign in → connect UniRouter → confirm access and the first fact.**
 
@@ -44,11 +44,25 @@ Prepare both current administrator sessions and UR's source/project configuratio
 
 ### 5. Confirm access and the first fact
 
-Keep Auto off for the initial explicit, bounded Connect/Sync once. Configuration saved, worker loaded, received data and an ordinary user being allowed to read it are separate states.
+#### Find the same request in X-Insight
 
-Use one authorized, non-sensitive completed UR request. An ordinary XI user with the exact source/project grants must find the same source/request identity and supported outcome, usage and cost evidence. Missing facts remain unknown; an empty list is not successful first-fact acceptance. Verify foreign-scope denial and revocation where the acceptance scope requires them. Connection administration does not grant every reader access; capture permission does not authorize body reading. Opening an investigation from Cost and usage carries the selected evidence event and the reading cutoff. Authorized evidence that arrives later can appear if it occurred by the cutoff. An investigation link carrying an evidence revision can replay that committed revision under current access.
+1. In [UniRouter](https://github.com/foigent/unirouter/blob/main/docs/community/getting-started.md#make-and-inspect-a-request), choose an authorized, non-sensitive completed request from the connected installation and the intended organization/project. Keep its gateway **Request ID**, completion time and time zone, outcome, input/output tokens, and recorded customer charge and currency if available. Use the same Request ID in both products. UR is the source for execution and customer billing facts. If settlement is still pending, verify it in UR before comparing a final charge.
+2. On the XI installation's normal HTTPS `/login`, sign in as the owner with an explicit project reading grant. Repeat from an independent session signed in as the reader with the intended source/project metadata grant. In **Runtime and execution → Execution records**, enter the **Request ID** with exact matching. Select the same source if the filter is available. Set the time range to include the request and use the browser’s local time zone for the start and end fields. Open the result and check its source, organization/project and Request ID before comparing outcome, tokens and charge in the evidence you can read. The reader's grant determines which fields are visible. Connection administration and metadata grants confer no body-reading permission.
+3. Compare the same measure and currency. The customer charge, a provider cost observation and an estimate are different measures. If an amount is labeled micro-CNY, divide by 1,000,000 to compare with CNY. Preserve the difference between recorded zero, pending settlement and unavailable evidence. In this walkthrough all values come from your own authorized request.
 
-On the tested installation, the earlier FPV21 preview ingested one authorized completed UR request that the owner and ordinary reader could both read. On FPV24, the installed UR 1.15.6 connection recovered, completed a bounded sync with zero new items, and communicated after automatic control credential rotation. The owner and reader also read the granted project in Runtime. See [current status](release-readiness.md), [first-source setup](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md#connect-the-first-source), [ordinary-user grants](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md#grant-ordinary-users-the-right-scope), and [data handling](data-handling.md).
+The search time range selects which executions to find. The reading cutoff (`as_of`) controls the time boundary for reading evidence. Retain the cutoff and any `evidence_revision` returned with the detail link when comparing a saved reading. A revision pins the committed evidence for that reading. A cutoff-only link may show evidence received later that occurred by that cutoff. If you open an investigation from **Cost and usage**, the link carries the chosen execution, selected event and cutoff. A saved reading still requires current access. If it expired or authorization changed, check the grant and start a fresh reading when permitted.
+
+#### Check visibility before syncing
+
+On an existing connection, search for the exact Request ID before starting any sync. If the record is already visible, continue with the comparison. If **Auto sync** is already enabled, leave it enabled and allow the worker to poll within scope. The configured cadence is a minimum interval. An eligible UR fact is searchable once committed in XI and visible to the signed-in role in that reading. A connection check, a data commit and a source checkpoint acknowledgment can occur at different times.
+
+#### If the record is missing
+
+First verify UR export eligibility and the exact source, project, ID and time range. If the fact has yet to arrive on a new connection in its default manual mode or an existing connection already in manual mode, an authorized operator can verify the active collection scope and use **Sync once** on that connection. The run is bounded and can collect other eligible records within that scope.
+
+In **Connectors**, an authorized operator can use **Refresh local status** to check the last outgoing check, last data commit and the sync outcome without starting a fetch. Empty, partial and error results call for different checks. Share the safe diagnostic code if present. If the response to a submitted sync was lost, confirm the prior request in the product before starting another operation. If the owner can find the record and the reader cannot, check the reader's current source/project and metadata grants. Share neither connection secrets nor customer bodies. See the [FPV27 synchronization manual](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/connection-sync.md), [ordinary-user grants](https://github.com/foigent/x-insight/blob/4d2f53b048f63439fff59f6194946953732ea106/docs/manual/en-US/index.md#grant-ordinary-users-the-right-scope), and [data handling](data-handling.md).
+
+See the [public release status and bilingual packaged-manual erratum](release-readiness.md) for verified preview results and their scope.
 
 ## Developer and historical references
 
